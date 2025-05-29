@@ -26,7 +26,7 @@ function CSR() {
       overflowX: 'hidden'
     }}>
         <Sidebar />
-        hello
+        {/* hello */}
     </div>
     )
 }
