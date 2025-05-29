@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   ComposedChart
 } from 'recharts';
-import api from '../services/api';
+import api from '../../services/api';
 
 function Economic() {
   const [retentionData, setRetentionData] = useState([]);
@@ -81,6 +81,7 @@ function Economic() {
               dataKey="retention_ratio" 
               fill="#82ca9d" 
               name="Retention Ratio"
+              legendType="none"
             />
             <Line
               type="monotone"

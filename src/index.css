@@ -1,0 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Remove any potential default margins from the main container */
+div#root > div {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+} 
