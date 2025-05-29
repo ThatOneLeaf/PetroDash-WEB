@@ -1,16 +1,20 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { useRef } from 'react';
+import Modal from '../components/modal'; 
+import LoginPage from './Login_page/Login_page';
 
 function Landing() {
   // Create refs for each section
   const aboutRef = useRef(null);
   const disclosureRef = useRef(null);
   const contactRef = useRef(null);
+  const [isLoginModal, setLoginModal] = useState(false);
 
   // Scroll handler function
   const scrollToSection = (ref) => {
@@ -60,8 +64,7 @@ function Landing() {
             pellentesque.
           </p>
 
-          <Link to="/login">
-            <button style={{
+          <button style={{
               backgroundColor: '#2E7D32',
               color: 'white',
               padding: '12px 32px',
@@ -73,11 +76,18 @@ function Landing() {
               fontSize: '16px',
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
-            }}>
+            }}
+            onClick={() => setLoginModal(true)}
+            >
               LOGIN
             </button>
-          </Link>
         </div>
+
+        {isLoginModal && (
+          <Modal onClose={() => setLoginModal(false)}>
+            <LoginPage />
+          </Modal>
+        )}
 
         <div style={{ flex: 1 }}>
           <div style={{
