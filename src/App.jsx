@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Economic from './pages/Economic/Economic';
 import Landing from './pages/Landing';
+import Sidebar from './components/Sidebar';
 
 function App() {
   return (
@@ -11,7 +12,17 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/economic" element={<Economic />} />
+            <Route
+              path="/economic"
+              element={
+                <div style={{ display: 'flex' }}>
+                  <Sidebar />
+                  <div style={{ flex: 1 }}>
+                    <Economic />
+                  </div>
+                </div>
+              }
+            />
           </Routes>
         </main>
       </div>
@@ -19,4 +30,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
