@@ -6,6 +6,7 @@ function Overlay({ children, onClose }) {
 
   const handleClickOutside = (event) => {
     if (overlayRef.current && !overlayRef.current.contains(event.target)) {
+      console.log("hello");
       onClose();
     }
   };
@@ -26,7 +27,6 @@ function Overlay({ children, onClose }) {
         height: "100vh",
         bgcolor: "rgba(0,0,0,0.5)",
         display: "flex",
-        justifyContent: "center",
         alignItems: "center",
         zIndex: 50,
         p: 0,
@@ -36,17 +36,17 @@ function Overlay({ children, onClose }) {
     maxWidth={false}
     maxHeight={false}
     >
-      <Container sx={{
-        m: 'auto',
-        bgcolor: '#FFFFFF',
-        borderRadius: '8px',
-        p: '6px',
+      <Container ref={overlayRef} sx={{
         position: 'relative',
-        overflow: 'auto'
+        overflow: 'auto',
+        display: "flex",
+        justifyContent: "center",
+        width: '800px',
       }}
       disableGutters
-      maxWidth={false}
-      maxHeight={false}>
+        maxWidth={false}
+        maxHeight={false}
+      >
         {children}
       </Container>
     </Container>

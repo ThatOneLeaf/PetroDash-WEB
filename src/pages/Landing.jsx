@@ -21,6 +21,11 @@ function Landing() {
     ref.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+const toggleModal = () => {
+    setLoginModal(!isLoginModal);
+    console.log("hi");
+  };
+
   return (
     <div style={{ 
       display: 'flex',
@@ -69,22 +74,24 @@ function Landing() {
               color: 'white',
               padding: '12px 32px',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '100px',
               cursor: 'pointer',
               fontFamily: 'Inter',
               fontWeight: '500',
               fontSize: '16px',
               textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.5px',
+              boxSizing: 'border-box',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
             }}
-            onClick={() => setLoginModal(true)}
+            onClick={toggleModal}
             >
               LOGIN
             </button>
         </div>
 
         {isLoginModal && (
-          <Modal onClose={() => setLoginModal(false)}>
+          <Modal onClose={toggleModal}>
             <LoginPage />
           </Modal>
         )}
