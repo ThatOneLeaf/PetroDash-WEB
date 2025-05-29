@@ -12,7 +12,8 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route
+            <Route path="/economics" element={<Economic />} />
+            {/* <Route
               path="/economic"
               element={
                 <div style={{ display: 'flex' }}>
@@ -22,7 +23,7 @@ function App() {
                   </div>
                 </div>
               }
-            />
+            /> */}
           </Routes>
         </main>
       </div>
