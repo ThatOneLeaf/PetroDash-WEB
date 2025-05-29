@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 
@@ -13,19 +13,70 @@ import EnvironmentIcon from "../assets/Icons/environment.svg";
 import SocialIcon from "../assets/Icons/social.svg";
 import ProfileIcon from "../assets/Icons/profile.svg";
 import LogoutIcon from "../assets/Icons/logout.svg";
+import DropDownIcon from "../assets/Icons/drop-down.svg";
 
 function SideBar({ collapsed: collapsedProp = false }) {
   // Sidebar expands on hover, collapses on mouse leave
   const [collapsed, setCollapsed] = useState(true);
+  const [envOpen, setEnvOpen] = useState(false);
+  const [socialOpen, setSocialOpen] = useState(false);
+
+  // Helper to open only one dropdown at a time
+  const handleDropdownToggle = (dropdown) => {
+    if (dropdown === "env") {
+      setEnvOpen((open) => {
+        if (!open) setSocialOpen(false);
+        return !open;
+      });
+    } else if (dropdown === "social") {
+      setSocialOpen((open) => {
+        if (!open) setEnvOpen(false);
+        return !open;
+      });
+    }
+  };
+
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Navigation items
   const navItems = [
     { label: "Energy", icon: EnergyIcon, to: "/energy" },
     { label: "Economics", icon: EconomicsIcon, to: "/economics" },
-    { label: "Environment", icon: EnvironmentIcon, to: "/environment" },
-    { label: "Social", icon: SocialIcon, to: "/social" },
+    {
+      label: "Environment",
+      icon: EnvironmentIcon,
+      to: "/environment",
+      dropdown: [
+        { label: "Air", to: "/environment/air" },
+        { label: "Water", to: "/environment/water" },
+        { label: "Waste", to: "/environment/waste" },
+        { label: "Energy", to: "/environment/energy" },
+        { label: "C.A.R.E", to: "/environment/care" },
+      ],
+    },
+    {
+      label: "Social",
+      icon: SocialIcon,
+      to: "/social",
+      dropdown: [
+        { label: "H.R.", to: "/social/hr" },
+        { label: "H.E.L.P", to: "/social/help" },
+        { label: "ER1-94 Fund Allocations", to: "/social/er1-94" },
+      ],
+    },
   ];
+
+  // Helper to check if a nav item is selected
+  const isSelected = (item) => {
+    if (item.dropdown) {
+      return item.dropdown.some((sub) => location.pathname.startsWith(sub.to));
+    }
+    return location.pathname.startsWith(item.to);
+  };
+
+  // Helper to check if a dropdown subitem is selected
+  const isDropdownSelected = (sub) => location.pathname.startsWith(sub.to);
 
   return (
     <Box
@@ -38,8 +89,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
         justifyContent: "space-between",
         borderRight: "1px solid #eee",
         transition: "width 0.35s cubic-bezier(.4,0,.2,1)",
-        boxShadow: "4px 0 12px 0 rgba(44,62,80,0.22)", // OUTER shadow, always visible
-        position: "relative",
+        boxShadow: "4px 0 12px 0 rgba(44,62,80,0.22)",
+        position: "sticky", // changed from "relative"
+        top: 0,
         overflowX: "hidden",
         zIndex: 100,
       }}
@@ -114,6 +166,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                 textAlign: "center",
                 pl: 0,
                 minWidth: 0,
+                borderLeft: location.pathname.startsWith("/dashboard") && !collapsed ? "6px solid #182959" : "6px solid transparent",
                 boxShadow: collapsed ? "none" : undefined,
                 "&:hover": { bgcolor: collapsed ? "transparent" : "#162a52" },
                 display: "flex",
@@ -146,65 +199,397 @@ function SideBar({ collapsed: collapsedProp = false }) {
         </Box>
         {/* Navigation Items */}
         <Box>
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              style={{
-                textDecoration: "none",
-                color: "#1a3365",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: collapsed ? "center" : "flex-start",
-                  px: collapsed ? 0 : 4,
-                  py: 1.5,
-                  gap: collapsed ? 0 : 2,
-                  cursor: "pointer",
-                  transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                  "&:hover": {
-                    bgcolor: "#2B8C37",
-                  },
-                  "&:hover span": {
-                    color: "#fff",
-                    fontWeight: 700,
-                  },
-                  "&:hover img": {
-                    filter:
-                      "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                  },
-                }}
-              >
-                <img
-                  src={item.icon}
-                  alt={item.label}
-                  style={{
-                    width: 28,
-                    height: 28,
-                    transition: "filter 0.2s, margin 0.3s",
-                    marginLeft: 0,
-                    marginRight: 0,
+          {navItems.map((item) =>
+            item.label === "Environment" ? (
+              <React.Fragment key={item.label}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: collapsed ? "center" : "flex-start",
+                    px: collapsed ? 0 : 4,
+                    py: 1.5,
+                    gap: collapsed ? 0 : 2,
+                    cursor: "pointer",
+                    transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                    bgcolor:
+                      (envOpen && !collapsed)
+                        ? "#2B8C37"
+                        : (isSelected(item) && !collapsed)
+                          ? "rgba(43,140,55,0.5)"
+                          : "transparent",
+                    borderRadius: (envOpen && !collapsed) || (isSelected(item) && !collapsed) ? 0 : undefined,
+                    position: "relative",
+                    // Remove borderLeft, add indicator as ::before
+                    "&::before": isSelected(item) ? {
+                      content: '""',
+                      position: "absolute",
+                      left: 0,
+                      top: 4,
+                      bottom: 4,
+                      width: 6,
+                      background: "#000",
+                      borderTopRightRadius: 12,
+                      borderBottomRightRadius: 12,
+                      zIndex: 2,
+                    } : {},
+                    "&:hover": {
+                      bgcolor: "#2B8C37",
+                    },
+                    "&:hover span": {
+                      color: "#fff",
+                      fontWeight: 700,
+                    },
+                    "&:hover img": {
+                      filter:
+                        "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                    },
                   }}
-                />
-                {collapsed ? null : (
-                  <span
+                  onClick={() => {
+                    if (!collapsed) handleDropdownToggle("env");
+                  }}
+                >
+                  <img
+                    src={item.icon}
+                    alt={item.label}
                     style={{
-                      fontSize: 18,
-                      transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
-                      opacity: 1,
-                      marginLeft: 4,
-                      whiteSpace: "nowrap",
+                      width: 28,
+                      height: 28,
+                      transition: "filter 0.2s, margin 0.3s",
+                      marginLeft: 0,
+                      marginRight: 0,
+                      filter:
+                        ((envOpen && !collapsed) || (isSelected(item) && !collapsed))
+                          ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                          : undefined,
+                    }}
+                  />
+                  {collapsed ? null : (
+                    <>
+                      <span
+                        style={{
+                          fontSize: 18,
+                          fontWeight: (envOpen || (isSelected(item) && !collapsed)) ? 700 : 400,
+                          color: (envOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365",
+                          transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
+                          opacity: 1,
+                          marginLeft: 4,
+                          whiteSpace: "nowrap",
+                          flex: 1,
+                        }}
+                      >
+                        {item.label}
+                      </span>
+                      <img
+                        src={DropDownIcon}
+                        alt="Expand"
+                        style={{
+                          width: 22,
+                          height: 22,
+                          marginLeft: 2,
+                          transition: "transform 0.3s, filter 0.2s",
+                          transform: envOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          filter: envOpen
+                            ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                            : undefined,
+                        }}
+                      />
+                    </>
+                  )}
+                </Box>
+                {/* Dropdown */}
+                {!collapsed && envOpen && (
+                  <Box
+                    sx={{
+                      pl: 7,
+                      pr: 2,
+                      py: 1,
+                      bgcolor: "#fff",
+                      boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)", // subtle shadow
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                      mb: 1,
+                      borderRadius: 2, // rounded corners
+                      border: "1px solid #e0e0e0", // subtle border
+                      position: "relative",
+                      zIndex: 101,
                     }}
                   >
-                    {item.label}
-                  </span>
+                    {item.dropdown.map((sub) => (
+                      <Link
+                        key={sub.label}
+                        to={sub.to}
+                        style={{
+                          textDecoration: "none",
+                          color: "#1a3365",
+                        }}
+                        onClick={() => setEnvOpen(false)}
+                      >
+                        <Box
+                          sx={{
+                            py: 0.8,
+                            px: 1,
+                            borderRadius: 2,
+                            transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                            bgcolor: isDropdownSelected(sub) ? "#182959" : "transparent",
+                            color: isDropdownSelected(sub) ? "#fff" : "#1a3365",
+                            fontWeight: isDropdownSelected(sub) ? 700 : 400,
+                            borderLeft: isDropdownSelected(sub) ? "6px solid #182959" : "6px solid transparent",
+                            borderTopRightRadius: isDropdownSelected(sub) ? 12 : 0,
+                            borderBottomRightRadius: isDropdownSelected(sub) ? 12 : 0,
+                            "&:hover": {
+                              bgcolor: "#182959",
+                              color: "#fff",
+                              fontWeight: 700,
+                            },
+                            fontSize: 16,
+                            letterSpacing: 0.2,
+                          }}
+                        >
+                          {sub.label}
+                        </Box>
+                      </Link>
+                    ))}
+                  </Box>
                 )}
-              </Box>
-            </Link>
-          ))}
+              </React.Fragment>
+            ) : item.label === "Social" ? (
+              <React.Fragment key={item.label}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: collapsed ? "center" : "flex-start",
+                    px: collapsed ? 0 : 4,
+                    py: 1.5,
+                    gap: collapsed ? 0 : 2,
+                    cursor: "pointer",
+                    transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                    bgcolor:
+                      (socialOpen && !collapsed)
+                        ? "#2B8C37"
+                        : (isSelected(item) && !collapsed)
+                          ? "rgba(43,140,55,0.5)"
+                          : "transparent",
+                    borderRadius: (socialOpen && !collapsed) || (isSelected(item) && !collapsed) ? 0 : undefined,
+                    position: "relative",
+                    // Remove borderLeft, add indicator as ::before
+                    "&::before": isSelected(item) ? {
+                      content: '""',
+                      position: "absolute",
+                      left: 0,
+                      top: 4,
+                      bottom: 4,
+                      width: 6,
+                      background: "#000",
+                      borderTopRightRadius: 12,
+                      borderBottomRightRadius: 12,
+                      zIndex: 2,
+                    } : {},
+                    "&:hover": {
+                      bgcolor: "#2B8C37",
+                    },
+                    "&:hover span": {
+                      color: "#fff",
+                      fontWeight: 700,
+                    },
+                    "&:hover img": {
+                      filter:
+                        "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                    },
+                  }}
+                  onClick={() => {
+                    if (!collapsed) handleDropdownToggle("social");
+                  }}
+                >
+                  <img
+                    src={item.icon}
+                    alt={item.label}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      transition: "filter 0.2s, margin 0.3s",
+                      marginLeft: 0,
+                      marginRight: 0,
+                      filter:
+                        ((socialOpen && !collapsed) || (isSelected(item) && !collapsed))
+                          ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                          : undefined,
+                    }}
+                  />
+                  {collapsed ? null : (
+                    <>
+                      <span
+                        style={{
+                          fontSize: 18,
+                          fontWeight: (socialOpen || (isSelected(item) && !collapsed)) ? 700 : 400,
+                          color: (socialOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365",
+                          transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
+                          opacity: 1,
+                          marginLeft: 4,
+                          whiteSpace: "nowrap",
+                          flex: 1,
+                        }}
+                      >
+                        {item.label}
+                      </span>
+                      <img
+                        src={DropDownIcon}
+                        alt="Expand"
+                        style={{
+                          width: 22,
+                          height: 22,
+                          marginLeft: 2,
+                          transition: "transform 0.3s, filter 0.2s",
+                          transform: socialOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          filter: socialOpen
+                            ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                            : undefined,
+                        }}
+                      />
+                    </>
+                  )}
+                </Box>
+                {/* Dropdown */}
+                {!collapsed && socialOpen && (
+                  <Box
+                    sx={{
+                      pl: 7,
+                      pr: 2,
+                      py: 1,
+                      bgcolor: "#fff",
+                      boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                      mb: 1,
+                      borderRadius: 2,
+                      border: "1px solid #e0e0e0",
+                      position: "relative",
+                      zIndex: 101,
+                    }}
+                  >
+                    {item.dropdown.map((sub) => (
+                      <Link
+                        key={sub.label}
+                        to={sub.to}
+                        style={{
+                          textDecoration: "none",
+                          color: "#1a3365",
+                        }}
+                        onClick={() => setSocialOpen(false)}
+                      >
+                        <Box
+                          sx={{
+                            py: 0.8,
+                            px: 1,
+                            borderRadius: 2,
+                            transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                            bgcolor: isDropdownSelected(sub) ? "#182959" : "transparent",
+                            color: isDropdownSelected(sub) ? "#fff" : "#1a3365",
+                            fontWeight: isDropdownSelected(sub) ? 700 : 400,
+                            borderLeft: isDropdownSelected(sub) ? "6px solid #182959" : "6px solid transparent",
+                            borderTopRightRadius: isDropdownSelected(sub) ? 12 : 0,
+                            borderBottomRightRadius: isDropdownSelected(sub) ? 12 : 0,
+                            "&:hover": {
+                              bgcolor: "#182959",
+                              color: "#fff",
+                              fontWeight: 700,
+                            },
+                            fontSize: 16,
+                            letterSpacing: 0.2,
+                          }}
+                        >
+                          {sub.label}
+                        </Box>
+                      </Link>
+                    ))}
+                  </Box>
+                )}
+              </React.Fragment>
+            ) : (
+              <Link
+                key={item.label}
+                to={item.to}
+                style={{
+                  textDecoration: "none",
+                  color: "#1a3365",
+                }}
+                onClick={() => { setEnvOpen(false); setSocialOpen(false); }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: collapsed ? "center" : "flex-start",
+                    px: collapsed ? 0 : 4,
+                    py: 1.5,
+                    gap: collapsed ? 0 : 2,
+                    cursor: "pointer",
+                    transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                    bgcolor: isSelected(item) && !collapsed ? "rgba(43,140,55,0.5)" : "transparent",
+                    position: "relative",
+                    // Remove borderLeft, add indicator as ::before
+                    "&::before": isSelected(item) ? {
+                      content: '""',
+                      position: "absolute",
+                      left: 0,
+                      top: 4,
+                      bottom: 4,
+                      width: 6,
+                      background: "#000",
+                      borderTopRightRadius: 12,
+                      borderBottomRightRadius: 12,
+                      zIndex: 2,
+                    } : {},
+                    "&:hover": {
+                      bgcolor: "#2B8C37",
+                    },
+                    "&:hover span": {
+                      color: "#fff",
+                      fontWeight: 700,
+                    },
+                    "&:hover img": {
+                      filter:
+                        "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                    },
+                  }}
+                >
+                  <img
+                    src={item.icon}
+                    alt={item.label}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      transition: "filter 0.2s, margin 0.3s",
+                      marginLeft: 0,
+                      marginRight: 0,
+                      filter:
+                        (isSelected(item) && !collapsed)
+                          ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                          : undefined,
+                    }}
+                  />
+                  {collapsed ? null : (
+                    <span
+                      style={{
+                        fontSize: 18,
+                        fontWeight: (isSelected(item) && !collapsed) ? 700 : 400,
+                        color: (isSelected(item) && !collapsed) ? "#fff" : "#1a3365",
+                        transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
+                        opacity: 1,
+                        marginLeft: 4,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                  )}
+                </Box>
+              </Link>
+            )
+          )}
         </Box>
       </Box>
       {/* Bottom Section: Profile and Logout */}
