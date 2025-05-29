@@ -83,7 +83,7 @@ export default function LoginPage() {
             {/* Logo image */}
             <Box
               component="img"
-              src="src\images\logo\PetroDash_Logo.png"
+              src="src\assets\petrodashlogo.png"
               alt="PetroDash Logo"
               sx={{
                 width: 240,

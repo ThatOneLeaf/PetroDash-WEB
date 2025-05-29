@@ -71,7 +71,7 @@ function Economic() {
       overflowX: 'hidden'
     }}>
       <Sidebar />
-      <div style={{ padding: '20px' }}>
+      /* <div style={{ padding: '20px' }}>
         <h1>Economic Value Retention Ratio</h1>
         
         <div style={{ marginBottom: '20px' }}>
@@ -124,7 +124,7 @@ function Economic() {
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </div> 
     </div>
   );
 }
