@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Economic from './pages/Economic/Economic';
 import Landing from './pages/Landing';
-import Sidebar from './components/Sidebar';
+import CSR from './pages/CSR/CSR';
 
 function App() {
   return (
@@ -12,18 +12,9 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path='/dashboard' element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
-            {/* <Route
-              path="/economic"
-              element={
-                <div style={{ display: 'flex' }}>
-                  <Sidebar />
-                  <div style={{ flex: 1 }}>
-                    <Economic />
-                  </div>
-                </div>
-              }
-            /> */}
+            <Route path="/social-csr" element={<CSR/>} />
           </Routes>
         </main>
       </div>

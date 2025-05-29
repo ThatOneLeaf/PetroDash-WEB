@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState,  } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Grid,
@@ -19,6 +20,11 @@ const interFont = { fontFamily: "Inter, sans-serif" };
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+
+  const toDashboard = () => {
+    navigate('')
+  }
 
   return (
     <Paper
@@ -37,11 +43,11 @@ export default function LoginPage() {
         <Grid
           item
           sx={{
-            bgcolor: "#99b4e0",
+            bgcolor: "#7694c4",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            minHeight: 500
+            // minHeight: 500
           }}
         >
           {/* Login image */}
@@ -52,7 +58,7 @@ export default function LoginPage() {
             sx={{
               width: "auto",
               height: "auto",
-              maxWidth: 400,
+              maxWidth: 441.,
               maxHeight: 600,
               objectFit: "contain",
               opacity: 0.825,
@@ -166,24 +172,26 @@ export default function LoginPage() {
             </Link>
           </Box>
           {/* Login Button */}
-          <Button
-            variant="contained"
-            fullWidth
-            sx={{
-              bgcolor: "#1e5b2e",
-              color: "#fff",
-              fontWeight: 700,
-              borderRadius: "24px",
-              fontSize: 18,
-              py: 1.2,
-              textTransform: "none",
-              boxShadow: "none",
-              ...interFont,
-              "&:hover": { bgcolor: "#176c3c" }
-            }}
-          >
-            LOGIN
-          </Button>
+          <Link to="/dashboard">
+            <Button
+              variant="contained"
+              fullWidth
+              sx={{
+                bgcolor: "#1e5b2e",
+                color: "#fff",
+                fontWeight: 700,
+                borderRadius: "24px",
+                fontSize: 18,
+                py: 1.2,
+                textTransform: "none",
+                boxShadow: "none",
+                ...interFont,
+                "&:hover": { bgcolor: "#176c3c" }
+              }} onClick={() => {navigate("/dashboard")}}
+            >
+              LOGIN
+            </Button>
+          </Link>
         </Grid>
       </Grid>
     </Paper>

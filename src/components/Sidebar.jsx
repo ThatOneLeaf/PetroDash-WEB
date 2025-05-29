@@ -24,7 +24,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
     { label: "Energy", icon: EnergyIcon, to: "/energy" },
     { label: "Economics", icon: EconomicsIcon, to: "/economics" },
     { label: "Environment", icon: EnvironmentIcon, to: "/environment" },
-    { label: "Social", icon: SocialIcon, to: "/social" },
+    { label: "Social", icon: SocialIcon, to: "/social-csr" },
   ];
 
   return (
@@ -280,7 +280,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
           }}
           onClick={() => {
             // Add logout logic here if needed
-            navigate("/login");
+            navigate("/");
           }}
         >
           <img
