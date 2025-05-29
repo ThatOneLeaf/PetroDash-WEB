@@ -1,7 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
-function Navbar({ isSticky = false }) {
+function Navbar({ 
+  isSticky = false, 
+  onAboutClick, 
+  onDisclosureClick, 
+  onContactClick 
+}) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -54,39 +59,45 @@ function Navbar({ isSticky = false }) {
           left: '50%',
           transform: 'translateX(-50%)'
         }}>
-          <Link to="/about" style={{ 
-            textDecoration: 'none', 
-            color: 'inherit', 
-            fontFamily: 'Inter', 
-            fontSize: '15px',
-            fontWeight: 'medium',
-            letterSpacing: '0.17px',
-            textTransform: 'uppercase'
-          }}>
+          <button 
+            onClick={onAboutClick}
+            style={{ 
+              background: 'none',
+              border: 'none',
+              color: '#333',
+              cursor: 'pointer',
+              fontFamily: 'Inter',
+              fontSize: '14px'
+            }}
+          >
             ABOUT
-          </Link>
-          <Link to="/disclosure" style={{ 
-            textDecoration: 'none', 
-            color: 'inherit', 
-            fontFamily: 'Inter', 
-            fontSize: '15px',
-            fontWeight: 'medium',
-            letterSpacing: '0.17px',
-            textTransform: 'uppercase'
-          }}>
+          </button>
+          <button 
+            onClick={onDisclosureClick}
+            style={{ 
+              background: 'none',
+              border: 'none',
+              color: '#333',
+              cursor: 'pointer',
+              fontFamily: 'Inter',
+              fontSize: '14px'
+            }}
+          >
             DISCLOSURE
-          </Link>
-          <Link to="/contact" style={{ 
-            textDecoration: 'none', 
-            color: 'inherit', 
-            fontFamily: 'Inter', 
-            fontSize: '15px',
-            fontWeight: 'medium',
-            letterSpacing: '0.17px',
-            textTransform: 'uppercase'
-          }}>
+          </button>
+          <button 
+            onClick={onContactClick}
+            style={{ 
+              background: 'none',
+              border: 'none',
+              color: '#333',
+              cursor: 'pointer',
+              fontFamily: 'Inter',
+              fontSize: '14px'
+            }}
+          >
             CONTACT US
-          </Link>
+          </button>
         </div>
 
         <Link to="/login">

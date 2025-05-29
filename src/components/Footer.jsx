@@ -19,7 +19,7 @@ function Footer() {
           alignItems: 'center',
           gap: '2rem'
         }}>
-          <img src="src\assets\petrodashlogo.png" alt="PetroDash" style={{ height: '40px' }} />
+          <img src="src\assets\petrodashlogodark.png" alt="PetroDash" style={{ height: '40px' }} />
           <p style={{ 
             fontSize: '14px', 
             lineHeight: '1.5',

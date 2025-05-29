@@ -1,22 +1,30 @@
+/* Reset all margins and paddings */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body, html, #root {
-  margin: 0;
-  padding: 0;
+/* Reset body and html */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
   width: 100%;
-  overflow-x: hidden;
-  position: relative;
-  min-height: 100vh;
+  /* Only set overflow-x here if needed */
 }
 
-/* Remove any potential default margins from the main container */
-div#root > div {
-  margin: 0;
-  padding: 0;
+/* Reset root element */
+#root {
+  margin: 0 !important;
+  padding: 0 !important;
   width: 100%;
-  overflow-x: hidden;
+  /* Remove overflow control from here */
+}
+
+/* Target the main container directly */
+#root > div {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  /* Remove overflow control from here */
 } 

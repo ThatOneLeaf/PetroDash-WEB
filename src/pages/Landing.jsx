@@ -4,19 +4,35 @@ import Footer from '../components/Footer';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { useRef } from 'react';
 
 function Landing() {
+  // Create refs for each section
+  const aboutRef = useRef(null);
+  const disclosureRef = useRef(null);
+  const contactRef = useRef(null);
+
+  // Scroll handler function
+  const scrollToSection = (ref) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div style={{ 
-      display: 'flex', 
+      display: 'flex',
       flexDirection: 'column',
       minHeight: '100vh',
+      width: '100%',
       margin: 0,
       padding: 0,
-      overflow: 'hidden',  // Changed from overflowX to prevent any scroll
-      position: 'relative'
+      overflowX: 'hidden'
     }}>
-      <Navbar isSticky={true} />
+      <Navbar 
+        isSticky={true}
+        onAboutClick={() => scrollToSection(aboutRef)}
+        onDisclosureClick={() => scrollToSection(disclosureRef)}
+        onContactClick={() => scrollToSection(contactRef)}
+      />
       
       <main style={{
         display: 'flex',
@@ -78,7 +94,7 @@ function Landing() {
         </div>
       </main>
 
-      <section style={{
+      <section ref={aboutRef} style={{
         backgroundColor: '#f5f5f5',
         padding: '6rem 4rem',
         textAlign: 'center'
@@ -118,12 +134,11 @@ function Landing() {
         </div>
       </section>
 
-      <section style={{
+      <section ref={disclosureRef} style={{
         backgroundColor: '#2E7D32',
         color: 'white',
         padding: '6rem 4rem',
         width: '100%',
-        boxSizing: 'border-box',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -161,8 +176,9 @@ function Landing() {
         </div>
       </section>
 
-      <section style={{
-        padding: '6rem 4rem'
+      <section ref={contactRef} style={{
+        padding: '6rem 4rem',
+        width: '100%'
       }}>
         <h2 style={{
           fontSize: '2rem',
