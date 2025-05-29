@@ -23,7 +23,6 @@ function Landing() {
 
 const toggleModal = () => {
     setLoginModal(!isLoginModal);
-    console.log("hi");
   };
 
   return (

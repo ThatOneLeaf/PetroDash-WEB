@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import Modal from '../components/modal'; 
+import LoginPage from '../pages/Login_page/Login_page';
 
 function Navbar({ 
   isSticky = false, 
@@ -8,6 +10,7 @@ function Navbar({
   onContactClick 
 }) {
   const [scrolled, setScrolled] = useState(false);
+  const [isNavbarLogin, setLoginModal] = useState(false);
 
   useEffect(() => {
     if (!isSticky) return;
@@ -24,6 +27,10 @@ function Navbar({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isSticky]);
+
+  const toggleModal = () => {
+    setLoginModal(!isNavbarLogin);
+  };
 
   // Animation styles
   const navAnimStyle = isSticky
@@ -149,24 +156,31 @@ function Navbar({
             </button>
           </div>
 
-          <Link to="/login">
-            <button style={{
+          <button style={{
               backgroundColor: '#2E7D32',
               color: 'white',
-              padding: '8px 24px',
+              padding: '12px 32px',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '100px',
               cursor: 'pointer',
               fontFamily: 'Inter',
-              fontSize: '15px',
-              fontWeight: 'medium',
-              letterSpacing: '0.17px',
+              fontWeight: '500',
+              fontSize: '16px',
               textTransform: 'uppercase',
-              transition: 'background 0.2s'
-            }}>
-              LOGIN
-            </button>
-          </Link>
+              letterSpacing: '0.5px',
+              boxSizing: 'border-box',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+            }}
+            onClick={toggleModal}
+            >
+            LOGIN
+          </button>
+
+        {isNavbarLogin && (
+          <Modal onClose={toggleModal}>
+            <LoginPage />
+          </Modal>
+        )}
         </nav>
       </div>
     </>
