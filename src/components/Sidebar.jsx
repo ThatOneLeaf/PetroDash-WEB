@@ -89,7 +89,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   width: 190,
                   marginBottom: 16,
                   marginTop: 2,
-                  transition: "width 0.2s",
+                  transition: "opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1)",
+                  opacity: collapsed ? 0 : 1,
+                  transform: collapsed ? "scale(0.95)" : "scale(1)",
                 }}
               />
             )}
