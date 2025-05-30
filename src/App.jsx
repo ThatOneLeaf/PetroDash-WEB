@@ -5,6 +5,7 @@ import Economic from './pages/Economic/Economic';
 import Landing from './pages/Landing';
 import Sidebar from './components/Sidebar';
 import EconomicGenerated from './pages/Economic/EconomicGenerated';
+import EconomicExpenditures from './pages/Economic/EconomicExpenditures';
 import CSR from './pages/CSR/CSR';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/economic" element={<Economic />} />
             <Route path="/economic/generated" element={<EconomicGenerated />} />
+            <Route path="/economic/expenditures" element={<EconomicExpenditures />} />
             <Route path='/dashboard' element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
             <Route path="/social-csr" element={<CSR/>} />

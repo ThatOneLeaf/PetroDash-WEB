@@ -17,7 +17,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
-import AddValueGeneratedModal from '../../components/Economic/AddValueGeneratedModal';
+import AddValueGeneratedModal from '../../components/AddValueGeneratedModal';
 import Sidebar from '../../components/Sidebar';
 
 function EconomicGenerated() {

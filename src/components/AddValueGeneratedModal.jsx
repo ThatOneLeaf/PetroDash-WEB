@@ -8,7 +8,7 @@ import {
   MenuItem,
   Box
 } from '@mui/material';
-import api from '../../services/api';
+import api from '../services/api';
 
 function AddValueGeneratedModal({ onClose }) {
   const currentYear = new Date().getFullYear();

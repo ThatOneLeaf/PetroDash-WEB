@@ -2,54 +2,32 @@ import { useEffect, useRef } from 'react';
 import Container from '@mui/material/Container'
 
 function Overlay({ children, onClose }) {
-  const overlayRef = useRef();
-
-  const handleClickOutside = (event) => {
-    if (overlayRef.current && !overlayRef.current.contains(event.target)) {
-      console.log("hello");
+  const handleBackgroundClick = (e) => {
+    if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   return (
-    <Container sx={{
-        position: "fixed",
-        top: '0px',
-        left: '0px',
-        width: "100vw",
-        height: "100vh",
-        bgcolor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        zIndex: 50,
-        p: 0,
-        m: 0
-    }}
-    disableGutters
-    maxWidth={false}
-    maxHeight={false}
-    >
-      <Container ref={overlayRef} sx={{
-        position: 'relative',
-        overflow: 'auto',
-        display: "flex",
-        justifyContent: "center",
-        width: '800px',
+    <div
+      onClick={handleBackgroundClick}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
       }}
-      disableGutters
-        maxWidth={false}
-        maxHeight={false}
-      >
+    >
+      <div onClick={e => e.stopPropagation()}>
         {children}
-      </Container>
-    </Container>
+      </div>
+    </div>
   );
 }
 
