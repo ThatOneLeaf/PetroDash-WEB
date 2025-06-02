@@ -6,6 +6,7 @@ import Landing from './pages/Landing';
 import Sidebar from './components/Sidebar';
 import EconomicGenerated from './pages/Economic/EconomicGenerated';
 import EconomicExpenditures from './pages/Economic/EconomicExpenditures';
+import EconomicCapitalProvider from './pages/Economic/EconomicCapitalProvider';
 import EnvironmentEnergy from './pages/Envi/EnvironmentEnergy';
 import EnvironmentWater from './pages/Envi/EnvironmentWater';
 import EnvironmentWaste from './pages/Envi/EnvironmentWaste';
@@ -23,6 +24,7 @@ function App() {
             <Route path="/economic" element={<Economic />} />
             <Route path="/economic/generated" element={<EconomicGenerated />} />
             <Route path="/economic/expenditures" element={<EconomicExpenditures />} />
+            <Route path="/economic/capital-provider" element={<EconomicCapitalProvider />} />
             <Route path="/environment/energy" element={<EnvironmentEnergy />} />
             <Route path="/environment/water" element={<EnvironmentWater />} />
             <Route path="/environment/waste" element={<EnvironmentWaste />} />
