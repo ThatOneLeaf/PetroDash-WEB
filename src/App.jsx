@@ -13,6 +13,7 @@ import EnvironmentWaste from './pages/Envi/EnvironmentWaste';
 import EnvironmentAir from './pages/Envi/EnvironmentAir';
 import EnvironmentCare from './pages/Envi/EnvironmentCare';
 import CSR from './pages/CSR/CSR';
+import Energy from './pages/Energy/Energy';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path='/dashboard' element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
             <Route path="/social-csr" element={<CSR/>} />
+            <Route path ="/power-generation" element={<Energy/>}/>
           </Routes>
         </main>
       </div>
