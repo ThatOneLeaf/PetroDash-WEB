@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   TableBody,
   TableCell,
@@ -25,10 +25,10 @@ import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
 import AddEnergyElectricityModal from '../../envi_components/AddEnergyElectricityModal';
 import AddEnergyDieselModal from '../../envi_components/AddEnergyDieselModal';
-import Table from '../../components/Table/Table';
-import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
+import CustomTable from '../../components/Table/Table'; // Adjust path as needed
+import Pagination from '../../components/Pagination/pagination'; // Adjust path as needed
 
 function EnvironmentEnergy() {
   const [data, setData] = useState([]);
@@ -51,22 +51,51 @@ function EnvironmentEnergy() {
   });
 
   useEffect(() => {
-    fetchExpendituresData();
-  }, []);
+    if (selected === 'Electricity') {
+      fetchElectricityData();
+    }
+    if (selected === 'Diesel') {
+      fetchDieselData();
+    }
+  }, [selected]);
 
-  const fetchExpendituresData = async () => {
+  const fetchElectricityData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/economic/expenditures');
-      console.log('Data from API:', response.data);
+      const response = await api.get('environment/electric_consumption'); 
+      console.log('Electricity data from API:', response.data);
       setData(response.data);
     } catch (error) {
-      console.error('Error fetching expenditures data:', error);
+      console.error('Error fetching electric consumption data:', error);
       setError('Error fetching data');
     } finally {
       setLoading(false);
     }
   };
+
+    const fetchDieselData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('environment/diesel_consumption'); 
+      console.log('Diesel data from API:', response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error('Error fetching diesel consumption data:', error);
+      setError('Error fetching data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const columns = useMemo(() => {
+     if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') return [];
+     return Object.keys(data[0])
+        .slice(1) // This will exclude the first column
+        .map((key) => ({
+       key,
+        label: key.charAt(0).toUpperCase() + key.slice(1),
+      }));
+  }, [data]);
 
   const handleSort = (key) => {
     setSortConfig(prevConfig => ({
@@ -92,9 +121,9 @@ function EnvironmentEnergy() {
     // Apply search filter
     if (searchTerm) {
       filteredData = filteredData.filter(row => 
-        row.comp.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.year.toString().includes(searchTerm)
+        row.comp?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.year?.toString().includes(searchTerm)
       );
     }
 
@@ -137,10 +166,15 @@ function EnvironmentEnergy() {
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
+  // Debug logging
+  console.log('Data:', data);
+  console.log('Columns:', columns);
+  console.log('Current page data:', getCurrentPageData());
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
-      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2.5rem' }}>
+      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2.25rem' }}>
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between',
@@ -152,7 +186,7 @@ function EnvironmentEnergy() {
             flexDirection: 'column',
             alignItems: 'flex-start'}}>
             <Typography sx={{ 
-              fontSize: '1rem', 
+              fontSize: '0.9rem', 
               fontWeight: 800,
             }}>
               REPOSITORY
@@ -170,10 +204,10 @@ function EnvironmentEnergy() {
                 backgroundColor: '#182959',
                 borderRadius: '999px',
                 padding: '9px 18px',
-                fontSize: '1.2rem',
+                fontSize: '1rem',
                 fontWeight: 'bold',
                 '&:hover': {
-                  backgroundColor: '#0f1a3c', // darker shade on hover
+                  backgroundColor: '#0f1a3c',
                 },
               }}
             >
@@ -183,12 +217,12 @@ function EnvironmentEnergy() {
               variant="contained"
               sx={{ 
                 backgroundColor: '#182959',
-                borderRadius: '999px', // Fully rounded (pill-style)
-                padding: '9px 18px',    // Optional: adjust padding for better look
-                fontSize: '1.2rem', // Optional: adjust font size
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
                 fontWeight: 'bold',
                 '&:hover': {
-                  backgroundColor: '#0f1a3c', // darker shade on hover
+                  backgroundColor: '#0f1a3c',
                 },
               }}
             >
@@ -199,12 +233,12 @@ function EnvironmentEnergy() {
               startIcon={<AddIcon />}
               sx={{ 
                 backgroundColor: '#2B8C37',
-                borderRadius: '999px', // Fully rounded (pill-style)
-                padding: '9px 18px',    // Optional: adjust padding for better look 
-                fontSize: '1.1rem', // Optional: adjust font size
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
                 fontWeight: 'bold',
                 '&:hover': {
-                  backgroundColor: '#256d2f', // darker shade of #2B8C37
+                  backgroundColor: '#256d2f',
                 },
               }}
               onClick={() => setIsAddModalOpen(true)}
@@ -214,7 +248,7 @@ function EnvironmentEnergy() {
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: '1rem' }}>
+        <Box sx={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
           {['Electricity', 'Diesel'].map((type) => (
             <Button
               key={type}
@@ -223,7 +257,7 @@ function EnvironmentEnergy() {
               sx={{
                 backgroundColor: selected === type ? '#2B8C37' : '#9ca3af',
                 borderRadius: '15px',
-                padding: '9px 18px',
+                padding: '5px 10px',
                 width: '25%',
                 fontSize: '1.1rem',
                 fontWeight: selected === type ? 800 : 700,
@@ -238,23 +272,47 @@ function EnvironmentEnergy() {
           ))}
         </Box>
 
-        {/* ********************** */}
-        {/* Insert Table View Here */}
-        {/* ********************** */}
+        {/* Custom Table Component */}
+         <CustomTable
+          columns={columns}
+          rows={getCurrentPageData()}
+          onSort={handleSort}
+          sortConfig={sortConfig}
+          emptyMessage="No energy data found."
+          maxHeight="69vh"
+          minHeight="300px"
+          actions={(row) => (
+            <IconButton size="small">
+              <EditIcon />
+            </IconButton>
+          )}
+        />
+        
 
-        {/* Conditional rendering block */}
+        {/* Custom Pagination Component */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+          <Pagination 
+            page={page}
+            count={totalPages}
+            onChange={handlePageChange}
+          />
+        </Box>
+
+        {/* Conditional rendering for modals */}
         {isAddModalOpen && (
           <Overlay onClose={() => setIsAddModalOpen(false)}>
             {selected === 'Electricity' ? (
               <AddEnergyElectricityModal 
                 onClose={() => {
                   setIsAddModalOpen(false);
+                  fetchElectricityData(); // Refresh data after adding
                 }} 
               />
             ) : (
               <AddEnergyDieselModal 
                 onClose={() => {
                   setIsAddModalOpen(false);
+                  fetchDieselData(); // Refresh data after adding
                 }} 
               />
             )}

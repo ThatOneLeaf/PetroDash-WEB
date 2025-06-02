@@ -24,6 +24,9 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 // sortConfig: { key, direction }, current sort state (optional, for controlled sort)
 // actions: (row) => ReactNode, function to render action buttons per row (optional)
 // emptyMessage: string, message to show when no data (optional)
+// height: string or number, fixed height for the table container (optional)
+// maxHeight: string or number, maximum height for the table container (optional)
+// minHeight: string or number, minimum height for the table container (optional)
 
 const Table = ({
   columns,
@@ -32,6 +35,9 @@ const Table = ({
   sortConfig,
   actions,
   emptyMessage = "No data available.",
+  height,
+  maxHeight,
+  minHeight,
 }) => {
   // Internal sort state if not controlled by parent
   const [internalSort, setInternalSort] = React.useState({ key: null, direction: "asc" });
@@ -40,6 +46,31 @@ const Table = ({
 
   // Use controlled or internal sort config
   const activeSort = isControlled ? sortConfig : internalSort;
+
+  // Calculate dynamic height based on content
+  const calculateDynamicHeight = () => {
+    if (height) return height; // Use fixed height if provided
+    
+    const headerHeight = 60;
+    const rowHeight = 55;
+    const padding = 20;
+    const minRows = 3; // Minimum rows to show
+    const maxRows = 10; // Maximum rows to show without scrolling
+    
+    const actualRows = Math.max(minRows, Math.min(rows.length || minRows, maxRows));
+    const calculatedHeight = headerHeight + (actualRows * rowHeight) + padding;
+    
+    // Apply min/max constraints if provided
+    let finalHeight = calculatedHeight;
+    if (minHeight && calculatedHeight < (typeof minHeight === 'string' ? parseInt(minHeight) : minHeight)) {
+      finalHeight = minHeight;
+    }
+    if (maxHeight && calculatedHeight > (typeof maxHeight === 'string' ? parseInt(maxHeight) : maxHeight)) {
+      finalHeight = maxHeight;
+    }
+    
+    return finalHeight;
+  };
 
   // Sorting logic
   // If controlled, do NOT sort here, just render rows as-is
@@ -101,9 +132,12 @@ const Table = ({
           border: "1px solid #e5e8f1",
           overflow: "auto",
           minWidth: "100%",
+          height: calculateDynamicHeight(),
+          minHeight: minHeight || 'auto',
+          maxHeight: maxHeight || 'none',
         }}
       >
-        <MuiTable sx={{ minWidth: 650, tableLayout: "auto" }}>
+        <MuiTable sx={{ tableLayout: "auto" }}> {/* Remove minWidth: 650 */}
           <TableHead>
             <TableRow
               sx={{
@@ -128,15 +162,15 @@ const Table = ({
             >
               {/* Render column headers */}
               {columns.map((col) => (
+                // Inside Table.js, in the TableCell within displayRows.map:
                 <TableCell
                   key={col.key}
                   align="center"
-                  onClick={() => handleSort(col.key)}
                   sx={{
-                    cursor: "pointer",
-                    userSelect: "none",
-                    "&:hover": { background: "#22347a" },
-                    transition: "background 0.15s",
+                    fontSize: 15,
+                    px: 2,
+                    py: 1.5,
+                    borderBottom: "1px solid #f0f1f5",
                     textAlign: "center",
                     whiteSpace: "normal",
                     wordBreak: "normal",
@@ -151,12 +185,13 @@ const Table = ({
               ))}
               {/* Render Action header if actions prop is provided */}
               {actions && (
+               // Inside Table.js, in the TableHead's TableCell for actions:
                 <TableCell
                   align="center"
+                  // Remove width: 100 here if you suspect it's causing issues
                   sx={{
-                    width: 100,
-                    color: "#fff",
                     fontWeight: 700,
+                    width: 100,
                     borderBottom: "none",
                     textAlign: "center",
                     whiteSpace: "normal",
