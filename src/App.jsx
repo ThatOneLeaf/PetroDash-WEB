@@ -6,6 +6,7 @@ import Landing from './pages/Landing';
 import Sidebar from './components/Sidebar';
 import EconomicGenerated from './pages/Economic/EconomicGenerated';
 import EconomicExpenditures from './pages/Economic/EconomicExpenditures';
+import Environment from './pages/Envi/Environment';
 import CSR from './pages/CSR/CSR';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
             <Route path="/economic" element={<Economic />} />
             <Route path="/economic/generated" element={<EconomicGenerated />} />
             <Route path="/economic/expenditures" element={<EconomicExpenditures />} />
+            <Route path="/environment" element={<Environment />} />
             <Route path='/dashboard' element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
             <Route path="/social-csr" element={<CSR/>} />
