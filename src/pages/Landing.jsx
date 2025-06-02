@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { useRef } from 'react';
 import Modal from '../components/modal'; 
 import LoginPage from './Login_page/Login_page';
 import Btn from '../components/ButtonComp'
@@ -36,6 +35,61 @@ const toggleModal = () => {
       padding: 0,
       overflowX: 'hidden'
     }}>
+      {/* Responsive styles */}
+      <style>
+        {`
+          @media (max-width: 900px) {
+            .landing-main {
+              flex-direction: column !important;
+              padding: 3rem 1.5rem !important;
+              gap: 2rem !important;
+            }
+            .landing-section {
+              padding: 3rem 1.5rem !important;
+            }
+            .landing-about-images {
+              flex-direction: column !important;
+              gap: 1.5rem !important;
+            }
+            .landing-about-images > div {
+              width: 100% !important;
+              max-width: 350px;
+              margin: 0 auto;
+              height: 180px !important;
+            }
+            .landing-disclosure {
+              flex-direction: column !important;
+              gap: 2rem !important;
+              padding: 3rem 1.5rem !important;
+            }
+            .landing-disclosure > div,
+            .landing-disclosure > .disclosure-img {
+              width: 100% !important;
+              max-width: 100%;
+            }
+            .landing-contact-flex {
+              flex-direction: column !important;
+              gap: 2rem !important;
+            }
+            .landing-contact-flex > div {
+              max-width: 100% !important;
+            }
+          }
+          @media (max-width: 600px) {
+            .landing-main,
+            .landing-section,
+            .landing-disclosure {
+              padding: 1.5rem 0.5rem !important;
+            }
+            h1 {
+              font-size: 2rem !important;
+            }
+            h2 {
+              font-size: 1.3rem !important;
+            }
+          }
+        `}
+      </style>
       <Navbar 
         isSticky={true}
         onAboutClick={() => scrollToSection(aboutRef)}
@@ -43,12 +97,13 @@ const toggleModal = () => {
         onContactClick={() => scrollToSection(contactRef)}
       />
       
-      <main style={{
+      <main className="landing-main" style={{
         display: 'flex',
         padding: '6rem 4rem',
-        gap: '4rem'
+        gap: '4rem',
+        flexWrap: 'wrap'
       }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{
             fontSize: '3rem',
             marginBottom: '2rem',
@@ -68,27 +123,7 @@ const toggleModal = () => {
             mauris. Integer ac mauris nec ex elementum
             pellentesque.
           </p>
-
-          {/* <button style={{
-              backgroundColor: '#2E7D32',
-              color: 'white',
-              padding: '12px 32px',
-              border: 'none',
-              borderRadius: '100px',
-              cursor: 'pointer',
-              fontFamily: 'Inter',
-              fontWeight: '500',
-              fontSize: '16px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              boxSizing: 'border-box',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}
-            onClick={toggleModal}
-            >
-              LOGIN
-            </button> */}
-            <Btn color="#2E7D32" label="LOGIN" onClick={toggleModal} />
+          <Btn color="#2E7D32" label="LOGIN" onClick={toggleModal} />
         </div>
 
         {isLoginModal && (
@@ -97,7 +132,7 @@ const toggleModal = () => {
           </Modal>
         )}
 
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             backgroundColor: '#f0f0f0',
             borderRadius: '12px',
@@ -105,14 +140,15 @@ const toggleModal = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#666'
+            color: '#666',
+            width: '100%'
           }}>
             <p>Image Placeholder</p>
           </div>
         </div>
       </main>
 
-      <section ref={aboutRef} style={{
+      <section ref={aboutRef} className="landing-section" style={{
         backgroundColor: '#f5f5f5',
         padding: '6rem 4rem',
         textAlign: 'center'
@@ -130,7 +166,7 @@ const toggleModal = () => {
           fames ac turpis egestas. Aliquam et iaculis felis. Mauris nec tellus tellus.
         </p>
 
-        <div style={{
+        <div className="landing-about-images" style={{
           display: 'flex',
           justifyContent: 'center',
           gap: '3rem'
@@ -152,7 +188,7 @@ const toggleModal = () => {
         </div>
       </section>
 
-      <section ref={disclosureRef} style={{
+      <section ref={disclosureRef} className="landing-disclosure" style={{
         backgroundColor: '#2E7D32',
         color: 'white',
         padding: '6rem 4rem',
@@ -180,7 +216,7 @@ const toggleModal = () => {
             Aliquam et iaculis felis. Mauris nec tellus tellus.
           </p>
         </div>
-        <div style={{
+        <div className="disclosure-img" style={{
           backgroundColor: '#f0f0f0',
           borderRadius: '12px',
           height: '300px',
@@ -194,7 +230,7 @@ const toggleModal = () => {
         </div>
       </section>
 
-      <section ref={contactRef} style={{
+      <section ref={contactRef} className="landing-section" style={{
         padding: '6rem 4rem',
         width: '100%'
       }}>
@@ -204,7 +240,7 @@ const toggleModal = () => {
           textAlign: 'center'
         }}>Contact Us</h2>
         
-        <div style={{
+        <div className="landing-contact-flex" style={{
           display: 'flex',
           gap: '4rem',
           justifyContent: 'center'
