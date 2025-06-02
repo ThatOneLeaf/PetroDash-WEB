@@ -48,10 +48,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
       icon: EnvironmentIcon,
       to: "/environment",
       dropdown: [
-        { label: "Air", to: "/environment/air" },
+        { label: "Energy", to: "/environment/energy" },
         { label: "Water", to: "/environment/water" },
         { label: "Waste", to: "/environment/waste" },
-        { label: "Energy", to: "/environment/energy" },
+        { label: "Air", to: "/environment/air" },
         { label: "C.A.R.E", to: "/environment/care" },
       ],
     },

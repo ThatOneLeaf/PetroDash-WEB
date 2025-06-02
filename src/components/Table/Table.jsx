@@ -137,7 +137,7 @@ const Table = ({
           maxHeight: maxHeight || 'none',
         }}
       >
-        <MuiTable sx={{ tableLayout: "auto" }}> {/* Remove minWidth: 650 */}
+        <MuiTable sx={{ minWidth: 650, tableLayout: "auto" }}>
           <TableHead>
             <TableRow
               sx={{
@@ -166,7 +166,12 @@ const Table = ({
                 <TableCell
                   key={col.key}
                   align="center"
+                  onClick={() => handleSort(col.key)}
                   sx={{
+                    cursor: "pointer",
+                    userSelect: "none",
+                    "&:hover": { background: "#22347a" },
+                    transition: "background 0.15s",
                     fontSize: 15,
                     px: 2,
                     py: 1.5,
@@ -192,6 +197,7 @@ const Table = ({
                   sx={{
                     fontWeight: 700,
                     width: 100,
+                    color: "#fff",
                     borderBottom: "none",
                     textAlign: "center",
                     whiteSpace: "normal",

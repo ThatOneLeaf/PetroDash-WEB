@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   TableBody,
   TableCell,
@@ -23,9 +23,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddEconExpendituresModal from '../../components/AddEconExpendituresModal';
 import AddEnvironmentEnergyModal from '../../envi_components/AddEnergyElectricityModal';
-import Table from '../../components/Table/Table';
+import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
@@ -36,6 +35,7 @@ function EnvironmentWater() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selected, setSelected] = useState('Abstraction'); // Default selection
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -50,22 +50,68 @@ function EnvironmentWater() {
   });
 
   useEffect(() => {
-    fetchExpendituresData();
-  }, []);
+    if (selected === 'Abstraction') {
+      fetchAbstractionData();
+    }
+    if (selected === 'Discharged') {
+      fetchDischargedData();
+    }
+    if (selected === 'Consumption') {
+      fetchConsumptionData();
+    }
+  }, [selected]);
 
-  const fetchExpendituresData = async () => {
+  const fetchAbstractionData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/economic/expenditures');
-      console.log('Data from API:', response.data);
+      const response = await api.get('environment/water_abstraction'); 
+      console.log('Water Abstraction data from API:', response.data);
       setData(response.data);
     } catch (error) {
-      console.error('Error fetching expenditures data:', error);
+      console.error('Error fetching water abstraction data:', error);
       setError('Error fetching data');
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchDischargedData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('environment/water_discharge'); 
+      console.log('Water Discharge data from API:', response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error('Error fetching water discharge data:', error);
+      setError('Error fetching data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchConsumptionData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('environment/water_consumption'); 
+      console.log('Water Consumption data from API:', response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error('Error fetching water consumption data:', error);
+      setError('Error fetching data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const columns = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') return [];
+    return Object.keys(data[0])
+      .slice(1) // This will exclude the first column
+      .map((key) => ({
+      key,
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+    }));
+    }, [data]);
 
   const handleSort = (key) => {
     setSortConfig(prevConfig => ({
@@ -139,19 +185,19 @@ function EnvironmentWater() {
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
-      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2.5rem' }}>
+      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2.25rem' }}>
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '0.5rem'
+          marginBottom: '0.5rem',
         }}>
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start'}}>
             <Typography sx={{ 
-              fontSize: '1rem', 
+              fontSize: '0.9rem', 
               fontWeight: 800,
             }}>
               REPOSITORY
@@ -169,10 +215,10 @@ function EnvironmentWater() {
                 backgroundColor: '#182959',
                 borderRadius: '999px',
                 padding: '9px 18px',
-                fontSize: '1.1rem',
+                fontSize: '1rem',
                 fontWeight: 'bold',
                 '&:hover': {
-                  backgroundColor: '#0f1a3c', // darker shade on hover
+                  backgroundColor: '#0f1a3c',
                 },
               }}
             >
@@ -182,12 +228,12 @@ function EnvironmentWater() {
               variant="contained"
               sx={{ 
                 backgroundColor: '#182959',
-                borderRadius: '999px', // Fully rounded (pill-style)
-                padding: '9px 18px',    // Optional: adjust padding for better look
-                fontSize: '1.1rem', // Optional: adjust font size
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
                 fontWeight: 'bold',
                 '&:hover': {
-                  backgroundColor: '#0f1a3c', // darker shade on hover
+                  backgroundColor: '#0f1a3c',
                 },
               }}
             >
@@ -198,12 +244,12 @@ function EnvironmentWater() {
               startIcon={<AddIcon />}
               sx={{ 
                 backgroundColor: '#2B8C37',
-                borderRadius: '999px', // Fully rounded (pill-style)
-                padding: '9px 18px',    // Optional: adjust padding for better look 
-                fontSize: '1.1rem', // Optional: adjust font size
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
                 fontWeight: 'bold',
                 '&:hover': {
-                  backgroundColor: '#256d2f', // darker shade of #2B8C37
+                  backgroundColor: '#256d2f',
                 },
               }}
               onClick={() => setIsAddModalOpen(true)}
@@ -213,10 +259,56 @@ function EnvironmentWater() {
           </Box>
         </Box>
 
+        <Box sx={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+          {['Abstraction','Discharged', 'Consumption'].map((type) => (
+            <Button
+              key={type}
+              onClick={() => setSelected(type)}
+              variant="contained"
+              sx={{
+                backgroundColor: selected === type ? '#2B8C37' : '#9ca3af',
+                borderRadius: '15px',
+                padding: '5px 10px',
+                width: '20%',
+                fontSize: '1.1rem',
+                fontWeight: selected === type ? 800 : 700,
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: selected === type ? '#256d2f' : '#6b7280',
+                },
+              }}
+            >
+              {type}
+            </Button>
+          ))}
+        </Box>
 
+        {/* Custom Table Component */}
+        <CustomTable
+          columns={columns}
+          rows={getCurrentPageData()}
+          onSort={handleSort}
+          sortConfig={sortConfig}
+          emptyMessage="No energy data found."
+          maxHeight="69vh"
+          minHeight="300px"
+          actions={(row) => (
+            <IconButton size="small">
+              <EditIcon />
+            </IconButton>
+          )}
+        />
+        
 
-
-
+        {/* Custom Pagination Component */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+          <Pagination 
+            page={page}
+            count={totalPages}
+            onChange={handlePageChange}
+          />
+        </Box>
+        
         {isAddModalOpen && (
           <Overlay onClose={() => setIsAddModalOpen(false)}>
             <AddEnvironmentEnergyModal 

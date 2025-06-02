@@ -166,11 +166,6 @@ function EnvironmentEnergy() {
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
-  // Debug logging
-  console.log('Data:', data);
-  console.log('Columns:', columns);
-  console.log('Current page data:', getCurrentPageData());
-
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
