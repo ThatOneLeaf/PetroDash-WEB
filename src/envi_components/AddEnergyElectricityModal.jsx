@@ -21,14 +21,6 @@ function AddEnvironmentEnergyModal({ onClose }) {
     unit: 'kWh' // Default unit
   });
 
-  const [totalRevenue, setTotalRevenue] = useState(0);
-
-  const calculateTotal = (data) => {
-    const values = Object.values(data).filter((value, index) => index !== 0 && index !== 1); // Exclude year & quarter
-    const total = values.reduce((sum, value) => sum + (Number(value) || 0), 0);
-    setTotalRevenue(total);
-  };
-
   const handleChange = (field) => (event) => {
     const newFormData = {
       ...formData,
@@ -45,17 +37,25 @@ function AddEnvironmentEnergyModal({ onClose }) {
   return (
     <Paper sx={{
       p: 4,
-      width: '400px',
+      width: '500px',
       borderRadius: '16px',
       bgcolor: 'white'
     }}>
-      <Typography variant="h5" sx={{ 
-        color: '#1a237e',
-        mb: 3,
-        fontWeight: 'bold' 
-      }}>
-        Add New Record
-      </Typography>
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        mb: 3}}>
+        <Typography sx={{ 
+          fontSize: '1rem', 
+          fontWeight: 800,
+        }}>
+          ADD NEW RECORD
+        </Typography>
+        <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
+          Energy - Electricity
+        </Typography>
+      </Box>
 
       <Box sx={{ 
         display: 'grid', 
@@ -127,22 +127,29 @@ function AddEnvironmentEnergyModal({ onClose }) {
         </FormControl>
       </Box>
 
-      <Button
-        variant="contained"
-        sx={{ 
-          backgroundColor: '#2B8C37',
-          borderRadius: '999px', // Fully rounded (pill-style)
-          padding: '9px 18px',    // Optional: adjust padding for better look 
-          fontSize: '1rem', // Optional: adjust font size
-          fontWeight: 'bold',
-          '&:hover': {
-            backgroundColor: '#256d2f', // darker shade of #2B8C37
-          },
-        }}
-        onClick={handleSubmit}
-      >
-        ADD RECORD
-      </Button>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        mt: 3
+      }}>
+        <Button
+          variant="contained"
+          sx={{ 
+            backgroundColor: '#2B8C37',
+            borderRadius: '999px', // Fully rounded (pill-style)
+            padding: '9px 18px',    // Optional: adjust padding for better look 
+            fontSize: '1rem', // Optional: adjust font size
+            fontWeight: 'bold',
+            '&:hover': {
+              backgroundColor: '#256d2f', // darker shade of #2B8C37
+            },
+          }}
+          onClick={handleSubmit}
+        >
+          ADD RECORD
+        </Button>
+      </Box>
     </Paper>
   );
 }

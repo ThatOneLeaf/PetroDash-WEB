@@ -22,7 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddEnvironmentEnergyModal from '../../envi_components/AddEnvironmentEnergyModal';
+import AddEnvironmentEnergyModal from '../../envi_components/AddEnergyElectricityModal';
 
 function EnvironmentAir() {
   const [data, setData] = useState([]);

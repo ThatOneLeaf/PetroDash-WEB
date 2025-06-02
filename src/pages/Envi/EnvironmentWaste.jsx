@@ -13,6 +13,8 @@ import {
   TextField,
   Select,
   MenuItem,
+  Container,
+  Typography,
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
@@ -22,7 +24,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddEnvironmentEnergyModal from '../../envi_components/AddEnvironmentEnergyModal';
+import AddEnvironmentEnergyModal from '../../envi_components/AddEnergyElectricityModal';
 
 function EnvironmentWaste() {
   const [data, setData] = useState([]);
@@ -133,97 +135,95 @@ function EnvironmentWaste() {
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
-      <Box sx={{ flexGrow: 1, height: '100vh', overflow: 'auto' }}>
-        <div style={{ padding: '2rem' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '2rem'
-          }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start'}}>
-              <h1 style={{ 
-                fontSize: '1rem', 
+      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2.5rem' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '2rem'
+        }}>
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start'}}>
+            <Typography sx={{ 
+              fontSize: '1rem', 
+              fontWeight: 800,
+            }}>
+              REPOSITORY
+            </Typography>
+            <Typography sx={{ fontSize: '3rem', color: '#182959', fontWeight: 800}}>
+              Environment - Waste
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: '1rem' }}>
+            <Button
+              variant="contained"
+              startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
                 fontWeight: 'bold',
-              }}>
-                REPOSITORY
-              </h1>
-              <h2 style={{ fontSize: '3.2rem', color: '#182959', fontWeight: 900, textShadow: '0px 0px 0 #182959'}}>
-                Environment - Waste
-              </h2>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <Button
-                variant="contained"
-                startIcon={<FileUploadIcon />}
-                sx={{
-                  backgroundColor: '#182959',
-                  borderRadius: '999px',
-                  padding: '9px 18px',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: '#0f1a3c', // darker shade on hover
-                  },
-                }}
-              >
-                EXPORT DATA
-              </Button>
-              <Button
-                variant="contained"
-                sx={{ 
-                  backgroundColor: '#182959',
-                  borderRadius: '999px', // Fully rounded (pill-style)
-                  padding: '9px 18px',    // Optional: adjust padding for better look
-                  fontSize: '1rem', // Optional: adjust font size
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: '#0f1a3c', // darker shade on hover
-                  },
-                }}
-              >
-                IMPORT
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                sx={{ 
-                  backgroundColor: '#2B8C37',
-                  borderRadius: '999px', // Fully rounded (pill-style)
-                  padding: '9px 18px',    // Optional: adjust padding for better look 
-                  fontSize: '1rem', // Optional: adjust font size
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: '#256d2f', // darker shade of #2B8C37
-                  },
-                }}
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                ADD RECORD
-              </Button>
-            </div>
-          </div>
+                '&:hover': {
+                  backgroundColor: '#0f1a3c', // darker shade on hover
+                },
+              }}
+            >
+              EXPORT DATA
+            </Button>
+            <Button
+              variant="contained"
+              sx={{ 
+                backgroundColor: '#182959',
+                borderRadius: '999px', // Fully rounded (pill-style)
+                padding: '9px 18px',    // Optional: adjust padding for better look
+                fontSize: '1rem', // Optional: adjust font size
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c', // darker shade on hover
+                },
+              }}
+            >
+              IMPORT
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ 
+                backgroundColor: '#2B8C37',
+                borderRadius: '999px', // Fully rounded (pill-style)
+                padding: '9px 18px',    // Optional: adjust padding for better look 
+                fontSize: '1rem', // Optional: adjust font size
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#256d2f', // darker shade of #2B8C37
+                },
+              }}
+              onClick={() => setIsAddModalOpen(true)}
+            >
+              ADD RECORD
+            </Button>
+          </Box>
+        </Box>
 
 
 
 
 
-          {isAddModalOpen && (
-            <Overlay onClose={() => setIsAddModalOpen(false)}>
-              <AddEnvironmentEnergyModal 
-                onClose={() => {
-                  setIsAddModalOpen(false);
-                  fetchExpendituresData(); // Refresh data after adding
-                }} 
-              />
-            </Overlay>
-          )}
-        </div>
-      </Box>
+        {isAddModalOpen && (
+          <Overlay onClose={() => setIsAddModalOpen(false)}>
+            <AddEnvironmentEnergyModal 
+              onClose={() => {
+                setIsAddModalOpen(false);
+                fetchExpendituresData(); // Refresh data after adding
+              }} 
+            />
+          </Overlay>
+        )}
+      </Container>
     </Box>
   );
 }
