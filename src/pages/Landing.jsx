@@ -8,6 +8,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { useRef } from 'react';
 import Modal from '../components/modal'; 
 import LoginPage from './Login_page/Login_page';
+import Btn from '../components/ButtonComp'
 
 function Landing() {
   // Create refs for each section
@@ -68,7 +69,7 @@ const toggleModal = () => {
             pellentesque.
           </p>
 
-          <button style={{
+          {/* <button style={{
               backgroundColor: '#2E7D32',
               color: 'white',
               padding: '12px 32px',
@@ -86,7 +87,8 @@ const toggleModal = () => {
             onClick={toggleModal}
             >
               LOGIN
-            </button>
+            </button> */}
+            <Btn color="#2E7D32" label="LOGIN" onClick={toggleModal} />
         </div>
 
         {isLoginModal && (

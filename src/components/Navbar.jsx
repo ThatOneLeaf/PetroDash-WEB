@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Modal from '../components/modal'; 
 import LoginPage from '../pages/Login_page/Login_page';
+import Btn from '../components/ButtonComp';
 
 function Navbar({ 
   isSticky = false, 
@@ -62,7 +63,7 @@ function Navbar({
             position: absolute;
             left: 0; right: 0; bottom: -2px;
             height: 2px;
-            background: #2E7D32;
+            background: #182959;
             transform: scaleX(0);
             transition: transform 0.3s cubic-bezier(.4,0,.2,1);
             transform-origin: left;
@@ -73,7 +74,7 @@ function Navbar({
           }
           .navbar-center-btn:hover,
           .navbar-center-btn:focus {
-            color: #2E7D32;
+            color: #182959;
           }
         `}
       </style>
@@ -156,7 +157,7 @@ function Navbar({
             </button>
           </div>
 
-          <button style={{
+          {/* <button style={{
               backgroundColor: '#2E7D32',
               color: 'white',
               padding: '12px 32px',
@@ -174,7 +175,8 @@ function Navbar({
             onClick={toggleModal}
             >
             LOGIN
-          </button>
+          </button> */}
+          <Btn color="#2E7D32" label="LOGIN" onClick={toggleModal} />
 
         {isNavbarLogin && (
           <Modal onClose={toggleModal}>
