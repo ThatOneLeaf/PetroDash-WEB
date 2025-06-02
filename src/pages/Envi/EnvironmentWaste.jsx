@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import {
-  Table,
   TableBody,
   TableCell,
   TableContainer,
@@ -25,6 +24,10 @@ import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
 import AddEnvironmentEnergyModal from '../../envi_components/AddEnergyElectricityModal';
+import Table from '../../components/Table/Table';
+import Pagination from '../../components/Pagination/pagination';
+import Filter from '../../components/Filter/Filter';
+import Search from '../../components/Filter/Search';
 
 function EnvironmentWaste() {
   const [data, setData] = useState([]);
