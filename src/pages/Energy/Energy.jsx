@@ -5,8 +5,7 @@ import {
   Container,
   Typography,
   Button,
-  IconButton,
-  Chip,
+  IconButton
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -20,38 +19,8 @@ import AddEnergyGenerationModal from "../../components/AddPowerGeneratedModal";
 import Pagination from "../../components/Pagination/pagination";
 import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter"; 
+import StatusChip from "../../components/StatusChip";
 
-function StatusChip({ status }) {
-  const code = status?.toUpperCase() || "";
-  let label = "";
-  let color = "default";
-
-  switch (code) {
-    case "PND":
-      label = "Pending";
-      break;
-    case "HAP":
-      label = "Head Approved";
-      color = "success";
-      break;
-    case "SAP":
-      label = "Site Approved";
-      color = "info";
-      break;
-    case "FRS":
-      label = "For Revision (Site)";
-      color = "warning";
-      break;
-    case "FRH":
-      label = "For Revision (Head)";
-      color = "error";
-      break;
-    default:
-      label = code;
-  }
-
-  return <Chip label={label} color={color} size="small" />;
-}
 
 function Energy() {
   const [data, setData] = useState([]);
