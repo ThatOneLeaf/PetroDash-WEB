@@ -1,0 +1,221 @@
+import { useState } from "react";
+import {
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  Box,
+} from "@mui/material";
+
+import api from "../services/api";
+
+function AddEmployeeModal({ onClose }) {
+  const [formData, setFormData] = useState({
+    companyId: "", // get current  company of emp
+    employeeId: "",
+    gender: "",
+    position: "",
+    employeeCategory: "",
+    employeeStatus: "",
+    tenureStart: "",
+    tenureEnded: "",
+  });
+
+  const handleChange = (field) => (event) => {
+    const newFormData = {
+      ...formData,
+      [field]: event.target.value,
+    };
+    setFormData(newFormData);
+  };
+
+  const handleSubmit = () => {
+    console.log("Submit clicked", formData);
+    onClose();
+  };
+
+  /* API FOR SUBMIT OF ADD RECORD
+  const handleSubmit = async () => {
+    try {
+      await api.post('/economic/value-generated', formData);
+      onClose();
+      // You might want to refresh the data after adding
+    } catch (error) {
+      console.error('Error adding record:', error);
+    }
+  };*/
+
+  return (
+    <Paper
+      sx={{
+        p: 4,
+        width: "450px",
+        borderRadius: "16px",
+        bgcolor: "white",
+      }}
+    >
+      <Typography
+        variant="h5"
+        sx={{
+          color: "#1a237e",
+          mb: 3,
+          fontWeight: "bold",
+        }}
+      >
+        Add New Record
+      </Typography>
+
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        {/* 
+
+        
+        <Select
+          value={formData.year}
+          onChange={handleChange('year')}
+          sx={{ height: '40px' }}
+        >
+          {[...Array(10)].map((_, i) => (
+            <MenuItem key={currentYear - i} value={currentYear - i}>
+              {currentYear - i}
+            </MenuItem>
+          ))}
+        </Select>*/}
+
+        <TextField
+          placeholder="Employee ID*"
+          value={formData.employeeId}
+          onChange={handleChange("employeeId")}
+          type="text"
+        />
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 2,
+          }}
+        >
+          <Select
+            value={formData.gender}
+            onChange={handleChange("gender")}
+            displayEmpty
+            renderValue={(selected) => {
+              if (!selected) {
+                return <span style={{ color: "#999" }}>Select Gender*</span>;
+              }
+              return selected === "male" ? "Male" : "Female";
+            }}
+          >
+            <MenuItem value="male">Male</MenuItem>
+            <MenuItem value="female">Female</MenuItem>
+          </Select>
+
+          <Select
+            value={formData.position}
+            onChange={handleChange("position")}
+            displayEmpty
+            renderValue={(selected) => {
+              if (!selected) {
+                return <span style={{ color: "#999" }}>Select Position*</span>;
+              }
+              const getPositionName = (selected) => {
+                const map = {
+                  RNF: "Rank-And-File",
+                  MM: "Middle Management",
+                  SM: "Senior Management",
+                };
+
+                return map[selected] || "Unknown";
+              };
+
+              return getPositionName(selected);
+            }}
+          >
+            <MenuItem value="RNF">Rank-And-File</MenuItem>
+            <MenuItem value="MM">Middle Management</MenuItem>
+            <MenuItem value="SM">Senior Management</MenuItem>
+          </Select>
+        </Box>
+
+        <Select
+          value={formData.employeeCategory}
+          onChange={handleChange("employeeCategory")}
+          displayEmpty
+          renderValue={(selected) => {
+            if (!selected) {
+              return (
+                <span style={{ color: "#999" }}>Select Employee Category*</span>
+              );
+            }
+            return selected === "prof" ? "Professional" : "Non-Professional";
+          }}
+        >
+          <MenuItem value="prof">Professional</MenuItem>
+          <MenuItem value="nonprof">Non-Professional</MenuItem>
+        </Select>
+
+        <Select
+          value={formData.employeeStatus}
+          onChange={handleChange("employeeStatus")}
+          displayEmpty
+          renderValue={(selected) => {
+            if (!selected) {
+              return (
+                <span style={{ color: "#999" }}>Select Employee Status*</span>
+              );
+            }
+            return selected === "perm" ? "Permanent" : "Temporary";
+          }}
+        >
+          <MenuItem value="perm">Permanent</MenuItem>
+          <MenuItem value="temp">Temporary</MenuItem>
+        </Select>
+
+        <TextField
+          placeholder="Tenure Start*"
+          value={formData.tenureStart}
+          onChange={handleChange("tenureStart")}
+          type="date"
+        />
+
+        <TextField
+          placeholder="Tenure Ended"
+          value={formData.tenureEnded}
+          onChange={handleChange("tenureEnded")}
+          type="date"
+        />
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          mt: 2,
+        }}
+      >
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          sx={{
+            bgcolor: "#2E7D32",
+            "&:hover": { bgcolor: "#1b5e20" },
+          }}
+        >
+          ADD
+        </Button>
+      </Box>
+    </Paper>
+  );
+}
+
+export default AddEmployeeModal;

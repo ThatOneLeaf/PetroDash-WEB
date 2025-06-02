@@ -1,13 +1,14 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 //import Navbar from './components/layout/Navbar';
-import Dashboard from './pages/Dashboard';
-import Economic from './pages/Economic/Economic';
-import Landing from './pages/Landing';
-import Sidebar from './components/Sidebar';
-import EconomicGenerated from './pages/Economic/EconomicGenerated';
-import EconomicExpenditures from './pages/Economic/EconomicExpenditures';
-import Environment from './pages/Envi/Environment';
-import CSR from './pages/CSR/CSR';
+import Dashboard from "./pages/Dashboard";
+import Economic from "./pages/Economic/Economic";
+import Landing from "./pages/Landing";
+import Sidebar from "./components/Sidebar";
+import EconomicGenerated from "./pages/Economic/EconomicGenerated";
+import EconomicExpenditures from "./pages/Economic/EconomicExpenditures";
+import Environment from "./pages/Envi/Environment";
+import HR from "./pages/HR/HR"; // update this
+import CSR from "./pages/CSR/CSR";
 
 function App() {
   return (
@@ -18,11 +19,15 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/economic" element={<Economic />} />
             <Route path="/economic/generated" element={<EconomicGenerated />} />
-            <Route path="/economic/expenditures" element={<EconomicExpenditures />} />
+            <Route
+              path="/economic/expenditures"
+              element={<EconomicExpenditures />}
+            />
             <Route path="/environment" element={<Environment />} />
-            <Route path='/dashboard' element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
-            <Route path="/social-csr" element={<CSR/>} />
+            <Route path="/social-csr" element={<CSR />} />
+            <Route path="/social-hr" element={<HR />} />
           </Routes>
         </main>
       </div>
