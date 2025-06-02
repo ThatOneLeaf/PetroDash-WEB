@@ -1,28 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   Button,
   IconButton,
   Box,
-  TextField,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
 import AddEconExpendituresModal from '../../components/AddEconExpendituresModal';
+import Table from '../../components/Table/Table';
+import Pagination from '../../components/Pagination/pagination';
+import Filter from '../../components/Filter/Filter';
+import Search from '../../components/Filter/Search';
 
 function EconomicExpenditures() {
   const [data, setData] = useState([]);
@@ -66,6 +59,7 @@ function EconomicExpenditures() {
       key,
       direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
     }));
+    setPage(1); // Reset to first page on sort
   };
 
   const getSortedData = (dataToSort = data) => {
@@ -79,53 +73,101 @@ function EconomicExpenditures() {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  const getFilteredData = () => {
-    let filteredData = [...data];
-    
-    // Apply search filter
+  // Filtering, searching, and sorting are all applied to the full dataset before pagination
+  const processedData = useMemo(() => {
+    let filtered = [...data];
+
+    // Search
     if (searchTerm) {
-      filteredData = filteredData.filter(row => 
-        row.comp.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.year.toString().includes(searchTerm)
+      filtered = filtered.filter(row =>
+        row.comp?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.year?.toString().includes(searchTerm)
       );
     }
 
-    // Apply filters
-    if (filters.year) {
-      filteredData = filteredData.filter(row => row.year === filters.year);
-    }
-    if (filters.type) {
-      filteredData = filteredData.filter(row => row.type === filters.type);
-    }
-    if (filters.company) {
-      filteredData = filteredData.filter(row => row.comp === filters.company);
-    }
-    
-    return filteredData;
-  };
+    // Filters
+    if (filters.year) filtered = filtered.filter(row => row.year === filters.year);
+    if (filters.type) filtered = filtered.filter(row => row.type === filters.type);
+    if (filters.company) filtered = filtered.filter(row => row.comp === filters.company);
 
-  // Update getCurrentPageData to use filtered data
-  const getCurrentPageData = () => {
-    const filteredData = getFilteredData();
-    const sortedData = getSortedData(filteredData);
+    // Sorting
+    if (sortConfig && sortConfig.key) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return 1;
+        if (bValue == null) return -1;
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+        }
+        const cmp = String(aValue).localeCompare(String(bValue), undefined, { numeric: true });
+        return sortConfig.direction === "asc" ? cmp : -cmp;
+      });
+    }
+
+    return filtered;
+  }, [data, filters, searchTerm, sortConfig]);
+
+  // Reset to first page if filters/search/sort change and current page is out of range
+  useEffect(() => {
+    const totalPages = Math.ceil(processedData.length / rowsPerPage) || 1;
+    if (page > totalPages) setPage(1);
+  }, [processedData, page]);
+
+  // Only slice for the current page, do NOT sort again in Table
+  const currentPageRows = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return sortedData.slice(start, end);
-  };
+    return processedData.slice(start, start + rowsPerPage);
+  }, [processedData, page, rowsPerPage]);
 
-  const totalPages = Math.ceil(getFilteredData().length / rowsPerPage);
+  const totalPages = Math.ceil(processedData.length / rowsPerPage) || 1;
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
-  };
+  // Table columns definition for reusable Table
+  const columns = [
+    { key: 'comp', label: 'Comp' },
+    { key: 'year', label: 'Year' },
+    { key: 'type', label: 'Type' },
+    { key: 'government', label: 'Government' },
+    { key: 'localSuppl', label: 'Local Supply' },
+    { key: 'foreignSupplierSpending', label: 'Foreign Supplier Spending' },
+    { key: 'employee', label: 'Employee' },
+    { key: 'community', label: 'Community' },
+    { key: 'depreciation', label: 'Depreciation' },
+    { key: 'depletion', label: 'Depletion' },
+    { key: 'others', label: 'Others' },
+  ];
 
-  const renderSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />;
-  };
+  // Actions column for edit button
+  const actions = (row) => (
+    <IconButton size="small">
+      <EditIcon />
+    </IconButton>
+  );
+
+  // Prepare options for Filter components (ensure no undefined/empty, sorted, and unique)
+  const yearOptions = useMemo(
+    () =>
+      Array.from(new Set(data.map(row => row.year).filter(Boolean)))
+        .sort((a, b) => b - a)
+        .map(year => ({ label: String(year), value: year })),
+    [data]
+  );
+  const typeOptions = useMemo(
+    () =>
+      Array.from(new Set(data.map(row => row.type).filter(Boolean)))
+        .sort()
+        .map(type => ({ label: type, value: type })),
+    [data]
+  );
+  const companyOptions = useMemo(
+    () =>
+      Array.from(new Set(data.map(row => row.comp).filter(Boolean)))
+        .sort()
+        .map(comp => ({ label: comp, value: comp })),
+    [data]
+  );
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -179,159 +221,72 @@ function EconomicExpenditures() {
             </div>
           </div>
 
-          {/* Search and Filter Section */}
+          {/* Search and Filter Section (replaced with custom components) */}
           <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-            <TextField 
-                placeholder="Search"
-                variant="outlined"
-                size="small"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{ width: 200 }}
+            <Search
+              onSearch={val => {
+                setSearchTerm(val);
+                setPage(1);
+              }}
+              suggestions={[
+                ...new Set([
+                  ...data.map(row => row.comp).filter(Boolean),
+                  ...data.map(row => row.type).filter(Boolean),
+                  ...data.map(row => String(row.year)).filter(Boolean)
+                ])
+              ]}
             />
-            
-            {/* Year Filter */}
-            <Select
-                value={filters.year}
-                onChange={(e) => setFilters(prev => ({ ...prev, year: e.target.value }))}
-                displayEmpty
-                size="small"
-                sx={{ width: 120 }}
-            >
-                <MenuItem value="">All Years</MenuItem>
-                {[...new Set(data.map(row => row.year))].sort().reverse().map(year => (
-                <MenuItem key={year} value={year}>{year}</MenuItem>
-                ))}
-            </Select>
-
-            {/* Type Filter */}
-            <Select
-                value={filters.type}
-                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                displayEmpty
-                size="small"
-                sx={{ width: 200 }}
-            >
-                <MenuItem value="">All Types</MenuItem>
-                <MenuItem value="Cost of Sales">Cost of Sales</MenuItem>
-                <MenuItem value="General and Administrative">General and Administrative</MenuItem>
-            </Select>
-
-            {/* Company Filter */}
-            <Select
-                value={filters.company}
-                onChange={(e) => setFilters(prev => ({ ...prev, company: e.target.value }))}
-                displayEmpty
-                size="small"
-                sx={{ width: 200 }}
-            >
-                <MenuItem value="">All Companies</MenuItem>
-                {[...new Set(data.map(row => row.comp))].sort().map(comp => (
-                <MenuItem key={comp} value={comp}>{comp}</MenuItem>
-                ))}
-            </Select>
+            <Filter
+              label="Year"
+              options={[{ label: 'All Years', value: '' }, ...yearOptions]}
+              value={filters.year}
+              onChange={val => {
+                setFilters(prev => ({ ...prev, year: val }));
+                setPage(1);
+              }}
+              placeholder="Year"
+            />
+            <Filter
+              label="Type"
+              options={[{ label: 'All Types', value: '' }, ...typeOptions]}
+              value={filters.type}
+              onChange={val => {
+                setFilters(prev => ({ ...prev, type: val }));
+                setPage(1);
+              }}
+              placeholder="Type"
+            />
+            <Filter
+              label="Company"
+              options={[{ label: 'All Companies', value: '' }, ...companyOptions]}
+              value={filters.company}
+              onChange={val => {
+                setFilters(prev => ({ ...prev, company: val }));
+                setPage(1);
+              }}
+              placeholder="Company"
+            />
           </Box>
 
-          {/* Table */}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow style={{ backgroundColor: '#182959' }}>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Comp</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Year</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Type</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Government</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Local Suppl</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Foreign Supplier Spending</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Employee</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Community</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Depreciation</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Depletion</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Others</TableCell>
-                  <TableCell style={{ color: 'white', fontWeight: 'bold' }}>Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {getCurrentPageData().map((row, index) => (
-                  <TableRow key={index} hover>
-                    <TableCell>{row.comp}</TableCell>
-                    <TableCell>{row.year}</TableCell>
-                    <TableCell>{row.type}</TableCell>
-                    <TableCell>{row.government}</TableCell>
-                    <TableCell>{row.localSuppl}</TableCell>
-                    <TableCell>{row.foreignSupplierSpending}</TableCell>
-                    <TableCell>{row.employee}</TableCell>
-                    <TableCell>{row.community}</TableCell>
-                    <TableCell>{row.depreciation}</TableCell>
-                    <TableCell>{row.depletion}</TableCell>
-                    <TableCell>{row.others}</TableCell>
-                    <TableCell>
-                      <IconButton size="small">
-                        <EditIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {/* Reusable Table */}
+          <Table
+            columns={columns}
+            rows={currentPageRows}
+            // Pass onSort and sortConfig so Table does NOT sort internally
+            onSort={handleSort}
+            sortConfig={sortConfig}
+            actions={actions}
+            emptyMessage="No data available."
+          />
 
           {/* Pagination */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center',
-            marginTop: '2rem',
-            gap: '0.5rem'
-          }}>
-            <Button
-              onClick={() => handlePageChange(1)}
-              variant="outlined"
-              size="small"
-              disabled={page === 1}
-            >
-              {'<<'}
-            </Button>
-            <Button
-              onClick={() => handlePageChange(page - 1)}
-              variant="outlined"
-              size="small"
-              disabled={page === 1}
-            >
-              {'<'}
-            </Button>
-            
-            {[...Array(totalPages)].map((_, index) => (
-              <Button
-                key={index + 1}
-                variant={page === index + 1 ? 'contained' : 'outlined'}
-                size="small"
-                onClick={() => handlePageChange(index + 1)}
-                style={{
-                  minWidth: '40px',
-                  backgroundColor: page === index + 1 ? '#182959' : 'transparent'
-                }}
-              >
-                {index + 1}
-              </Button>
-            ))}
-
-            <Button
-              onClick={() => handlePageChange(page + 1)}
-              variant="outlined"
-              size="small"
-              disabled={page === totalPages}
-            >
-              {'>'}
-            </Button>
-            <Button
-              onClick={() => handlePageChange(totalPages)}
-              variant="outlined"
-              size="small"
-              disabled={page === totalPages}
-            >
-              {'>>'}
-            </Button>
-          </div>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Pagination
+              page={page}
+              count={totalPages}
+              onChange={(newPage) => setPage(newPage)}
+            />
+          </Box>
           {isAddModalOpen && (
             <Overlay onClose={() => setIsAddModalOpen(false)}>
               <AddEconExpendituresModal 
