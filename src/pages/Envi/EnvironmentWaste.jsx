@@ -1,0 +1,328 @@
+import { useMemo, useState, useEffect } from 'react';
+import {
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
+  IconButton,
+  Box,
+  TextField,
+  Select,
+  MenuItem,
+  Container,
+  Typography,
+} from '@mui/material';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import AddIcon from '@mui/icons-material/Add';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import EditIcon from '@mui/icons-material/Edit';
+import api from '../../services/api';
+import Overlay from '../../components/modal';
+import Sidebar from '../../components/Sidebar';
+import AddEnvironmentEnergyModal from '../../envi_components/AddEnergyElectricityModal';
+import CustomTable from '../../components/Table/Table';
+import Pagination from '../../components/Pagination/pagination';
+import Filter from '../../components/Filter/Filter';
+import Search from '../../components/Filter/Search';
+
+function EnvironmentWaste() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selected, setSelected] = useState('Hazard Waste Generated'); // Default selection
+  const [sortConfig, setSortConfig] = useState({
+    key: 'year',
+    direction: 'desc'
+  });
+  
+  const rowsPerPage = 10;
+
+  const [filters, setFilters] = useState({
+    year: '',
+    type: '',
+    company: ''
+  });
+
+  useEffect(() => {
+    if (selected === 'Hazard Waste Generated') {
+      fetchHazardGenData();
+    }
+    if (selected === 'Hazard Waste Disposed') {
+      fetchHazardDisData();
+    }
+    if (selected === 'Non-Hazard Waste') {
+      fetchNonHazardsData();
+    }
+  }, [selected]);
+
+  const fetchHazardGenData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('environment/hazard_waste_generated'); 
+      console.log('Hazard Waste Generated data from API:', response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error('Error fetching hazard waste generated data:', error);
+      setError('Error fetching data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchHazardDisData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('environment/hazard_waste_disposed');
+      console.log('Hazard Waste Disposed data from API:', response.data); 
+      console.log('Water Discharge data from API:', response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error('Error fetching hazard waste disposed data:', error);
+      setError('Error fetching data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchNonHazardsData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('environment/non_hazard_waste');
+      console.log('Non-Hazard Waste data from API:', response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error('Error fetching non-hazard waste data:', error);
+      setError('Error fetching data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const columns = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') return [];
+    return Object.keys(data[0])
+      .slice(1) // This will exclude the first column
+      .map((key) => ({
+      key,
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+    }));
+    }, [data]);
+
+  const handleSort = (key) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortedData = (dataToSort = data) => {
+    const sortedData = [...dataToSort].sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return sortedData;
+  };
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const getFilteredData = () => {
+    let filteredData = [...data];
+    
+    // Apply search filter
+    if (searchTerm) {
+      filteredData = filteredData.filter(row => 
+        row.comp.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.year.toString().includes(searchTerm)
+      );
+    }
+
+    // Apply filters
+    if (filters.year) {
+      filteredData = filteredData.filter(row => row.year === filters.year);
+    }
+    if (filters.type) {
+      filteredData = filteredData.filter(row => row.type === filters.type);
+    }
+    if (filters.company) {
+      filteredData = filteredData.filter(row => row.comp === filters.company);
+    }
+    
+    return filteredData;
+  };
+
+  // Update getCurrentPageData to use filtered data
+  const getCurrentPageData = () => {
+    const filteredData = getFilteredData();
+    const sortedData = getSortedData(filteredData);
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    return sortedData.slice(start, end);
+  };
+
+  const totalPages = Math.ceil(getFilteredData().length / rowsPerPage);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
+
+  const renderSortIcon = (key) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />;
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <Sidebar />
+      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2.25rem' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '0.5rem',
+        }}>
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start'}}>
+            <Typography sx={{ 
+              fontSize: '0.9rem', 
+              fontWeight: 800,
+            }}>
+              REPOSITORY
+            </Typography>
+            <Typography sx={{ fontSize: '2.75rem', color: '#182959', fontWeight: 800}}>
+              Environment - Waste
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: '1rem' }}>
+            <Button
+              variant="contained"
+              startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+            >
+              EXPORT DATA
+            </Button>
+            <Button
+              variant="contained"
+              sx={{ 
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+            >
+              IMPORT
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ 
+                backgroundColor: '#2B8C37',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#256d2f',
+                },
+              }}
+              onClick={() => setIsAddModalOpen(true)}
+            >
+              ADD RECORD
+            </Button>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+          {['Hazard Waste Generated','Hazard Waste Disposed', 'Non-Hazard Waste'].map((type) => (
+            <Button
+              key={type}
+              onClick={() => setSelected(type)}
+              variant="contained"
+              sx={{
+                backgroundColor: selected === type ? '#2B8C37' : '#9ca3af',
+                borderRadius: '15px',
+                padding: '5px 10px',
+                width: '20%',
+                fontSize: '1.1rem',
+                fontWeight: selected === type ? 800 : 700,
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: selected === type ? '#256d2f' : '#6b7280',
+                },
+              }}
+            >
+              {type}
+            </Button>
+          ))}
+        </Box>
+
+        {/* Custom Table Component */}
+        <CustomTable
+          columns={columns}
+          rows={getCurrentPageData()}
+          onSort={handleSort}
+          sortConfig={sortConfig}
+          emptyMessage="No energy data found."
+          maxHeight="69vh"
+          minHeight="300px"
+          actions={(row) => (
+            <IconButton size="small">
+              <EditIcon />
+            </IconButton>
+          )}
+        />
+        
+
+        {/* Custom Pagination Component */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+          <Pagination 
+            page={page}
+            count={totalPages}
+            onChange={handlePageChange}
+          />
+        </Box>
+
+        {isAddModalOpen && (
+          <Overlay onClose={() => setIsAddModalOpen(false)}>
+            <AddEnvironmentEnergyModal 
+              onClose={() => {
+                setIsAddModalOpen(false);
+                fetchExpendituresData(); // Refresh data after adding
+              }} 
+            />
+          </Overlay>
+        )}
+      </Container>
+    </Box>
+  );
+}
+
+export default EnvironmentWaste;

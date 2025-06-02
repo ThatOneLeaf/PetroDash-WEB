@@ -1,56 +1,77 @@
 import { useState, useEffect } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  IconButton,
-  Box,
-} from '@mui/material';
+import { Button, Box } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import AddValueGeneratedModal from '../../components/AddValueGeneratedModal';
 import Sidebar from '../../components/Sidebar';
+import Table from '../../components/Table/Table';
+import Filter from '../../components/Filter/Filter';
+import Search from '../../components/Filter/Search';
+import Pagination from '../../components/Pagination/pagination';
 
 function EconomicGenerated() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
+
+  // Table state
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
   });
-  
-  const rowsPerPage = 10;
+  const [filters, setFilters] = useState({});
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchEconomicData();
-  }, []); // Remove sortConfig dependency
+  }, []);
 
   const fetchEconomicData = async () => {
     try {
       setLoading(true);
       const response = await api.get('/economic/value-generated-data');
-      console.log('Data from API:', response.data);
       setData(response.data);
     } catch (error) {
-      console.error('Error fetching economic data:', error);
       setError('Error fetching data');
     } finally {
       setLoading(false);
     }
   };
 
+  // Table columns config
+  const columns = [
+    { key: 'year', label: 'Year',
+      render: (val) => val
+    },
+    { key: 'electricitySales', label: 'Electricity Sales',
+      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    },
+    { key: 'oilRevenues', label: 'Oil Revenues',
+      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    },
+    { key: 'otherRevenues', label: 'Other Revenues',
+      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    },
+    { key: 'interestIncome', label: 'Interest Income',
+      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    },
+    { key: 'shareInNetIncomeOfAssociate', label: 'Share in Net Income of Associate',
+      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    },
+    { key: 'miscellaneousIncome', label: 'Miscellaneous Income',
+      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    },
+    { key: 'totalRevenue', label: 'Total Revenue (₱)',
+      render: (val) => val != null ? `₱ ${Number(val).toLocaleString()}` : ''
+    }
+  ];
+
+  // Sorting logic
   const handleSort = (key) => {
     setSortConfig(prevConfig => ({
       key,
@@ -58,38 +79,55 @@ function EconomicGenerated() {
     }));
   };
 
-  const renderSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />;
-  };
-
-  // Sort data locally
-  const getSortedData = () => {
-    const sortedData = [...data].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
+  // Filtering and searching logic
+  const filteredData = data
+    .filter(row => {
+      // Filter
+      return Object.entries(filters).every(([key, value]) => {
+        if (value == null || value.length === 0) return true;
+        if (Array.isArray(value)) return value.includes(row[key]);
+        return row[key] === value;
+      });
+    })
+    .filter(row => {
+      // Search (searches all fields as string)
+      if (!search) return true;
+      const searchStr = search.toLowerCase();
+      return Object.values(row).some(val =>
+        String(val).toLowerCase().includes(searchStr)
+      );
     });
-    return sortedData;
-  };
 
-  // Get current page data from sorted data
-  const getCurrentPageData = () => {
-    const sortedData = getSortedData();
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return sortedData.slice(start, end);
-  };
+  // Sorting
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
 
-  // Calculate total pages based on data length
-  const totalPages = Math.ceil(data.length / rowsPerPage);
+  // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
+  const pagedData = sortedData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
-  // Handle page changes
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
-  };
+  // Reset to page 1 if filters/search change and page is out of range
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+    // eslint-disable-next-line
+  }, [filteredData.length, rowsPerPage]);
+
+  // Year filter options (add "All Years" option at the top)
+  const yearOptions = [
+    { label: "All Years", value: "" },
+    ...data
+      .map(d => ({ label: d.year, value: d.year }))
+      .filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)
+  ];
+
+  // Table actions (optional)
+  const renderActions = (row) => (
+    <></>
+    // Add action buttons here if needed
+  );
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -99,15 +137,15 @@ function EconomicGenerated() {
       <Sidebar />
       <Box sx={{ flexGrow: 1, height: '100vh', overflow: 'auto' }}>
         <div style={{ padding: '2rem' }}>
-          <div style={{ 
-            display: 'flex', 
+          <div style={{
+            display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '2rem'
           }}>
             <div>
-              <h1 style={{ 
-                fontSize: '1.5rem', 
+              <h1 style={{
+                fontSize: '1.5rem',
                 fontWeight: 'bold',
                 marginBottom: '0.5rem'
               }}>
@@ -117,7 +155,6 @@ function EconomicGenerated() {
                 Economic - Generated
               </h2>
             </div>
-            
             <div style={{ display: 'flex', gap: '1rem' }}>
               <Button
                 variant="contained"
@@ -143,145 +180,50 @@ function EconomicGenerated() {
             </div>
           </div>
 
-          {/* Table with updated colors */}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow style={{ backgroundColor: '#182959' }}>
-                  {[
-                    { key: 'year', label: 'Year' },
-                    { key: 'electricitySales', label: 'Electricity Sales' },
-                    { key: 'oilRevenues', label: 'Oil Revenues' },
-                    { key: 'otherRevenues', label: 'Other Revenues' },
-                    { key: 'interestIncome', label: 'Interest Income' },
-                    { key: 'shareInNetIncomeOfAssociate', label: 'Share in Net Income of Associate' },
-                    { key: 'miscellaneousIncome', label: 'Miscellaneous Income' },
-                    { key: 'totalRevenue', label: 'Total Revenue (₱)' }
-                  ].map(({ key, label }) => (
-                    <TableCell 
-                      key={key}
-                      onClick={() => handleSort(key)}
-                      style={{ 
-                        color: 'white',
-                        cursor: 'pointer',
-                        padding: '16px',
-                        fontWeight: 'bold',
-                        whiteSpace: 'nowrap',
-                        userSelect: 'none'
-                      }}
-                    >
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center',
-                        gap: '4px' 
-                      }}>
-                        {label}
-                        {renderSortIcon(key)}
-                      </div>
-                    </TableCell>
-                  ))}
-                  <TableCell 
-                    style={{ 
-                      color: 'white',
-                      padding: '16px',
-                      fontWeight: 'bold',
-                      width: '100px'
-                    }}
-                  >
-                    Action
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {getCurrentPageData().map((row) => (
-                  <TableRow 
-                    key={row.year}
-                    hover
-                  >
-                    <TableCell>{row.year}</TableCell>
-                    <TableCell>{row.electricitySales.toLocaleString()}</TableCell>
-                    <TableCell>{row.oilRevenues.toLocaleString()}</TableCell>
-                    <TableCell>{row.otherRevenues.toLocaleString()}</TableCell>
-                    <TableCell>{row.interestIncome.toLocaleString()}</TableCell>
-                    <TableCell>{row.shareInNetIncomeOfAssociate.toLocaleString()}</TableCell>
-                    <TableCell>{row.miscellaneousIncome.toLocaleString()}</TableCell>
-                    <TableCell>{row.totalRevenue.toLocaleString()}</TableCell>
-                    <TableCell style={{ textAlign: 'center' }}>
-                      <IconButton size="small">
-                        {/* Add your action icon here */}
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {/* Search and Year Filter controls side by side */}
+          <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+            <Search
+              onSearch={setSearch}
+              suggestions={data.map(d => d.year.toString())}
+            />
+            <Filter
+              label="Year"
+              options={yearOptions}
+              value={filters.year ?? ''}
+              onChange={val => setFilters(f => ({ ...f, year: val }))}
+              multi={false}
+            />
+          </Box>
 
-          {/* Pagination with updated colors */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center',
-            marginTop: '2rem',
-            gap: '0.5rem'
-          }}>
-            <Button
-              onClick={() => handlePageChange(1)}
-              variant="outlined"
-              size="small"
-              disabled={page === 1}
-            >
-              {'<<'}
-            </Button>
-            <Button
-              onClick={() => handlePageChange(page - 1)}
-              variant="outlined"
-              size="small"
-              disabled={page === 1}
-            >
-              {'<'}
-            </Button>
-            
-            {[...Array(totalPages)].map((_, index) => (
-              <Button
-                key={index + 1}
-                variant={page === index + 1 ? 'contained' : 'outlined'}
-                size="small"
-                onClick={() => handlePageChange(index + 1)}
-                style={{
-                  minWidth: '40px',
-                  backgroundColor: page === index + 1 ? '#182959' : 'transparent'
-                }}
-              >
-                {index + 1}
-              </Button>
-            ))}
+          {/* Table */}
+          <Table
+            columns={columns}
+            rows={pagedData}
+            onSort={handleSort}
+            sortConfig={sortConfig}
+            actions={renderActions}
+            filters={{}} // No filters in table, handled above
+            onFilterChange={() => {}} // No-op
+            emptyMessage="No data available."
+          />
 
-            <Button
-              onClick={() => handlePageChange(page + 1)}
-              variant="outlined"
-              size="small"
-              disabled={page === totalPages}
-            >
-              {'>'}
-            </Button>
-            <Button
-              onClick={() => handlePageChange(totalPages)}
-              variant="outlined"
-              size="small"
-              disabled={page === totalPages}
-            >
-              {'>>'}
-            </Button>
-          </div>
+          {/* Pagination */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Pagination
+              page={page}
+              count={totalPages}
+              onChange={setPage}
+            />
+          </Box>
 
           {/* Add Modal */}
           {isAddModalOpen && (
             <Overlay onClose={() => setIsAddModalOpen(false)}>
-              <AddValueGeneratedModal 
+              <AddValueGeneratedModal
                 onClose={() => {
                   setIsAddModalOpen(false);
                   fetchEconomicData();
-                }} 
+                }}
               />
             </Overlay>
           )}

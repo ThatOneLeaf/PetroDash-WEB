@@ -11,13 +11,13 @@ import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddEconExpendituresModal from '../../components/AddEconExpendituresModal';
 import Table from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
+import AddCapitalProviderModal from '../../components/AddCapitalProviderPaymentsModal';
 
-function EconomicExpenditures() {
+function EconomicCapitalProvider() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,23 +31,23 @@ function EconomicExpenditures() {
   const rowsPerPage = 10;
 
   const [filters, setFilters] = useState({
-    year: '',
-    type: '',
-    company: ''
+    year: ''
   });
 
+  const [searchTerm, setSearchTerm] = useState('');
+
   useEffect(() => {
-    fetchExpendituresData();
+    fetchCapitalProviderData();
   }, []);
 
-  const fetchExpendituresData = async () => {
+  const fetchCapitalProviderData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/economic/expenditures');
-      console.log('Data from API:', response.data);
+      const response = await api.get('/economic/capital-provider-payments');
+      console.log('Capital Provider Data from API:', response.data);
       setData(response.data);
     } catch (error) {
-      console.error('Error fetching expenditures data:', error);
+      console.error('Error fetching capital provider data:', error);
       setError('Error fetching data');
     } finally {
       setLoading(false);
@@ -59,37 +59,22 @@ function EconomicExpenditures() {
       key,
       direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
     }));
-    setPage(1); // Reset to first page on sort
+    setPage(1);
   };
 
-  const getSortedData = (dataToSort = data) => {
-    const sortedData = [...dataToSort].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return sortedData;
-  };
-
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Filtering, searching, and sorting are all applied to the full dataset before pagination
+  // Filtering, searching, and sorting
   const processedData = useMemo(() => {
     let filtered = [...data];
 
     // Search
     if (searchTerm) {
       filtered = filtered.filter(row =>
-        row.comp?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         row.year?.toString().includes(searchTerm)
       );
     }
 
     // Filters
     if (filters.year) filtered = filtered.filter(row => row.year === filters.year);
-    if (filters.type) filtered = filtered.filter(row => row.type === filters.type);
-    if (filters.company) filtered = filtered.filter(row => row.comp === filters.company);
 
     // Sorting
     if (sortConfig && sortConfig.key) {
@@ -116,7 +101,7 @@ function EconomicExpenditures() {
     if (page > totalPages) setPage(1);
   }, [processedData, page]);
 
-  // Only slice for the current page, do NOT sort again in Table
+  // Only slice for the current page
   const currentPageRows = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     return processedData.slice(start, start + rowsPerPage);
@@ -124,19 +109,33 @@ function EconomicExpenditures() {
 
   const totalPages = Math.ceil(processedData.length / rowsPerPage) || 1;
 
-  // Table columns definition for reusable Table
+  // Table columns definition
   const columns = [
-    { key: 'comp', label: 'Comp' },
-    { key: 'year', label: 'Year' },
-    { key: 'type', label: 'Type' },
-    { key: 'government', label: 'Government' },
-    { key: 'localSuppl', label: 'Local Supply' },
-    { key: 'foreignSupplierSpending', label: 'Foreign Supplier Spending' },
-    { key: 'employee', label: 'Employee' },
-    { key: 'community', label: 'Community' },
-    { key: 'depreciation', label: 'Depreciation' },
-    { key: 'depletion', label: 'Depletion' },
-    { key: 'others', label: 'Others' },
+    { 
+      key: 'year', 
+      label: 'Year',
+      render: (val) => val
+    },
+    { 
+      key: 'interest', 
+      label: 'Interest',
+      render: (val) => val != null ? Number(val).toLocaleString() : '0'
+    },
+    { 
+      key: 'dividendsToNci', 
+      label: 'Dividends to NCI',
+      render: (val) => val != null ? Number(val).toLocaleString() : '0'
+    },
+    { 
+      key: 'dividendsToParent', 
+      label: 'Dividends to Parent',
+      render: (val) => val != null ? Number(val).toLocaleString() : '0'
+    },
+    { 
+      key: 'total', 
+      label: 'Total (₱)',
+      render: (val) => val != null ? `₱ ${Number(val).toLocaleString()}` : '₱ 0'
+    },
   ];
 
   // Actions column for edit button
@@ -146,26 +145,12 @@ function EconomicExpenditures() {
     </IconButton>
   );
 
-  // Prepare options for Filter components (ensure no undefined/empty, sorted, and unique)
+  // Prepare options for Filter components
   const yearOptions = useMemo(
     () =>
       Array.from(new Set(data.map(row => row.year).filter(Boolean)))
         .sort((a, b) => b - a)
         .map(year => ({ label: String(year), value: year })),
-    [data]
-  );
-  const typeOptions = useMemo(
-    () =>
-      Array.from(new Set(data.map(row => row.type).filter(Boolean)))
-        .sort()
-        .map(type => ({ label: type, value: type })),
-    [data]
-  );
-  const companyOptions = useMemo(
-    () =>
-      Array.from(new Set(data.map(row => row.comp).filter(Boolean)))
-        .sort()
-        .map(comp => ({ label: comp, value: comp })),
     [data]
   );
 
@@ -192,7 +177,7 @@ function EconomicExpenditures() {
                 REPOSITORY
               </h1>
               <h2 style={{ fontSize: '2rem', color: '#182959' }}>
-                Economic - Expenditures
+                Economic - Capital Provider
               </h2>
             </div>
             
@@ -221,7 +206,7 @@ function EconomicExpenditures() {
             </div>
           </div>
 
-          {/* Search and Filter Section (replaced with custom components) */}
+          {/* Search and Filter Section */}
           <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
             <Search
               onSearch={val => {
@@ -230,8 +215,6 @@ function EconomicExpenditures() {
               }}
               suggestions={[
                 ...new Set([
-                  ...data.map(row => row.comp).filter(Boolean),
-                  ...data.map(row => row.type).filter(Boolean),
                   ...data.map(row => String(row.year)).filter(Boolean)
                 ])
               ]}
@@ -246,33 +229,12 @@ function EconomicExpenditures() {
               }}
               placeholder="Year"
             />
-            <Filter
-              label="Type"
-              options={[{ label: 'All Types', value: '' }, ...typeOptions]}
-              value={filters.type}
-              onChange={val => {
-                setFilters(prev => ({ ...prev, type: val }));
-                setPage(1);
-              }}
-              placeholder="Type"
-            />
-            <Filter
-              label="Company"
-              options={[{ label: 'All Companies', value: '' }, ...companyOptions]}
-              value={filters.company}
-              onChange={val => {
-                setFilters(prev => ({ ...prev, company: val }));
-                setPage(1);
-              }}
-              placeholder="Company"
-            />
           </Box>
 
-          {/* Reusable Table */}
+          {/* Table */}
           <Table
             columns={columns}
             rows={currentPageRows}
-            // Pass onSort and sortConfig so Table does NOT sort internally
             onSort={handleSort}
             sortConfig={sortConfig}
             actions={actions}
@@ -287,13 +249,15 @@ function EconomicExpenditures() {
               onChange={(newPage) => setPage(newPage)}
             />
           </Box>
+
+          {/* Add Modal */}
           {isAddModalOpen && (
             <Overlay onClose={() => setIsAddModalOpen(false)}>
-              <AddEconExpendituresModal 
+              <AddCapitalProviderModal
                 onClose={() => {
                   setIsAddModalOpen(false);
-                  fetchExpendituresData(); // Refresh data after adding
-                }} 
+                  fetchCapitalProviderData();
+                }}
               />
             </Overlay>
           )}
@@ -303,4 +267,4 @@ function EconomicExpenditures() {
   );
 }
 
-export default EconomicExpenditures;
+export default EconomicCapitalProvider;

@@ -48,10 +48,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
       icon: EnvironmentIcon,
       to: "/environment",
       dropdown: [
-        { label: "Air", to: "/environment/air" },
+        { label: "Energy", to: "/environment/energy" },
         { label: "Water", to: "/environment/water" },
         { label: "Waste", to: "/environment/waste" },
-        { label: "Energy", to: "/environment/energy" },
+        { label: "Air", to: "/environment/air" },
         { label: "C.A.R.E", to: "/environment/care" },
       ],
     },
@@ -120,7 +120,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
               marginTop: 10,
               transition: "width 0.35s cubic-bezier(.4,0,.2,1), margin 0.2s, opacity 0.3s",
               opacity: 1,
+              cursor: "pointer"
             }}
+            onClick={() => navigate("/")}
           />
           <div
             style={{
@@ -144,6 +146,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   transition: "opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1)",
                   opacity: collapsed ? 0 : 1,
                   transform: collapsed ? "scale(0.95)" : "scale(1)",
+                  // cursor removed here
                 }}
               />
             )}
