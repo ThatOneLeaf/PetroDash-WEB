@@ -63,18 +63,18 @@ function SafetyWorkData() {
   const navigate = useNavigate();
 
   const buttonRoutes = [
-    { label: "Employability", value: "button1", path: "/social-hr" },
+    { label: "Employability", value: "button1", path: "/social/hr" },
     {
       label: "Parental Leave",
       value: "button2",
-      path: "/social-hr/parentalleave",
+      path: "/social/hr/parentalleave",
     },
     {
       label: "Safety Work Data",
       value: "button3",
-      path: "/social-hr/safetyworkdata",
+      path: "/social/hr/safetyworkdata",
     },
-    { label: "Training", value: "button4", path: "/social-hr/training" },
+    { label: "Training", value: "button4", path: "/social/hr/training" },
     { label: "OSH", value: "button5", path: "/osh" },
   ];
 

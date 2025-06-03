@@ -86,18 +86,18 @@ function Demographics() {
   const navigate = useNavigate();
 
   const buttonRoutes = [
-    { label: "Employability", value: "button1", path: "/social-hr" },
+    { label: "Employability", value: "button1", path: "/social/hr" },
     {
       label: "Parental Leave",
       value: "button2",
-      path: "/social-hr/parentalleave",
+      path: "/social/hr/parentalleave",
     },
     {
       label: "Safety Work Data",
       value: "button3",
-      path: "/social-hr/safetyworkdata",
+      path: "/social/hr/safetyworkdata",
     },
-    { label: "Training", value: "button4", path: "/social-hr/training" },
+    { label: "Training", value: "button4", path: "/social/hr/training" },
     { label: "OSH", value: "button5", path: "/osh" },
   ];
 
@@ -137,7 +137,6 @@ function Demographics() {
       });
     })
     .filter((row) => {
-      // Search (searches all fields as string)
       if (!search) return true;
       const searchStr = search.toLowerCase();
       return Object.values(row).some((val) =>
@@ -156,22 +155,16 @@ function Demographics() {
 
   // Pagination logic
   const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
-  const pagedData = sortedData.slice(
+  const pagedData = filteredData.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
 
-  // Reset to page 1 if filters/search change and page is out of range
   useEffect(() => {
     if (page > totalPages) setPage(1);
-    // eslint-disable-next-line
   }, [pagedData.length, rowsPerPage]);
 
-  // Table actions (optional)
-  const renderActions = (row) => (
-    <></>
-    // Add action buttons here if needed
-  );
+  const renderActions = (row) => <></>;
 
   if (loading) return <div>Loading...</div>; // UN COMMENT
   if (error) return <div>{error}</div>;
@@ -260,13 +253,14 @@ function Demographics() {
                 { label: "All Companies", value: "" },
                 ...companyOptions,
               ]}
-              value={filters.company}
+              value={filters.company_id}
               onChange={(val) => {
-                setFilters((prev) => ({ ...prev, company: val }));
+                setFilters((prev) => ({ ...prev, company_id: val }));
                 setPage(1);
               }}
               placeholder="Company"
             />
+
             <Filter
               label="Gender"
               options={[{ label: "All Genders", value: "" }, ...genderOptions]}
@@ -277,6 +271,7 @@ function Demographics() {
               }}
               placeholder="Gender"
             />
+
             <Filter
               label="Position"
               options={[
@@ -297,13 +292,14 @@ function Demographics() {
                 { label: "All Employement Status", value: "" },
                 ...employementStatusOptions,
               ]}
-              value={filters.employement_status}
+              value={filters.employment_status}
               onChange={(val) => {
-                setFilters((prev) => ({ ...prev, employement_status: val }));
+                setFilters((prev) => ({ ...prev, employment_status: val }));
                 setPage(1);
               }}
               placeholder="Employement Status"
             />
+
             <Filter
               label="Employement Category"
               options={[
@@ -320,9 +316,9 @@ function Demographics() {
             <Filter
               label="Status"
               options={[{ label: "All Statuses", value: "" }, ...statusOptions]}
-              value={filters.status}
+              value={filters.status_id}
               onChange={(val) => {
-                setFilters((prev) => ({ ...prev, status: val }));
+                setFilters((prev) => ({ ...prev, status_id: val }));
                 setPage(1);
               }}
               placeholder="Status"
