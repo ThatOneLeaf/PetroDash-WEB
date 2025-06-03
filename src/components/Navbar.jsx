@@ -92,6 +92,17 @@ function Navbar({
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
+  // Auto-close mobile menu on resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 900 && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mobileMenuOpen]);
+  
   const toggleModal = () => {
     setLoginModal(!isNavbarLogin);
   };
@@ -263,13 +274,35 @@ function Navbar({
               zIndex: 1203,
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'flex-start',
-              padding: '2rem 1.5rem',
-              gap: '2rem',
+              alignItems: 'stretch',
+              padding: '2rem 1.5rem 2rem 1.5rem',
+              gap: '1.5rem',
               transition: 'right 0.35s cubic-bezier(.4,0,.2,1)',
+              borderTopLeftRadius: 16,
+              borderBottomLeftRadius: 16,
             }}
           >
-            <Link to="/" style={{ textDecoration: 'none', color: 'inherit', marginBottom: 24 }} onClick={() => setMobileMenuOpen(false)}>
+            {/* Close button */}
+            <button
+              aria-label="Close menu"
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                alignSelf: 'flex-end',
+                background: 'none',
+                border: 'none',
+                fontSize: 28,
+                color: '#182959',
+                cursor: 'pointer',
+                marginBottom: '1.5rem',
+                marginTop: '-1rem',
+                marginRight: '-0.5rem',
+                padding: 0,
+                lineHeight: 1,
+              }}
+            >
+              &times;
+            </button>
+            <Link to="/" style={{ textDecoration: 'none', color: 'inherit', marginBottom: 24, alignSelf: 'center' }} onClick={() => setMobileMenuOpen(false)}>
               <img
                 src="src/assets/petrodashlogo.png"
                 alt="PetroDash"
@@ -285,9 +318,12 @@ function Navbar({
                 color: '#333',
                 cursor: 'pointer',
                 fontFamily: 'Inter',
-                fontSize: '16px',
-                marginBottom: 16,
-                textAlign: 'left'
+                fontSize: '18px',
+                marginBottom: 12,
+                textAlign: 'left',
+                padding: '0.75rem 0',
+                borderRadius: 6,
+                transition: 'background 0.2s',
               }}
             >
               ABOUT
@@ -301,14 +337,38 @@ function Navbar({
                 color: '#333',
                 cursor: 'pointer',
                 fontFamily: 'Inter',
-                fontSize: '16px',
-                marginBottom: 16,
-                textAlign: 'left'
+                fontSize: '18px',
+                marginBottom: 12,
+                textAlign: 'left',
+                padding: '0.75rem 0',
+                borderRadius: 6,
+                transition: 'background 0.2s',
               }}
             >
               DISCLOSURE
             </button>
-            <Btn color="#2E7D32" label="LOGIN" onClick={() => { setMobileMenuOpen(false); toggleModal(); }} />
+            <div style={{ marginTop: '2rem', alignSelf: 'stretch' }}>
+              {/* Full width, green LOGIN button for mobile */}
+              <Btn
+                color="green"
+                label="LOGIN"
+                style={{ width: '100%' }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  toggleModal();
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }} />
+            <div style={{
+              textAlign: 'center',
+              color: '#aaa',
+              fontSize: '0.9rem',
+              marginTop: 'auto',
+              paddingTop: '2rem'
+            }}>
+              &copy; {new Date().getFullYear()} PetroDash
+            </div>
           </div>
           
           {isNavbarLogin && (

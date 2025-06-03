@@ -48,12 +48,7 @@ function Footer() {
             fontFamily: 'Inter',
             fontSize: '14px'
           }}>DISCLOSURE</Link>
-          <Link to="/contact" style={{ 
-            color: 'white', 
-            textDecoration: 'none',
-            fontFamily: 'Inter',
-            fontSize: '14px'
-          }}>CONTACT US</Link>
+          {/* CONTACT US link removed */}
         </div>
       </div>
 
@@ -73,4 +68,4 @@ function Footer() {
   );
 }
 
-export default Footer; 
+export default Footer;
