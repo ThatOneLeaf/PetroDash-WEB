@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import SideBar from "../../components/Sidebar";
+import ImportPowerFileModal from "../../components/ImportPowerFileModal";
 import {
   Box,
   Container,
@@ -20,6 +21,7 @@ import Pagination from "../../components/Pagination/pagination";
 import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter"; 
 import StatusChip from "../../components/StatusChip";
+import api from '../../services/api';
 
 function Energy() {
   const [data, setData] = useState([]);
@@ -28,6 +30,7 @@ function Energy() {
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
   const [isAddEnergyModalOpen, setIsAddEnergyModalOpen] = useState(false);
+  const [isImportEnergyModalOpen, setIsImportEnergyModalOpen] = useState(false);
 
   const [filters, setFilters] = useState({
     company: "",
@@ -37,14 +40,14 @@ function Energy() {
     status: "",
   });
 
+  // New state for power plants list
+  const [powerPlants, setPowerPlants] = useState([]);
+
   const fetchEnergyData = async () => {
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/energy/energy_records_by_status"
-      );
-      if (!response.ok) throw new Error("Failed to fetch energy data");
+      const response = await api.get("/energy/energy_records_by_status");
+      const result = response.data;
 
-      const result = await response.json();
       const records = Array.isArray(result) ? result : [result];
 
       const formattedData = records.map((item) => ({
@@ -65,27 +68,40 @@ function Energy() {
     }
   };
 
+  // Fetch power plants once on mount
+  useEffect(() => {
+    const fetchPowerPlants = async () => {
+      try {
+        const response = await api.get('/reference/power_plants');
+        setPowerPlants(response.data);
+      } catch (error) {
+        console.error('Failed to fetch power plants:', error);
+      }
+    };
+
+    fetchPowerPlants();
+  }, []);
+
   useEffect(() => {
     fetchEnergyData();
   }, []);
 
-  // Helper to ensure unique non-empty sorted options
-  const generateOptions = (items) => {
-    return Array.from(new Set(items.filter(Boolean))).sort().map((val) => ({
-      label: val,
-      value: val,
-    }));
-  };
-
-  const companyOptions = generateOptions(data.map((item) => item.companyName));
-  const powerPlantOptions = generateOptions(data.map((item) => item.powerPlant));
-  const generationSourceOptions = generateOptions(
-    data.map((item) => item.generationSource)
+  // Build unique options for filters
+  const companyOptions = Array.from(
+    new Set(data.map((item) => item.companyName))
+  ).map((val) => ({ label: val, value: val }));
+  const powerPlantOptions = Array.from(
+    new Set(data.map((item) => item.powerPlant))
+  ).map((val) => ({ label: val, value: val }));
+  const generationSourceOptions = Array.from(
+    new Set(data.map((item) => item.generationSource))
   ).map((val) => ({
-    label: val.label.charAt(0).toUpperCase() + val.label.slice(1),
-    value: val.value,
+    label: val.charAt(0).toUpperCase() + val.slice(1),
+    value: val,
   }));
-  const provinceOptions = generateOptions(data.map((item) => item.province));
+  const provinceOptions = Array.from(
+    new Set(data.map((item) => item.province))
+  ).map((val) => ({ label: val, value: val }));
   const statusOptions = [
     { label: "Pending", value: "PND" },
     { label: "Head Approved", value: "HAP" },
@@ -94,6 +110,7 @@ function Energy() {
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
+  // Filter data by date and all filters
   const filteredData = data.filter((item) => {
     const itemDate = dayjs(item.date);
     if (startDate && itemDate.isBefore(dayjs(startDate), "day")) return false;
@@ -177,7 +194,10 @@ function Energy() {
               >
                 EXPORT DATA
               </Button>
-              <Button variant="contained" sx={{ backgroundColor: "#182959" }}>
+              <Button 
+                variant="contained" 
+                sx={{ backgroundColor: "#182959" }}
+                onClick={() => setIsImportEnergyModalOpen(true)}>
                 IMPORT
               </Button>
               <Button
@@ -286,7 +306,7 @@ function Energy() {
             </LocalizationProvider>
           </Box>
 
-          {/* Table */}
+          {/* Table or fallback */}
           {paginatedData.length === 0 ? (
             <Typography align="center" sx={{ py: 5 }}>
               No records found for the selected filters.
@@ -318,9 +338,20 @@ function Energy() {
                 setIsAddEnergyModalOpen(false);
                 fetchEnergyData();
               }}
+              powerPlants={powerPlants}  
             />
           </Overlay>
         )}
+        {isImportEnergyModalOpen && (
+        <Overlay onClose={() => setIsImportEnergyModalOpen(false)}>
+          <ImportPowerFileModal
+            onClose={() => {
+              setIsImportEnergyModalOpen(false);
+              fetchEnergyData(); // optional
+            }}
+          />
+        </Overlay>
+      )}
       </Box>
     </Box>
   );
