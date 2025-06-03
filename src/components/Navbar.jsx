@@ -236,11 +236,8 @@ function Navbar({
               CONTACT US
             </button>
           </div>
-
-          {/* Desktop Login Button */}
-          <div className="navbar-login-desktop">
-            <Btn color="#2E7D32" label="LOGIN" onClick={toggleModal} />
-          </div>
+          
+          <Btn color="green" label="LOGIN" onClick={toggleModal} />
 
           {/* Hamburger for mobile */}
           <div className="navbar-hamburger" style={{ display: 'none', zIndex: 1202 }}>
