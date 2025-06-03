@@ -88,12 +88,17 @@ function SideBar({ collapsed: collapsedProp = false }) {
         flexDirection: "column",
         justifyContent: "space-between",
         borderRight: "1px solid #eee",
-        transition: "width 0.35s cubic-bezier(.4,0,.2,1)",
+        transition: "width 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1), position 0s linear 0.35s", // smooth transition
         boxShadow: "4px 0 12px 0 rgba(44,62,80,0.22)",
-        position: "sticky", // changed from "relative"
+        position: collapsed ? "sticky" : "absolute",
         top: 0,
+        left: collapsed ? 0 : 0, // always 0, but transition is smooth
         overflowX: "hidden",
-        zIndex: 100,
+        zIndex: collapsed ? 100 : 1300,
+        // Optional: fade shadow in/out for more smoothness
+        ...(collapsed
+          ? { boxShadow: "4px 0 12px 0 rgba(44,62,80,0.22)" }
+          : { boxShadow: "8px 0 24px 0 rgba(44,62,80,0.22)" }),
       }}
       onMouseEnter={() => setCollapsed(false)}
       onMouseLeave={() => setCollapsed(true)}
@@ -240,8 +245,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       bgcolor: "#2B8C37",
                     },
                     "&:hover span": {
-                      color: "#fff",
-                      fontWeight: 700,
+                      color: "#fff", // Make text white on hover
+                      fontWeight: 700, // Make text bold on hover
                     },
                     "&:hover img": {
                       filter:
@@ -398,8 +403,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       bgcolor: "#2B8C37",
                     },
                     "&:hover span": {
-                      color: "#fff",
-                      fontWeight: 700,
+                      color: "#fff", // Make text white on hover
+                      fontWeight: 700, // Make text bold on hover
                     },
                     "&:hover img": {
                       filter:
@@ -558,8 +563,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       bgcolor: "#2B8C37",
                     },
                     "&:hover span": {
-                      color: "#fff",
-                      fontWeight: 700,
+                      color: "#fff", // Make text white on hover
+                      fontWeight: 700, // Make text bold on hover
                     },
                     "&:hover img": {
                       filter:
