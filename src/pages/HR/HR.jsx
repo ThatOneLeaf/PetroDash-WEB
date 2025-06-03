@@ -37,7 +37,7 @@ function Demographics() {
 
   //INIITIALIZE FILTER INPUTS
   const companyOptions = Array.from(
-    new Set(data.map((item) => item.company_id))
+    new Set(data.map((item) => item.company_name))
   ).map((val) => ({ label: val, value: val }));
   const genderOptions = Array.from(
     new Set(data.map((item) => item.gender))
@@ -103,7 +103,7 @@ function Demographics() {
 
   // Table columns config
   const columns = [
-    { key: "company_id", label: "Company ID" },
+    { key: "company_name", label: "Company ID" },
     { key: "employee_id", label: "Employee ID" },
     { key: "gender", label: "Gender" },
     { key: "position_id", label: "Position" },
@@ -253,9 +253,9 @@ function Demographics() {
                 { label: "All Companies", value: "" },
                 ...companyOptions,
               ]}
-              value={filters.company_id}
+              value={filters.company_name}
               onChange={(val) => {
-                setFilters((prev) => ({ ...prev, company_id: val }));
+                setFilters((prev) => ({ ...prev, company_name: val }));
                 setPage(1);
               }}
               placeholder="Company"

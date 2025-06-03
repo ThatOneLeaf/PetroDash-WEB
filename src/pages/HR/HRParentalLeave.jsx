@@ -1,16 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  IconButton,
-  Box,
-} from "@mui/material";
+import { Button, Box } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -22,6 +11,12 @@ import AddParentalLeaveModal from "../../components/hr_components/AddParentalLea
 import ImportHRModal from "../../components/hr_components/ImportHRModal";
 import Sidebar from "../../components/Sidebar";
 
+import Table from "../../components/Table/Table";
+import Filter from "../../components/Filter/Filter";
+import Search from "../../components/Filter/Search";
+import Pagination from "../../components/Pagination/pagination";
+import StatusChip from "../../components/StatusChip";
+
 import { useNavigate } from "react-router-dom";
 
 function ParentalLeave() {
@@ -32,6 +27,10 @@ function ParentalLeave() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedButton, setSelectedButton] = useState("button2");
+
+  const [filters, setFilters] = useState({});
+  const [search, setSearch] = useState("");
+
   const [sortConfig, setSortConfig] = useState({
     key: "year",
     direction: "desc",
@@ -39,27 +38,39 @@ function ParentalLeave() {
 
   const rowsPerPage = 10;
 
-  //WAITING FOR API
-  /*
+  const companyOptions = Array.from(
+    new Set(data.map((item) => item.company_name))
+  ).map((val) => ({ label: val, value: val }));
+
+  const typeOfLeaveOptions = Array.from(
+    new Set(data.map((item) => item.type_of_leave))
+  ).map((val) => ({ label: val, value: val }));
+
+  const statusOptions = [
+    { label: "Pending", value: "PND" },
+    { label: "Head Approved", value: "HAP" },
+    { label: "Site Approved", value: "SAP" },
+    { label: "For Revision (Site)", value: "FRS" },
+    { label: "For Revision (Head)", value: "FRH" },
+  ];
+
   useEffect(() => {
-    fetchEconomicData(); //change
-  }, []); // Remove sortConfig dependency
+    fetchParentalData();
+  }, []);
 
-
-  //update
-  const fetchEmployabilityData = async () => {
+  const fetchParentalData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/economic/value-generated-data");
-      console.log("Data from API:", response.data);
+      const response = await api.get("hr/parental_leave_records_by_status");
+      console.log("Parental Data from API:", response.data);
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching economic data:", error);
+      console.error("Error fetching Parental data:", error);
       setError("Error fetching data");
     } finally {
       setLoading(false);
     }
-  };*/
+  };
 
   const navigate = useNavigate();
 
@@ -79,6 +90,24 @@ function ParentalLeave() {
     { label: "OSH", value: "button5", path: "/osh" },
   ];
 
+  // Table columns config
+  const columns = [
+    { key: "company_name", label: "Company" },
+    { key: "employee_id", label: "Employee ID" },
+    { key: "date", label: "Date Availed", render: (val) => val.split("T")[0] },
+    {
+      key: "end_date",
+      label: "Date Ended",
+      render: (val) => val.split("T")[0],
+    },
+    { key: "type_of_leave", label: "Type Of Leave" },
+    {
+      key: "status_id",
+      label: "Status",
+      render: (val) => <StatusChip status={val} />,
+    },
+  ];
+  // Sorting logic
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
       key,
@@ -89,47 +118,46 @@ function ParentalLeave() {
     }));
   };
 
-  const renderSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === "asc" ? (
-      <ArrowUpwardIcon fontSize="small" />
-    ) : (
-      <ArrowDownwardIcon fontSize="small" />
-    );
-  };
-
-  // Sort data locally
-  const getSortedData = () => {
-    const sortedData = [...data].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key])
-        return sortConfig.direction === "asc" ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key])
-        return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
+  const filteredData = data
+    .filter((row) => {
+      // Filter
+      return Object.entries(filters).every(([key, value]) => {
+        if (value == null || value.length === 0) return true;
+        if (Array.isArray(value)) return value.includes(row[key]);
+        return row[key] === value;
+      });
+    })
+    .filter((row) => {
+      if (!search) return true;
+      const searchStr = search.toLowerCase();
+      return Object.values(row).some((val) =>
+        String(val).toLowerCase().includes(searchStr)
+      );
     });
-    return sortedData;
-  };
 
-  // Get current page data from sorted data
-  const getCurrentPageData = () => {
-    const sortedData = getSortedData();
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return sortedData.slice(start, end);
-  };
+  // Sorting
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key])
+      return sortConfig.direction === "asc" ? -1 : 1;
+    if (a[sortConfig.key] > b[sortConfig.key])
+      return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
 
-  // Calculate total pages based on data length
-  const totalPages = Math.ceil(data.length / rowsPerPage);
+  // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
+  const pagedData = filteredData.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
 
-  // Handle page changes
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
-  };
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [pagedData.length, rowsPerPage]);
 
-  //if (loading) return <div>Loading...</div>; // UN COMMENT
-  //if (error) return <div>{error}</div>;
+  const renderActions = (row) => <></>;
+  if (loading) return <div>Loading...</div>; // UN COMMENT
+  if (error) return <div>{error}</div>;
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -157,29 +185,6 @@ function ParentalLeave() {
               <h2 style={{ fontSize: "2rem", color: "#182959" }}>
                 Social - Human Resources
               </h2>
-
-              <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
-                {buttonRoutes.map(({ label, value, path }) => (
-                  <Button
-                    key={value}
-                    variant={
-                      selectedButton === value ? "contained" : "outlined"
-                    }
-                    onClick={() => {
-                      setSelectedButton(value);
-                      navigate(path);
-                    }}
-                    style={{
-                      backgroundColor:
-                        selectedButton === value ? "#182959" : "",
-                      color: selectedButton === value ? "white" : "#182959",
-                      borderColor: "#182959",
-                    }}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
             </div>
 
             <div style={{ display: "flex", gap: "1rem" }}>
@@ -208,7 +213,149 @@ function ParentalLeave() {
             </div>
           </div>
 
-          {/* Table with updated colors */}
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+            {buttonRoutes.map(({ label, value, path }) => (
+              <Button
+                key={value}
+                variant={selectedButton === value ? "contained" : "outlined"}
+                onClick={() => {
+                  setSelectedButton(value);
+                  navigate(path);
+                }}
+                style={{
+                  backgroundColor: selectedButton === value ? "#182959" : "",
+                  color: selectedButton === value ? "white" : "#182959",
+                  borderColor: "#182959",
+                }}
+              >
+                {label}
+              </Button>
+            ))}
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+            <Filter
+              label="Company"
+              options={[
+                { label: "All Companies", value: "" },
+                ...companyOptions,
+              ]}
+              value={filters.company_name}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, company_name: val }));
+                setPage(1);
+              }}
+              placeholder="Company"
+            />
+
+            <Filter
+              label="Type Of Leave"
+              options={[
+                { label: "All Types Of Leave", value: "" },
+                ...typeOfLeaveOptions,
+              ]}
+              value={filters.type_of_leave}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, type_of_leave: val }));
+                setPage(1);
+              }}
+              placeholder="Type Of Leave"
+            />
+
+            <Filter
+              label="Status"
+              options={[{ label: "All Statuses", value: "" }, ...statusOptions]}
+              value={filters.status_id}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, status_id: val }));
+                setPage(1);
+              }}
+              placeholder="Status"
+            />
+          </Box>
+
+          {/* Filters */}
+          {/*}
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+            <Filter
+              label="Company"
+              options={[
+                { label: "All Companies", value: "" },
+                ...companyOptions,
+              ]}
+              value={filters.company_id}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, company_id: val }));
+                setPage(1);
+              }}
+              placeholder="Company"
+            />
+
+            <Filter
+              label="Gender"
+              options={[{ label: "All Genders", value: "" }, ...genderOptions]}
+              value={filters.gender}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, gender: val }));
+                setPage(1);
+              }}
+              placeholder="Gender"
+            />
+
+            <Filter
+              label="Position"
+              options={[
+                { label: "All Position", value: "" },
+                ...positionOptions,
+              ]}
+              value={filters.position_id}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, position_id: val }));
+                setPage(1);
+              }}
+              placeholder="Position"
+            />
+
+            <Filter
+              label="Employement Status"
+              options={[
+                { label: "All Employement Status", value: "" },
+                ...employementStatusOptions,
+              ]}
+              value={filters.employment_status}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, employment_status: val }));
+                setPage(1);
+              }}
+              placeholder="Employement Status"
+            />
+
+            <Filter
+              label="Employement Category"
+              options={[
+                { label: "All Employement Category", value: "" },
+                ...employementCategoryOptions,
+              ]}
+              value={filters.p_np}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, p_np: val }));
+                setPage(1);
+              }}
+              placeholder="Employement Category"
+            />
+            <Filter
+              label="Status"
+              options={[{ label: "All Statuses", value: "" }, ...statusOptions]}
+              value={filters.status_id}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, status_id: val }));
+                setPage(1);
+              }}
+              placeholder="Status"
+            />
+          </Box>*/}
+
+          {/* Table with updated colors 
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
@@ -258,7 +405,7 @@ function ParentalLeave() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {/* update */}{" "}
+             
                 {getCurrentPageData().map((row) => (
                   <TableRow key={row.employee_id} hover>
                     <TableCell>{row.employee_id}</TableCell>
@@ -272,15 +419,33 @@ function ParentalLeave() {
                     <TableCell>{row.employment_status}</TableCell>
                     <TableCell style={{ textAlign: "center" }}>
                       <IconButton size="small">
-                        {/* Action icon or logic goes here */}
+                        
                       </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
-          {/* Pagination with updated colors */}
+          </TableContainer>*/}
+
+          {/* Table */}
+          <Table
+            columns={columns}
+            rows={pagedData}
+            onSort={handleSort}
+            sortConfig={sortConfig}
+            actions={renderActions}
+            filters={{}} // No filters in table, handled above
+            onFilterChange={() => {}} // No-op
+            emptyMessage="No data available."
+          />
+
+          {/* Pagination */}
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <Pagination page={page} count={totalPages} onChange={setPage} />
+          </Box>
+
+          {/* Pagination with updated colors 
           <div
             style={{
               display: "flex",
@@ -338,7 +503,7 @@ function ParentalLeave() {
             >
               {">>"}
             </Button>
-          </div>
+          </div>*/}
 
           {/* Add Modal */}
           {isAddModalOpen && (
