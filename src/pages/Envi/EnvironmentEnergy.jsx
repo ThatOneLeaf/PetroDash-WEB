@@ -497,14 +497,14 @@
                   <ImportFileModal
                     title="Energy - Electricity"
                     downloadPath="environment/create_template/envi_electric_consumption"
-                    uploadPath="/energy/import"
+                    uploadPath="environment/bulk_upload_electric_consumption"
                     onClose={() => setIsImportModalOpen(false)} // or any close handler
                   />
               ) : (
                   <ImportFileModal
                     title="Energy - Diesel"
                     downloadPath="environment/create_template/envi_diesel_consumption"
-                    uploadPath="/energy/import"
+                    uploadPath="environment/bulk_upload_diesel_consumption"
                     onClose={() => setIsImportModalOpen(false)} // or any close handler
                   />       
               )}

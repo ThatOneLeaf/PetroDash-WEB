@@ -59,16 +59,23 @@ function ImportFileModal({
     }
 
     const formData = new FormData();
-    formData.append("file", selectedFile);
+    formData.append("file", selectedFile);  // 
 
     try {
-      await api.post(uploadPath, formData);
-      console.log("File uploaded successfully");
+      const response = await api.post(uploadPath, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      alert(response.data.message);
       onClose();
     } catch (error) {
       console.error("Error uploading file:", error);
+      alert(error?.response?.data?.detail || "Upload failed.");
     }
   };
+
 
   return (
     <Paper sx={{

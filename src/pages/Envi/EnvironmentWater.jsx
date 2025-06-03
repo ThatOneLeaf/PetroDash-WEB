@@ -352,7 +352,7 @@ function EnvironmentWater() {
                 <ImportFileModal
                   title="Water - Abstraction"
                   downloadPath="environment/create_template/envi_water_abstraction"
-                  uploadPath="/water/import"
+                  uploadPath="environment/bulk_upload_water_abstraction"
                   onClose={() => setIsImportModalOpen(false)} // or any close handler
                 />     
             )}
@@ -360,7 +360,7 @@ function EnvironmentWater() {
                 <ImportFileModal
                   title="Water - Discharged"
                   downloadPath="environment/create_template/envi_water_discharge"
-                  uploadPath="/water/import"
+                  uploadPath="environment/bulk_upload_water_discharge"
                   onClose={() => setIsImportModalOpen(false)} // or any close handler
                 />
             )}
@@ -368,7 +368,7 @@ function EnvironmentWater() {
                 <ImportFileModal
                   title="Water - Consumption"
                   downloadPath="environment/create_template/envi_water_consumption"
-                  uploadPath="/water/import"
+                  uploadPath="environment/bulk_upload_water_consumption"
                   onClose={() => setIsImportModalOpen(false)} // or any close handler
                 />
             )}
