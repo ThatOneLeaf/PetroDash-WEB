@@ -337,6 +337,8 @@ function Navbar({
             </button>
             <Btn color="#2E7D32" label="LOGIN" onClick={() => { setMobileMenuOpen(false); toggleModal(); }} />
           </div>
+          
+          <Btn color="green" label="LOGIN" onClick={toggleModal} />
 
           {isNavbarLogin && (
             <Modal onClose={toggleModal}>

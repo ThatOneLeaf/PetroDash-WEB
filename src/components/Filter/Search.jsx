@@ -73,32 +73,33 @@ const Search = ({ onSearch, suggestions = [] }) => {
         autoComplete="off"
         size="small"
         sx={{
-          width: 315,
+          width: 200,
           minWidth: 0,
-          height: 40, // Match Filter button height
+          height: 32,
           "& .MuiOutlinedInput-root": {
             borderRadius: 2,
             border: "1px solid #182959",
-            fontSize: 14,
+            fontSize: 13,
             background: "#fff",
             color: "#555",
-            height: 40, // Ensure input itself is 40px
-            minHeight: 40,
+            height: 32,
+            minHeight: 32,
             paddingTop: 0,
             paddingBottom: 0,
           },
           "& .MuiInputBase-input": {
-            height: "40px !important",
-            padding: "0 14px",
+            height: "32px !important",
+            padding: "0 10px",
             boxSizing: "border-box",
             display: "flex",
             alignItems: "center",
+            fontSize: 13,
           },
         }}
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
-              <SearchIcon sx={{ color: "#555" }} />
+              <SearchIcon sx={{ color: "#555", fontSize: 18 }} />
             </InputAdornment>
           ),
         }}
@@ -116,9 +117,10 @@ const Search = ({ onSearch, suggestions = [] }) => {
             sx={{
               mt: 1,
               borderRadius: 2,
-              maxHeight: 180,
+              maxHeight: 120,
               overflowY: "auto",
               p: 0,
+              minWidth: 160,
             }}
           >
             {/* List of suggestion items */}
@@ -129,18 +131,20 @@ const Search = ({ onSearch, suggestions = [] }) => {
                     key={idx}
                     onClick={() => handleSuggestionClick(s)}
                     sx={{
-                      fontSize: 16,
+                      fontSize: 13,
                       color: "#333",
+                      minHeight: 28,
+                      px: 1.5,
                     }}
                   >
-                    <ListItemText primary={s} />
+                    <ListItemText primary={s} primaryTypographyProps={{ fontSize: 13 }} />
                   </ListItemButton>
                 ))}
               </List>
             ) : (
               // Show "No data" prompt if no suggestions and query is not empty
               !!query && (
-                <Box sx={{ p: 2, color: "#888", fontSize: 16, textAlign: "center" }}>
+                <Box sx={{ p: 1, color: "#888", fontSize: 13, textAlign: "center" }}>
                   No data for '{query}'
                 </Box>
               )

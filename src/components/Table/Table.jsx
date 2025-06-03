@@ -9,6 +9,7 @@ import {
   Paper,
   Box,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
@@ -27,6 +28,29 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 // height: string or number, fixed height for the table container (optional)
 // maxHeight: string or number, maximum height for the table container (optional)
 // minHeight: string or number, minimum height for the table container (optional)
+
+// Improved abbreviation: skip stopwords, ignore symbols/parentheses, keep numbers, max 4 chars
+const STOPWORDS = ["of", "the", "and", "for", "to", "in", "on", "at", "by", "with", "from", "as", "an", "a"];
+const abbreviateHeader = (label) => {
+  // Remove content in parentheses and trim
+  let cleanLabel = label.replace(/\(.*?\)/g, '').trim();
+  // Remove non-alphanumeric except spaces
+  cleanLabel = cleanLabel.replace(/[^\w\s\d]/g, '');
+  const words = cleanLabel.split(/\s+/).filter(Boolean);
+  if (words.length > 2) {
+    // Filter out stopwords, but always keep at least two words
+    const filtered = words.filter(w => !STOPWORDS.includes(w.toLowerCase()));
+    const useWords = filtered.length >= 2 ? filtered : words;
+    // If a word is a number, keep it as is, else take first letter
+    let abbr = useWords.map(w =>
+      /^\d+$/.test(w) ? w : w[0].toUpperCase()
+    ).join('');
+    // Limit abbreviation to 2-4 chars for readability
+    if (abbr.length > 4) abbr = abbr.slice(0, 4);
+    return abbr;
+  }
+  return label;
+};
 
 const Table = ({
   columns,
@@ -145,13 +169,13 @@ const Table = ({
                 "& th": {
                   color: "#fff",
                   fontWeight: 700,
-                  fontSize: 14,
+                  fontSize: 16,
                   borderBottom: "none",
                   whiteSpace: "normal",
                   wordBreak: "normal",
                   overflowWrap: "break-word",
-                  px: 1,
-                  py: 1,
+                  px: 2,
+                  py: 2,
                   position: "sticky",
                   top: 0,
                   background: "#182959",
@@ -161,39 +185,79 @@ const Table = ({
               }}
             >
               {/* Render column headers */}
-              {columns.map((col) => (
-                // Inside Table.js, in the TableCell within displayRows.map:
-                <TableCell
-                  key={col.key}
-                  align="center"
-                  onClick={() => handleSort(col.key)}
-                  sx={{
-                    cursor: "pointer",
-                    userSelect: "none",
-                    "&:hover": { background: "#22347a" },
-                    transition: "background 0.15s",
-                    fontSize: 15,
-                    px: 2,
-                    py: 1.5,
-                    borderBottom: "1px solid #f0f1f5",
-                    textAlign: "center",
-                    whiteSpace: "normal",
-                    wordBreak: "normal",
-                    overflowWrap: "break-word",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, justifyContent: "center" }}>
-                    {col.label}
-                    {renderSortIcon(col.key)}
-                  </Box>
-                </TableCell>
-              ))}
+              {columns.map((col) => {
+                const words = col.label.replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
+                const isAbbreviated = words.length > 2;
+                const headerContent = isAbbreviated
+                  ? (
+                    <Tooltip
+                      title={<span style={{ fontSize: 15, fontWeight: 500 }}>{col.label}</span>}
+                      arrow
+                      enterDelay={100}
+                      leaveDelay={50}
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            bgcolor: "#22347a",
+                            color: "#fff",
+                            fontSize: 15,
+                            fontWeight: 500,
+                            borderRadius: 1,
+                            boxShadow: 3,
+                            px: 2,
+                            py: 1,
+                          }
+                        },
+                        arrow: {
+                          sx: {
+                            color: "#22347a"
+                          }
+                        }
+                      }}
+                    >
+                      <span style={{
+                        letterSpacing: 1,
+                        fontWeight: 700,
+                        display: "inline-block",
+                        minWidth: 32,
+                        textAlign: "center"
+                      }}>
+                        {abbreviateHeader(col.label)}
+                      </span>
+                    </Tooltip>
+                  )
+                  : col.label;
+                return (
+                  <TableCell
+                    key={col.key}
+                    align="center"
+                    onClick={() => handleSort(col.key)}
+                    sx={{
+                      cursor: "pointer",
+                      userSelect: "none",
+                      "&:hover": { background: "#22347a" },
+                      transition: "background 0.15s",
+                      fontSize: 15,
+                      px: 2,
+                      py: 1.5,
+                      borderBottom: "1px solid #f0f1f5",
+                      textAlign: "center",
+                      whiteSpace: "normal",
+                      wordBreak: "normal",
+                      overflowWrap: "break-word",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, justifyContent: "center" }}>
+                      {headerContent}
+                      {renderSortIcon(col.key)}
+                    </Box>
+                  </TableCell>
+                );
+              })}
               {/* Render Action header if actions prop is provided */}
               {actions && (
-               // Inside Table.js, in the TableHead's TableCell for actions:
                 <TableCell
                   align="center"
-                  // Remove width: 100 here if you suspect it's causing issues
                   sx={{
                     fontWeight: 700,
                     width: 100,
@@ -236,7 +300,7 @@ const Table = ({
                       key={col.key}
                       align="center"
                       sx={{
-                        fontSize: 12,
+                        fontSize: 15,
                         px: 2,
                         py: 1.5,
                         borderBottom: "1px solid #f0f1f5",

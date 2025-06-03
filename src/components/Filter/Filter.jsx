@@ -101,19 +101,19 @@ const Filter = ({
         variant="outlined"
         color="inherit"
         onClick={handleToggle}
-        endIcon={open ? <ArrowDropUpIcon sx={{ color: "#000" }} /> : <ArrowDropDownIcon sx={{ color: "#000" }} />}
+        endIcon={open ? <ArrowDropUpIcon sx={{ color: "#000", fontSize: 18 }} /> : <ArrowDropDownIcon sx={{ color: "#000", fontSize: 18 }} />}
         sx={{
           borderRadius: 2,
-          fontWeight: 600,
-          fontSize: 17,
-          px: 2.5,
+          fontWeight: 500,
+          fontSize: 14,
+          px: 1.5,
           py: 0,
           color: "#000",
           background: "#f7f7f7",
           borderColor: "#e0e0e0",
           boxShadow: "0 2px 8px 0 rgba(0,0,0,0.03)",
-          height: 42,
-          minHeight: 42,
+          height: 32,
+          minHeight: 32,
           textAlign: "left",
           justifyContent: "flex-start",
           alignItems: "center",
@@ -130,8 +130,8 @@ const Filter = ({
       >
         {/* Show selected label(s) or fallback to label/placeholder */}
         {selectedLabels
-          ? <span style={{ color: "#000", fontWeight: 600 }}>{selectedLabels}</span>
-          : <span style={{ fontWeight: 500, color: "#888" }}>{placeholder || label}</span>
+          ? <span style={{ color: "#000", fontWeight: 500, fontSize: 14 }}>{selectedLabels}</span>
+          : <span style={{ fontWeight: 400, color: "#888", fontSize: 13 }}>{placeholder || label}</span>
         }
       </Button>
       {/* Dropdown popper for options */}
@@ -139,16 +139,16 @@ const Filter = ({
         open={open}
         anchorEl={anchorRef.current}
         placement="bottom-start"
-        style={{ zIndex: 1300, minWidth: 240 }}
+        style={{ zIndex: 1300, minWidth: 180 }}
       >
         <ClickAwayListener onClickAway={handleClose}>
           <Paper
             elevation={6}
             sx={{
               mt: 1,
-              borderRadius: 3,
+              borderRadius: 2,
               p: 0,
-              minWidth: 240,
+              minWidth: 180,
               background: "#fff",
               boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
               border: "1px solid #e0e0e0",
@@ -159,16 +159,17 @@ const Filter = ({
               ref={listRef}
               role="listbox"
               sx={{
-                py: 1,
-                maxHeight: 320,
+                py: 0.5,
+                maxHeight: 240,
                 overflowY: "auto",
                 "& .MuiListItemButton-root": {
-                  borderRadius: 2,
-                  mx: 1,
-                  my: 0.5,
+                  borderRadius: 1.5,
+                  mx: 0.5,
+                  my: 0.25,
                   color: "#000",
-                  fontWeight: 500,
-                  fontSize: 16,
+                  fontWeight: 400,
+                  fontSize: 13,
+                  minHeight: 28,
                   transition: "background 0.15s",
                   "&.Mui-selected, &:hover": {
                     background: "#f0f0f0",
@@ -177,18 +178,21 @@ const Filter = ({
                 },
                 "& .MuiCheckbox-root": {
                   color: "#000",
+                  p: 0.5,
+                  mr: 1,
+                  '& .MuiSvgIcon-root': { fontSize: 16 }
                 },
                 "& .MuiListItemText-root": {
                   color: "#000",
-                  fontWeight: 500,
-                  fontSize: 16,
+                  fontWeight: 400,
+                  fontSize: 13,
                 },
               }}
             >
               {/* Show message if no options */}
               {options.length === 0 && (
                 <ListItem>
-                  <ListItemText primary="No options" sx={{ color: "#888", textAlign: "center" }} />
+                  <ListItemText primary="No options" sx={{ color: "#888", textAlign: "center", fontSize: 13 }} />
                 </ListItem>
               )}
               {/* Render each option */}
@@ -209,7 +213,7 @@ const Filter = ({
                         tabIndex={-1}
                         disableRipple
                         size="small"
-                        sx={{ mr: 1, color: "#000" }}
+                        sx={{ mr: 1, color: "#000", p: 0.5 }}
                       />
                     )}
                     <ListItemText primary={opt.label} />
