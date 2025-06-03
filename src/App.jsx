@@ -42,7 +42,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
             <Route path="/social/help" element={<CSR />} />
-            <Route path="/social-hr" element={<HR />} />
+            <Route path="/social/hr" element={<HR />} />
             <Route path="/energy/power-generation" element={<Energy />} />
           </Routes>
         </main>
