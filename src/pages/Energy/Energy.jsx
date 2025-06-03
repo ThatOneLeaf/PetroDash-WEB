@@ -21,7 +21,6 @@ import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter"; 
 import StatusChip from "../../components/StatusChip";
 
-
 function Energy() {
   const [data, setData] = useState([]);
   const [startDate, setStartDate] = useState(null);
@@ -50,7 +49,7 @@ function Energy() {
 
       const formattedData = records.map((item) => ({
         energyId: item.energy_id,
-        powerPlant: item.site_name || item.power_plant_id,
+        powerPlant: item.power_plant_id,
         companyName: item.company_name,
         generationSource: item.generation_source,
         province: item.province || "",
@@ -70,22 +69,23 @@ function Energy() {
     fetchEnergyData();
   }, []);
 
-  // Build unique options for filters
-  const companyOptions = Array.from(
-    new Set(data.map((item) => item.companyName))
-  ).map((val) => ({ label: val, value: val }));
-  const powerPlantOptions = Array.from(
-    new Set(data.map((item) => item.powerPlant))
-  ).map((val) => ({ label: val, value: val }));
-  const generationSourceOptions = Array.from(
-    new Set(data.map((item) => item.generationSource))
+  // Helper to ensure unique non-empty sorted options
+  const generateOptions = (items) => {
+    return Array.from(new Set(items.filter(Boolean))).sort().map((val) => ({
+      label: val,
+      value: val,
+    }));
+  };
+
+  const companyOptions = generateOptions(data.map((item) => item.companyName));
+  const powerPlantOptions = generateOptions(data.map((item) => item.powerPlant));
+  const generationSourceOptions = generateOptions(
+    data.map((item) => item.generationSource)
   ).map((val) => ({
-    label: val.charAt(0).toUpperCase() + val.slice(1),
-    value: val,
+    label: val.label.charAt(0).toUpperCase() + val.label.slice(1),
+    value: val.value,
   }));
-  const provinceOptions = Array.from(
-    new Set(data.map((item) => item.province))
-  ).map((val) => ({ label: val, value: val }));
+  const provinceOptions = generateOptions(data.map((item) => item.province));
   const statusOptions = [
     { label: "Pending", value: "PND" },
     { label: "Head Approved", value: "HAP" },
@@ -94,7 +94,6 @@ function Energy() {
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
-  // Filter data by date and all filters
   const filteredData = data.filter((item) => {
     const itemDate = dayjs(item.date);
     if (startDate && itemDate.isBefore(dayjs(startDate), "day")) return false;
@@ -287,7 +286,7 @@ function Energy() {
             </LocalizationProvider>
           </Box>
 
-          {/* Table or fallback */}
+          {/* Table */}
           {paginatedData.length === 0 ? (
             <Typography align="center" sx={{ py: 5 }}>
               No records found for the selected filters.

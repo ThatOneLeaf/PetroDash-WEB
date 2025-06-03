@@ -145,13 +145,13 @@ const Table = ({
                 "& th": {
                   color: "#fff",
                   fontWeight: 700,
-                  fontSize: 16,
+                  fontSize: 14,
                   borderBottom: "none",
                   whiteSpace: "normal",
                   wordBreak: "normal",
                   overflowWrap: "break-word",
-                  px: 2,
-                  py: 2,
+                  px: 1,
+                  py: 1,
                   position: "sticky",
                   top: 0,
                   background: "#182959",
@@ -236,7 +236,7 @@ const Table = ({
                       key={col.key}
                       align="center"
                       sx={{
-                        fontSize: 15,
+                        fontSize: 12,
                         px: 2,
                         py: 1.5,
                         borderBottom: "1px solid #f0f1f5",

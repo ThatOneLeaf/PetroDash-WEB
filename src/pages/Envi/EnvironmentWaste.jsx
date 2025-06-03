@@ -23,11 +23,14 @@ import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddEnvironmentEnergyModal from '../../envi_components/AddEnergyElectricityModal';
+import AddWasteHazardGenModal from '../../envi_components/AddWasteHazardGenModal';
+import AddWasteHazardDisModal from '../../envi_components/AddWasteHazardDisModal';
+import AddWasteNonHazGenModal from '../../envi_components/AddWasteNonHazGenModal';
 import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
+import { Add } from '@mui/icons-material';
 
 function EnvironmentWaste() {
   const [data, setData] = useState([]);
@@ -35,7 +38,7 @@ function EnvironmentWaste() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selected, setSelected] = useState('Hazard Waste Generated'); // Default selection
+  const [selected, setSelected] = useState('Hazard Generated'); // Default selection
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -50,13 +53,13 @@ function EnvironmentWaste() {
   });
 
   useEffect(() => {
-    if (selected === 'Hazard Waste Generated') {
+    if (selected === 'Hazard Generated') {
       fetchHazardGenData();
     }
-    if (selected === 'Hazard Waste Disposed') {
+    if (selected === 'Hazard Disposed') {
       fetchHazardDisData();
     }
-    if (selected === 'Non-Hazard Waste') {
+    if (selected === 'Non-Hazard Generated') {
       fetchNonHazardsData();
     }
   }, [selected]);
@@ -261,7 +264,7 @@ function EnvironmentWaste() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-          {['Hazard Waste Generated','Hazard Waste Disposed', 'Non-Hazard Waste'].map((type) => (
+          {['Hazard Generated', 'Hazard Disposed', 'Non-Hazard Generated'].map((type) => (
             <Button
               key={type}
               onClick={() => setSelected(type)}
@@ -290,7 +293,7 @@ function EnvironmentWaste() {
           rows={getCurrentPageData()}
           onSort={handleSort}
           sortConfig={sortConfig}
-          emptyMessage="No energy data found."
+          emptyMessage="No waste data found."
           maxHeight="69vh"
           minHeight="300px"
           actions={(row) => (
@@ -311,14 +314,32 @@ function EnvironmentWaste() {
         </Box>
 
         {isAddModalOpen && (
-          <Overlay onClose={() => setIsAddModalOpen(false)}>
-            <AddEnvironmentEnergyModal 
+        <Overlay onClose={() => setIsAddModalOpen(false)}>
+          {selected === 'Hazard Generated' && (
+            <AddWasteHazardGenModal 
               onClose={() => {
                 setIsAddModalOpen(false);
-                fetchExpendituresData(); // Refresh data after adding
+                fetchHazardGenData(); 
               }} 
             />
-          </Overlay>
+          )}
+          {selected === 'Hazard Disposed' && (
+            <AddWasteHazardDisModal 
+              onClose={() => {
+                setIsAddModalOpen(false);
+                fetchHazardDisData();
+              }} 
+            />
+          )}
+          {selected === 'Non-Hazard Generated' && (
+            <AddWasteNonHazGenModal 
+              onClose={() => {
+                setIsAddModalOpen(false);
+                fetchNonHazardsData();
+              }} 
+            />
+          )}
+        </Overlay>
         )}
       </Container>
     </Box>

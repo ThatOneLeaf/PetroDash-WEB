@@ -19,18 +19,9 @@ function getPages(page, count) {
   return pages;
 }
 
-/**
- * Pagination component
- * Props:
- * - page: current page number (1-based)
- * - count: total number of pages
- * - onChange: function to call with new page number
- */
 export default function Pagination({ page, count, onChange }) {
-  // Get the array of page numbers and ellipsis to display
   const pages = getPages(page, count);
 
-  // Style for navigation icons (arrows)
   const iconStyle = {
     fontSize: 22,
     color: "#231815",
@@ -70,6 +61,7 @@ export default function Pagination({ page, count, onChange }) {
           &laquo;
         </span>
       </Button>
+
       {/* Previous page button */}
       <Button
         variant="outlined"
@@ -91,12 +83,12 @@ export default function Pagination({ page, count, onChange }) {
           &lsaquo;
         </span>
       </Button>
-      {/* Page number buttons and ellipsis */}
+
+      {/* Page numbers and ellipses */}
       {pages.map((p, idx) =>
         p === "..." ? (
-          // Ellipsis display (not clickable)
           <Box
-            key={idx}
+            key={`ellipsis-${idx}`}
             sx={{
               minWidth: 40,
               height: 40,
@@ -117,9 +109,8 @@ export default function Pagination({ page, count, onChange }) {
             ...
           </Box>
         ) : (
-          // Page number button
           <Button
-            key={p}
+            key={`page-${p}-${idx}`}
             variant={p === page ? "contained" : "outlined"}
             sx={{
               minWidth: 40,
@@ -152,6 +143,7 @@ export default function Pagination({ page, count, onChange }) {
           </Button>
         )
       )}
+
       {/* Next page button */}
       <Button
         variant="outlined"
@@ -173,6 +165,7 @@ export default function Pagination({ page, count, onChange }) {
           &rsaquo;
         </span>
       </Button>
+
       {/* Last page button */}
       <Button
         variant="outlined"

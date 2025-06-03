@@ -1,25 +1,19 @@
 import { useState, useEffect } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  IconButton,
-  Box,
-} from "@mui/material";
+import { Button, Box } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import api from "../../services/api";
 import Overlay from "../../components/modal";
-import AddEmployeeModal from "../../components/AddEmployeeModal";
-import ImportEmployabilityModal from "../../components/ImportEmployabilityModal";
+import AddEmployeeModal from "../../components/hr_components/AddEmployeeModal";
+import ImportHRModal from "../../components/hr_components/ImportHRModal";
 import Sidebar from "../../components/Sidebar";
+import Table from "../../components/Table/Table";
+import Filter from "../../components/Filter/Filter";
+import Search from "../../components/Filter/Search";
+import Pagination from "../../components/Pagination/pagination";
+import StatusChip from "../../components/StatusChip";
+
+import { useNavigate } from "react-router-dom";
 
 function Demographics() {
   const [data, setData] = useState([]);
@@ -28,7 +22,12 @@ function Demographics() {
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   const [selectedButton, setSelectedButton] = useState("button1");
+
+  const [filters, setFilters] = useState({});
+  const [search, setSearch] = useState("");
+
   const [sortConfig, setSortConfig] = useState({
     key: "year",
     direction: "desc",
@@ -36,28 +35,88 @@ function Demographics() {
 
   const rowsPerPage = 10;
 
-  //WAITING FOR API
-  /*
+  //INIITIALIZE FILTER INPUTS
+  const companyOptions = Array.from(
+    new Set(data.map((item) => item.company_id))
+  ).map((val) => ({ label: val, value: val }));
+  const genderOptions = Array.from(
+    new Set(data.map((item) => item.gender))
+  ).map((val) => ({ label: val, value: val }));
+  const positionOptions = Array.from(
+    new Set(data.map((item) => item.position_id))
+  ).map((val) => ({
+    label: val,
+    value: val,
+  }));
+  const employementCategoryOptions = Array.from(
+    new Set(data.map((item) => item.p_np))
+  ).map((val) => ({
+    label: val,
+    value: val,
+  }));
+  const employementStatusOptions = Array.from(
+    new Set(data.map((item) => item.employment_status))
+  ).map((val) => ({ label: val, value: val }));
+  const statusOptions = [
+    { label: "Pending", value: "PND" },
+    { label: "Head Approved", value: "HAP" },
+    { label: "Site Approved", value: "SAP" },
+    { label: "For Revision (Site)", value: "FRS" },
+    { label: "For Revision (Head)", value: "FRH" },
+  ];
+
   useEffect(() => {
-    fetchEconomicData(); //change
-  }, []); // Remove sortConfig dependency
+    fetchEmployabilityData();
+  }, []);
 
-
-  //update
   const fetchEmployabilityData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/economic/value-generated-data");
-      console.log("Data from API:", response.data);
+      const response = await api.get("hr/employability_records_by_status");
+      console.log("Employability Data from API:", response.data);
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching economic data:", error);
+      console.error("Error fetching Employability data:", error);
       setError("Error fetching data");
     } finally {
       setLoading(false);
     }
-  };*/
+  };
 
+  const navigate = useNavigate();
+
+  const buttonRoutes = [
+    { label: "Employability", value: "button1", path: "/social/hr" },
+    {
+      label: "Parental Leave",
+      value: "button2",
+      path: "/social/hr/parentalleave",
+    },
+    {
+      label: "Safety Work Data",
+      value: "button3",
+      path: "/social/hr/safetyworkdata",
+    },
+    { label: "Training", value: "button4", path: "/social/hr/training" },
+    { label: "OSH", value: "button5", path: "/osh" },
+  ];
+
+  // Table columns config
+  const columns = [
+    { key: "company_id", label: "Company ID" },
+    { key: "employee_id", label: "Employee ID" },
+    { key: "gender", label: "Gender" },
+    { key: "position_id", label: "Position" },
+    { key: "p_np", label: "Employee Category" },
+    { key: "employment_status", label: "Employee Status" },
+    {
+      key: "status_id",
+      label: "Status",
+      render: (val) => <StatusChip status={val} />,
+    },
+  ];
+
+  // Sorting logic
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
       key,
@@ -68,47 +127,47 @@ function Demographics() {
     }));
   };
 
-  const renderSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === "asc" ? (
-      <ArrowUpwardIcon fontSize="small" />
-    ) : (
-      <ArrowDownwardIcon fontSize="small" />
-    );
-  };
-
-  // Sort data locally
-  const getSortedData = () => {
-    const sortedData = [...data].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key])
-        return sortConfig.direction === "asc" ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key])
-        return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
+  const filteredData = data
+    .filter((row) => {
+      // Filter
+      return Object.entries(filters).every(([key, value]) => {
+        if (value == null || value.length === 0) return true;
+        if (Array.isArray(value)) return value.includes(row[key]);
+        return row[key] === value;
+      });
+    })
+    .filter((row) => {
+      if (!search) return true;
+      const searchStr = search.toLowerCase();
+      return Object.values(row).some((val) =>
+        String(val).toLowerCase().includes(searchStr)
+      );
     });
-    return sortedData;
-  };
 
-  // Get current page data from sorted data
-  const getCurrentPageData = () => {
-    const sortedData = getSortedData();
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return sortedData.slice(start, end);
-  };
+  // Sorting
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key])
+      return sortConfig.direction === "asc" ? -1 : 1;
+    if (a[sortConfig.key] > b[sortConfig.key])
+      return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
 
-  // Calculate total pages based on data length
-  const totalPages = Math.ceil(data.length / rowsPerPage);
+  // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
+  const pagedData = filteredData.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
 
-  // Handle page changes
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
-  };
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [pagedData.length, rowsPerPage]);
 
-  //if (loading) return <div>Loading...</div>; // UN COMMENT
-  //if (error) return <div>{error}</div>;
+  const renderActions = (row) => <></>;
+
+  if (loading) return <div>Loading...</div>; // UN COMMENT
+  if (error) return <div>{error}</div>;
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -124,44 +183,20 @@ function Demographics() {
             }}
           >
             <div>
-              <h1
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                REPOSITORY
-              </h1>
-              <h2 style={{ fontSize: "2rem", color: "#182959" }}>
-                Social - Human Resources
-              </h2>
-
-              <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
-                {[
-                  { label: "Employability", value: "button1" },
-                  { label: "Parental Leave", value: "button2" },
-                  { label: "Safety", value: "button3" },
-                  { label: "Training", value: "button4" },
-                  { label: "OSH", value: "button5" },
-                ].map(({ label, value }) => (
-                  <Button
-                    key={value}
-                    variant={
-                      selectedButton === value ? "contained" : "outlined"
-                    }
-                    onClick={() => setSelectedButton(value)}
-                    style={{
-                      backgroundColor:
-                        selectedButton === value ? "#182959" : "",
-                      color: selectedButton === value ? "white" : "#182959",
-                      borderColor: "#182959",
-                    }}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
+              <Box>
+                <h1
+                  style={{
+                    fontSize: "1.5rem",
+                    fontWeight: "bold",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  REPOSITORY
+                </h1>
+                <h2 style={{ fontSize: "2rem", color: "#182959" }}>
+                  Social - Human Resources
+                </h2>
+              </Box>
             </div>
 
             <div style={{ display: "flex", gap: "1rem" }}>
@@ -190,138 +225,122 @@ function Demographics() {
             </div>
           </div>
 
-          {/* Table with updated colors */}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow style={{ backgroundColor: "#182959" }}>
-                  {[
-                    { key: "companyId", label: "Company ID" },
-                    { key: "employeeId", label: "Employee ID" },
-                    { key: "gender", label: "Gender" },
-                    { key: "position", label: "Position" },
-                    { key: "employeeCategory", label: "Employee Category" },
-                    { key: "employeeStatus", label: "Employee Status" },
-                    { key: "approvalStatus", label: "Approval Status" },
-                  ].map(({ key, label }) => (
-                    <TableCell
-                      key={key}
-                      onClick={() => handleSort(key)}
-                      style={{
-                        color: "white",
-                        cursor: "pointer",
-                        padding: "16px",
-                        fontWeight: "bold",
-                        whiteSpace: "nowrap",
-                        userSelect: "none",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        {label}
-                        {renderSortIcon(key)}
-                      </div>
-                    </TableCell>
-                  ))}
-                  <TableCell
-                    style={{
-                      color: "white",
-                      padding: "16px",
-                      fontWeight: "bold",
-                      width: "100px",
-                    }}
-                  >
-                    Action
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {/* update */}{" "}
-                {getCurrentPageData().map((row) => (
-                  <TableRow key={row.employee_id} hover>
-                    <TableCell>{row.employee_id}</TableCell>
-                    <TableCell>{row.gender}</TableCell>
-                    <TableCell>
-                      {new Date(row.birthdate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{row.position_id}</TableCell>
-                    <TableCell>{row.p_np}</TableCell>
-                    <TableCell>{row.company_id}</TableCell>
-                    <TableCell>{row.employment_status}</TableCell>
-                    <TableCell style={{ textAlign: "center" }}>
-                      <IconButton size="small">
-                        {/* Action icon or logic goes here */}
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {/* Pagination with updated colors */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              marginTop: "2rem",
-              gap: "0.5rem",
-            }}
-          >
-            <Button
-              onClick={() => handlePageChange(1)}
-              variant="outlined"
-              size="small"
-              disabled={page === 1}
-            >
-              {"<<"}
-            </Button>
-            <Button
-              onClick={() => handlePageChange(page - 1)}
-              variant="outlined"
-              size="small"
-              disabled={page === 1}
-            >
-              {"<"}
-            </Button>
-
-            {[...Array(totalPages)].map((_, index) => (
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+            {buttonRoutes.map(({ label, value, path }) => (
               <Button
-                key={index + 1}
-                variant={page === index + 1 ? "contained" : "outlined"}
-                size="small"
-                onClick={() => handlePageChange(index + 1)}
+                key={value}
+                variant={selectedButton === value ? "contained" : "outlined"}
+                onClick={() => {
+                  setSelectedButton(value);
+                  navigate(path);
+                }}
                 style={{
-                  minWidth: "40px",
-                  backgroundColor:
-                    page === index + 1 ? "#182959" : "transparent",
+                  backgroundColor: selectedButton === value ? "#182959" : "",
+                  color: selectedButton === value ? "white" : "#182959",
+                  borderColor: "#182959",
                 }}
               >
-                {index + 1}
+                {label}
               </Button>
             ))}
+          </Box>
 
-            <Button
-              onClick={() => handlePageChange(page + 1)}
-              variant="outlined"
-              size="small"
-              disabled={page === totalPages}
-            >
-              {">"}
-            </Button>
-            <Button
-              onClick={() => handlePageChange(totalPages)}
-              variant="outlined"
-              size="small"
-              disabled={page === totalPages}
-            >
-              {">>"}
-            </Button>
-          </div>
+          {/* Filters */}
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+            <Filter
+              label="Company"
+              options={[
+                { label: "All Companies", value: "" },
+                ...companyOptions,
+              ]}
+              value={filters.company_id}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, company_id: val }));
+                setPage(1);
+              }}
+              placeholder="Company"
+            />
+
+            <Filter
+              label="Gender"
+              options={[{ label: "All Genders", value: "" }, ...genderOptions]}
+              value={filters.gender}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, gender: val }));
+                setPage(1);
+              }}
+              placeholder="Gender"
+            />
+
+            <Filter
+              label="Position"
+              options={[
+                { label: "All Position", value: "" },
+                ...positionOptions,
+              ]}
+              value={filters.position_id}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, position_id: val }));
+                setPage(1);
+              }}
+              placeholder="Position"
+            />
+
+            <Filter
+              label="Employement Status"
+              options={[
+                { label: "All Employement Status", value: "" },
+                ...employementStatusOptions,
+              ]}
+              value={filters.employment_status}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, employment_status: val }));
+                setPage(1);
+              }}
+              placeholder="Employement Status"
+            />
+
+            <Filter
+              label="Employement Category"
+              options={[
+                { label: "All Employement Category", value: "" },
+                ...employementCategoryOptions,
+              ]}
+              value={filters.p_np}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, p_np: val }));
+                setPage(1);
+              }}
+              placeholder="Employement Category"
+            />
+            <Filter
+              label="Status"
+              options={[{ label: "All Statuses", value: "" }, ...statusOptions]}
+              value={filters.status_id}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, status_id: val }));
+                setPage(1);
+              }}
+              placeholder="Status"
+            />
+          </Box>
+
+          {/* Table */}
+          <Table
+            columns={columns}
+            rows={pagedData}
+            onSort={handleSort}
+            sortConfig={sortConfig}
+            actions={renderActions}
+            filters={{}} // No filters in table, handled above
+            onFilterChange={() => {}} // No-op
+            emptyMessage="No data available."
+          />
+
+          {/* Pagination */}
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <Pagination page={page} count={totalPages} onChange={setPage} />
+          </Box>
 
           {/* Add Modal */}
           {isAddModalOpen && (
@@ -335,9 +354,11 @@ function Demographics() {
           )}
 
           {/* Add Import Modal */}
+
           {isImportModalOpen && (
             <Overlay onClose={() => setIsImportModalOpen(false)}>
-              <ImportEmployabilityModal
+              <ImportHRModal
+                context="employability"
                 onClose={() => {
                   setIsImportModalOpen(false);
                 }}
