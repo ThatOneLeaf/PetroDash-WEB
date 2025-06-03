@@ -103,17 +103,16 @@ const Filter = ({
         onClick={handleToggle}
         endIcon={open ? <ArrowDropUpIcon sx={{ color: "#000", fontSize: 18 }} /> : <ArrowDropDownIcon sx={{ color: "#000", fontSize: 18 }} />}
         sx={{
-          borderRadius: 2,
+          borderRadius: 100,
           fontWeight: 500,
           fontSize: 14,
           px: 1.5,
           py: 0,
           color: "#000",
-          background: "#f7f7f7",
-          borderColor: "#e0e0e0",
+          border: "1.5px solid #182959",
           boxShadow: "0 2px 8px 0 rgba(0,0,0,0.03)",
-          height: 32,
-          minHeight: 32,
+          height: 40,
+          minHeight: 40,
           textAlign: "left",
           justifyContent: "flex-start",
           alignItems: "center",
