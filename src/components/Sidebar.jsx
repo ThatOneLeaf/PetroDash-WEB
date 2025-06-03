@@ -304,13 +304,14 @@ function SideBar({ collapsed: collapsedProp = false }) {
                 {!collapsed && envOpen && (
                   <Box
                     sx={{
-                      pl: 7,
+                      pl: 4,
                       pr: 2,
                       py: 1,
                       bgcolor: "#fff",
                       boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)", // subtle shadow
                       display: "flex",
                       flexDirection: "column",
+                      alignItems: "flex-start", // added for left alignment
                       gap: 1,
                       mb: 1,
                       borderRadius: 2, // rounded corners
@@ -326,6 +327,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         style={{
                           textDecoration: "none",
                           color: "#1a3365",
+                          width: "100%", // ensure full width for left alignment
                         }}
                         onClick={() => setEnvOpen(false)}
                       >
@@ -348,6 +350,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                             },
                             fontSize: 16,
                             letterSpacing: 0.2,
+                            textAlign: "left", // ensure text is left aligned
+                            width: "100%", // ensure full width for left alignment
                           }}
                         >
                           {sub.label}
@@ -458,13 +462,14 @@ function SideBar({ collapsed: collapsedProp = false }) {
                 {!collapsed && socialOpen && (
                   <Box
                     sx={{
-                      pl: 7,
+                      pl: 4, // changed from pl: 7 to pl: 4 for left alignment
                       pr: 2,
                       py: 1,
                       bgcolor: "#fff",
                       boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)",
                       display: "flex",
                       flexDirection: "column",
+                      alignItems: "flex-start", // added for left alignment
                       gap: 1,
                       mb: 1,
                       borderRadius: 2,
@@ -480,6 +485,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         style={{
                           textDecoration: "none",
                           color: "#1a3365",
+                          width: "100%", // ensure full width for left alignment
                         }}
                         onClick={() => setSocialOpen(false)}
                       >
@@ -502,6 +508,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                             },
                             fontSize: 16,
                             letterSpacing: 0.2,
+                            textAlign: "left", // ensure text is left aligned
+                            width: "100%", // ensure full width for left alignment
                           }}
                         >
                           {sub.label}
