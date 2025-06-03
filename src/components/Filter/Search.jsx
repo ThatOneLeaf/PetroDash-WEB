@@ -104,7 +104,7 @@ const Search = ({ onSearch, suggestions = [] }) => {
       />
       {/* Suggestions dropdown using Popper */}
       <Popper
-        open={showSuggestions && filteredSuggestions.length > 0}
+        open={showSuggestions && (filteredSuggestions.length > 0 || (!!query && filteredSuggestions.length === 0))}
         anchorEl={anchorRef.current}
         placement="bottom-start"
         style={{ zIndex: 1300, width: anchorRef.current ? anchorRef.current.offsetWidth : undefined }}
@@ -121,20 +121,29 @@ const Search = ({ onSearch, suggestions = [] }) => {
             }}
           >
             {/* List of suggestion items */}
-            <List dense disablePadding>
-              {filteredSuggestions.map((s, idx) => (
-                <ListItemButton
-                  key={idx}
-                  onClick={() => handleSuggestionClick(s)}
-                  sx={{
-                    fontSize: 16,
-                    color: "#333",
-                  }}
-                >
-                  <ListItemText primary={s} />
-                </ListItemButton>
-              ))}
-            </List>
+            {filteredSuggestions.length > 0 ? (
+              <List dense disablePadding>
+                {filteredSuggestions.map((s, idx) => (
+                  <ListItemButton
+                    key={idx}
+                    onClick={() => handleSuggestionClick(s)}
+                    sx={{
+                      fontSize: 16,
+                      color: "#333",
+                    }}
+                  >
+                    <ListItemText primary={s} />
+                  </ListItemButton>
+                ))}
+              </List>
+            ) : (
+              // Show "No data" prompt if no suggestions and query is not empty
+              !!query && (
+                <Box sx={{ p: 2, color: "#888", fontSize: 16, textAlign: "center" }}>
+                  No data for '{query}'
+                </Box>
+              )
+            )}
           </Paper>
         </ClickAwayListener>
       </Popper>
