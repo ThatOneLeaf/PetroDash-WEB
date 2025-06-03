@@ -26,6 +26,7 @@ import Sidebar from '../../components/Sidebar';
 import AddAbstractionModal from '../../envi_components/AddWaterAbstractionModal';
 import AddDischargedModal from '../../envi_components/AddWaterDischargedModal';
 import AddConsumptionModal from '../../envi_components/AddWaterConsumptionModal';
+import ImportFileModal from '../../components/ImportFileModal';
 import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
@@ -38,6 +39,7 @@ function EnvironmentWater() {
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selected, setSelected] = useState('Abstraction'); // Default selection
+  const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -233,6 +235,7 @@ function EnvironmentWater() {
                   backgroundColor: '#0f1a3c',
                 },
               }}
+              onClick={() => setIsImportModalOpen(true)}
             >
               IMPORT
             </Button>
@@ -341,6 +344,35 @@ function EnvironmentWater() {
             />
           )}
         </Overlay>
+        )}
+
+        { isImportdModalOpen && (
+          <Overlay onClose={() => setIsImportModalOpen(false)}>
+            {selected === 'Abstraction' && (
+                <ImportFileModal
+                  title="Water - Abstraction"
+                  downloadPath="environment/create_template/envi_water_abstraction"
+                  uploadPath="/water/import"
+                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                />     
+            )}
+            {selected === 'Discharged' && (
+                <ImportFileModal
+                  title="Water - Discharged"
+                  downloadPath="environment/create_template/envi_water_discharge"
+                  uploadPath="/water/import"
+                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                />
+            )}
+            {selected === 'Consumption' && (
+                <ImportFileModal
+                  title="Water - Consumption"
+                  downloadPath="environment/create_template/envi_water_consumption"
+                  uploadPath="/water/import"
+                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                />
+            )}
+          </Overlay>
         )}
       </Container>
     </Box>

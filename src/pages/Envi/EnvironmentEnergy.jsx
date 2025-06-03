@@ -26,6 +26,7 @@
   import Sidebar from '../../components/Sidebar';
   import AddEnergyElectricityModal from '../../envi_components/AddEnergyElectricityModal';
   import AddEnergyDieselModal from '../../envi_components/AddEnergyDieselModal';
+  import ImportFileModal from '../../components/ImportFileModal';
   import Filter from '../../components/Filter/Filter';
   import Search from '../../components/Filter/Search';
   import CustomTable from '../../components/Table/Table'; // Adjust path as needed
@@ -37,6 +38,7 @@
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
     const [selected, setSelected] = useState('Electricity'); // Default selection
     const [searchQuery, setSearchQuery] = useState("");
     const [sortConfig, setSortConfig] = useState({
@@ -271,6 +273,7 @@
                     backgroundColor: '#0f1a3c',
                   },
                 }}
+                onClick={() => setIsImportModalOpen(true)}
               >
                 IMPORT
               </Button>
@@ -469,7 +472,7 @@
           </Box>
 
           {/* Conditional rendering for modals */}
-          {isAddModalOpen && (
+          { isAddModalOpen && (
             <Overlay onClose={() => setIsAddModalOpen(false)}>
               {selected === 'Electricity' ? (
                 <AddEnergyElectricityModal 
@@ -485,6 +488,25 @@
                     fetchDieselData(); // Refresh data after adding
                   }} 
                 />
+              )}
+            </Overlay>
+          )}
+          { isImportdModalOpen && (
+            <Overlay onClose={() => setIsImportModalOpen(false)}>
+              {selected === 'Electricity' ? (
+                  <ImportFileModal
+                    title="Energy - Electricity"
+                    downloadPath="environment/create_template/envi_electric_consumption"
+                    uploadPath="/energy/import"
+                    onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  />
+              ) : (
+                  <ImportFileModal
+                    title="Energy - Diesel"
+                    downloadPath="environment/create_template/envi_diesel_consumption"
+                    uploadPath="/energy/import"
+                    onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  />       
               )}
             </Overlay>
           )}

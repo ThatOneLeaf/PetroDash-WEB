@@ -26,6 +26,7 @@ import Sidebar from '../../components/Sidebar';
 import AddWasteHazardGenModal from '../../envi_components/AddWasteHazardGenModal';
 import AddWasteHazardDisModal from '../../envi_components/AddWasteHazardDisModal';
 import AddWasteNonHazGenModal from '../../envi_components/AddWasteNonHazGenModal';
+import ImportFileModal from '../../components/ImportFileModal';
 import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
@@ -38,6 +39,7 @@ function EnvironmentWaste() {
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selected, setSelected] = useState('Hazard Generated'); // Default selection
+  const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -235,6 +237,7 @@ function EnvironmentWaste() {
                   backgroundColor: '#0f1a3c',
                 },
               }}
+              onClick={() => setIsImportModalOpen(true)}
             >
               IMPORT
             </Button>
@@ -343,6 +346,35 @@ function EnvironmentWaste() {
               }} 
             />
           )}
+        </Overlay>
+        )}
+
+        { isImportdModalOpen && (
+          <Overlay onClose={() => setIsImportModalOpen(false)}>
+            {selected === 'Hazard Generated' && (
+                <ImportFileModal
+                  title="Waste - Hazard Generated"
+                  downloadPath="environment/create_template/envi_hazard_waste_generated"
+                  uploadPath="/waste/import"
+                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                />     
+            )}
+            {selected === 'Hazard Disposed' && (
+                <ImportFileModal
+                  title="Waste - Hazard Disposed"
+                  downloadPath="environment/create_template/envi_hazard_waste_disposed"
+                  uploadPath="/waste/import"
+                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                />
+            )}
+            {selected === 'Non-Hazard Generated' && (
+                <ImportFileModal
+                  title="Waste - Non Hazard Generated"
+                  downloadPath="environment/create_template/envi_non_hazard_waste"
+                  uploadPath="/waste/import"
+                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                />
+            )}
         </Overlay>
         )}
       </Container>
