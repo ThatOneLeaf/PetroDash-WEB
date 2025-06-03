@@ -12,13 +12,14 @@ import {
 } from '@mui/material';
 import api from '../services/api';
 
-function AddWaterAbstractionModal({ onClose }) {
+function AddWasteHazardGenModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     year: currentYear, 
     quarter: '', // ⬅️ Initialize quarter
-    volume: '',
-    unit: 'Cubic Meter' // Default unit
+    type: '',
+    waste: '',
+    unit: '' // Default unit
   });
 
   const handleChange = (field) => (event) => {
@@ -37,7 +38,7 @@ function AddWaterAbstractionModal({ onClose }) {
   return (
     <Paper sx={{
       p: 4,
-      width: '500px',
+      width: '600px',
       borderRadius: '16px',
       bgcolor: 'white'
     }}>
@@ -53,7 +54,7 @@ function AddWaterAbstractionModal({ onClose }) {
           ADD NEW RECORD
         </Typography>
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
-          Water - Discharged
+          Waste - Hazard Generated
         </Typography>
       </Box>
 
@@ -98,18 +99,42 @@ function AddWaterAbstractionModal({ onClose }) {
           </Select>
         </FormControl>
       </Box>
+
       <Box sx={{
         display: 'grid', 
         gap: 2,
         mb: 3
       }}>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Waste Type</InputLabel>
+          <Select
+            value={formData.type}
+            onChange={handleChange('type')}
+            label="Waste Type"
+            sx={{ height: '55px' }}
+          >
+            {['Empty Containers', 'Electronic Waste', 'Used Oil', 'BFL'].map((type) => (
+              <MenuItem key={type} value={type}>
+                {type}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr',
+        gap: 2,
+        mb: 2
+      }}>
         <TextField
-          placeholder="Water Volume"
-          value={formData.volume}
-          onChange={handleChange('volume')}
+          label="Waste Generated"
+          placeholder="####"
+          value={formData.waste}
+          onChange={handleChange('waste')}
           type="number"
         />
-
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Unit of Measurement</InputLabel>
           <Select
@@ -118,7 +143,7 @@ function AddWaterAbstractionModal({ onClose }) {
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['Cubic Meter'].map((unit) => (
+            {['Kilogram', 'Liter'].map((unit) => (
               <MenuItem key={unit} value={unit}>
                 {unit}
               </MenuItem>
@@ -154,4 +179,4 @@ function AddWaterAbstractionModal({ onClose }) {
   );
 }
 
-export default AddWaterAbstractionModal;
+export default AddWasteHazardGenModal;
