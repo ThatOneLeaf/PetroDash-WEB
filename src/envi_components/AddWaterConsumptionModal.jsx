@@ -16,9 +16,9 @@ function AddWaterConsumptionModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     year: currentYear, 
-    month: '', // ⬅️ Initialize quarter
-    consumption: '',
-    unit: 'Liter' // Default unit
+    quarter: '', // ⬅️ Initialize quarter
+    volume: '',
+    unit: 'Cubic Meter' // Default unit
   });
 
   const handleChange = (field) => (event) => {
@@ -64,19 +64,16 @@ function AddWaterConsumptionModal({ onClose }) {
         mb: 2
       }}>
         <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Month</InputLabel>
+          <InputLabel>Quarter</InputLabel>
           <Select
-            value={formData.month}
-            onChange={handleChange('month')}
-            label="Month"
+            value={formData.quarter}
+            onChange={handleChange('quarter')}
+            label="Quarter"
             sx={{ height: '55px' }}
           >
-            {[
-              'January', 'February', 'March', 'April', 'May', 'June',
-              'July', 'August', 'September', 'October', 'November', 'December'
-            ].map((month) => (
-              <MenuItem key={month} value={month}>
-                {month}
+            {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => (
+              <MenuItem key={quarter} value={quarter}>
+                {quarter}
               </MenuItem>
             ))}
           </Select>
@@ -106,35 +103,10 @@ function AddWaterConsumptionModal({ onClose }) {
         gap: 2,
         mb: 3
       }}>
-        <FormControl fullWidth>
-          <InputLabel>Company Property</InputLabel>
-          <Select
-            value={formData.property}
-            onChange={handleChange('property')}
-            label="Company Property"
-            sx={{ height: '55px' }}
-          >
-            {[
-              'Grass Cutter',
-              'Generator Sets',
-              'DMAX',
-              'MUX',
-              'MULTICAB',
-              'ELF TRUCK',
-              'WATER TRUCK (4l)',
-              'WATER TRUCK (6l)',
-            ].map((item) => (
-              <MenuItem key={item} value={item}>
-                {item}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
         <TextField
-          placeholder="Diesel Consumption"
-          value={formData.consumption}
-          onChange={handleChange('consumption')}
+          placeholder="Water Volume"
+          value={formData.volume}
+          onChange={handleChange('volume')}
           type="number"
         />
 
@@ -146,7 +118,7 @@ function AddWaterConsumptionModal({ onClose }) {
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['Liter'].map((unit) => (
+            {['Cubic Meter'].map((unit) => (
               <MenuItem key={unit} value={unit}>
                 {unit}
               </MenuItem>
@@ -182,4 +154,5 @@ function AddWaterConsumptionModal({ onClose }) {
   );
 }
 
-export default AddEnvironmentDieselModal;
+export default AddWaterConsumptionModal;
+// 

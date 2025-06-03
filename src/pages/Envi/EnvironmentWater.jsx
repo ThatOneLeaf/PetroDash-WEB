@@ -23,7 +23,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddEnvironmentEnergyModal from '../../envi_components/AddEnergyElectricityModal';
+import AddAbstractionModal from '../../envi_components/AddWaterAbstractionModal';
+import AddDischargedModal from '../../envi_components/AddWaterDischargedModal';
+import AddConsumptionModal from '../../envi_components/AddWaterConsumptionModal';
 import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
@@ -64,7 +66,7 @@ function EnvironmentWater() {
   const fetchAbstractionData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('environment/water_abstraction'); 
+      const response = await api.get('environment/water_abstraction_records'); 
       console.log('Water Abstraction data from API:', response.data);
       setData(response.data);
     } catch (error) {
@@ -298,7 +300,6 @@ function EnvironmentWater() {
             </IconButton>
           )}
         />
-        
 
         {/* Custom Pagination Component */}
         <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
@@ -310,14 +311,32 @@ function EnvironmentWater() {
         </Box>
         
         {isAddModalOpen && (
-          <Overlay onClose={() => setIsAddModalOpen(false)}>
-            <AddEnvironmentEnergyModal 
+        <Overlay onClose={() => setIsAddModalOpen(false)}>
+          {selected === 'Abstraction' && (
+            <AddAbstractionModal 
               onClose={() => {
                 setIsAddModalOpen(false);
-                fetchExpendituresData(); // Refresh data after adding
+                fetchAbstractionData(); 
               }} 
             />
-          </Overlay>
+          )}
+          {selected === 'Discharged' && (
+            <AddDischargedModal 
+              onClose={() => {
+                setIsAddModalOpen(false);
+                fetchDischargedData();
+              }} 
+            />
+          )}
+          {selected === 'Consumption' && (
+            <AddConsumptionModal 
+              onClose={() => {
+                setIsAddModalOpen(false);
+                fetchConsumptionData(); 
+              }} 
+            />
+          )}
+        </Overlay>
         )}
       </Container>
     </Box>

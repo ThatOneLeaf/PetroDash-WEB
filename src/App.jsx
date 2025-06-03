@@ -23,6 +23,7 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Landing />} />
+            {/* <Route path="/energy" element={<Energy />} /> */}
             <Route path="/economic" element={<Economic />} />
             <Route path="/economic/generated" element={<EconomicGenerated />} />
             <Route
@@ -40,9 +41,9 @@ function App() {
             <Route path="/environment/care" element={<EnvironmentCare />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
-            <Route path="/social-csr" element={<CSR />} />
+            <Route path="/social/help" element={<CSR />} />
             <Route path="/social-hr" element={<HR />} />
-            <Route path="/power-generation" element={<Energy />} />
+            <Route path="/energy/power-generation" element={<Energy />} />
           </Routes>
         </main>
       </div>

@@ -123,7 +123,7 @@ const toggleModal = () => {
             mauris. Integer ac mauris nec ex elementum
             pellentesque.
           </p>
-          <Btn color="#2E7D32" label="LOGIN" onClick={toggleModal} />
+          <Btn color="green" label="LOGIN" onClick={toggleModal} />
         </div>
 
         {isLoginModal && (
