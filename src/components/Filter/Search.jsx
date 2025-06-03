@@ -73,11 +73,11 @@ const Search = ({ onSearch, suggestions = [] }) => {
         autoComplete="off"
         size="small"
         sx={{
-          width: 200,
+          width: 250,
           minWidth: 0,
           height: 32,
           "& .MuiOutlinedInput-root": {
-            borderRadius: 2,
+            borderRadius: 100,
             border: "1px solid #182959",
             fontSize: 13,
             background: "#fff",

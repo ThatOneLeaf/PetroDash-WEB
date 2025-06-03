@@ -38,6 +38,7 @@ function EnvironmentWater() {
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selected, setSelected] = useState('Abstraction'); // Default selection
+  const [searchQuery, setSearchQuery] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -131,33 +132,32 @@ function EnvironmentWater() {
     return sortedData;
   };
 
-  const [searchTerm, setSearchTerm] = useState('');
-
   const getFilteredData = () => {
     let filteredData = [...data];
-    
-    // Apply search filter
-    if (searchTerm) {
-      filteredData = filteredData.filter(row => 
-        row.comp.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.year.toString().includes(searchTerm)
+
+    if (searchQuery) {
+      const lower = searchQuery.toLowerCase();
+      filteredData = filteredData.filter((item) =>
+        Object.values(item).some(
+          (val) =>
+            val &&
+            val.toString().toLowerCase().includes(lower)
+        )
       );
     }
 
-    // Apply filters
-    if (filters.year) {
-      filteredData = filteredData.filter(row => row.year === filters.year);
-    }
-    if (filters.type) {
-      filteredData = filteredData.filter(row => row.type === filters.type);
-    }
-    if (filters.company) {
-      filteredData = filteredData.filter(row => row.comp === filters.company);
-    }
-    
     return filteredData;
   };
+
+  const suggestions = useMemo(() => {
+    const uniqueValues = new Set();
+    data.forEach((item) => {
+      Object.values(item).forEach((val) => {
+        if (val) uniqueValues.add(val.toString());
+      });
+    });
+    return Array.from(uniqueValues);
+  }, [data]);
 
   // Update getCurrentPageData to use filtered data
   const getCurrentPageData = () => {
@@ -176,18 +176,13 @@ function EnvironmentWater() {
     }
   };
 
-  const renderSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />;
-  };
-
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
-      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2.25rem' }}>
+      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2rem' }}>
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between',
@@ -199,17 +194,17 @@ function EnvironmentWater() {
             flexDirection: 'column',
             alignItems: 'flex-start'}}>
             <Typography sx={{ 
-              fontSize: '0.9rem', 
+              fontSize: '0.75rem', 
               fontWeight: 800,
             }}>
               REPOSITORY
             </Typography>
-            <Typography sx={{ fontSize: '2.75rem', color: '#182959', fontWeight: 800}}>
+            <Typography sx={{ fontSize: '2.25rem', color: '#182959', fontWeight: 800}}>
               Environment - Water
             </Typography>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: '1rem' }}>
+          <Box sx={{ display: 'flex', gap: '0.5rem' }}>
             <Button
               variant="contained"
               startIcon={<FileUploadIcon />}
@@ -217,7 +212,7 @@ function EnvironmentWater() {
                 backgroundColor: '#182959',
                 borderRadius: '999px',
                 padding: '9px 18px',
-                fontSize: '1rem',
+                fontSize: '0.85rem',
                 fontWeight: 'bold',
                 '&:hover': {
                   backgroundColor: '#0f1a3c',
@@ -232,7 +227,7 @@ function EnvironmentWater() {
                 backgroundColor: '#182959',
                 borderRadius: '999px',
                 padding: '9px 18px',
-                fontSize: '1rem',
+                fontSize: '0.85rem',
                 fontWeight: 'bold',
                 '&:hover': {
                   backgroundColor: '#0f1a3c',
@@ -248,7 +243,7 @@ function EnvironmentWater() {
                 backgroundColor: '#2B8C37',
                 borderRadius: '999px',
                 padding: '9px 18px',
-                fontSize: '1rem',
+                fontSize: '0.85rem',
                 fontWeight: 'bold',
                 '&:hover': {
                   backgroundColor: '#256d2f',
@@ -261,7 +256,7 @@ function EnvironmentWater() {
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+        <Box sx={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           {['Abstraction','Discharged', 'Consumption'].map((type) => (
             <Button
               key={type}
@@ -270,9 +265,9 @@ function EnvironmentWater() {
               sx={{
                 backgroundColor: selected === type ? '#2B8C37' : '#9ca3af',
                 borderRadius: '15px',
-                padding: '5px 10px',
+                padding: '3px 6px',
                 width: '20%',
-                fontSize: '1.1rem',
+                fontSize: '0.85rem',
                 fontWeight: selected === type ? 800 : 700,
                 color: 'white',
                 '&:hover': {
@@ -283,6 +278,15 @@ function EnvironmentWater() {
               {type}
             </Button>
           ))}
+        </Box>
+
+        {/* Search Input */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: '0.5rem'}}>
+          <Search 
+            onSearch={setSearchQuery} 
+            suggestions={suggestions} 
+          />
+
         </Box>
 
         {/* Custom Table Component */}
