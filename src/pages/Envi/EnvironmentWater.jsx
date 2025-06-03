@@ -66,7 +66,7 @@ function EnvironmentWater() {
   const fetchAbstractionData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('environment/water_abstraction'); 
+      const response = await api.get('environment/water_abstraction_records'); 
       console.log('Water Abstraction data from API:', response.data);
       setData(response.data);
     } catch (error) {
