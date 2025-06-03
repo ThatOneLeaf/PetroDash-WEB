@@ -12,27 +12,29 @@ import {
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 
-import api from "../services/api";
+import api from "../../services/api";
 
-function ImportEmployabilityModal({ onClose }) {
-  const [formData, setFormData] = useState({
-    companyId: "", // get current  company of emp
-    employeeId: "",
-    gender: "",
-    position: "",
-    employeeCategory: "",
-    employeeStatus: "",
-    tenureStart: "",
-    tenureEnded: "",
-  });
-
-  const handleChange = (field) => (event) => {
-    const newFormData = {
-      ...formData,
-      [field]: event.target.value,
-    };
-    setFormData(newFormData);
+function ImportHRModal({ onClose, context = "employability" }) {
+  const templateConfig = {
+    employability: {
+      templateURL: "employability_template.csv",
+      filename: "HR_Employability_2025.csv",
+    },
+    parentalleave: {
+      templateURL: "parental_template.csv",
+      filename: "HR_Parental_Leave_2025.csv",
+    },
+    safetyworkdata: {
+      templateURL: "safetyworkdata_template.csv",
+      filename: "HR_Safety_Work_Data_2025.csv",
+    },
+    training: {
+      templateURL: "training_template.csv",
+      filename: "HR_Training_2025.csv",
+    },
   };
+
+  const config = templateConfig[context] || templateConfig["employability"];
 
   const handleSubmit = () => {
     console.log("Submit clicked", formData);
@@ -120,7 +122,7 @@ function ImportEmployabilityModal({ onClose }) {
         }}
       >
         <InsertDriveFileIcon sx={{ mr: 1 }} />
-        <Typography variant="body2">HR_Employability_2025.csv</Typography>
+        <Typography variant="body2">{config.filename}</Typography>
       </Box>
 
       <Box
@@ -146,4 +148,4 @@ function ImportEmployabilityModal({ onClose }) {
   );
 }
 
-export default ImportEmployabilityModal;
+export default ImportHRModal;
