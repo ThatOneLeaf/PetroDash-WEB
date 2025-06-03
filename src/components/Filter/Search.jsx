@@ -66,19 +66,20 @@ const Search = ({ onSearch, suggestions = [] }) => {
       <TextField
         inputRef={anchorRef}
         type="text"
-        placeholder="Type to search..."
+        placeholder="Company, Quarter, Year, etc."
         value={query}
         onChange={handleInputChange}
         onFocus={handleFocus}
         autoComplete="off"
         size="small"
         sx={{
-          width: 260,
+          width: 315,
           minWidth: 0,
           height: 40, // Match Filter button height
           "& .MuiOutlinedInput-root": {
-            borderRadius: 3,
-            fontSize: 18,
+            borderRadius: 2,
+            border: "1px solid #182959",
+            fontSize: 14,
             background: "#fff",
             color: "#555",
             height: 40, // Ensure input itself is 40px
