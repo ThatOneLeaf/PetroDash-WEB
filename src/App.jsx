@@ -43,7 +43,7 @@ function App() {
             <Route path="/economics" element={<Economic />} />
             <Route path="/social/help" element={<CSR />} />
             <Route path="/social-hr" element={<HR />} />
-            <Route path="/power-generation" element={<Energy />} />
+            <Route path="/energy/power-generation" element={<Energy />} />
           </Routes>
         </main>
       </div>
