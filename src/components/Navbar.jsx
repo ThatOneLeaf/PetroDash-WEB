@@ -177,7 +177,7 @@ function Navbar({
         }}>
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit', zIndex: 1202 }}>
             <img
-              src="src\assets\petrodashlogo.png"
+              src="src/assets/petrodashlogo.png"
               alt="PetroDash"
               style={{ height: '40px' }}
               className="navbar-logo"
@@ -221,23 +221,12 @@ function Navbar({
             >
               DISCLOSURE
             </button>
-            <button 
-              onClick={onContactClick}
-              className="navbar-center-btn"
-              style={{ 
-                background: 'none',
-                border: 'none',
-                color: '#333',
-                cursor: 'pointer',
-                fontFamily: 'Inter',
-                fontSize: '14px'
-              }}
-            >
-              CONTACT US
-            </button>
           </div>
           
-          <Btn color="green" label="LOGIN" onClick={toggleModal} />
+          {/* Desktop LOGIN button */}
+          <div className="navbar-login-desktop" style={{ display: 'flex', alignItems: 'center', zIndex: 1202 }}>
+            <Btn color="green" label="LOGIN" onClick={toggleModal} />
+          </div>
 
           {/* Hamburger for mobile */}
           <div className="navbar-hamburger" style={{ display: 'none', zIndex: 1202 }}>
@@ -282,7 +271,7 @@ function Navbar({
           >
             <Link to="/" style={{ textDecoration: 'none', color: 'inherit', marginBottom: 24 }} onClick={() => setMobileMenuOpen(false)}>
               <img
-                src="src\\assets\\petrodashlogo.png"
+                src="src/assets/petrodashlogo.png"
                 alt="PetroDash"
                 style={{ height: '40px' }}
               />
@@ -319,27 +308,9 @@ function Navbar({
             >
               DISCLOSURE
             </button>
-            <button 
-              onClick={() => { setMobileMenuOpen(false); onContactClick && onContactClick(); }}
-              className="navbar-center-btn"
-              style={{ 
-                background: 'none',
-                border: 'none',
-                color: '#333',
-                cursor: 'pointer',
-                fontFamily: 'Inter',
-                fontSize: '16px',
-                marginBottom: 16,
-                textAlign: 'left'
-              }}
-            >
-              CONTACT US
-            </button>
             <Btn color="#2E7D32" label="LOGIN" onClick={() => { setMobileMenuOpen(false); toggleModal(); }} />
           </div>
           
-          <Btn color="green" label="LOGIN" onClick={toggleModal} />
-
           {isNavbarLogin && (
             <Modal onClose={toggleModal}>
               <LoginPage />
