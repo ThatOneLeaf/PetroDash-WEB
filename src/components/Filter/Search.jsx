@@ -66,19 +66,20 @@ const Search = ({ onSearch, suggestions = [] }) => {
       <TextField
         inputRef={anchorRef}
         type="text"
-        placeholder="Type to search..."
+        placeholder="Company, Quarter, Year, etc."
         value={query}
         onChange={handleInputChange}
         onFocus={handleFocus}
         autoComplete="off"
         size="small"
         sx={{
-          width: 260,
+          width: 315,
           minWidth: 0,
           height: 40, // Match Filter button height
           "& .MuiOutlinedInput-root": {
-            borderRadius: 3,
-            fontSize: 18,
+            borderRadius: 2,
+            border: "1px solid #182959",
+            fontSize: 14,
             background: "#fff",
             color: "#555",
             height: 40, // Ensure input itself is 40px
@@ -104,7 +105,7 @@ const Search = ({ onSearch, suggestions = [] }) => {
       />
       {/* Suggestions dropdown using Popper */}
       <Popper
-        open={showSuggestions && filteredSuggestions.length > 0}
+        open={showSuggestions && (filteredSuggestions.length > 0 || (!!query && filteredSuggestions.length === 0))}
         anchorEl={anchorRef.current}
         placement="bottom-start"
         style={{ zIndex: 1300, width: anchorRef.current ? anchorRef.current.offsetWidth : undefined }}
@@ -121,20 +122,29 @@ const Search = ({ onSearch, suggestions = [] }) => {
             }}
           >
             {/* List of suggestion items */}
-            <List dense disablePadding>
-              {filteredSuggestions.map((s, idx) => (
-                <ListItemButton
-                  key={idx}
-                  onClick={() => handleSuggestionClick(s)}
-                  sx={{
-                    fontSize: 16,
-                    color: "#333",
-                  }}
-                >
-                  <ListItemText primary={s} />
-                </ListItemButton>
-              ))}
-            </List>
+            {filteredSuggestions.length > 0 ? (
+              <List dense disablePadding>
+                {filteredSuggestions.map((s, idx) => (
+                  <ListItemButton
+                    key={idx}
+                    onClick={() => handleSuggestionClick(s)}
+                    sx={{
+                      fontSize: 16,
+                      color: "#333",
+                    }}
+                  >
+                    <ListItemText primary={s} />
+                  </ListItemButton>
+                ))}
+              </List>
+            ) : (
+              // Show "No data" prompt if no suggestions and query is not empty
+              !!query && (
+                <Box sx={{ p: 2, color: "#888", fontSize: 16, textAlign: "center" }}>
+                  No data for '{query}'
+                </Box>
+              )
+            )}
           </Paper>
         </ClickAwayListener>
       </Popper>

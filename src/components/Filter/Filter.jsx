@@ -101,25 +101,27 @@ const Filter = ({
         variant="outlined"
         color="inherit"
         onClick={handleToggle}
-        endIcon={open ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
+        endIcon={open ? <ArrowDropUpIcon sx={{ color: "#000" }} /> : <ArrowDropDownIcon sx={{ color: "#000" }} />}
         sx={{
-          borderRadius: 3,
-          fontWeight: "bold",
-          fontSize: 20,
-          px: 3,
+          borderRadius: 2,
+          fontWeight: 600,
+          fontSize: 17,
+          px: 2.5,
           py: 0,
-          color: "#555",
-          background: "#fff",
-          borderColor: "#bdbdbd",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-          height: 40,
-          minHeight: 40,
+          color: "#000",
+          background: "#f7f7f7",
+          borderColor: "#e0e0e0",
+          boxShadow: "0 2px 8px 0 rgba(0,0,0,0.03)",
+          height: 42,
+          minHeight: 42,
           textAlign: "left",
           justifyContent: "flex-start",
           alignItems: "center",
+          transition: "all 0.18s",
           "&:hover, &:focus": {
-            borderColor: "#888",
-            background: "#fafbfc",
+            borderColor: "#000",
+            background: "#ededed",
+            color: "#000",
           },
         }}
         aria-expanded={open}
@@ -128,8 +130,8 @@ const Filter = ({
       >
         {/* Show selected label(s) or fallback to label/placeholder */}
         {selectedLabels
-          ? <span style={{ color: "#1976d2", fontWeight: 500 }}>{selectedLabels}</span>
-          : <span style={{ fontWeight: 600, color: "#888" }}>{placeholder || label}</span>
+          ? <span style={{ color: "#000", fontWeight: 600 }}>{selectedLabels}</span>
+          : <span style={{ fontWeight: 500, color: "#888" }}>{placeholder || label}</span>
         }
       </Button>
       {/* Dropdown popper for options */}
@@ -137,29 +139,56 @@ const Filter = ({
         open={open}
         anchorEl={anchorRef.current}
         placement="bottom-start"
-        style={{ zIndex: 1300, minWidth: 220 }}
+        style={{ zIndex: 1300, minWidth: 240 }}
       >
         <ClickAwayListener onClickAway={handleClose}>
           <Paper
-            elevation={4}
+            elevation={6}
             sx={{
               mt: 1,
-              borderRadius: 2,
+              borderRadius: 3,
               p: 0,
-              minWidth: 220,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+              minWidth: 240,
+              background: "#fff",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              border: "1px solid #e0e0e0",
             }}
           >
             {/* List of options */}
             <List
               ref={listRef}
               role="listbox"
-              sx={{ py: 1, maxHeight: 320, overflowY: "auto" }}
+              sx={{
+                py: 1,
+                maxHeight: 320,
+                overflowY: "auto",
+                "& .MuiListItemButton-root": {
+                  borderRadius: 2,
+                  mx: 1,
+                  my: 0.5,
+                  color: "#000",
+                  fontWeight: 500,
+                  fontSize: 16,
+                  transition: "background 0.15s",
+                  "&.Mui-selected, &:hover": {
+                    background: "#f0f0f0",
+                    color: "#000",
+                  },
+                },
+                "& .MuiCheckbox-root": {
+                  color: "#000",
+                },
+                "& .MuiListItemText-root": {
+                  color: "#000",
+                  fontWeight: 500,
+                  fontSize: 16,
+                },
+              }}
             >
               {/* Show message if no options */}
               {options.length === 0 && (
                 <ListItem>
-                  <ListItemText primary="No options" sx={{ color: "#aaa" }} />
+                  <ListItemText primary="No options" sx={{ color: "#888", textAlign: "center" }} />
                 </ListItem>
               )}
               {/* Render each option */}
@@ -180,7 +209,7 @@ const Filter = ({
                         tabIndex={-1}
                         disableRipple
                         size="small"
-                        sx={{ mr: 1 }}
+                        sx={{ mr: 1, color: "#000" }}
                       />
                     )}
                     <ListItemText primary={opt.label} />
