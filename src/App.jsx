@@ -12,7 +12,7 @@ import EnvironmentWater from "./pages/Envi/EnvironmentWater";
 import EnvironmentWaste from "./pages/Envi/EnvironmentWaste";
 import EnvironmentAir from "./pages/Envi/EnvironmentAir";
 import EnvironmentCare from "./pages/Envi/EnvironmentCare";
-import CSR from "./pages/CSR/CSR";
+import CSR from "./pages/CSR/CSRActivity";
 import Energy from "./pages/Energy/Energy";
 import HR from "./pages/HR/HR";
 
