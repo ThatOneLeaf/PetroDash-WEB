@@ -6,7 +6,8 @@ import {
   Button,
   Select,
   MenuItem,
-  Box
+  Box,
+  Alert
 } from '@mui/material';
 import api from '../services/api';
 
@@ -23,6 +24,9 @@ function AddValueGeneratedModal({ onClose }) {
   });
 
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Calculate total revenue whenever form data changes
   const calculateTotal = (data) => {
@@ -38,16 +42,46 @@ function AddValueGeneratedModal({ onClose }) {
     };
     setFormData(newFormData);
     calculateTotal(newFormData);
+    
+    // Clear any previous errors/success messages
+    setError('');
+    setSuccess('');
   };
 
   const handleSubmit = async () => {
     try {
-      await api.post('/economic/value-generated', formData);
-      onClose();
-      // You might want to refresh the data after adding
+      setLoading(true);
+      setError('');
+      setSuccess('');
+      
+      console.log('Submitting value generated data:', formData);
+      
+      const response = await api.post('/economic/value-generated', formData);
+      
+      console.log('API Response:', response.data);
+      setSuccess('Record created successfully!');
+      
+      // Close modal after a short delay to show success message
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+      
     } catch (error) {
       console.error('Error adding record:', error);
+      setError(
+        error.response?.data?.detail || 
+        error.message || 
+        'An error occurred while creating the record'
+      );
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const isFormValid = () => {
+    return formData.year && Object.values(formData).some(value => 
+      value !== formData.year && value !== '' && Number(value) > 0
+    );
   };
 
   return (
@@ -65,6 +99,18 @@ function AddValueGeneratedModal({ onClose }) {
         Add New Record
       </Typography>
 
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+
       <Box sx={{ 
         display: 'grid', 
         gridTemplateColumns: '1fr 1fr',
@@ -75,7 +121,11 @@ function AddValueGeneratedModal({ onClose }) {
           value={formData.year}
           onChange={handleChange('year')}
           sx={{ height: '40px' }}
+          displayEmpty
         >
+          <MenuItem value="" disabled>
+            Year
+          </MenuItem>
           {[...Array(10)].map((_, i) => (
             <MenuItem key={currentYear - i} value={currentYear - i}>
               {currentYear - i}
@@ -88,6 +138,7 @@ function AddValueGeneratedModal({ onClose }) {
           value={formData.electricitySales}
           onChange={handleChange('electricitySales')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -95,6 +146,7 @@ function AddValueGeneratedModal({ onClose }) {
           value={formData.oilRevenues}
           onChange={handleChange('oilRevenues')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -102,6 +154,7 @@ function AddValueGeneratedModal({ onClose }) {
           value={formData.otherRevenues}
           onChange={handleChange('otherRevenues')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -109,6 +162,7 @@ function AddValueGeneratedModal({ onClose }) {
           value={formData.interestIncome}
           onChange={handleChange('interestIncome')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -116,6 +170,7 @@ function AddValueGeneratedModal({ onClose }) {
           value={formData.shareInNetIncomeOfAssociate}
           onChange={handleChange('shareInNetIncomeOfAssociate')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -123,6 +178,7 @@ function AddValueGeneratedModal({ onClose }) {
           value={formData.miscellaneousIncome}
           onChange={handleChange('miscellaneousIncome')}
           type="number"
+          disabled={loading}
         />
       </Box>
 
@@ -133,18 +189,37 @@ function AddValueGeneratedModal({ onClose }) {
         mt: 2 
       }}>
         <Typography variant="h6">
-          Total Revenue: {totalRevenue.toLocaleString()}
+          Total Revenue: ₱{totalRevenue.toLocaleString()}
         </Typography>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          sx={{ 
-            bgcolor: '#2E7D32',
-            '&:hover': { bgcolor: '#1b5e20' }
-          }}
-        >
-          ADD
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            disabled={loading}
+            sx={{ 
+              color: '#666',
+              borderColor: '#666',
+              '&:hover': { 
+                borderColor: '#333',
+                color: '#333'
+              }
+            }}
+          >
+            CANCEL
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={loading || !isFormValid()}
+            sx={{ 
+              bgcolor: '#2E7D32',
+              '&:hover': { bgcolor: '#1b5e20' },
+              '&:disabled': { bgcolor: '#ccc' }
+            }}
+          >
+            {loading ? 'ADDING...' : 'ADD'}
+          </Button>
+        </Box>
       </Box>
     </Paper>
   );

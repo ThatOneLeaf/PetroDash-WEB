@@ -6,7 +6,8 @@ import {
   Button,
   Select,
   MenuItem,
-  Box
+  Box,
+  Alert
 } from '@mui/material';
 import api from '../services/api';
 
@@ -30,6 +31,9 @@ function AddExpendituresModal({ onClose }) {
   });
 
   const [totalExpenditure, setTotalExpenditure] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     // Fetch companies and types when component mounts
@@ -51,6 +55,7 @@ function AddExpendituresModal({ onClose }) {
         }));
       } catch (error) {
         console.error('Error fetching options:', error);
+        setError('Failed to load companies and expenditure types');
       }
     };
 
@@ -73,15 +78,47 @@ function AddExpendituresModal({ onClose }) {
     };
     setFormData(newFormData);
     calculateTotal(newFormData);
+    
+    // Clear any previous errors/success messages
+    setError('');
+    setSuccess('');
   };
 
   const handleSubmit = async () => {
     try {
-      await api.post('/economic/expenditures', formData);
-      onClose();
+      setLoading(true);
+      setError('');
+      setSuccess('');
+      
+      console.log('Submitting expenditure data:', formData);
+      
+      const response = await api.post('/economic/expenditures', formData);
+      
+      console.log('API Response:', response.data);
+      setSuccess('Expenditure record created successfully!');
+      
+      // Close modal after a short delay to show success message
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+      
     } catch (error) {
       console.error('Error adding expenditure record:', error);
+      setError(
+        error.response?.data?.detail || 
+        error.message || 
+        'An error occurred while creating the expenditure record'
+      );
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const isFormValid = () => {
+    return formData.comp && formData.type && formData.year && 
+           Object.entries(formData)
+             .filter(([key]) => !['comp', 'year', 'type'].includes(key))
+             .some(([_, value]) => value !== '' && Number(value) > 0);
   };
 
   return (
@@ -101,6 +138,18 @@ function AddExpendituresModal({ onClose }) {
         Add New Record
       </Typography>
 
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+
       <Box sx={{ 
         display: 'grid', 
         gridTemplateColumns: '1fr 1fr',
@@ -111,6 +160,8 @@ function AddExpendituresModal({ onClose }) {
           value={formData.comp}
           onChange={handleChange('comp')}
           sx={{ height: '40px' }}
+          disabled={loading}
+          displayEmpty
           MenuProps={{
             PaperProps: {
               sx: {
@@ -123,6 +174,9 @@ function AddExpendituresModal({ onClose }) {
             }
           }}
         >
+          <MenuItem value="" disabled>
+            Select Company
+          </MenuItem>
           {companies.map((company) => (
             <MenuItem 
               key={company.id} 
@@ -141,6 +195,8 @@ function AddExpendituresModal({ onClose }) {
           value={formData.type}
           onChange={handleChange('type')}
           sx={{ height: '40px' }}
+          disabled={loading}
+          displayEmpty
           MenuProps={{
             PaperProps: {
               sx: {
@@ -153,6 +209,9 @@ function AddExpendituresModal({ onClose }) {
             }
           }}
         >
+          <MenuItem value="" disabled>
+            Select Type
+          </MenuItem>
           {types.map((type) => (
             <MenuItem 
               key={type.id} 
@@ -171,6 +230,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.year}
           onChange={handleChange('year')}
           sx={{ height: '40px' }}
+          disabled={loading}
         >
           {[...Array(10)].map((_, i) => (
             <MenuItem 
@@ -187,6 +247,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.government}
           onChange={handleChange('government')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -194,6 +255,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.localSuppl}
           onChange={handleChange('localSuppl')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -201,6 +263,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.foreignSupplierSpending}
           onChange={handleChange('foreignSupplierSpending')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -208,6 +271,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.employee}
           onChange={handleChange('employee')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -215,6 +279,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.community}
           onChange={handleChange('community')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -222,6 +287,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.depreciation}
           onChange={handleChange('depreciation')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -229,6 +295,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.depletion}
           onChange={handleChange('depletion')}
           type="number"
+          disabled={loading}
         />
 
         <TextField
@@ -236,6 +303,7 @@ function AddExpendituresModal({ onClose }) {
           value={formData.others}
           onChange={handleChange('others')}
           type="number"
+          disabled={loading}
         />
       </Box>
 
@@ -246,18 +314,37 @@ function AddExpendituresModal({ onClose }) {
         mt: 2 
       }}>
         <Typography variant="h6">
-          Total Expenditures: {totalExpenditure.toLocaleString()}
+          Total Expenditures: ₱{totalExpenditure.toLocaleString()}
         </Typography>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          sx={{ 
-            bgcolor: '#2B8C37',
-            '&:hover': { bgcolor: '#1b5e20' }
-          }}
-        >
-          ADD
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            disabled={loading}
+            sx={{ 
+              color: '#666',
+              borderColor: '#666',
+              '&:hover': { 
+                borderColor: '#333',
+                color: '#333'
+              }
+            }}
+          >
+            CANCEL
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={loading || !isFormValid()}
+            sx={{ 
+              bgcolor: '#2B8C37',
+              '&:hover': { bgcolor: '#1b5e20' },
+              '&:disabled': { bgcolor: '#ccc' }
+            }}
+          >
+            {loading ? 'ADDING...' : 'ADD'}
+          </Button>
+        </Box>
       </Box>
     </Paper>
   );

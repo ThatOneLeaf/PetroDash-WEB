@@ -42,7 +42,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
   // Navigation items
   const navItems = [
     { label: "Energy", icon: EnergyIcon, to: "/energy" },
-    { label: "Economics", icon: EconomicsIcon, to: "/economics" },
+    { label: "Economic", icon: EconomicsIcon, to: "/economic" },
     {
       label: "Environment",
       icon: EnvironmentIcon,
