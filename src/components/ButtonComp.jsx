@@ -1,52 +1,36 @@
-import { useState } from 'react'
-import Button from '@mui/material/Button';
+import { Button } from "@mui/material";
 
-// label = button name, onclick = button function, color = blue/green
-function ButtonComp({ label, rounded, onClick, color }) {
-  const [btnColor, setColor] = useState();
-
+function ButtonComp({ label, rounded, onClick, color, startIcon }) {
   const getColor = () => {
-    if (color === "green"){
-      return "#2B8C37";
-    }
-    else if (color === "blue"){
-      return "#182959";
-    }
-  }
-
-  const getSecondColor = () => {
-    if (color === "green"){
-      return "#2B8C37";
-    }
-    else if (color === "blue"){
-      return "#182959";
-    }
-  }
+    if (color === "green") return "#2B8C37";
+    if (color === "blue") return "#182959";
+  };
 
   return (
-    <Button 
+    <Button
       onClick={onClick}
-      // className="navbar-center-btn"
+      startIcon={startIcon}
       sx={{
-        backgroundColor: getColor(color),
+        backgroundColor: getColor(),
         color: 'white',
-        padding: '6px 32px',
+        padding: '9px 18px',
         border: 'none',
-        borderRadius: '100px',
+        borderRadius: rounded ? '999px' : '4px',
         cursor: 'pointer',
         fontFamily: 'Inter',
-        fontWeight: '500',
-        fontSize: '16px',
+        fontWeight: 'bold',
+        fontSize: '0.85rem',
         textTransform: 'uppercase',
         letterSpacing: '0.5px',
         boxSizing: 'border-box',
         boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
         '&:hover': {
-          backgroundColor: '#256d2f'
-        }
-    }}
-    >{label}</Button>
-  )
+          backgroundColor: color === 'green' ? '#256d2f' : '#0f1a3c',
+        },
+      }}
+    >
+      {label}
+    </Button>
+  );
 }
-
 export default ButtonComp;

@@ -25,13 +25,15 @@ import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
 import Search from "../../components/Filter/Search";
 import DateRangePicker from "../../components/Filter/DateRangePicker";
+import RepositoryHeader from "../../components/RepositoryHeader";
+import ButtonComp from "../../components/ButtonComp";
 
 function Energy() {
   const [data, setData] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [page, setPage] = useState(1);
-  const rowsPerPage = 10;
+  const [rowsPerPage, setRowsPerPage] = useState(15);
   const [isAddEnergyModalOpen, setIsAddEnergyModalOpen] = useState(false);
   const [isImportEnergyModalOpen, setIsImportEnergyModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -154,7 +156,7 @@ function Energy() {
   );
 
   const columns = [
-    { key: "powerPlant", label: "Power Plant" },
+    { key: "powerPlant", label: "Power Project" },
     {
       key: "date",
       label: "Date",
@@ -183,6 +185,22 @@ function Energy() {
     setPage(newPage);
   };
 
+  useEffect(() => {
+    const calculateRowsPerPage = () => {
+      const vh = window.innerHeight;
+      const rowHeight = 48; // Approximate row height in px (depends on your styling)
+      const headerFooterHeight = 200; // Adjust based on your layout (header, pagination, etc.)
+      const availableHeight = vh * 0.75 - headerFooterHeight;
+
+      const calculatedRows = Math.floor(availableHeight / rowHeight);
+      setRowsPerPage(Math.max(calculatedRows, 10)); // Minimum of 5 rows
+    };
+
+    calculateRowsPerPage();
+    window.addEventListener('resize', calculateRowsPerPage);
+    return () => window.removeEventListener('resize', calculateRowsPerPage);
+  }, []);
+
   return (
     <Box sx={{ display: "flex" }}>
       <SideBar />
@@ -197,43 +215,47 @@ function Energy() {
             }}
           >
             <Box>
-              <Typography
-                variant="h1"
-                sx={{ fontSize: "1.5rem", fontWeight: "bold", mb: 0.5 }}
-              >
-                REPOSITORY
-              </Typography>
-              <Typography
-                variant="h2"
-                sx={{ fontSize: "2rem", fontWeight: "bold", color: "#182959" }}
-              >
-                Power Generation
-              </Typography>
+            <RepositoryHeader
+                label="REPOSITORY"
+                title="Power Generation"
+              />
             </Box>
 
-            <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-              <Button
-                variant="contained"
+
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 2,
+                justifyContent: { xs: "center", sm: "flex-end" },
+                alignItems: "center",
+                width: "100%",
+              }}
+            >
+              <ButtonComp
+                label="Export Data"
+                rounded={true}
+                onClick={() => {/* handle export logic */}}
+                color="blue"
                 startIcon={<FileUploadIcon />}
-                sx={{ backgroundColor: "#182959" }}
-              >
-                EXPORT DATA
-              </Button>
-              <Button 
-                variant="contained" 
-                sx={{ backgroundColor: "#182959" }}
-                onClick={() => setIsImportEnergyModalOpen(true)}>
-                IMPORT
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
+              />
+
+              <ButtonComp
+                label="Import"
+                rounded={true}
+                onClick={() => setIsImportEnergyModalOpen(true)}
+                color="blue"
+              />
+
+              <ButtonComp
+                label="Add Record"
+                rounded={true}
                 onClick={() => setIsAddEnergyModalOpen(true)}
-                sx={{ backgroundColor: "#2B8C37" }}
-              >
-                ADD RECORD
-              </Button>
+                color="green"
+                startIcon={<AddIcon />}
+              />
             </Box>
+
           </Box>
 
           {/* Filters */}
@@ -255,7 +277,7 @@ function Energy() {
               ]}
             />
             <Filter label="Company" placeholder="Company" options={[{ label: "All Companies", value: "" }, ...companyOptions]} value={filters.company} onChange={(val) => { setFilters((prev) => ({ ...prev, company: val })); setPage(1); }} />
-            <Filter label="Power Plant" placeholder="Power Plant" options={[{ label: "All Power Plants", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
+            <Filter label="Power Project" placeholder="Power Project" options={[{ label: "All Power Projects", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
             <Filter label="Generation Source" placeholder="Source" options={[{ label: "All Sources", value: "" }, ...generationSourceOptions]} value={filters.generationSource} onChange={(val) => { setFilters((prev) => ({ ...prev, generationSource: val })); setPage(1); }} />
             <Filter label="Status" placeholder="Status" options={[{ label: "All Statuses", value: "" }, ...statusOptions]} value={filters.status} onChange={(val) => { setFilters((prev) => ({ ...prev, status: val })); setPage(1); }} />
             <DateRangePicker
@@ -301,20 +323,21 @@ function Energy() {
               No records found for the selected filters.
             </Typography>
           ) : (
-              <Table
-                columns={columns}
-                rows={paginatedData}
-                onSort={handleSort}
-                sortConfig={sortConfig}
-                emptyMessage="No energy data found."
-                maxHeight="69vh"
-                minHeight="300px"
-                actions={(row) => (
-                  <IconButton size="small">
-                    <EditIcon />
-                  </IconButton>
-                )}
-              />
+            <Table
+              columns={columns}
+              rows={paginatedData}
+              rowsPerPage={rowsPerPage}
+              onSort={handleSort}
+              sortConfig={sortConfig}
+              emptyMessage="No energy data found."
+              maxHeight={'75vh'}
+              scrollable
+              actions={(row) => (
+                <IconButton size="small">
+                  <EditIcon />
+                </IconButton>
+              )}
+            />
           )}
 
           {/* Pagination */}
