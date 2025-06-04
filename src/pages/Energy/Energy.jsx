@@ -52,10 +52,9 @@ function Energy() {
     return (
       Object.values(filters).some(v => v !== null && v !== '') ||
       startDate !== null ||
-      endDate !== null ||
-      searchTerm !== ''
+      endDate !== null
     );
-  }, [filters, startDate, endDate, searchTerm]);
+  }, [filters, startDate, endDate]);
 
 
   const [powerPlants, setPowerPlants] = useState([]);
@@ -266,7 +265,7 @@ function Energy() {
               setStartDate={setStartDate}
               setEndDate={setEndDate}
             />
-            {(isFiltering || startDate || endDate || searchTerm) && (
+            {(isFiltering || startDate || endDate ) && (
               <Button
                 variant="outline"
                 startIcon={<ClearIcon />}
@@ -287,8 +286,6 @@ function Energy() {
                   });
                   setStartDate(null);
                   setEndDate(null);
-                  setSearchTerm(""); // ← this resets the search input
-                  setFilters({});    // ← optional: reset other filters too
                   setPage(1);
                 }}
               >

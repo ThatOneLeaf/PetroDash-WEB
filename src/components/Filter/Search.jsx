@@ -2,6 +2,8 @@ import React from "react";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
+import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -10,16 +12,11 @@ import Box from "@mui/material/Box";
 import Popper from "@mui/material/Popper";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 
-// Main Search Component for filtering/searching with suggestions
 const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
-  // State for the current input value
   const [query, setQuery] = React.useState("");
-  // State to control visibility of suggestions dropdown
   const [showSuggestions, setShowSuggestions] = React.useState(false);
-  // Ref for the input element (used as anchor for Popper)
   const anchorRef = React.useRef(null);
 
-  // Memoized filtered suggestions based on current input
   const filteredSuggestions = React.useMemo(() => {
     if (!query) return [];
     const lower = query.toLowerCase();
@@ -28,7 +25,6 @@ const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
       .slice(0, 8);
   }, [query, suggestions]);
 
-  // Handle input value change
   const handleInputChange = (e) => {
     const val = e.target.value;
     setQuery(val);
@@ -36,19 +32,16 @@ const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
     if (onSearch) onSearch(val);
   };
 
-  // Handle clicking a suggestion (fills input and triggers search)
   const handleSuggestionClick = (suggestion) => {
     setQuery(suggestion);
     setShowSuggestions(false);
     if (onSearch) onSearch(suggestion);
   };
 
-  // Show suggestions when input is focused and there are suggestions
   const handleFocus = () => {
     setShowSuggestions(filteredSuggestions.length > 0);
   };
 
-  // Hide suggestions when clicking away from the input/suggestion list
   const handleClickAway = (event) => {
     if (
       anchorRef.current &&
@@ -59,10 +52,14 @@ const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
     setShowSuggestions(false);
   };
 
+  const handleClear = () => {
+    setQuery("");
+    setShowSuggestions(false);
+    if (onSearch) onSearch("");
+  };
+
   return (
-    // Container for search input and suggestions dropdown
     <Box display="inline-block" position="relative" className="search-suggestion-root">
-      {/* Search input field */}
       <TextField
         inputRef={anchorRef}
         type="text"
@@ -99,12 +96,17 @@ const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
-              <SearchIcon sx={{ color: "#555", fontSize: 18 }} />
+              {query ? (
+                <IconButton size="small" onClick={handleClear}>
+                  <ClearIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              ) : (
+                <SearchIcon sx={{ color: "#555", fontSize: 18 }} />
+              )}
             </InputAdornment>
           ),
         }}
       />
-      {/* Suggestions dropdown using Popper */}
       <Popper
         open={showSuggestions && (filteredSuggestions.length > 0 || (!!query && filteredSuggestions.length === 0))}
         anchorEl={anchorRef.current}
@@ -123,7 +125,6 @@ const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
               minWidth: 160,
             }}
           >
-            {/* List of suggestion items */}
             {filteredSuggestions.length > 0 ? (
               <List dense disablePadding>
                 {filteredSuggestions.map((s, idx) => (
@@ -142,7 +143,6 @@ const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
                 ))}
               </List>
             ) : (
-              // Show "No data" prompt if no suggestions and query is not empty
               !!query && (
                 <Box sx={{ p: 1, color: "#888", fontSize: 13, textAlign: "center" }}>
                   No data for '{query}'
@@ -157,9 +157,3 @@ const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
 };
 
 export default Search;
-
-/*
-Usage Example:
-
-<Search onSearch={val => console.log(val)} suggestions={['apple', 'banana', 'cherry']} />
-*/
