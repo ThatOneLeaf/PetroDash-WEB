@@ -311,7 +311,7 @@ function Energy() {
                   setPage(1);
                 }}
               >
-                Clear
+                Clear Filters
               </Button>
             )}
   

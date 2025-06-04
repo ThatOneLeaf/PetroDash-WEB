@@ -87,12 +87,12 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
       }
     >
       <FormControl fullWidth>
-        <InputLabel id="power-plant-label">Power Plant</InputLabel>
+        <InputLabel id="power-plant-label">Power Project</InputLabel>
         <Select
           labelId="power-plant-label"
           value={formData.powerPlant}
           onChange={handleChange('powerPlant')}
-          label="Power Plant"
+          label="Power Project"
           size="medium"
         >
           {powerPlants.map((plant) => (
