@@ -5,6 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import AddValueGeneratedModal from '../../components/AddValueGeneratedModal';
+import ImportEconGeneratedModal from '../../components/ImportEconGeneratedModal';
 import Sidebar from '../../components/Sidebar';
 import Table from '../../components/Table/Table';
 import Filter from '../../components/Filter/Filter';
@@ -16,14 +17,11 @@ function EconomicGenerated() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
-  // Table state
-  const [sortConfig, setSortConfig] = useState({
-    key: 'year',
-    direction: 'desc'
-  });
+  // Table state - simplified
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState('');
 
@@ -71,16 +69,8 @@ function EconomicGenerated() {
     }
   ];
 
-  // Sorting logic
-  const handleSort = (key) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-
   // Filtering and searching logic
-  const filteredData = data
+  const processedData = data
     .filter(row => {
       // Filter
       return Object.entries(filters).every(([key, value]) => {
@@ -90,30 +80,34 @@ function EconomicGenerated() {
       });
     })
     .filter(row => {
-      // Search (searches all fields as string)
+      // Enhanced Search - searches year and all monetary values
       if (!search) return true;
       const searchStr = search.toLowerCase();
-      return Object.values(row).some(val =>
-        String(val).toLowerCase().includes(searchStr)
-      );
+      
+      // Search in year
+      if (row.year && String(row.year).toLowerCase().includes(searchStr)) return true;
+      
+      // Search in monetary values (formatted and raw)
+      const monetaryFields = [
+        'electricitySales', 'oilRevenues', 'otherRevenues', 
+        'interestIncome', 'shareInNetIncomeOfAssociate', 
+        'miscellaneousIncome', 'totalRevenue'
+      ];
+      
+      return monetaryFields.some(field => {
+        const value = row[field];
+        if (value == null) return false;
+        
+        // Search in raw number
+        if (String(value).toLowerCase().includes(searchStr)) return true;
+        
+        // Search in formatted number (with commas)
+        const formatted = Number(value).toLocaleString();
+        if (formatted.toLowerCase().includes(searchStr)) return true;
+        
+        return false;
+      });
     });
-
-  // Sorting
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  // Pagination logic
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
-  const pagedData = sortedData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-
-  // Reset to page 1 if filters/search change and page is out of range
-  useEffect(() => {
-    if (page > totalPages) setPage(1);
-    // eslint-disable-next-line
-  }, [filteredData.length, rowsPerPage]);
 
   // Year filter options (add "All Years" option at the top)
   const yearOptions = [
@@ -128,6 +122,14 @@ function EconomicGenerated() {
     <></>
     // Add action buttons here if needed
   );
+
+  // Calculate total pages for external pagination
+  const totalPages = Math.ceil(processedData.length / rowsPerPage);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -166,6 +168,7 @@ function EconomicGenerated() {
               <Button
                 variant="contained"
                 style={{ backgroundColor: '#182959' }}
+                onClick={() => setIsImportModalOpen(true)}
               >
                 IMPORT
               </Button>
@@ -184,7 +187,8 @@ function EconomicGenerated() {
           <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
             <Search
               onSearch={setSearch}
-              suggestions={data.map(d => d.year.toString())}
+              placeholder="Search by year or values..."
+              suggestions={data.map(d => d.year.toString()).filter(Boolean).slice(0, 10)}
             />
             <Filter
               label="Year"
@@ -195,15 +199,15 @@ function EconomicGenerated() {
             />
           </Box>
 
-          {/* Table */}
+          {/* Unified Table with internal sorting and pagination */}
           <Table
             columns={columns}
-            rows={pagedData}
-            onSort={handleSort}
-            sortConfig={sortConfig}
+            rows={processedData} // Pass ALL processed data
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handlePageChange}
+            initialSort={{ key: 'year', direction: 'desc' }} // Default sort by year desc
             actions={renderActions}
-            filters={{}} // No filters in table, handled above
-            onFilterChange={() => {}} // No-op
             emptyMessage="No data available."
           />
 
@@ -212,7 +216,7 @@ function EconomicGenerated() {
             <Pagination
               page={page}
               count={totalPages}
-              onChange={setPage}
+              onChange={handlePageChange}
             />
           </Box>
 
@@ -222,7 +226,23 @@ function EconomicGenerated() {
               <AddValueGeneratedModal
                 onClose={() => {
                   setIsAddModalOpen(false);
+                  // Reset page to 1 to show new data at top
+                  setPage(1);
                   fetchEconomicData();
+                }}
+              />
+            </Overlay>
+          )}
+
+          {/* Import Modal */}
+          {isImportModalOpen && (
+            <Overlay onClose={() => setIsImportModalOpen(false)}>
+              <ImportEconGeneratedModal
+                onClose={() => {
+                  setIsImportModalOpen(false);
+                  // Reset page to 1 to show new data at top
+                  setPage(1);
+                  fetchEconomicData(); // Refresh data after import
                 }}
               />
             </Overlay>

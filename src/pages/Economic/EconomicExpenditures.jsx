@@ -12,6 +12,7 @@ import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
 import AddEconExpendituresModal from '../../components/AddEconExpendituresModal';
+import ImportEconExpendituresModal from '../../components/ImportEconExpendituresModal';
 import Table from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
@@ -23,10 +24,7 @@ function EconomicExpenditures() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState({
-    key: 'year',
-    direction: 'desc'
-  });
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const rowsPerPage = 10;
 
@@ -54,36 +52,46 @@ function EconomicExpenditures() {
     }
   };
 
-  const handleSort = (key) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
-    }));
-    setPage(1); // Reset to first page on sort
-  };
-
-  const getSortedData = (dataToSort = data) => {
-    const sortedData = [...dataToSort].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return sortedData;
-  };
-
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filtering, searching, and sorting are all applied to the full dataset before pagination
+  // Filtering and searching are applied to the full dataset (no more manual sorting)
   const processedData = useMemo(() => {
     let filtered = [...data];
 
-    // Search
+    // Enhanced Search - searches year, company, and all expenditure values
     if (searchTerm) {
-      filtered = filtered.filter(row =>
-        row.comp?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.year?.toString().includes(searchTerm)
-      );
+      filtered = filtered.filter(row => {
+        const searchStr = searchTerm.toLowerCase();
+        
+        // Search in year
+        if (row.year && String(row.year).toLowerCase().includes(searchStr)) return true;
+        
+        // Search in company
+        if (row.comp && row.comp.toLowerCase().includes(searchStr)) return true;
+        
+        // Search in type
+        if (row.type && row.type.toLowerCase().includes(searchStr)) return true;
+        
+        // Search in expenditure values (formatted and raw)
+        const expenditureFields = [
+          'government', 'localSuppl', 'foreignSupplierSpending', 
+          'employee', 'community', 'depreciation', 'depletion', 'others'
+        ];
+        
+        return expenditureFields.some(field => {
+          const value = row[field];
+          if (value == null) return false;
+          
+          // Search in raw number
+          if (String(value).toLowerCase().includes(searchStr)) return true;
+          
+          // Search in formatted number (with commas)
+          const formatted = Number(value).toLocaleString();
+          if (formatted.toLowerCase().includes(searchStr)) return true;
+          
+          return false;
+        });
+      });
     }
 
     // Filters
@@ -91,38 +99,8 @@ function EconomicExpenditures() {
     if (filters.type) filtered = filtered.filter(row => row.type === filters.type);
     if (filters.company) filtered = filtered.filter(row => row.comp === filters.company);
 
-    // Sorting
-    if (sortConfig && sortConfig.key) {
-      filtered = [...filtered].sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
-        if (aValue == null && bValue == null) return 0;
-        if (aValue == null) return 1;
-        if (bValue == null) return -1;
-        if (typeof aValue === "number" && typeof bValue === "number") {
-          return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
-        }
-        const cmp = String(aValue).localeCompare(String(bValue), undefined, { numeric: true });
-        return sortConfig.direction === "asc" ? cmp : -cmp;
-      });
-    }
-
     return filtered;
-  }, [data, filters, searchTerm, sortConfig]);
-
-  // Reset to first page if filters/search/sort change and current page is out of range
-  useEffect(() => {
-    const totalPages = Math.ceil(processedData.length / rowsPerPage) || 1;
-    if (page > totalPages) setPage(1);
-  }, [processedData, page]);
-
-  // Only slice for the current page, do NOT sort again in Table
-  const currentPageRows = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return processedData.slice(start, start + rowsPerPage);
-  }, [processedData, page, rowsPerPage]);
-
-  const totalPages = Math.ceil(processedData.length / rowsPerPage) || 1;
+  }, [data, filters, searchTerm]);
 
   // Table columns definition for reusable Table
   const columns = [
@@ -169,6 +147,14 @@ function EconomicExpenditures() {
     [data]
   );
 
+  // Calculate total pages for external pagination
+  const totalPages = Math.ceil(processedData.length / rowsPerPage);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -207,6 +193,7 @@ function EconomicExpenditures() {
               <Button
                 variant="contained"
                 style={{ backgroundColor: '#182959' }}
+                onClick={() => setIsImportModalOpen(true)}
               >
                 IMPORT
               </Button>
@@ -228,6 +215,7 @@ function EconomicExpenditures() {
                 setSearchTerm(val);
                 setPage(1);
               }}
+              placeholder="Search by year, company, or values..."
               suggestions={[
                 ...new Set([
                   ...data.map(row => row.comp).filter(Boolean),
@@ -268,13 +256,14 @@ function EconomicExpenditures() {
             />
           </Box>
 
-          {/* Reusable Table */}
+          {/* Unified Table with internal sorting and pagination */}
           <Table
             columns={columns}
-            rows={currentPageRows}
-            // Pass onSort and sortConfig so Table does NOT sort internally
-            onSort={handleSort}
-            sortConfig={sortConfig}
+            rows={processedData} // Pass ALL processed data
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handlePageChange}
+            initialSort={{ key: 'year', direction: 'desc' }} // Default sort by year desc
             actions={actions}
             emptyMessage="No data available."
           />
@@ -284,7 +273,7 @@ function EconomicExpenditures() {
             <Pagination
               page={page}
               count={totalPages}
-              onChange={(newPage) => setPage(newPage)}
+              onChange={handlePageChange}
             />
           </Box>
           {isAddModalOpen && (
@@ -292,8 +281,22 @@ function EconomicExpenditures() {
               <AddEconExpendituresModal 
                 onClose={() => {
                   setIsAddModalOpen(false);
+                  // Reset page to 1 to show new data at top
+                  setPage(1);
                   fetchExpendituresData(); // Refresh data after adding
                 }} 
+              />
+            </Overlay>
+          )}
+          {isImportModalOpen && (
+            <Overlay onClose={() => setIsImportModalOpen(false)}>
+              <ImportEconExpendituresModal
+                onClose={() => {
+                  setIsImportModalOpen(false);
+                  // Reset page to 1 to show new data at top
+                  setPage(1);
+                  fetchExpendituresData(); // Refresh data after import
+                }}
               />
             </Overlay>
           )}

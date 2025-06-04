@@ -11,7 +11,7 @@ import Popper from "@mui/material/Popper";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 
 // Main Search Component for filtering/searching with suggestions
-const Search = ({ onSearch, suggestions = [] }) => {
+const Search = ({ onSearch, suggestions = [], placeholder = "Search..." }) => {
   // State for the current input value
   const [query, setQuery] = React.useState("");
   // State to control visibility of suggestions dropdown
@@ -66,7 +66,7 @@ const Search = ({ onSearch, suggestions = [] }) => {
       <TextField
         inputRef={anchorRef}
         type="text"
-        placeholder="Company, Quarter, Year, etc."
+        placeholder={placeholder}
         value={query}
         onChange={handleInputChange}
         onFocus={handleFocus}

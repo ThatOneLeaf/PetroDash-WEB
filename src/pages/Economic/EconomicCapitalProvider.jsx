@@ -16,6 +16,7 @@ import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import AddCapitalProviderModal from '../../components/AddCapitalProviderPaymentsModal';
+import ImportEconCapitalProviderModal from '../../components/ImportEconCapitalProviderModal';
 
 function EconomicCapitalProvider() {
   const [data, setData] = useState([]);
@@ -23,10 +24,7 @@ function EconomicCapitalProvider() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState({
-    key: 'year',
-    direction: 'desc'
-  });
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const rowsPerPage = 10;
 
@@ -54,60 +52,42 @@ function EconomicCapitalProvider() {
     }
   };
 
-  const handleSort = (key) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
-    }));
-    setPage(1);
-  };
-
-  // Filtering, searching, and sorting
+  // Filtering and searching logic (no more manual sorting)
   const processedData = useMemo(() => {
     let filtered = [...data];
 
-    // Search
+    // Enhanced Search - searches year and all payment values
     if (searchTerm) {
-      filtered = filtered.filter(row =>
-        row.year?.toString().includes(searchTerm)
-      );
+      filtered = filtered.filter(row => {
+        const searchStr = searchTerm.toLowerCase();
+        
+        // Search in year
+        if (row.year && String(row.year).toLowerCase().includes(searchStr)) return true;
+        
+        // Search in payment values (formatted and raw)
+        const paymentFields = ['interest', 'dividendsToNci', 'dividendsToParent', 'total'];
+        
+        return paymentFields.some(field => {
+          const value = row[field];
+          if (value == null) return false;
+          
+          // Search in raw number
+          if (String(value).toLowerCase().includes(searchStr)) return true;
+          
+          // Search in formatted number (with commas)
+          const formatted = Number(value).toLocaleString();
+          if (formatted.toLowerCase().includes(searchStr)) return true;
+          
+          return false;
+        });
+      });
     }
 
     // Filters
     if (filters.year) filtered = filtered.filter(row => row.year === filters.year);
 
-    // Sorting
-    if (sortConfig && sortConfig.key) {
-      filtered = [...filtered].sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
-        if (aValue == null && bValue == null) return 0;
-        if (aValue == null) return 1;
-        if (bValue == null) return -1;
-        if (typeof aValue === "number" && typeof bValue === "number") {
-          return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
-        }
-        const cmp = String(aValue).localeCompare(String(bValue), undefined, { numeric: true });
-        return sortConfig.direction === "asc" ? cmp : -cmp;
-      });
-    }
-
     return filtered;
-  }, [data, filters, searchTerm, sortConfig]);
-
-  // Reset to first page if filters/search/sort change and current page is out of range
-  useEffect(() => {
-    const totalPages = Math.ceil(processedData.length / rowsPerPage) || 1;
-    if (page > totalPages) setPage(1);
-  }, [processedData, page]);
-
-  // Only slice for the current page
-  const currentPageRows = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return processedData.slice(start, start + rowsPerPage);
-  }, [processedData, page, rowsPerPage]);
-
-  const totalPages = Math.ceil(processedData.length / rowsPerPage) || 1;
+  }, [data, filters, searchTerm]);
 
   // Table columns definition
   const columns = [
@@ -154,6 +134,14 @@ function EconomicCapitalProvider() {
     [data]
   );
 
+  // Calculate total pages for external pagination
+  const totalPages = Math.ceil(processedData.length / rowsPerPage);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -192,6 +180,7 @@ function EconomicCapitalProvider() {
               <Button
                 variant="contained"
                 style={{ backgroundColor: '#182959' }}
+                onClick={() => setIsImportModalOpen(true)}
               >
                 IMPORT
               </Button>
@@ -213,6 +202,7 @@ function EconomicCapitalProvider() {
                 setSearchTerm(val);
                 setPage(1);
               }}
+              placeholder="Search by year or values..."
               suggestions={[
                 ...new Set([
                   ...data.map(row => String(row.year)).filter(Boolean)
@@ -231,12 +221,14 @@ function EconomicCapitalProvider() {
             />
           </Box>
 
-          {/* Table */}
+          {/* Unified Table with internal sorting and pagination */}
           <Table
             columns={columns}
-            rows={currentPageRows}
-            onSort={handleSort}
-            sortConfig={sortConfig}
+            rows={processedData} // Pass ALL processed data
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handlePageChange}
+            initialSort={{ key: 'year', direction: 'desc' }} // Default sort by year desc
             actions={actions}
             emptyMessage="No data available."
           />
@@ -246,7 +238,7 @@ function EconomicCapitalProvider() {
             <Pagination
               page={page}
               count={totalPages}
-              onChange={(newPage) => setPage(newPage)}
+              onChange={handlePageChange}
             />
           </Box>
 
@@ -256,7 +248,23 @@ function EconomicCapitalProvider() {
               <AddCapitalProviderModal
                 onClose={() => {
                   setIsAddModalOpen(false);
+                  // Reset page to 1 to show new data at top
+                  setPage(1);
                   fetchCapitalProviderData();
+                }}
+              />
+            </Overlay>
+          )}
+
+          {/* Import Modal */}
+          {isImportModalOpen && (
+            <Overlay onClose={() => setIsImportModalOpen(false)}>
+              <ImportEconCapitalProviderModal
+                onClose={() => {
+                  setIsImportModalOpen(false);
+                  // Reset page to 1 to show new data at top
+                  setPage(1);
+                  fetchCapitalProviderData(); // Refresh data after import
                 }}
               />
             </Overlay>
