@@ -15,10 +15,11 @@ import api from '../services/api';
 function AddWaterConsumptionModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
+    company_id: '', // ⬅️ Initialize company
     year: currentYear, 
     quarter: '', // ⬅️ Initialize quarter
     volume: '',
-    unit: 'Cubic Meter' // Default unit
+    unit_of_measurement: 'cubic meter' // Default unit
   });
 
   const handleChange = (field) => (event) => {
@@ -27,11 +28,30 @@ function AddWaterConsumptionModal({ onClose }) {
       [field]: event.target.value
     };
     setFormData(newFormData);
-    calculateTotal(newFormData);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData) => {
+    console.log("Submitting form data:", formData);
+    try {
+      const payload = {
+        company_id: formData.company_id?.trim(),
+        quarter: formData.quarter,
+        year: parseInt(formData.year),
+        volume: parseFloat(formData.volume),
+        unit_of_measurement: formData.unit_of_measurement?.trim(),
+      };
 
+      const response = await api.post(
+        "/environment/single_upload_water_consumption",
+        payload
+      );
+
+      alert(response.data.message);
+      onClose(); // Close modal if needed
+    } catch (error) {
+      console.error("Error uploading single record:", error);
+      alert(error?.response?.data?.detail || "Add Record Failed.");
+    }
   };
 
   return (
@@ -55,6 +75,28 @@ function AddWaterConsumptionModal({ onClose }) {
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
           Water - Consumption
         </Typography>
+      </Box>
+
+      <Box sx={{
+        display: 'grid', 
+        gap: 2,
+        mb: 2
+      }}>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Company</InputLabel>
+          <Select
+            value={formData.company_id}
+            onChange={handleChange('company_id')}
+            label="Company"
+            sx={{ height: '55px' }}
+          >
+            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
+              <MenuItem key={company_id} value={company_id}>
+                {company_id}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       <Box sx={{ 
@@ -113,14 +155,14 @@ function AddWaterConsumptionModal({ onClose }) {
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Unit of Measurement</InputLabel>
           <Select
-            value={formData.unit}
-            onChange={handleChange('unit')}
+            value={formData.unit_of_measurement}
+            onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['Cubic Meter'].map((unit) => (
-              <MenuItem key={unit} value={unit}>
-                {unit}
+            {['cubic meter'].map((unit_of_measurement) => (
+              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
+                {unit_of_measurement}
               </MenuItem>
             ))}
           </Select>
@@ -145,7 +187,7 @@ function AddWaterConsumptionModal({ onClose }) {
               backgroundColor: '#256d2f', // darker shade of #2B8C37
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(formData)}
         >
           ADD RECORD
         </Button>

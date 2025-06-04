@@ -15,10 +15,12 @@ import api from '../services/api';
 function AddWaterDischargedModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
+    company_id: '', // ⬅️ Initialize company
     year: currentYear, 
+    month: '', // ⬅️ Initialize month
     quarter: '', // ⬅️ Initialize quarter
     volume: '',
-    unit: 'Cubic Meter' // Default unit
+    unit_of_measurement: 'cubic meter' // Default unit
   });
 
   const handleChange = (field) => (event) => {
@@ -27,11 +29,31 @@ function AddWaterDischargedModal({ onClose }) {
       [field]: event.target.value
     };
     setFormData(newFormData);
-    calculateTotal(newFormData);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData) => {
+    console.log("Submitting form data:", formData);
+    try {
+      const payload = {
+        company_id: formData.company_id?.trim(),
+        month: formData.month,
+        quarter: formData.quarter,
+        year: parseInt(formData.year),
+        volume: parseFloat(formData.volume),
+        unit_of_measurement: formData.unit_of_measurement?.trim(),
+      };
 
+      const response = await api.post(
+        "/environment/single_upload_water_abstraction",
+        payload
+      );
+
+      alert(response.data.message);
+      onClose(); // Close modal if needed
+    } catch (error) {
+      console.error("Error uploading single record:", error);
+      alert(error?.response?.data?.detail || "Add Record Failed.");
+    }
   };
 
   return (
@@ -55,6 +77,46 @@ function AddWaterDischargedModal({ onClose }) {
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
           Water - Abstraction
         </Typography>
+      </Box>
+
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr',
+        gap: 2,
+        mb: 2
+      }}>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Company</InputLabel>
+          <Select
+            value={formData.company_id}
+            onChange={handleChange('company_id')}
+            label="Company"
+            sx={{ height: '55px' }}
+          >
+            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
+              <MenuItem key={company_id} value={company_id}>
+                {company_id}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 120 }}>
+        <InputLabel>Month</InputLabel>
+          <Select
+            value={formData.month}
+            onChange={handleChange('month')}
+            label="Month"
+            sx={{ height: '55px' }}
+          >
+            {['January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ].map((month) => (
+              <MenuItem key={month} value={month}>
+                {month}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       <Box sx={{ 
@@ -113,14 +175,14 @@ function AddWaterDischargedModal({ onClose }) {
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Unit of Measurement</InputLabel>
           <Select
-            value={formData.unit}
-            onChange={handleChange('unit')}
+            value={formData.unit_of_measurement}
+            onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['Cubic Meter'].map((unit) => (
-              <MenuItem key={unit} value={unit}>
-                {unit}
+            {['cubic meter'].map((unit_of_measurement) => (
+              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
+                {unit_of_measurement}
               </MenuItem>
             ))}
           </Select>
@@ -145,7 +207,7 @@ function AddWaterDischargedModal({ onClose }) {
               backgroundColor: '#256d2f', // darker shade of #2B8C37
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(formData)}
         >
           ADD RECORD
         </Button>
