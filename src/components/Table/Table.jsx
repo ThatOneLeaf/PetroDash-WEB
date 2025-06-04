@@ -20,9 +20,12 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 //   - label: string, column header text
 //   - align: string, alignment for cell content (optional)
 //   - render: function, custom cell renderer (optional)
-// rows: array of objects, each object is a row of data
-// onSort: (key) => void, callback for sort changes (optional, for controlled sort)
-// sortConfig: { key, direction }, current sort state (optional, for controlled sort)
+// rows: array of objects, ALL data (not pre-paginated)
+// page: number, current page (1-based, optional - defaults to 1)
+// rowsPerPage: number, rows per page (optional - defaults to 10)
+// onPageChange: (newPage) => void, callback for page changes (optional)
+// initialSort: { key, direction }, initial sort config (optional)
+// onSort: (key) => void, callback for sort changes (optional, for external tracking)
 // actions: (row) => ReactNode, function to render action buttons per row (optional)
 // emptyMessage: string, message to show when no data (optional)
 // height: string or number, fixed height for the table container (optional)
@@ -54,22 +57,20 @@ const abbreviateHeader = (label) => {
 
 const Table = ({
   columns,
-  rows,
-  onSort,
-  sortConfig,
+  rows, // ALL data, not pre-paginated
+  page = 1,
+  rowsPerPage = 10,
+  onPageChange,
+  initialSort = { key: null, direction: "asc" },
+  onSort, // Optional callback for external tracking
   actions,
   emptyMessage = "No data available.",
   height,
   maxHeight,
   minHeight,
 }) => {
-  // Internal sort state if not controlled by parent
-  const [internalSort, setInternalSort] = React.useState({ key: null, direction: "asc" });
-  // If both onSort and sortConfig are provided, sorting is controlled by parent
-  const isControlled = !!onSort && !!sortConfig;
-
-  // Use controlled or internal sort config
-  const activeSort = isControlled ? sortConfig : internalSort;
+  // Internal sort state - always used for actual sorting
+  const [sortConfig, setSortConfig] = React.useState(initialSort);
 
   // Calculate dynamic height based on content
   const calculateDynamicHeight = () => {
@@ -79,9 +80,9 @@ const Table = ({
     const rowHeight = 55;
     const padding = 20;
     const minRows = 3; // Minimum rows to show
-    const maxRows = 10; // Maximum rows to show without scrolling
+    const maxRows = Math.min(rowsPerPage, 10); // Use rowsPerPage but cap at 10
     
-    const actualRows = Math.max(minRows, Math.min(rows.length || minRows, maxRows));
+    const actualRows = Math.max(minRows, Math.min(rowsPerPage, maxRows));
     const calculatedHeight = headerHeight + (actualRows * rowHeight) + padding;
     
     // Apply min/max constraints if provided
@@ -96,49 +97,72 @@ const Table = ({
     return finalHeight;
   };
 
-  // Sorting logic
-  // If controlled, do NOT sort here, just render rows as-is
-  // If uncontrolled, sort rows locally based on activeSort
-  const displayRows = isControlled ? rows : React.useMemo(() => {
-    if (!activeSort || !activeSort.key) return rows;
-    // Sort a shallow copy of rows array
+  // UNIFIED SORTING LOGIC: Always sort ALL data first
+  const sortedData = React.useMemo(() => {
+    if (!sortConfig || !sortConfig.key || !rows) return rows || [];
+    
     const sorted = [...rows].sort((a, b) => {
-      const aValue = a[activeSort.key];
-      const bValue = b[activeSort.key];
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      
+      // Handle null/undefined values
       if (aValue == null && bValue == null) return 0;
       if (aValue == null) return 1;
       if (bValue == null) return -1;
+      
       // Numeric sort if both values are numbers
       if (typeof aValue === "number" && typeof bValue === "number") {
-        return aValue - bValue;
+        return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
       }
-      // String/natural sort otherwise
-      return String(aValue).localeCompare(String(bValue), undefined, { numeric: true });
+      
+      // String/natural sort with numeric handling
+      const comparison = String(aValue).localeCompare(String(bValue), undefined, { 
+        numeric: true,
+        sensitivity: 'base'
+      });
+      
+      return sortConfig.direction === "asc" ? comparison : -comparison;
     });
-    // Reverse if direction is descending
-    return activeSort.direction === "asc" ? sorted : sorted.reverse();
-  }, [rows, activeSort, isControlled]);
+    
+    return sorted;
+  }, [rows, sortConfig]);
+
+  // PAGINATION: Apply after sorting
+  const paginatedData = React.useMemo(() => {
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return sortedData.slice(startIndex, endIndex);
+  }, [sortedData, page, rowsPerPage]);
+
+  // Calculate total pages
+  const totalPages = Math.ceil((sortedData?.length || 0) / rowsPerPage);
 
   // Handle header click for sorting
   const handleSort = (key) => {
-    if (isControlled) {
-      // Call parent sort handler
-      onSort(key);
-    } else {
-      // Toggle sort direction or set new sort key
-      setInternalSort((prev) => {
-        if (prev.key === key) {
-          return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
-        }
-        return { key, direction: "asc" };
-      });
-    }
+    setSortConfig((prev) => {
+      const newConfig = {
+        key,
+        direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc"
+      };
+      
+      // Call external sort callback if provided (for tracking/analytics)
+      if (onSort) {
+        onSort(key);
+      }
+      
+      // Reset to page 1 when sorting changes
+      if (onPageChange && page !== 1) {
+        onPageChange(1);
+      }
+      
+      return newConfig;
+    });
   };
 
   // Render sort icon for active sort column
   const renderSortIcon = (key) => {
-    if (!activeSort || activeSort.key !== key) return null;
-    return activeSort.direction === "asc" ? (
+    if (!sortConfig || sortConfig.key !== key) return null;
+    return sortConfig.direction === "asc" ? (
       <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} />
     ) : (
       <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
@@ -276,15 +300,15 @@ const Table = ({
           </TableHead>
           <TableBody>
             {/* Show empty message if no rows */}
-            {displayRows.length === 0 ? (
+            {paginatedData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length + (actions ? 1 : 0)} align="center" sx={{ py: 6, color: "#b0b0b0", textAlign: "center", whiteSpace: "normal", wordBreak: "normal", overflowWrap: "break-word" }}>
                   {emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (
-              // Render table rows
-              displayRows.map((row, idx) => (
+              // Render table rows (paginated data)
+              paginatedData.map((row, idx) => (
                 <TableRow
                   key={row.id ?? `${row.year ?? ""}-${row.comp ?? ""}-${row.type ?? ""}-${idx}`}
                   hover

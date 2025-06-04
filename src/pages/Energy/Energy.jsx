@@ -314,7 +314,7 @@ function Energy() {
           ) : (
             <Table
               columns={columns}
-              rows={paginatedData}
+              rows={filteredData}
               actions={renderActions}
               emptyMessage="No records found for the selected filters."
             />
