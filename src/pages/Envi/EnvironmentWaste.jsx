@@ -340,9 +340,10 @@ function EnvironmentWaste() {
                 backgroundColor: selected === type ? '#2B8C37' : '#9ca3af',
                 borderRadius: '15px',
                 padding: '3px 6px',
+                height: '30px',
                 width: '20%',
                 fontSize: '0.85rem',
-                fontWeight: selected === type ? 800 : 700,
+                fontWeight: 700,
                 color: 'white',
                 '&:hover': {
                   backgroundColor: selected === type ? '#256d2f' : '#6b7280',
@@ -474,12 +475,20 @@ function EnvironmentWaste() {
         
 
         {/* Custom Pagination Component */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+          {/* Row Count Display */}
+          <Typography sx={{ fontSize: '1rem'}}>
+            Showing {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
+          </Typography>
           <Pagination 
             page={page}
             count={totalPages}
             onChange={handlePageChange}
           />
+          <Typography sx={{ fontSize: '1rem'}}>
+            Showing {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
+            {Math.min(page * rowsPerPage, filteredData.length)} records
+          </Typography>
         </Box>
 
         {isAddModalOpen && (
