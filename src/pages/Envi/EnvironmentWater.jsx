@@ -462,7 +462,7 @@ function EnvironmentWater() {
           rows={paginatedData}
           onSort={handleSort}
           sortConfig={sortConfig}
-          emptyMessage="No energy data found."
+          emptyMessage="No water data found."
           maxHeight="69vh"
           minHeight="300px"
           actions={(row) => (

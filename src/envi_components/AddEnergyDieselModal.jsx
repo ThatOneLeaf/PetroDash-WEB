@@ -11,14 +11,18 @@ import {
   InputLabel // ⬅️ Make sure this is imported
 } from '@mui/material';
 import api from '../services/api';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 function AddEnvironmentDieselModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
-    year: currentYear, 
-    month: '', // ⬅️ Initialize quarter
+    company_id: '', // ⬅️ Initialize company
+    cp_id: '',
     consumption: '',
-    unit: 'Liter' // Default unit
+    unit_of_measurement: 'Liter', // Default unit
+    date: '',
   });
 
   const handleChange = (field) => (event) => {
@@ -27,11 +31,30 @@ function AddEnvironmentDieselModal({ onClose }) {
       [field]: event.target.value
     };
     setFormData(newFormData);
-    calculateTotal(newFormData);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData) => {
+    console.log("Submitting form data:", formData);
+    try {
+      const payload = {
+        company_id: formData.company_id?.trim(),
+        cp_id: formData.cp_id?.trim(),
+        unit_of_measurement: formData.unit_of_measurement?.trim(),
+        consumption: parseFloat(formData.consumption),
+        date: formData.date,
+      };
 
+      const response = await api.post(
+        "/environment/single_upload_diesel_consumption",
+        payload
+      );
+
+      alert(response.data.message);
+      onClose(); // Close modal if needed
+    } catch (error) {
+      console.error("Error uploading single record:", error);
+      alert(error?.response?.data?.detail || "Add Record Failed.");
+    }
   };
 
   return (
@@ -64,53 +87,25 @@ function AddEnvironmentDieselModal({ onClose }) {
         mb: 2
       }}>
         <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Month</InputLabel>
+          <InputLabel>Company</InputLabel>
           <Select
-            value={formData.month}
-            onChange={handleChange('month')}
-            label="Month"
+            value={formData.company_id}
+            onChange={handleChange('company_id')}
+            label="Company"
             sx={{ height: '55px' }}
           >
-            {[
-              'January', 'February', 'March', 'April', 'May', 'June',
-              'July', 'August', 'September', 'October', 'November', 'December'
-            ].map((month) => (
-              <MenuItem key={month} value={month}>
-                {month}
+            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
+              <MenuItem key={company_id} value={company_id}>
+                {company_id}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
-
-        <FormControl sx={{ minWidth: 120 }}>
-        <InputLabel>Year</InputLabel>
-          <Select
-            value={formData.year}
-            onChange={handleChange('year')}
-            label="Year"
-            sx={{ height: '55px' }}
-          >
-            {[...Array(10)].map((_, i) => (
-              <MenuItem 
-                key={currentYear - i} 
-                value={currentYear - i}
-              >
-                {currentYear - i}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-      <Box sx={{
-        display: 'grid', 
-        gap: 2,
-        mb: 3
-      }}>
         <FormControl fullWidth>
           <InputLabel>Company Property</InputLabel>
           <Select
-            value={formData.property}
-            onChange={handleChange('property')}
+            value={formData.cp_id}
+            onChange={handleChange('cp_id')}
             label="Company Property"
             sx={{ height: '55px' }}
           >
@@ -123,15 +118,42 @@ function AddEnvironmentDieselModal({ onClose }) {
               'ELF TRUCK',
               'WATER TRUCK (4l)',
               'WATER TRUCK (6l)',
-            ].map((item) => (
-              <MenuItem key={item} value={item}>
-                {item}
+            ].map((cp_id) => (
+              <MenuItem key={cp_id} value={cp_id}>
+                {cp_id}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
+      </Box>
 
-        <TextField
+      <Box sx={{
+        display: 'grid', 
+        gap: 2,
+        mb: 2
+      }}>
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DatePicker
+            label="Date"
+            value={formData.date ? new Date(formData.date) : null}
+            onChange={(newValue) => {
+              setFormData((prev) => ({
+                ...prev,
+                date: newValue?.toISOString().split('T')[0] || '',
+              }));
+            }}
+            renderInput={(params) => <TextField {...params} fullWidth />}
+          />
+        </LocalizationProvider>
+      </Box>
+
+
+      <Box sx={{
+        display: 'grid', 
+        gap: 2,
+        mb: 3
+      }}>
+         <TextField
           placeholder="Diesel Consumption"
           value={formData.consumption}
           onChange={handleChange('consumption')}
@@ -141,14 +163,14 @@ function AddEnvironmentDieselModal({ onClose }) {
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Unit of Measurement</InputLabel>
           <Select
-            value={formData.unit}
-            onChange={handleChange('unit')}
+            value={formData.unit_of_measurement}
+            onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['Liter'].map((unit) => (
-              <MenuItem key={unit} value={unit}>
-                {unit}
+            {['Liter'].map((unit_of_measurement) => (
+              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
+                {unit_of_measurement}
               </MenuItem>
             ))}
           </Select>
@@ -173,7 +195,7 @@ function AddEnvironmentDieselModal({ onClose }) {
               backgroundColor: '#256d2f', // darker shade of #2B8C37
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(formData)}
         >
           ADD RECORD
         </Button>
