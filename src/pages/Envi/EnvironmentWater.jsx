@@ -232,6 +232,33 @@ function EnvironmentWater() {
     }
   };
 
+  const exportToExcel = async (filteredData) => {
+    try {
+      const response = await api.post(
+        'environment/export_excel',
+        filteredData,
+        {
+          responseType: 'blob', // ensures the response is treated as binary
+        }
+      );
+  
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+  
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'exported_data.xlsx';
+      a.click();
+  
+      // Clean up
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export Excel:', error);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -263,6 +290,7 @@ function EnvironmentWater() {
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
             <Button
               variant="contained"
+              onClick={() => exportToExcel(filteredData)}
               startIcon={<FileUploadIcon />}
               sx={{
                 backgroundColor: '#182959',
