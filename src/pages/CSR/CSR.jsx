@@ -9,9 +9,7 @@ import {
 function CSR() {
     return (
       <Box style={{ display: 'flex', flexDirection: 'row', height: '200dvh', width: '100%', margin: 0, padding: 0, overflowX: 'hidden' }}>
-        <Box style={{}}>
           <Sidebar />
-        </Box>
         <Box sx={{ width: '100%', height: 'full', display: 'flex', flexDirection: 'column', padding: '40px' }}>
           {/* Title */}
           <Typography variant="h6" sx={{  }}>Repository</Typography>

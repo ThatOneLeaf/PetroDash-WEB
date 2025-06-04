@@ -138,10 +138,8 @@ function CSR() {
   if (error) return <div>{error}</div>;
 
   return (
-    <Box style={{ display: 'flex', flexDirection: 'row', height: '200dvh', width: '100%', margin: 0, padding: 0, overflowX: 'hidden' }}>
-      <Box style={{}}>
+    <Box style={{ display: 'flex'}}>
         <Sidebar />
-      </Box>
       <Box sx={{ width: '100%', height: 'full', display: 'flex', flexDirection: 'column', padding: '40px' }}>
         {/* Title */}
         <Box sx={{

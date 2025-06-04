@@ -186,7 +186,7 @@ function Navbar({
           boxSizing: 'border-box',
           ...navAnimStyle
         }}>
-          <Link to="/" style={{ textDecoration: 'none', color: 'inherit', zIndex: 1202 }}>
+          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
             <img
               src="src/assets/petrodashlogo.png"
               alt="PetroDash"
