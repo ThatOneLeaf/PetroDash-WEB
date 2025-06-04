@@ -225,7 +225,7 @@ function EnvironmentEnergy() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'exported_data.xlsx';
+      a.download = 'exported_energy_data.xlsx';
       a.click();
   
       // Clean up
