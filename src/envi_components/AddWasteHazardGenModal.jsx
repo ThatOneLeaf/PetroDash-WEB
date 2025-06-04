@@ -17,9 +17,10 @@ function AddWasteHazardGenModal({ onClose }) {
   const [formData, setFormData] = useState({
     year: currentYear, 
     quarter: '', // ⬅️ Initialize quarter
-    type: '',
-    waste: '',
-    unit: '' // Default unit
+    company_id: '', // ⬅️ Initialize company
+    metrics: '',
+    waste_generated: '',
+    unit_of_measurement: '', // Default unit
   });
 
   const handleChange = (field) => (event) => {
@@ -28,11 +29,31 @@ function AddWasteHazardGenModal({ onClose }) {
       [field]: event.target.value
     };
     setFormData(newFormData);
-    calculateTotal(newFormData);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData) => {
+    console.log("Submitting form data:", formData);
+    try {
+      const payload = {
+        company_id: formData.company_id?.trim(),
+        metrics: formData.metrics?.trim(),
+        waste_generated: parseFloat(formData.waste_generated),
+        unit_of_measurement: formData.unit_of_measurement?.trim(),
+        quarter: formData.quarter,
+        year: parseInt(formData.year)
+      };
 
+      const response = await api.post(
+        "/environment/single_upload_hazard_waste_generated",
+        payload
+      );
+
+      alert(response.data.message);
+      onClose(); // Close modal if needed
+    } catch (error) {
+      console.error("Error uploading single record:", error);
+      alert(error?.response?.data?.detail || "Add Record Failed.");
+    }
   };
 
   return (
@@ -56,6 +77,44 @@ function AddWasteHazardGenModal({ onClose }) {
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
           Waste - Hazard Generated
         </Typography>
+      </Box>
+
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr',
+        gap: 2,
+        mb: 2
+      }}>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Company</InputLabel>
+          <Select
+            value={formData.company_id}
+            onChange={handleChange('company_id')}
+            label="Company"
+            sx={{ height: '55px' }}
+          >
+            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
+              <MenuItem key={company_id} value={company_id}>
+                {company_id}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Metrics</InputLabel>
+          <Select
+            value={formData.metrics}
+            onChange={handleChange('metrics')}
+            label="Waste metrics"
+            sx={{ height: '55px' }}
+          >
+            {['Empty Containers', 'Electronic Waste', 'Used Oil', 'BFL'].map((metrics) => (
+              <MenuItem key={metrics} value={metrics}>
+                {metrics}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       <Box sx={{ 
@@ -99,53 +158,29 @@ function AddWasteHazardGenModal({ onClose }) {
           </Select>
         </FormControl>
       </Box>
-
       <Box sx={{
         display: 'grid', 
         gap: 2,
         mb: 3
       }}>
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Waste Type</InputLabel>
-          <Select
-            value={formData.type}
-            onChange={handleChange('type')}
-            label="Waste Type"
-            sx={{ height: '55px' }}
-          >
-            {['Empty Containers', 'Electronic Waste', 'Used Oil', 'BFL'].map((type) => (
-              <MenuItem key={type} value={type}>
-                {type}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
-      <Box sx={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr',
-        gap: 2,
-        mb: 2
-      }}>
-        <TextField
-          label="Waste Generated"
-          placeholder="####"
-          value={formData.waste}
-          onChange={handleChange('waste')}
+         <TextField
+          placeholder="Waste Generated"
+          value={formData.waste_generated}
+          onChange={handleChange('waste_generated')}
           type="number"
         />
+
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Unit of Measurement</InputLabel>
           <Select
-            value={formData.unit}
-            onChange={handleChange('unit')}
+            value={formData.unit_of_measurement}
+            onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['Kilogram', 'Liter'].map((unit) => (
-              <MenuItem key={unit} value={unit}>
-                {unit}
+            {['Kilogram', 'Liter'].map((unit_of_measurement) => (
+              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
+                {unit_of_measurement}
               </MenuItem>
             ))}
           </Select>
@@ -170,7 +205,7 @@ function AddWasteHazardGenModal({ onClose }) {
               backgroundColor: '#256d2f', // darker shade of #2B8C37
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(formData)}
         >
           ADD RECORD
         </Button>

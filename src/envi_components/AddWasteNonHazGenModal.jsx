@@ -11,14 +11,18 @@ import {
   InputLabel // ⬅️ Make sure this is imported
 } from '@mui/material';
 import api from '../services/api';
+import { m } from 'framer-motion';
 
 function AddWasteNonHazGenModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     year: currentYear, 
-    type: '',
+    quarter: '', // ⬅️ Initialize quarter
+    company_id: '', // ⬅️ Initialize company
+    month: '',
+    metrics: '',
     waste: '',
-    unit: '' // Default unit
+    unit_of_measurement: '', // Default unit
   });
 
   const handleChange = (field) => (event) => {
@@ -27,11 +31,32 @@ function AddWasteNonHazGenModal({ onClose }) {
       [field]: event.target.value
     };
     setFormData(newFormData);
-    calculateTotal(newFormData);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData) => {
+    console.log("Submitting form data:", formData);
+    try {
+      const payload = {
+        company_id: formData.company_id?.trim(),
+        metrics: formData.metrics?.trim(),
+        waste: parseFloat(formData.waste),
+        unit_of_measurement: formData.unit_of_measurement?.trim(),
+        month: formData.month?.trim(),
+        quarter: formData.quarter,
+        year: parseInt(formData.year)
+      };
 
+      const response = await api.post(
+        "/environment/single_upload_non_hazard_waste",
+        payload
+      );
+
+      alert(response.data.message);
+      onClose(); // Close modal if needed
+    } catch (error) {
+      console.error("Error uploading single record:", error);
+      alert(error?.response?.data?.detail || "Add Record Failed.");
+    }
   };
 
   return (
@@ -57,41 +82,38 @@ function AddWasteNonHazGenModal({ onClose }) {
         </Typography>
       </Box>
 
-      <Box sx={{
+      <Box sx={{ 
         display: 'grid', 
+        gridTemplateColumns: '1fr 1fr',
         gap: 2,
-        mb: 3
+        mb: 2
       }}>
         <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Year</InputLabel>
-            <Select
-              value={formData.year}
-              onChange={handleChange('year')}
-              label="Year"
-              sx={{ height: '55px' }}
-            >
-              {[...Array(10)].map((_, i) => (
-                <MenuItem 
-                  key={currentYear - i} 
-                  value={currentYear - i}
-                >
-                  {currentYear - i}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
-
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Waste Type</InputLabel>
+          <InputLabel>Company</InputLabel>
           <Select
-            value={formData.type}
-            onChange={handleChange('type')}
-            label="Waste Type"
+            value={formData.company_id}
+            onChange={handleChange('company_id')}
+            label="Company"
             sx={{ height: '55px' }}
           >
-            {['Residual', 'Compostable', 'PET Bottles', 'Food', 'Scrap Metal', 'Scrap Tires'].map((type) => (
-              <MenuItem key={type} value={type}>
-                {type}
+            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
+              <MenuItem key={company_id} value={company_id}>
+                {company_id}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Metrics</InputLabel>
+          <Select
+            value={formData.metrics}
+            onChange={handleChange('metrics')}
+            label="Waste metrics"
+            sx={{ height: '55px' }}
+          >
+            {['Empty Containers', 'Electronic Waste', 'Used Oil', 'BFL'].map((metrics) => (
+              <MenuItem key={metrics} value={metrics}>
+                {metrics}
               </MenuItem>
             ))}
           </Select>
@@ -100,28 +122,85 @@ function AddWasteNonHazGenModal({ onClose }) {
 
       <Box sx={{ 
         display: 'grid', 
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: '1fr 1fr 1fr',
         gap: 2,
         mb: 2
       }}>
-        <TextField
-          label="Waste Generated"
-          placeholder="####"
+        <FormControl sx={{ minWidth: 120 }}>
+        <InputLabel>Month</InputLabel>
+          <Select
+            value={formData.month}
+            onChange={handleChange('month')}
+            label="Month"
+            sx={{ height: '55px' }}
+          >
+            {['January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ].map((month) => (
+              <MenuItem key={month} value={month}>
+                {month}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Quarter</InputLabel>
+          <Select
+            value={formData.quarter}
+            onChange={handleChange('quarter')}
+            label="Quarter"
+            sx={{ height: '55px' }}
+          >
+            {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => (
+              <MenuItem key={quarter} value={quarter}>
+                {quarter}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ minWidth: 120 }}>
+        <InputLabel>Year</InputLabel>
+          <Select
+            value={formData.year}
+            onChange={handleChange('year')}
+            label="Year"
+            sx={{ height: '55px' }}
+          >
+            {[...Array(10)].map((_, i) => (
+              <MenuItem 
+                key={currentYear - i} 
+                value={currentYear - i}
+              >
+                {currentYear - i}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      <Box sx={{
+        display: 'grid', 
+        gap: 2,
+        mb: 3
+      }}>
+         <TextField
+          placeholder="Waste Generated"
           value={formData.waste}
           onChange={handleChange('waste')}
           type="number"
         />
+
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Unit of Measurement</InputLabel>
           <Select
-            value={formData.unit}
-            onChange={handleChange('unit')}
+            value={formData.unit_of_measurement}
+            onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['Kilogram', 'Liter', 'Pieces'].map((unit) => (
-              <MenuItem key={unit} value={unit}>
-                {unit}
+            {['Kilogram', 'Liter'].map((unit_of_measurement) => (
+              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
+                {unit_of_measurement}
               </MenuItem>
             ))}
           </Select>
@@ -146,7 +225,7 @@ function AddWasteNonHazGenModal({ onClose }) {
               backgroundColor: '#256d2f', // darker shade of #2B8C37
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(formData)}
         >
           ADD RECORD
         </Button>
