@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import SideBar from "../../components/Sidebar";
 import ImportPowerFileModal from "../../components/ImportPowerFileModal";
 import {
@@ -21,7 +21,10 @@ import Pagination from "../../components/Pagination/pagination";
 import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter"; 
 import StatusChip from "../../components/StatusChip";
+import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
+import Search from "../../components/Filter/Search";
+import DateRangePicker from "../../components/Filter/DateRangePicker";
 
 function Energy() {
   const [data, setData] = useState([]);
@@ -31,6 +34,11 @@ function Energy() {
   const rowsPerPage = 10;
   const [isAddEnergyModalOpen, setIsAddEnergyModalOpen] = useState(false);
   const [isImportEnergyModalOpen, setIsImportEnergyModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+    const [sortConfig, setSortConfig] = useState({
+    key: 'date',
+    direction: 'desc'
+  });
 
   const [filters, setFilters] = useState({
     company: "",
@@ -40,7 +48,16 @@ function Energy() {
     status: "",
   });
 
-  // New state for power plants list
+  const isFiltering = useMemo(() => {
+    return (
+      Object.values(filters).some(v => v !== null && v !== '') ||
+      startDate !== null ||
+      endDate !== null ||
+      searchTerm !== ''
+    );
+  }, [filters, startDate, endDate, searchTerm]);
+
+
   const [powerPlants, setPowerPlants] = useState([]);
 
   const fetchEnergyData = async () => {
@@ -68,7 +85,6 @@ function Energy() {
     }
   };
 
-  // Fetch power plants once on mount
   useEffect(() => {
     const fetchPowerPlants = async () => {
       try {
@@ -86,22 +102,25 @@ function Energy() {
     fetchEnergyData();
   }, []);
 
-  // Build unique options for filters
   const companyOptions = Array.from(
     new Set(data.map((item) => item.companyName))
   ).map((val) => ({ label: val, value: val }));
+
   const powerPlantOptions = Array.from(
     new Set(data.map((item) => item.powerPlant))
   ).map((val) => ({ label: val, value: val }));
+
   const generationSourceOptions = Array.from(
     new Set(data.map((item) => item.generationSource))
   ).map((val) => ({
     label: val.charAt(0).toUpperCase() + val.slice(1),
     value: val,
   }));
+
   const provinceOptions = Array.from(
     new Set(data.map((item) => item.province))
   ).map((val) => ({ label: val, value: val }));
+
   const statusOptions = [
     { label: "Pending", value: "PND" },
     { label: "Head Approved", value: "HAP" },
@@ -110,20 +129,20 @@ function Energy() {
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
-  // Filter data by date and all filters
   const filteredData = data.filter((item) => {
     const itemDate = dayjs(item.date);
+    const searchMatch =
+      searchTerm === "" ||
+      Object.values(item).some(val =>
+        String(val).toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+    if (!searchMatch) return false;
     if (startDate && itemDate.isBefore(dayjs(startDate), "day")) return false;
     if (endDate && itemDate.isAfter(dayjs(endDate), "day")) return false;
-
     if (filters.company && item.companyName !== filters.company) return false;
-    if (filters.powerPlant && item.powerPlant !== filters.powerPlant)
-      return false;
-    if (
-      filters.generationSource &&
-      item.generationSource !== filters.generationSource
-    )
-      return false;
+    if (filters.powerPlant && item.powerPlant !== filters.powerPlant) return false;
+    if (filters.generationSource && item.generationSource !== filters.generationSource) return false;
     if (filters.province && item.province !== filters.province) return false;
     if (filters.status && item.status !== filters.status) return false;
 
@@ -153,6 +172,14 @@ function Energy() {
     </IconButton>
   );
 
+  const handleSort = (key) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+    setPage(1); // Reset to first page on sort
+  };
+
   const handleChangePage = (newPage) => {
     setPage(newPage);
   };
@@ -162,7 +189,6 @@ function Energy() {
       <SideBar />
       <Box sx={{ flexGrow: 1, height: "100vh", overflow: "auto" }}>
         <Container maxWidth={false} disableGutters sx={{ padding: "2rem" }}>
-          {/* Header */}
           <Box
             sx={{
               display: "flex",
@@ -213,111 +239,85 @@ function Energy() {
 
           {/* Filters */}
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-            <Filter
-              label="Company"
-              options={[{ label: "All Companies", value: "" }, ...companyOptions]}
-              value={filters.company}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, company: val }));
+            <Search
+              value={searchTerm}
+              onSearch={(val) => {
+                setSearchTerm(val);
                 setPage(1);
               }}
-              placeholder="Company"
-            />
-            <Filter
-              label="Power Plant"
-              options={[{ label: "All Power Plants", value: "" }, ...powerPlantOptions]}
-              value={filters.powerPlant}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, powerPlant: val }));
-                setPage(1);
-              }}
-              placeholder="Power Plant"
-            />
-            <Filter
-              label="Generation Source"
-              options={[
-                { label: "All Sources", value: "" },
-                ...generationSourceOptions,
+              suggestions={[
+                ...new Set([
+                  ...data.map((row) => row.companyName).filter(Boolean),
+                  ...data.map((row) => row.powerPlant).filter(Boolean),
+                  ...data.map((row) => String(row.date)).filter(Boolean),
+                  ...data.map((row) => row.generationSource).filter(Boolean),
+                  ...data.map((row) => row.province).filter(Boolean),
+                ]),
               ]}
-              value={filters.generationSource}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, generationSource: val }));
-                setPage(1);
-              }}
-              placeholder="Source"
             />
-            <Filter
-              label="Province"
-              options={[{ label: "All Provinces", value: "" }, ...provinceOptions]}
-              value={filters.province}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, province: val }));
-                setPage(1);
-              }}
-              placeholder="Province"
+            <Filter label="Company" placeholder="Company" options={[{ label: "All Companies", value: "" }, ...companyOptions]} value={filters.company} onChange={(val) => { setFilters((prev) => ({ ...prev, company: val })); setPage(1); }} />
+            <Filter label="Power Plant" placeholder="Power Plant" options={[{ label: "All Power Plants", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
+            <Filter label="Generation Source" placeholder="Source" options={[{ label: "All Sources", value: "" }, ...generationSourceOptions]} value={filters.generationSource} onChange={(val) => { setFilters((prev) => ({ ...prev, generationSource: val })); setPage(1); }} />
+            <Filter label="Status" placeholder="Status" options={[{ label: "All Statuses", value: "" }, ...statusOptions]} value={filters.status} onChange={(val) => { setFilters((prev) => ({ ...prev, status: val })); setPage(1); }} />
+            <DateRangePicker
+              label="Date Range"
+              startDate={startDate}
+              endDate={endDate}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
             />
-            <Filter
-              label="Status"
-              options={[{ label: "All Statuses", value: "" }, ...statusOptions]}
-              value={filters.status}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, status: val }));
-                setPage(1);
-              }}
-              placeholder="Status"
-            />
+            {(isFiltering || startDate || endDate || searchTerm) && (
+              <Button
+                variant="outline"
+                startIcon={<ClearIcon />}
+                sx={{ 
+                  color: '#182959',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                }}
+                onClick={() => {
+                  setFilters({
+                    company: '',
+                    powerPlant: '',
+                    generationSource: '',
+                    province: '',
+                    status: '',
+                  });
+                  setStartDate(null);
+                  setEndDate(null);
+                  setSearchTerm(""); // ← this resets the search input
+                  setFilters({});    // ← optional: reset other filters too
+                  setPage(1);
+                }}
+              >
+                Clear
+              </Button>
+            )}
+  
           </Box>
 
-          {/* Date Filters */}
-          <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                label="Start Date"
-                value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
-                maxDate={endDate || undefined}
-                slotProps={{
-                  textField: {
-                    size: "small",
-                    sx: {
-                      width: 150,
-                      "& .MuiInputBase-root": { height: 36, fontSize: "0.8rem" },
-                      "& .MuiInputLabel-root": { fontSize: "0.75rem" },
-                    },
-                  },
-                }}
-              />
-              <DatePicker
-                label="End Date"
-                value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
-                minDate={startDate || undefined}
-                slotProps={{
-                  textField: {
-                    size: "small",
-                    sx: {
-                      width: 150,
-                      "& .MuiInputBase-root": { height: 36, fontSize: "0.8rem" },
-                      "& .MuiInputLabel-root": { fontSize: "0.75rem" },
-                    },
-                  },
-                }}
-              />
-            </LocalizationProvider>
-          </Box>
-
-          {/* Table or fallback */}
+          {/* Table */}
           {paginatedData.length === 0 ? (
             <Typography align="center" sx={{ py: 5 }}>
               No records found for the selected filters.
             </Typography>
           ) : (
-            <Table
-              columns={columns}
-              rows={filteredData}
-              actions={renderActions}
-              emptyMessage="No records found for the selected filters."
-            />
+              <Table
+                columns={columns}
+                rows={paginatedData}
+                onSort={handleSort}
+                sortConfig={sortConfig}
+                emptyMessage="No energy data found."
+                maxHeight="69vh"
+                minHeight="300px"
+                actions={(row) => (
+                  <IconButton size="small">
+                    <EditIcon />
+                  </IconButton>
+                )}
+              />
           )}
 
           {/* Pagination */}
@@ -330,7 +330,7 @@ function Energy() {
           </Box>
         </Container>
 
-        {/* Modal */}
+        {/* Modals */}
         {isAddEnergyModalOpen && (
           <Overlay onClose={() => setIsAddEnergyModalOpen(false)}>
             <AddEnergyGenerationModal
@@ -338,20 +338,20 @@ function Energy() {
                 setIsAddEnergyModalOpen(false);
                 fetchEnergyData();
               }}
-              powerPlants={powerPlants}  
+              powerPlants={powerPlants}
             />
           </Overlay>
         )}
         {isImportEnergyModalOpen && (
-        <Overlay onClose={() => setIsImportEnergyModalOpen(false)}>
-          <ImportPowerFileModal
-            onClose={() => {
-              setIsImportEnergyModalOpen(false);
-              fetchEnergyData(); // optional
-            }}
-          />
-        </Overlay>
-      )}
+          <Overlay onClose={() => setIsImportEnergyModalOpen(false)}>
+            <ImportPowerFileModal
+              onClose={() => {
+                setIsImportEnergyModalOpen(false);
+                fetchEnergyData();
+              }}
+            />
+          </Overlay>
+        )}
       </Box>
     </Box>
   );

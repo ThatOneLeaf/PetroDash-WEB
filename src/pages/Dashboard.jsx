@@ -13,6 +13,7 @@ import {
   ComposedChart
 } from 'recharts';
 import api from '../services/api';
+import {Box} from "@mui/material";
 import Sidebar from '../components/Sidebar';
 
 function Dashboard() {
@@ -40,19 +41,14 @@ function Dashboard() {
   // if (error) return <div>{error}</div>;
 
   return (
-    <div style={{ 
-      display: 'flex',
-      flexDirection: 'row',
-      minHeight: '200dvh',
-      width: '100%',
-      margin: 0,
-      padding: 0,
-      overflowX: 'hidden'
-    }}>
+    <Box sx={{ display: "flex" }}>
       <Sidebar />
-      <h1>Dashboard</h1>
-      {/* Add your dashboard content here */}
-    </div>
+      <Box sx={{ flexGrow: 1, height: "100vh", overflow: "auto" }}>
+        <h1>Dashboard</h1>
+      </Box>
+      
+
+    </Box>
   );
 }
 

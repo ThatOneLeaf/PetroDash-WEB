@@ -1,4 +1,4 @@
-import React, { useState,  } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -11,112 +11,100 @@ import {
   FormControlLabel,
   Link,
   InputAdornment,
-  IconButton
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-// Import the login image
 import loginImage from "../../assets/login_image.png";
+
 const interFont = { fontFamily: "Inter, sans-serif" };
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-
-  const toDashboard = () => {
-    navigate('')
-  }
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        borderRadius: "24px",
-        width: "800px",
-        // maxWidth: "95vw",
-        p: 0,
-        overflow: "hidden",
-        display: "flex",
-      }}
+    <Box
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      minHeight="100vh"
+      px={2}
     >
-      <Grid container>
-        {/* Left Side: Image */}
-        <Grid
-          item
-          sx={{
-            bgcolor: "#7694c4",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            // minHeight: 500
-          }}
-        >
-          {/* Login image */}
+      <Paper
+        elevation={3}
+        sx={{
+          borderRadius: "24px",
+          width: "100%",
+          maxWidth: 800,
+          display: "flex",
+          flexDirection: isSmall ? "column" : "row",
+          overflow: "hidden",
+        }}
+      >
+        {/* Image Section */}
+        {!isSmall && (
           <Box
-            component="img"
-            src={loginImage}
-            alt="Login"
             sx={{
-              width: "auto",
-              height: "auto",
-              maxWidth: 441.,
-              maxHeight: 600,
-              objectFit: "contain",
-              opacity: 0.825,
-              borderRadius: "24px 0 0 24px",
-              boxShadow: 2
+              bgcolor: "#7694c4",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "45%",
             }}
-          />
-        </Grid>
-        {/* Right Side: Login Form */}
-        <Grid
-          item
-          xs={7}
-          sx={{
-            p: 5,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center"
-          }}
-        >
-          {/* Logo */}
-          <Box sx={{ mb: 2, display: "flex", alignItems: "center" }}>
-            {/* Logo image */}
+          >
             <Box
               component="img"
-              src="src\assets\petrodashlogo.png"
-              alt="PetroDash Logo"
+              src={loginImage}
+              alt="Login"
               sx={{
-                width: 240,
-                height: "auto",
-                mr: 1,
-                display: "block"
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                opacity: 0.825,
+                borderRadius: "24px 0 0 24px",
               }}
             />
           </Box>
-          {/* User Login */}
-          <Typography
-            variant="h6"
-            sx={{
-              mt: 2,
-              mb: 3,
-              fontWeight: 400,
-              color: "#222",
-              ...interFont
-            }}
-          >
+        )}
+
+        {/* Login Form */}
+        <Box
+          sx={{
+            width: isSmall ? "100%" : "55%",
+            p: 4,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
+          {/* Logo */}
+          <Box sx={{ mb: 2 }}>
+            <Box
+              component="img"
+              src="src/assets/petrodashlogo.png"
+              alt="PetroDash Logo"
+              sx={{ width: 200 }}
+            />
+          </Box>
+
+          <Typography variant="h6" sx={{ mb: 3, ...interFont }}>
             User Login
           </Typography>
-          {/* Email */}
+
           <TextField
             fullWidth
             variant="outlined"
             placeholder="someone@petroenergy.com.ph"
             sx={{ mb: 2, ...interFont }}
             InputProps={{
-              sx: { borderRadius: "8px", ...interFont }
+              sx: { borderRadius: "8px", ...interFont },
             }}
           />
-          {/* Password */}
+
           <TextField
             fullWidth
             variant="outlined"
@@ -135,10 +123,10 @@ export default function LoginPage() {
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
-              )
+              ),
             }}
           />
-          {/* Show Password */}
+
           <FormControlLabel
             control={
               <Checkbox
@@ -146,7 +134,7 @@ export default function LoginPage() {
                 onChange={() => setShowPassword((show) => !show)}
                 sx={{
                   color: "#1e5b2e",
-                  "&.Mui-checked": { color: "#1e5b2e" }
+                  "&.Mui-checked": { color: "#1e5b2e" },
                 }}
               />
             }
@@ -157,7 +145,7 @@ export default function LoginPage() {
             }
             sx={{ mb: 1, ml: 0 }}
           />
-          {/* Forgot Password */}
+
           <Box sx={{ mb: 3 }}>
             <Link
               href="#"
@@ -165,35 +153,34 @@ export default function LoginPage() {
               sx={{
                 color: "#1a2c5b",
                 fontSize: 15,
-                ...interFont
+                ...interFont,
               }}
             >
               Forgot Password?
             </Link>
           </Box>
-          {/* Login Button */}
-          <Link to="/dashboard">
-            <Button
-              variant="contained"
-              fullWidth
-              sx={{
-                bgcolor: "#1e5b2e",
-                color: "#fff",
-                fontWeight: 700,
-                borderRadius: "24px",
-                fontSize: 18,
-                py: 1.2,
-                textTransform: "none",
-                boxShadow: "none",
-                ...interFont,
-                "&:hover": { bgcolor: "#176c3c" }
-              }} onClick={() => {navigate("/dashboard")}}
-            >
-              LOGIN
-            </Button>
-          </Link>
-        </Grid>
-      </Grid>
-    </Paper>
+
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => navigate("/dashboard")}
+            sx={{
+              bgcolor: "#1e5b2e",
+              color: "#fff",
+              fontWeight: 700,
+              borderRadius: "24px",
+              fontSize: 18,
+              py: 1.2,
+              textTransform: "none",
+              boxShadow: "none",
+              ...interFont,
+              "&:hover": { bgcolor: "#176c3c" },
+            }}
+          >
+            LOGIN
+          </Button>
+        </Box>
+      </Paper>
+    </Box>
   );
 }
