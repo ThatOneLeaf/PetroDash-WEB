@@ -109,7 +109,7 @@ function AddTrainingModal({ onClose }) {
         />
 
         <TextField
-          placeholder="Number of Participants   *"
+          placeholder="Number of Participants*"
           value={formData.numberOfParticipants}
           onChange={handleChange("numberOfParticipants")}
           type="number"
@@ -125,11 +125,18 @@ function AddTrainingModal({ onClose }) {
         }}
       >
         <Button
-          variant="contained"
           onClick={handleSubmit}
+          variant="contained"
           sx={{
-            bgcolor: "#2E7D32",
-            "&:hover": { bgcolor: "#1b5e20" },
+            width: "100px",
+            backgroundColor: "#2B8C37",
+            borderRadius: "999px",
+            padding: "9px 18px",
+            fontSize: "0.85rem",
+            fontWeight: "bold",
+            "&:hover": {
+              backgroundColor: "#256d2f",
+            },
           }}
         >
           ADD

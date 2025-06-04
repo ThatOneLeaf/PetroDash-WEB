@@ -11,13 +11,13 @@ import {
 
 import api from "../../services/api";
 
-function AddSafetyWorkDataModal({ onClose }) {
+function UpdateParentalLeaveModal({ onClose, row }) {
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
-    contractor: "",
-    date: "",
-    safetyManpower: "",
-    safetyManhours: "",
+    employeeId: "",
+    dateAvailed: "",
+    daysAvailed: "",
+    typeOfLeave: "",
   });
 
   const handleChange = (field) => (event) => {
@@ -61,7 +61,7 @@ function AddSafetyWorkDataModal({ onClose }) {
           fontWeight: "bold",
         }}
       >
-        Add New Record
+        Update Record
       </Typography>
 
       <Box
@@ -88,31 +88,57 @@ function AddSafetyWorkDataModal({ onClose }) {
         </Select>*/}
 
         <TextField
-          placeholder="Contractor*"
-          value={formData.contractor}
-          onChange={handleChange("contractor")}
-          type="text"
+          defaultValue={row.employee_id}
+          slotProps={{
+            input: {
+              readOnly: true,
+            },
+          }}
+          sx={{
+            "& .MuiInputBase-input": {
+              fontWeight: "bold",
+            },
+          }}
+        />
+
+        <Select
+          value={formData.typeOfLeave}
+          onChange={handleChange("typeOfLeave")}
+          displayEmpty
+          renderValue={(selected) => {
+            if (!selected) {
+              return <span style={{ color: "#999" }}>{row.type_of_leave}</span>;
+            }
+            const getLeave = (selected) => {
+              const map = {
+                SP: "Solo Parent",
+                MATERNITY: "Maternity",
+                PATERNITY: "Paternity",
+              };
+
+              return map[selected] || "Unknown";
+            };
+
+            return getLeave(selected);
+          }}
+        >
+          <MenuItem value="SP">Solo Parent </MenuItem>
+          <MenuItem value="MATERNITY">Maternity</MenuItem>
+          <MenuItem value="PATERNITY">Paternity</MenuItem>
+        </Select>
+
+        <TextField
+          placeholder={row.days}
+          value={formData.daysAvailed}
+          onChange={handleChange("daysAvailed")}
+          type="number"
         />
 
         <TextField
-          placeholder="Date*"
-          value={formData.date}
-          onChange={handleChange("date")}
+          placeholder={row.date?.split("T")[0]}
+          value={formData.dateAvailed}
+          onChange={handleChange("dateAvailed")}
           type="date"
-        />
-
-        <TextField
-          placeholder="Safety Manpower*"
-          value={formData.safetyManpower}
-          onChange={handleChange("safetyManpower")}
-          type="number"
-        />
-
-        <TextField
-          placeholder="Safety Manhours*"
-          value={formData.safetyManhours}
-          onChange={handleChange("safetyManhours")}
-          type="number"
         />
       </Box>
 
@@ -139,11 +165,11 @@ function AddSafetyWorkDataModal({ onClose }) {
             },
           }}
         >
-          ADD
+          UPDATE
         </Button>
       </Box>
     </Paper>
   );
 }
 
-export default AddSafetyWorkDataModal;
+export default UpdateParentalLeaveModal;

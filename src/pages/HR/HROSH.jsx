@@ -1,53 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button, IconButton, Box, Typography } from "@mui/material";
-import FileUploadIcon from "@mui/icons-material/FileUpload";
-import AddIcon from "@mui/icons-material/Add";
 
 import EditIcon from "@mui/icons-material/Edit";
 
 import api from "../../services/api";
-import Overlay from "../../components/modal";
-import AddTrainingModal from "../../components/hr_components/AddTrainingModal";
-import ImportHRModal from "../../components/hr_components/ImportHRModal";
-import Sidebar from "../../components/Sidebar";
 
 import { useFilteredData } from "../../components/hr_components/filtering"; //change when moved
 
 import Pagination from "../../components/Pagination/pagination";
 import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter";
+import Search from "../../components/Filter/Search";
+import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
-import { useNavigate } from "react-router-dom";
+import ViewOSHModal from "../../components/hr_components/ViewOSHModal";
+import UpdateOSHModal from "../../components/hr_components/UpdateOSHModal";
 
-function OSH() {
-  //remove and change ui with states
-  const [selectedButton, setSelectedButton] = useState("button4");
-  const navigate = useNavigate();
-  const buttonRoutes = [
-    { label: "Employability", value: "button1", path: "/social/hr" },
-    {
-      label: "Parental Leave",
-      value: "button2",
-      path: "/social/hr/parentalleave",
-    },
-    {
-      label: "Safety Work Data",
-      value: "button3",
-      path: "/social/hr/safetyworkdata",
-    },
-    { label: "Training", value: "button4", path: "/social/hr/training" },
-    { label: "OSH", value: "button5", path: "/social/hr/osh" },
-  ]; // ---------------------------------------------------
-
+function OSH({ onFilterChange }) {
   //INITIALIZE
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [isUpdateModal, setIsUpdateModal] = useState(false);
+  const [isViewModal, setIsViewModal] = useState(false);
+  const [row, setRow] = useState([]);
 
   // DATA -- CHANGE PER PAGE
   const fetchOSHData = async () => {
@@ -96,10 +77,21 @@ function OSH() {
   ];
 
   const renderActions = (row) => (
-    <IconButton size="small">
+    <IconButton
+      size="small"
+      onClick={(event) => {
+        event.stopPropagation();
+        setIsUpdateModal(true);
+        setRow(row);
+      }}
+    >
       <EditIcon />
     </IconButton>
   );
+
+  const showView = (row) => {
+    setIsViewModal(true), setRow(row);
+  };
 
   //FILTERS -- ITEMS --CHANGE PER PAGE
   const companyOptions = Array.from(
@@ -145,13 +137,30 @@ function OSH() {
 
   //FILTERS --DONT CHANGE
 
-  const filteredData = useFilteredData(data, filters);
+  const filteredData = useFilteredData(data, filters, searchQuery);
+
+  useEffect(() => {
+    if (typeof onFilterChange === "function" && filteredData !== null) {
+      onFilterChange(filteredData);
+    }
+  }, [filteredData, onFilterChange]);
+
+  //SEARCH
+  const suggestions = useMemo(() => {
+    const uniqueValues = new Set();
+    filteredData.forEach((item) => {
+      Object.values(item).forEach((val) => {
+        if (val) uniqueValues.add(val.toString());
+      });
+    });
+    return Array.from(uniqueValues);
+  }, [filteredData]);
 
   //PAGINATION -- DONT CHANGE
 
   const rowsPerPage = 10;
 
-  const totalPages = Math.ceil(data.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
   const paginatedData = filteredData.slice(
     (page - 1) * rowsPerPage,
@@ -169,59 +178,8 @@ function OSH() {
 
   return (
     <Box sx={{ display: "flex" }}>
-      <Sidebar />
-      <Box sx={{ flexGrow: 1, height: "100vh", overflow: "auto" }}>
-        <div style={{ padding: "2rem" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "2rem",
-            }}
-          >
-            <div>
-              <h1
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                REPOSITORY
-              </h1>
-              <h2 style={{ fontSize: "2rem", color: "#182959" }}>
-                Social - Human Resources
-              </h2>
-            </div>
-
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <Button
-                variant="contained"
-                startIcon={<FileUploadIcon />}
-                style={{ backgroundColor: "#182959" }}
-              >
-                EXPORT DATA
-              </Button>
-              <Button
-                variant="contained"
-                style={{ backgroundColor: "#182959" }}
-                onClick={() => setIsImportModalOpen(true)}
-              >
-                IMPORT
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                style={{ backgroundColor: "#2B8C37" }}
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                ADD RECORD
-              </Button>
-            </div>
-          </div>
-
-          {/* 
+      <Box sx={{ flexGrow: 1, height: "100%", overflow: "auto" }}>
+        {/* 
 
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
             {buttonRoutes.map(({ label, value, path }) => (
@@ -243,133 +201,125 @@ function OSH() {
             ))}
           </Box>*/}
 
-          {/* Filters */}
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-            <Filter
-              label="Company"
-              options={[
-                { label: "All Companies", value: "" },
-                ...companyOptions,
-              ]}
-              value={filters.company_name}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, company_name: val }));
-                setPage(1);
+        {/* Filters */}
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+          <Search onSearch={setSearchQuery} suggestions={suggestions} />
+          <Filter
+            label="Company"
+            options={[{ label: "All Companies", value: "" }, ...companyOptions]}
+            value={filters.company_name}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, company_name: val }));
+              setPage(1);
+            }}
+            placeholder="Company"
+          />
+
+          <Filter
+            label="Workforce Type"
+            options={[
+              { label: "All Workforce Type", value: "" },
+              ...workforceTypeOptions,
+            ]}
+            value={filters.workforce_type}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, workforce_type: val }));
+              setPage(1);
+            }}
+            placeholder="Workforce Type"
+          />
+
+          <Filter
+            label="Lost Time"
+            options={[
+              { label: "All Lost Time", value: "" },
+              ...lostTimeOptions,
+            ]}
+            value={filters.lost_time}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, lost_time: val }));
+              setPage(1);
+            }}
+            placeholder="Lost Time"
+          />
+
+          <Filter
+            label="Incident Type"
+            options={[
+              { label: "All Incident Type", value: "" },
+              ...incidentTypeOptions,
+            ]}
+            value={filters.incident_type}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, incident_type: val }));
+              setPage(1);
+            }}
+            placeholder="Incident Type"
+          />
+
+          <Filter
+            label="Incident Title"
+            options={[
+              { label: "All Incident Title", value: "" },
+              ...incidentTitleOptions,
+            ]}
+            value={filters.incident_title}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, incident_title: val }));
+              setPage(1);
+            }}
+            placeholder="Incident Title"
+          />
+
+          <Filter
+            label="Status"
+            options={[{ label: "All Status", value: "" }, ...statusOptions]}
+            value={filters.status_id}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, status_id: val }));
+              setPage(1);
+            }}
+            placeholder="Status"
+          />
+        </Box>
+
+        {/* Table or fallback */}
+
+        {
+          <Table
+            columns={columns}
+            rows={paginatedData}
+            actions={renderActions}
+            onRowClick={showView}
+            emptyMessage="No records found for the selected filters."
+          />
+        }
+
+        {/* Pagination */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Pagination
+            page={page}
+            count={Math.ceil(filteredData.length / rowsPerPage)}
+            onChange={handlePageChange}
+          />
+        </Box>
+
+        {isUpdateModal && (
+          <Overlay onClose={() => setIsUpdateModal(false)}>
+            <UpdateOSHModal onClose={() => setIsUpdateModal(false)} row={row} />
+          </Overlay>
+        )}
+
+        {isViewModal && (
+          <Overlay onClose={() => setIsViewModal(false)}>
+            <ViewOSHModal
+              onClose={() => {
+                setIsViewModal(false);
               }}
-              placeholder="Company"
+              row={row}
             />
-
-            <Filter
-              label="Workforce Type"
-              options={[
-                { label: "All Workforce Type", value: "" },
-                ...workforceTypeOptions,
-              ]}
-              value={filters.workforce_type}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, workforce_type: val }));
-                setPage(1);
-              }}
-              placeholder="Workforce Type"
-            />
-
-            <Filter
-              label="Lost Time"
-              options={[
-                { label: "All Lost Time", value: "" },
-                ...lostTimeOptions,
-              ]}
-              value={filters.lost_time}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, lost_time: val }));
-                setPage(1);
-              }}
-              placeholder="Lost Time"
-            />
-
-            <Filter
-              label="Incident Type"
-              options={[
-                { label: "All Incident Type", value: "" },
-                ...incidentTypeOptions,
-              ]}
-              value={filters.incident_type}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, incident_type: val }));
-                setPage(1);
-              }}
-              placeholder="Incident Type"
-            />
-
-            <Filter
-              label="Incident Title"
-              options={[
-                { label: "Incident Title", value: "" },
-                ...incidentTitleOptions,
-              ]}
-              value={filters.incident_title}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, incident_title: val }));
-                setPage(1);
-              }}
-              placeholder="Incident Title"
-            />
-
-            <Filter
-              label="Status"
-              options={[{ label: "All Status", value: "" }, ...statusOptions]}
-              value={filters.status_id}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, status_id: val }));
-                setPage(1);
-              }}
-              placeholder="Status"
-            />
-          </Box>
-
-          {/* Table or fallback */}
-
-          {
-            <Table
-              columns={columns}
-              rows={paginatedData}
-              actions={renderActions}
-              emptyMessage="No records found for the selected filters."
-            />
-          }
-
-          {/* Pagination */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-            <Pagination
-              page={page}
-              count={Math.ceil(filteredData.length / rowsPerPage)}
-              onChange={handlePageChange}
-            />
-          </Box>
-
-          {/* Add Modal */}
-          {isAddModalOpen && (
-            <Overlay onClose={() => setIsAddModalOpen(false)}>
-              <AddTrainingModal
-                onClose={() => {
-                  setIsAddModalOpen(false);
-                }}
-              />
-            </Overlay>
-          )}
-
-          {/* Add Import Modal */}
-          {isImportModalOpen && (
-            <Overlay onClose={() => setIsImportModalOpen(false)}>
-              <ImportHRModal
-                context="training"
-                onClose={() => {
-                  setIsImportModalOpen(false);
-                }}
-              />
-            </Overlay>
-          )}
-        </div>
+          </Overlay>
+        )}
       </Box>
     </Box>
   );

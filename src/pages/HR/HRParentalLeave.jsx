@@ -1,16 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button, Box, IconButton } from "@mui/material";
-import FileUploadIcon from "@mui/icons-material/FileUpload";
-import AddIcon from "@mui/icons-material/Add";
 
 import EditIcon from "@mui/icons-material/Edit";
 
 import api from "../../services/api";
-import Overlay from "../../components/modal";
-
-import AddParentalLeaveModal from "../../components/hr_components/AddParentalLeaveModal";
-import ImportHRModal from "../../components/hr_components/ImportHRModal";
-import Sidebar from "../../components/Sidebar";
 
 import { useFilteredData } from "../../components/hr_components/filtering";
 
@@ -18,40 +11,24 @@ import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter";
 import Search from "../../components/Filter/Search";
 import Pagination from "../../components/Pagination/pagination";
+import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
-import { useNavigate } from "react-router-dom";
+import ViewParentalLeaveModal from "../../components/hr_components/ViewParentalLeaveModal";
+import UpdateParentalLeaveModal from "../../components/hr_components/UpdateParentalLeaveModal";
 
-function ParentalLeave() {
-  const [selectedButton, setSelectedButton] = useState("button2");
-  const [search, setSearch] = useState("");
-
-  const navigate = useNavigate();
-
-  const buttonRoutes = [
-    { label: "Employability", value: "button1", path: "/social/hr" },
-    {
-      label: "Parental Leave",
-      value: "button2",
-      path: "/social/hr/parentalleave",
-    },
-    {
-      label: "Safety Work Data",
-      value: "button3",
-      path: "/social/hr/safetyworkdata",
-    },
-    { label: "Training", value: "button4", path: "/social/hr/training" },
-    { label: "OSH", value: "button5", path: "/social/hr/osh" },
-  ];
-
+function ParentalLeave({ onFilterChange }) {
   //INITIALIZE
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [isUpdateModal, setIsUpdateModal] = useState(false);
+  const [isViewModal, setIsViewModal] = useState(false);
+  const [row, setRow] = useState([]);
 
   // DATA -- CHANGE PER PAGE
   const fetchParentalData = async () => {
@@ -92,10 +69,21 @@ function ParentalLeave() {
   ];
 
   const renderActions = (row) => (
-    <IconButton size="small">
+    <IconButton
+      size="small"
+      onClick={(event) => {
+        event.stopPropagation();
+        setIsUpdateModal(true);
+        setRow(row);
+      }}
+    >
       <EditIcon />
     </IconButton>
   );
+
+  const showView = (row) => {
+    setIsViewModal(true), setRow(row);
+  };
 
   //FILTERS -- ITEMS --CHANGE PER PAGE
   const companyOptions = Array.from(
@@ -123,13 +111,30 @@ function ParentalLeave() {
 
   //FILTERS --DONT CHANGE
 
-  const filteredData = useFilteredData(data, filters);
+  const filteredData = useFilteredData(data, filters, searchQuery);
+
+  useEffect(() => {
+    if (typeof onFilterChange === "function" && filteredData !== null) {
+      onFilterChange(filteredData);
+    }
+  }, [filteredData, onFilterChange]);
+
+  //SEARCH
+  const suggestions = useMemo(() => {
+    const uniqueValues = new Set();
+    filteredData.forEach((item) => {
+      Object.values(item).forEach((val) => {
+        if (val) uniqueValues.add(val.toString());
+      });
+    });
+    return Array.from(uniqueValues);
+  }, [filteredData]);
 
   //PAGINATION -- DONT CHANGE
 
   const rowsPerPage = 10;
 
-  const totalPages = Math.ceil(data.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
   const paginatedData = filteredData.slice(
     (page - 1) * rowsPerPage,
@@ -147,59 +152,8 @@ function ParentalLeave() {
 
   return (
     <Box sx={{ display: "flex" }}>
-      <Sidebar />
-      <Box sx={{ flexGrow: 1, height: "100vh", overflow: "auto" }}>
-        <div style={{ padding: "2rem" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "2rem",
-            }}
-          >
-            <div>
-              <h1
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                REPOSITORY
-              </h1>
-              <h2 style={{ fontSize: "2rem", color: "#182959" }}>
-                Social - Human Resources
-              </h2>
-            </div>
-
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <Button
-                variant="contained"
-                startIcon={<FileUploadIcon />}
-                style={{ backgroundColor: "#182959" }}
-              >
-                EXPORT DATA
-              </Button>
-              <Button
-                variant="contained"
-                style={{ backgroundColor: "#182959" }}
-                onClick={() => setIsImportModalOpen(true)}
-              >
-                IMPORT
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                style={{ backgroundColor: "#2B8C37" }}
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                ADD RECORD
-              </Button>
-            </div>
-          </div>
-
-          {/* 
+      <Box sx={{ flexGrow: 1, height: "100%", overflow: "auto" }}>
+        {/* 
 
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
             {buttonRoutes.map(({ label, value, path }) => (
@@ -221,88 +175,83 @@ function ParentalLeave() {
             ))}
           </Box> */}
 
-          {/* Filters */}
+        {/* Filters */}
 
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-            <Filter
-              label="Company"
-              options={[
-                { label: "All Companies", value: "" },
-                ...companyOptions,
-              ]}
-              value={filters.company_name}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, company_name: val }));
-                setPage(1);
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+          <Search onSearch={setSearchQuery} suggestions={suggestions} />
+          <Filter
+            label="Company"
+            options={[{ label: "All Companies", value: "" }, ...companyOptions]}
+            value={filters.company_name}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, company_name: val }));
+              setPage(1);
+            }}
+            placeholder="Company"
+          />
+
+          <Filter
+            label="Type Of Leave"
+            options={[
+              { label: "All Types Of Leave", value: "" },
+              ...typeOfLeaveOptions,
+            ]}
+            value={filters.type_of_leave}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, type_of_leave: val }));
+              setPage(1);
+            }}
+            placeholder="Type Of Leave"
+          />
+
+          <Filter
+            label="Status"
+            options={[{ label: "All Statuses", value: "" }, ...statusOptions]}
+            value={filters.status_id}
+            onChange={(val) => {
+              setFilters((prev) => ({ ...prev, status_id: val }));
+              setPage(1);
+            }}
+            placeholder="Status"
+          />
+        </Box>
+
+        {/* Table or fallback */}
+
+        {
+          <Table
+            columns={columns}
+            rows={paginatedData}
+            actions={renderActions}
+            onRowClick={showView}
+            emptyMessage="No records found for the selected filters."
+          />
+        }
+
+        {/* Pagination */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <Pagination page={page} count={totalPages} onChange={setPage} />
+        </Box>
+
+        {isUpdateModal && (
+          <Overlay onClose={() => setIsUpdateModal(false)}>
+            <UpdateParentalLeaveModal
+              onClose={() => setIsUpdateModal(false)}
+              row={row}
+            />
+          </Overlay>
+        )}
+
+        {isViewModal && (
+          <Overlay onClose={() => setIsViewModal(false)}>
+            <ViewParentalLeaveModal
+              onClose={() => {
+                setIsViewModal(false);
               }}
-              placeholder="Company"
+              row={row}
             />
-
-            <Filter
-              label="Type Of Leave"
-              options={[
-                { label: "All Types Of Leave", value: "" },
-                ...typeOfLeaveOptions,
-              ]}
-              value={filters.type_of_leave}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, type_of_leave: val }));
-                setPage(1);
-              }}
-              placeholder="Type Of Leave"
-            />
-
-            <Filter
-              label="Status"
-              options={[{ label: "All Statuses", value: "" }, ...statusOptions]}
-              value={filters.status_id}
-              onChange={(val) => {
-                setFilters((prev) => ({ ...prev, status_id: val }));
-                setPage(1);
-              }}
-              placeholder="Status"
-            />
-          </Box>
-
-          {/* Table or fallback */}
-
-          {
-            <Table
-              columns={columns}
-              rows={paginatedData}
-              actions={renderActions}
-              emptyMessage="No records found for the selected filters."
-            />
-          }
-
-          {/* Pagination */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-            <Pagination page={page} count={totalPages} onChange={setPage} />
-          </Box>
-
-          {/* Add Modal */}
-          {isAddModalOpen && (
-            <Overlay onClose={() => setIsAddModalOpen(false)}>
-              <AddParentalLeaveModal
-                onClose={() => {
-                  setIsAddModalOpen(false);
-                }}
-              />
-            </Overlay>
-          )}
-
-          {/* Add Import Modal */}
-          {isImportModalOpen && (
-            <Overlay onClose={() => setIsImportModalOpen(false)}>
-              <ImportHRModal
-                context="parentalleave"
-                onClose={() => {
-                  setIsImportModalOpen(false);
-                }}
-              />
-            </Overlay>
-          )}
-        </div>
+          </Overlay>
+        )}
       </Box>
     </Box>
   );

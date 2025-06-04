@@ -32,6 +32,10 @@ function ImportHRModal({ onClose, context = "employability" }) {
       templateURL: "training_template.csv",
       filename: "HR_Training_2025.csv",
     },
+    osh: {
+      templateURL: "osh_template.csv",
+      filename: "HR_OSH_2025.csv",
+    },
   };
 
   const config = templateConfig[context] || templateConfig["employability"];
@@ -41,16 +45,29 @@ function ImportHRModal({ onClose, context = "employability" }) {
     onClose();
   };
 
-  /* API FOR SUBMIT OF ADD RECORD
-  const handleSubmit = async () => {
+  const handleDownload = async () => {
+    const fileUrl = `/files/${config.templateURL}`;
+    const fileName = config.filename;
+    /*
     try {
-      await api.post('/economic/value-generated', formData);
-      onClose();
-      // You might want to refresh the data after adding
+      const response = await fetch(fileUrl, { method: "HEAD" });
+
+      if (!response.ok) {
+        throw new Error(`File not found: ${fileUrl}`);
+      }
+
+      // Proceed to download if file exists
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
-      console.error('Error adding record:', error);
-    }
-  };*/
+      console.error("Download failed:", error);
+      alert("File not found or unavailable.");
+    }*/
+  };
 
   return (
     <Paper
@@ -73,6 +90,7 @@ function ImportHRModal({ onClose, context = "employability" }) {
       </Typography>
 
       <Typography
+        onClick={handleDownload}
         variant="body2"
         sx={{
           color: "#2B8C37",

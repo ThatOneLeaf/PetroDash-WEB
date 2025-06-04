@@ -13,7 +13,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import api from "../../services/api";
 
-function AddEmployeeModal({ onClose }) {
+function UpdateEmployeeModal({ onClose, row }) {
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
     employeeId: "",
@@ -66,7 +66,7 @@ function AddEmployeeModal({ onClose }) {
           fontWeight: "bold",
         }}
       >
-        Add New Record
+        Update Record
       </Typography>
 
       <Box
@@ -77,26 +77,18 @@ function AddEmployeeModal({ onClose }) {
           mb: 3,
         }}
       >
-        {/* 
-
-        
-        <Select
-          value={formData.year}
-          onChange={handleChange('year')}
-          sx={{ height: '40px' }}
-        >
-          {[...Array(10)].map((_, i) => (
-            <MenuItem key={currentYear - i} value={currentYear - i}>
-              {currentYear - i}
-            </MenuItem>
-          ))}
-        </Select>*/}
-
         <TextField
-          placeholder="Employee ID*"
-          value={formData.employeeId}
-          onChange={handleChange("employeeId")}
-          type="text"
+          defaultValue={row.employee_id}
+          slotProps={{
+            input: {
+              readOnly: true,
+            },
+          }}
+          sx={{
+            "& .MuiInputBase-input": {
+              fontWeight: "bold",
+            },
+          }}
         />
 
         <Box
@@ -112,7 +104,15 @@ function AddEmployeeModal({ onClose }) {
             displayEmpty
             renderValue={(selected) => {
               if (!selected) {
-                return <span style={{ color: "#999" }}>Select Gender*</span>;
+                return (
+                  <span style={{ color: "#999" }}>
+                    {row.gender?.toLowerCase() === "f"
+                      ? "Female"
+                      : row.gender?.toLowerCase() === "m"
+                      ? "Male"
+                      : row.gender}
+                  </span>
+                );
               }
               return selected === "male" ? "Male" : "Female";
             }}
@@ -127,7 +127,17 @@ function AddEmployeeModal({ onClose }) {
             displayEmpty
             renderValue={(selected) => {
               if (!selected) {
-                return <span style={{ color: "#999" }}>Select Position*</span>;
+                return (
+                  <span style={{ color: "#999" }}>
+                    {row.position_id?.toLowerCase() === "rf"
+                      ? "Rank-and-File"
+                      : row.position_id?.toLowerCase() === "mm"
+                      ? "Middle Management"
+                      : row.position_id?.toLowerCase() === "sm"
+                      ? "Senior Management"
+                      : row.position_id}
+                  </span>
+                );
               }
               const getPositionName = (selected) => {
                 const map = {
@@ -155,7 +165,13 @@ function AddEmployeeModal({ onClose }) {
           renderValue={(selected) => {
             if (!selected) {
               return (
-                <span style={{ color: "#999" }}>Select Employee Category*</span>
+                <span style={{ color: "#999" }}>
+                  {row.p_np?.toLowerCase() === "p"
+                    ? "Profesional"
+                    : row.p_np?.toLowerCase() === "np"
+                    ? "Non-Professional"
+                    : row.p_np}
+                </span>
               );
             }
             return selected === "prof" ? "Professional" : "Non-Professional";
@@ -172,7 +188,7 @@ function AddEmployeeModal({ onClose }) {
           renderValue={(selected) => {
             if (!selected) {
               return (
-                <span style={{ color: "#999" }}>Select Employee Status*</span>
+                <span style={{ color: "#999" }}>{row.employment_status}</span>
               );
             }
             return selected === "perm" ? "Permanent" : "Temporary";
@@ -183,14 +199,14 @@ function AddEmployeeModal({ onClose }) {
         </Select>
 
         <TextField
-          placeholder="Tenure Start*"
+          placeholder={row.start_date}
           value={formData.tenureStart}
           onChange={handleChange("tenureStart")}
           type="date"
         />
 
         <TextField
-          placeholder="Tenure Ended"
+          placeholder={row.end_date}
           value={formData.tenureEnded}
           onChange={handleChange("tenureEnded")}
           type="date"
@@ -220,11 +236,11 @@ function AddEmployeeModal({ onClose }) {
           }}
           onClick={handleSubmit}
         >
-          ADD
+          UPDATE
         </Button>
       </Box>
     </Paper>
   );
 }
 
-export default AddEmployeeModal;
+export default UpdateEmployeeModal;

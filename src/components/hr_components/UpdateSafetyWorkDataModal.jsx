@@ -11,7 +11,7 @@ import {
 
 import api from "../../services/api";
 
-function AddSafetyWorkDataModal({ onClose }) {
+function UpdateSafetyWorkDataModal({ onClose, row }) {
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
     contractor: "",
@@ -61,7 +61,7 @@ function AddSafetyWorkDataModal({ onClose }) {
           fontWeight: "bold",
         }}
       >
-        Add New Record
+        Update Record
       </Typography>
 
       <Box
@@ -88,28 +88,35 @@ function AddSafetyWorkDataModal({ onClose }) {
         </Select>*/}
 
         <TextField
-          placeholder="Contractor*"
-          value={formData.contractor}
-          onChange={handleChange("contractor")}
-          type="text"
+          defaultValue={row.contractor}
+          slotProps={{
+            input: {
+              readOnly: true,
+            },
+          }}
+          sx={{
+            "& .MuiInputBase-input": {
+              fontWeight: "bold",
+            },
+          }}
         />
 
         <TextField
-          placeholder="Date*"
+          placeholder={row.date?.split("T")[0]}
           value={formData.date}
           onChange={handleChange("date")}
           type="date"
         />
 
         <TextField
-          placeholder="Safety Manpower*"
+          placeholder={row.manpower}
           value={formData.safetyManpower}
           onChange={handleChange("safetyManpower")}
           type="number"
         />
 
         <TextField
-          placeholder="Safety Manhours*"
+          placeholder={row.manhours}
           value={formData.safetyManhours}
           onChange={handleChange("safetyManhours")}
           type="number"
@@ -139,11 +146,11 @@ function AddSafetyWorkDataModal({ onClose }) {
             },
           }}
         >
-          ADD
+          UPDATE
         </Button>
       </Box>
     </Paper>
   );
 }
 
-export default AddSafetyWorkDataModal;
+export default UpdateSafetyWorkDataModal;

@@ -56,7 +56,7 @@ function PageButtons({ selected, setSelected }) {
         gap: "0.5rem",
         flexWrap: "wrap",
         marginBottom: "1rem",
-        justifyContent: "center",
+        justifyContent: "left",
       }}
     >
       {pages.map((type) => (
