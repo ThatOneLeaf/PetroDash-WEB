@@ -16,7 +16,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import Overlay from "../../components/modal";
-import AddEnergyGenerationModal from "../../components/AddPowerGeneratedModal";
+import AddEnergyGeneratedModal from "../../components/AddPowerGeneratedModal";
 import Pagination from "../../components/Pagination/pagination";
 import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter"; 
@@ -193,7 +193,7 @@ function Energy() {
       const availableHeight = vh * 0.75 - headerFooterHeight;
 
       const calculatedRows = Math.floor(availableHeight / rowHeight);
-      setRowsPerPage(Math.max(calculatedRows, 10)); // Minimum of 5 rows
+      setRowsPerPage(Math.max(calculatedRows, 10));
     };
 
     calculateRowsPerPage();
@@ -353,7 +353,7 @@ function Energy() {
         {/* Modals */}
         {isAddEnergyModalOpen && (
           <Overlay onClose={() => setIsAddEnergyModalOpen(false)}>
-            <AddEnergyGenerationModal
+            <AddEnergyGeneratedModal
               onClose={() => {
                 setIsAddEnergyModalOpen(false);
                 fetchEnergyData();

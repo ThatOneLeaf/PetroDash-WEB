@@ -9,6 +9,7 @@ import {
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import api from "../services/api";
+import FormModal from "./FormModal";
 
 function ImportPowerFileModal({ onClose }) {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -42,32 +43,29 @@ function ImportPowerFileModal({ onClose }) {
       console.error("Error uploading file:", error);
     }
   };
-
   return (
-    <Paper
-      sx={{
-        p: 4,
-        width: "450px",
-        borderRadius: "16px",
-        bgcolor: "white",
-      }}
+    <FormModal
+      title="Import Data"
+      subtitle="Daily Generation"
+      width="450px"
+      actions={
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          sx={{
+            bgcolor: "#2E7D32",
+            "&:hover": { bgcolor: "#1b5e20" },
+          }}
+        >
+          IMPORT
+        </Button>
+      }
     >
-      <Typography
-        variant="h5"
-        sx={{
-          color: "#1a237e",
-          mb: 3,
-          fontWeight: "bold",
-        }}
-      >
-        Import Energy Data
-      </Typography>
-
       <Typography
         variant="body2"
         sx={{
           color: "#2B8C37",
-          mb: 3,
+          mb: 1,
           textAlign: "center",
           fontWeight: "bold",
           textDecoration: "underline",
@@ -93,7 +91,6 @@ function ImportPowerFileModal({ onClose }) {
             borderRadius: 2,
             p: 3,
             textAlign: "center",
-            mb: 3,
             border: "4px dotted #9e9e9e",
             display: "flex",
             alignItems: "center",
@@ -114,7 +111,6 @@ function ImportPowerFileModal({ onClose }) {
             display: "flex",
             alignItems: "center",
             color: "#1a237e",
-            mb: 3,
             fontWeight: "bold",
             justifyContent: "center",
           }}
@@ -125,27 +121,7 @@ function ImportPowerFileModal({ onClose }) {
           </Typography>
         </Box>
       )}
-
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          mt: 2,
-        }}
-      >
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          sx={{
-            bgcolor: "#2E7D32",
-            "&:hover": { bgcolor: "#1b5e20" },
-          }}
-        >
-          IMPORT
-        </Button>
-      </Box>
-    </Paper>
+    </FormModal>
   );
 }
 
