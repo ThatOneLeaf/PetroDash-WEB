@@ -27,6 +27,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 // initialSort: { key, direction }, initial sort config (optional)
 // onSort: (key) => void, callback for sort changes (optional, for external tracking)
 // actions: (row) => ReactNode, function to render action buttons per row (optional)
+// onRowClick: (row) => ReactNode, callback function that is triggered when a user clicks on a table row.
 // emptyMessage: string, message to show when no data (optional)
 // height: string or number, fixed height for the table container (optional)
 // maxHeight: string or number, maximum height for the table container (optional)
@@ -64,6 +65,7 @@ const Table = ({
   initialSort = { key: null, direction: "asc" },
   onSort, // Optional callback for external tracking
   actions,
+  onRowClick,
   emptyMessage = "No data available.",
   height,
   maxHeight,
@@ -316,6 +318,9 @@ const Table = ({
                     background: "#fff",
                     "&:hover": { background: "#f6f8fc" },
                     transition: "background 0.18s",
+                  }}
+                  onClick={() => {
+                    if (onRowClick) onRowClick(row);
                   }}
                 >
                   {/* Render each cell for the row */}
