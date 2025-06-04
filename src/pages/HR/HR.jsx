@@ -1,21 +1,50 @@
 import { useState, useEffect } from "react";
-import { Button, Box } from "@mui/material";
+import { Button, Box, IconButton } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 import api from "../../services/api";
 import Overlay from "../../components/modal";
 import AddEmployeeModal from "../../components/hr_components/AddEmployeeModal";
 import ImportHRModal from "../../components/hr_components/ImportHRModal";
 import Sidebar from "../../components/Sidebar";
+
+import { useFilteredData } from "../../components/hr_components/filtering";
+
 import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter";
 import Search from "../../components/Filter/Search";
 import Pagination from "../../components/Pagination/pagination";
 import StatusChip from "../../components/StatusChip";
 
+import PageButtons from "../../components/hr_components/page_button";
+
 import { useNavigate } from "react-router-dom";
 
 function Demographics() {
+  const [selectedButton, setSelectedButton] = useState("button1");
+  const navigate = useNavigate();
+
+  const buttonRoutes = [
+    { label: "Employability", value: "button1", path: "/social/hr" },
+    {
+      label: "Parental Leave",
+      value: "button2",
+      path: "/social/hr/parentalleave",
+    },
+    {
+      label: "Safety Work Data",
+      value: "button3",
+      path: "/social/hr/safetyworkdata",
+    },
+    { label: "Training", value: "button4", path: "/social/hr/training" },
+    { label: "OSH", value: "button5", path: "/social/hr/osh" },
+  ];
+
+  //Navigation
+
+  //INITIALIZE
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,22 +52,54 @@ function Demographics() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-  const [selectedButton, setSelectedButton] = useState("button1");
+  const [selected, setSelected] = useState("Employability");
 
-  const [filters, setFilters] = useState({});
-  const [search, setSearch] = useState("");
+  // DATA -- CHANGE PER PAGE
+  const fetchEmployabilityData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("hr/employability_records_by_status");
+      console.log("Employability Data from API:", response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching Employability data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const [sortConfig, setSortConfig] = useState({
-    key: "year",
-    direction: "desc",
-  });
+  useEffect(() => {
+    fetchEmployabilityData();
+  }, []);
 
-  const rowsPerPage = 10;
+  //TABLE -- CHANGE PER PAGE
 
-  //INIITIALIZE FILTER INPUTS
+  const columns = [
+    { key: "company_name", label: "Company ID" },
+    { key: "employee_id", label: "Employee ID" },
+    { key: "gender", label: "Gender" },
+    { key: "position_id", label: "Position" },
+    { key: "p_np", label: "Employee Category" },
+    { key: "employment_status", label: "Employee Status" },
+    {
+      key: "status_id",
+      label: "Status",
+      render: (val) => <StatusChip status={val} />,
+    },
+  ];
+
+  const renderActions = (row) => (
+    <IconButton size="small">
+      <EditIcon />
+    </IconButton>
+  );
+
+  //FILTERS -- ITEMS --CHANGE PER PAGE
   const companyOptions = Array.from(
     new Set(data.map((item) => item.company_name))
   ).map((val) => ({ label: val, value: val }));
+
   const genderOptions = Array.from(
     new Set(data.map((item) => item.gender))
   ).map((val) => ({ label: val, value: val }));
@@ -57,6 +118,8 @@ function Demographics() {
   const employementStatusOptions = Array.from(
     new Set(data.map((item) => item.employment_status))
   ).map((val) => ({ label: val, value: val }));
+
+  //STATUS DONT CHANGE
   const statusOptions = [
     { label: "Pending", value: "PND" },
     { label: "Head Approved", value: "HAP" },
@@ -65,108 +128,34 @@ function Demographics() {
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
-  useEffect(() => {
-    fetchEmployabilityData();
-  }, []);
-
-  const fetchEmployabilityData = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("hr/employability_records_by_status");
-      console.log("Employability Data from API:", response.data);
-      setData(response.data);
-    } catch (error) {
-      console.error("Error fetching Employability data:", error);
-      setError("Error fetching data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const navigate = useNavigate();
-
-  const buttonRoutes = [
-    { label: "Employability", value: "button1", path: "/social/hr" },
-    {
-      label: "Parental Leave",
-      value: "button2",
-      path: "/social/hr/parentalleave",
-    },
-    {
-      label: "Safety Work Data",
-      value: "button3",
-      path: "/social/hr/safetyworkdata",
-    },
-    { label: "Training", value: "button4", path: "/social/hr/training" },
-    { label: "OSH", value: "button5", path: "/osh" },
-  ];
-
-  // Table columns config
-  const columns = [
-    { key: "company_name", label: "Company ID" },
-    { key: "employee_id", label: "Employee ID" },
-    { key: "gender", label: "Gender" },
-    { key: "position_id", label: "Position" },
-    { key: "p_np", label: "Employee Category" },
-    { key: "employment_status", label: "Employee Status" },
-    {
-      key: "status_id",
-      label: "Status",
-      render: (val) => <StatusChip status={val} />,
-    },
-  ];
-
-  // Sorting logic
-  const handleSort = (key) => {
-    setSortConfig((prevConfig) => ({
-      key,
-      direction:
-        prevConfig.key === key && prevConfig.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
-  };
-
-  const filteredData = data
-    .filter((row) => {
-      // Filter
-      return Object.entries(filters).every(([key, value]) => {
-        if (value == null || value.length === 0) return true;
-        if (Array.isArray(value)) return value.includes(row[key]);
-        return row[key] === value;
-      });
-    })
-    .filter((row) => {
-      if (!search) return true;
-      const searchStr = search.toLowerCase();
-      return Object.values(row).some((val) =>
-        String(val).toLowerCase().includes(searchStr)
-      );
-    });
-
-  // Sorting
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (a[sortConfig.key] < b[sortConfig.key])
-      return sortConfig.direction === "asc" ? -1 : 1;
-    if (a[sortConfig.key] > b[sortConfig.key])
-      return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
+  const [filters, setFilters] = useState({
+    company_name: "",
+    type_of_leave: "",
+    status_id: "",
   });
 
-  // Pagination logic
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
-  const pagedData = filteredData.slice(
+  //FILTERS --DONT CHANGE
+
+  const filteredData = useFilteredData(data, filters);
+
+  //PAGINATION -- DONT CHANGE
+
+  const rowsPerPage = 10;
+
+  const totalPages = Math.ceil(data.length / rowsPerPage);
+
+  const paginatedData = filteredData.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
 
-  useEffect(() => {
-    if (page > totalPages) setPage(1);
-  }, [pagedData.length, rowsPerPage]);
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
 
-  const renderActions = (row) => <></>;
-
-  if (loading) return <div>Loading...</div>; // UN COMMENT
+  if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
@@ -225,6 +214,8 @@ function Demographics() {
             </div>
           </div>
 
+          {/* 
+
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
             {buttonRoutes.map(({ label, value, path }) => (
               <Button
@@ -243,9 +234,10 @@ function Demographics() {
                 {label}
               </Button>
             ))}
-          </Box>
+          </Box>*/}
 
           {/* Filters */}
+
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
             <Filter
               label="Company"
@@ -325,17 +317,16 @@ function Demographics() {
             />
           </Box>
 
-          {/* Table */}
-          <Table
-            columns={columns}
-            rows={pagedData}
-            onSort={handleSort}
-            sortConfig={sortConfig}
-            actions={renderActions}
-            filters={{}} // No filters in table, handled above
-            onFilterChange={() => {}} // No-op
-            emptyMessage="No data available."
-          />
+          {/* Table or fallback */}
+
+          {
+            <Table
+              columns={columns}
+              rows={paginatedData}
+              actions={renderActions}
+              emptyMessage="No records found for the selected filters."
+            />
+          }
 
           {/* Pagination */}
           <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>

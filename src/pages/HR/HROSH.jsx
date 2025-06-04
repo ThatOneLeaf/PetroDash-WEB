@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Box, IconButton } from "@mui/material";
+import { Button, IconButton, Box, Typography } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
 
@@ -7,27 +7,23 @@ import EditIcon from "@mui/icons-material/Edit";
 
 import api from "../../services/api";
 import Overlay from "../../components/modal";
-
-import AddParentalLeaveModal from "../../components/hr_components/AddParentalLeaveModal";
+import AddTrainingModal from "../../components/hr_components/AddTrainingModal";
 import ImportHRModal from "../../components/hr_components/ImportHRModal";
 import Sidebar from "../../components/Sidebar";
 
-import { useFilteredData } from "../../components/hr_components/filtering";
+import { useFilteredData } from "../../components/hr_components/filtering"; //change when moved
 
+import Pagination from "../../components/Pagination/pagination";
 import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter";
-import Search from "../../components/Filter/Search";
-import Pagination from "../../components/Pagination/pagination";
 import StatusChip from "../../components/StatusChip";
 
 import { useNavigate } from "react-router-dom";
 
-function ParentalLeave() {
-  const [selectedButton, setSelectedButton] = useState("button2");
-  const [search, setSearch] = useState("");
-
+function OSH() {
+  //remove and change ui with states
+  const [selectedButton, setSelectedButton] = useState("button4");
   const navigate = useNavigate();
-
   const buttonRoutes = [
     { label: "Employability", value: "button1", path: "/social/hr" },
     {
@@ -42,7 +38,7 @@ function ParentalLeave() {
     },
     { label: "Training", value: "button4", path: "/social/hr/training" },
     { label: "OSH", value: "button5", path: "/social/hr/osh" },
-  ];
+  ]; // ---------------------------------------------------
 
   //INITIALIZE
 
@@ -54,14 +50,16 @@ function ParentalLeave() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // DATA -- CHANGE PER PAGE
-  const fetchParentalData = async () => {
+  const fetchOSHData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("hr/parental_leave_records_by_status");
-      console.log("Parental Data from API:", response.data);
+      const response = await api.get(
+        "hr/occupational_safety_health_records_by_status"
+      );
+      console.log("OSH Data from API:", response.data);
       setData(response.data);
     } catch (error) {
-      console.error("Error fetching Parental data:", error);
+      console.error("Error fetching OSH data:", error);
       setError("Error fetching data");
     } finally {
       setLoading(false);
@@ -69,21 +67,27 @@ function ParentalLeave() {
   };
 
   useEffect(() => {
-    fetchParentalData();
+    fetchOSHData();
   }, []);
 
   //TABLE -- CHANGE PER PAGE
 
   const columns = [
     { key: "company_name", label: "Company" },
-    { key: "employee_id", label: "Employee ID" },
-    { key: "date", label: "Date Availed", render: (val) => val.split("T")[0] },
+    { key: "workforce_type", label: "Workforce Type" },
     {
-      key: "end_date",
-      label: "Date Ended",
+      key: "lost_time",
+      label: "Lost Time",
+      render: (val) => (val ? "Yes" : "No"),
+    },
+    {
+      key: "date",
+      label: "Date",
       render: (val) => val.split("T")[0],
     },
-    { key: "type_of_leave", label: "Type Of Leave" },
+    { key: "incident_type", label: "Incident Type" },
+    { key: "incident_title", label: "Incident Title" },
+    { key: "incident_count", label: "Incident Count" },
     {
       key: "status_id",
       label: "Status",
@@ -102,8 +106,23 @@ function ParentalLeave() {
     new Set(data.map((item) => item.company_name))
   ).map((val) => ({ label: val, value: val }));
 
-  const typeOfLeaveOptions = Array.from(
-    new Set(data.map((item) => item.type_of_leave))
+  const workforceTypeOptions = Array.from(
+    new Set(data.map((item) => item.workforce_type))
+  ).map((val) => ({ label: val, value: val }));
+
+  const lostTimeOptions = Array.from(
+    new Set(data.map((item) => item.lost_time))
+  ).map((val) => ({
+    label: val ? "Yes" : "No",
+    value: val,
+  }));
+
+  const incidentTypeOptions = Array.from(
+    new Set(data.map((item) => item.incident_type))
+  ).map((val) => ({ label: val, value: val }));
+
+  const incidentTitleOptions = Array.from(
+    new Set(data.map((item) => item.incident_title))
   ).map((val) => ({ label: val, value: val }));
 
   //STATUS DONT CHANGE
@@ -117,7 +136,10 @@ function ParentalLeave() {
 
   const [filters, setFilters] = useState({
     company_name: "",
-    type_of_leave: "",
+    workforce_type: "",
+    lost_time: "",
+    incident_type: "",
+    incident_title: "",
     status_id: "",
   });
 
@@ -219,10 +241,9 @@ function ParentalLeave() {
                 {label}
               </Button>
             ))}
-          </Box> */}
+          </Box>*/}
 
           {/* Filters */}
-
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
             <Filter
               label="Company"
@@ -239,22 +260,64 @@ function ParentalLeave() {
             />
 
             <Filter
-              label="Type Of Leave"
+              label="Workforce Type"
               options={[
-                { label: "All Types Of Leave", value: "" },
-                ...typeOfLeaveOptions,
+                { label: "All Workforce Type", value: "" },
+                ...workforceTypeOptions,
               ]}
-              value={filters.type_of_leave}
+              value={filters.workforce_type}
               onChange={(val) => {
-                setFilters((prev) => ({ ...prev, type_of_leave: val }));
+                setFilters((prev) => ({ ...prev, workforce_type: val }));
                 setPage(1);
               }}
-              placeholder="Type Of Leave"
+              placeholder="Workforce Type"
+            />
+
+            <Filter
+              label="Lost Time"
+              options={[
+                { label: "All Lost Time", value: "" },
+                ...lostTimeOptions,
+              ]}
+              value={filters.lost_time}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, lost_time: val }));
+                setPage(1);
+              }}
+              placeholder="Lost Time"
+            />
+
+            <Filter
+              label="Incident Type"
+              options={[
+                { label: "All Incident Type", value: "" },
+                ...incidentTypeOptions,
+              ]}
+              value={filters.incident_type}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, incident_type: val }));
+                setPage(1);
+              }}
+              placeholder="Incident Type"
+            />
+
+            <Filter
+              label="Incident Title"
+              options={[
+                { label: "Incident Title", value: "" },
+                ...incidentTitleOptions,
+              ]}
+              value={filters.incident_title}
+              onChange={(val) => {
+                setFilters((prev) => ({ ...prev, incident_title: val }));
+                setPage(1);
+              }}
+              placeholder="Incident Title"
             />
 
             <Filter
               label="Status"
-              options={[{ label: "All Statuses", value: "" }, ...statusOptions]}
+              options={[{ label: "All Status", value: "" }, ...statusOptions]}
               value={filters.status_id}
               onChange={(val) => {
                 setFilters((prev) => ({ ...prev, status_id: val }));
@@ -276,14 +339,18 @@ function ParentalLeave() {
           }
 
           {/* Pagination */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-            <Pagination page={page} count={totalPages} onChange={setPage} />
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+            <Pagination
+              page={page}
+              count={Math.ceil(filteredData.length / rowsPerPage)}
+              onChange={handlePageChange}
+            />
           </Box>
 
           {/* Add Modal */}
           {isAddModalOpen && (
             <Overlay onClose={() => setIsAddModalOpen(false)}>
-              <AddParentalLeaveModal
+              <AddTrainingModal
                 onClose={() => {
                   setIsAddModalOpen(false);
                 }}
@@ -295,7 +362,7 @@ function ParentalLeave() {
           {isImportModalOpen && (
             <Overlay onClose={() => setIsImportModalOpen(false)}>
               <ImportHRModal
-                context="parentalleave"
+                context="training"
                 onClose={() => {
                   setIsImportModalOpen(false);
                 }}
@@ -308,4 +375,4 @@ function ParentalLeave() {
   );
 }
 
-export default ParentalLeave;
+export default OSH;
