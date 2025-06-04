@@ -20,6 +20,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import EditIcon from '@mui/icons-material/Edit';
+import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
@@ -50,9 +51,16 @@ function EnvironmentWaste() {
 
   const [filters, setFilters] = useState({
     year: '',
+    quarter: '',
+    company: '',
     type: '',
-    company: ''
+    metrics: '',
+    status: '',
   });
+
+  const isFiltering = useMemo(() => {
+    return Object.values(filters).some(v => v !== null && v !== '');
+  }, [filters]);
 
   useEffect(() => {
     if (selected === 'Hazard Generated') {
@@ -117,7 +125,37 @@ function EnvironmentWaste() {
       key,
       label: key.charAt(0).toUpperCase() + key.slice(1),
     }));
-    }, [data]);
+  }, [data]);
+
+  // Prepare options for Filter components (ensure no undefined/empty, sorted, and unique)
+  const generateOptions = (data, field, sortFn = (a, b) => a.localeCompare(b)) => {
+    const set = new Set(data.map(row => row[field]).filter(Boolean));
+    const array = Array.from(set);
+    if (field === 'year') {
+      return array
+        .map(year => parseInt(year, 10))
+        .filter(year => !isNaN(year))
+        .sort((a, b) => a - b)
+        .map(year => ({ label: year, value: year }));
+    }
+    if (field === 'month') {
+      const monthOrder = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      return array
+        .sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b))
+        .map(month => ({ label: month, value: month }));
+    }
+    return array.sort(sortFn).map(item => ({ label: item, value: item }));
+  };
+
+  const companyOptions = useMemo(() => generateOptions(data, 'company'), [data]);
+  const yearOptions = useMemo(() => generateOptions(data, 'year'), [data]);
+  const quarterOptions = useMemo(() => generateOptions(data, 'quarter'), [data]);
+  const metricsOptions = useMemo(() => generateOptions(data, 'metrics'), [data]); 
+  const typeOptions = useMemo(() => generateOptions(data, 'type'), [data]);
+  const statusOptions = useMemo(() => generateOptions(data, 'status'), [data]);
 
   const handleSort = (key) => {
     setSortConfig(prevConfig => ({
@@ -136,20 +174,24 @@ function EnvironmentWaste() {
   };
 
   const getFilteredData = () => {
-    let filteredData = [...data];
+    return data.filter((item) => {
+      const matchesSearch =
+        !searchQuery ||
+        Object.values(item).some((val) =>
+          val?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
-    if (searchQuery) {
-      const lower = searchQuery.toLowerCase();
-      filteredData = filteredData.filter((item) =>
-        Object.values(item).some(
-          (val) =>
-            val &&
-            val.toString().toLowerCase().includes(lower)
-        )
-      );
-    }
+      const matchesCompany = !filters.company || item.company === filters.company;
+      const matchesYear = !filters.year || Number(item.year) === Number(filters.year);
+      const matchesQuarter = !filters.quarter || item.quarter === filters.quarter;
+      const matchesSource = !filters.source || item.source === filters.source;
+      const matchesMetrics = !filters.metrics || item.metrics === filters.metrics;
+      const matchesType = !filters.type || item.type === filters.type;
+      const matchesStatus = !filters.status || item.status === filters.status;
 
-    return filteredData;
+      return matchesSearch && matchesCompany && matchesYear && matchesQuarter && 
+      matchesMetrics && matchesType && matchesStatus;
+    });
   };
 
   const suggestions = useMemo(() => {
@@ -162,15 +204,14 @@ function EnvironmentWaste() {
     return Array.from(uniqueValues);
   }, [data]);
 
+  const filteredData = useMemo(() => getFilteredData(), [data, filters, searchQuery]);
 
-  // Update getCurrentPageData to use filtered data
-  const getCurrentPageData = () => {
-    const filteredData = getFilteredData();
-    const sortedData = getSortedData(filteredData);
+  const sortedData = useMemo(() => getSortedData(filteredData), [filteredData, sortConfig]);
+
+  const paginatedData = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return sortedData.slice(start, end);
-  };
+    return sortedData.slice(start, start + rowsPerPage);
+  }, [sortedData, page]);
 
   const totalPages = Math.ceil(getFilteredData().length / rowsPerPage);
 
@@ -286,18 +327,111 @@ function EnvironmentWaste() {
         </Box>
 
         {/* Search Input */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: '0.5rem'}}>
+        <Box sx={{ display: 'flex', gap: '0.5rem', mb: 1 }}>
           <Search 
             onSearch={setSearchQuery} 
             suggestions={suggestions} 
           />
+          <Filter
+            label="Company"
+            options={[{ label: 'All Company', value: '' }, ...companyOptions]}
+            value={filters.company}
+            onChange={val => {
+              setFilters(prev => ({ ...prev, company: val }));
+              setPage(1);
+            }}
+            placeholder="Company"
+          />
           
+          {(selected === 'Hazard Generated' || selected === 'Hazard Disposed') && (
+            <Filter
+              label="Type"
+              options={[{ label: 'All Type', value: '' }, ...typeOptions]}
+              value={filters.type}
+              onChange={val => {
+                setFilters(prev => ({ ...prev, type: val }));
+                setPage(1);
+              }}
+              placeholder="Type"
+            />
+          )}
+          {selected === 'Non-Hazard Generated' && (
+            <Filter
+              label="Metrics"
+              options={[{ label: 'All Metrics', value: '' }, ...metricsOptions]}
+              value={filters.metrics}
+              onChange={val => {
+                setFilters(prev => ({ ...prev, metrics: val }));
+                setPage(1);
+              }}
+              placeholder="Metrics"
+            />
+          )}
+          { selected !== 'Hazard Disposed' && (
+            <Filter
+              label="Quarter"
+              options={[{ label: 'All Quarter', value: '' }, ...quarterOptions]}
+              value={filters.quarter}
+              onChange={val => {
+                setFilters(prev => ({ ...prev, quarter: val }));
+                setPage(1);
+              }}
+              placeholder="Quarter"
+            />
+          )} 
+          <Filter
+            label="Year"
+            options={[{ label: 'All Year', value: '' }, ...yearOptions]}
+            value={filters.year}
+            onChange={val => {
+              setFilters(prev => ({ ...prev, year: val }));
+              setPage(1);
+            }}
+            placeholder="Year"
+          />
+          <Filter
+            label="Status"
+            options={[{ label: 'All Status', value: '' }, ...statusOptions]}
+            value={filters.status}
+            onChange={val => {
+              setFilters(prev => ({ ...prev, status: val }));
+              setPage(1);
+            }}
+            placeholder="Status"  
+          />
+
+          {isFiltering && (
+            <Button
+              variant="outline"
+              startIcon={<ClearIcon />}
+              sx={{ 
+                color: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+              }}
+              onClick={() => setFilters({
+                company: '',
+                year: '',
+                quarter: '',
+                source: '',
+                property: '',
+                type: '',
+                status: '',
+                month: '',
+              })}
+            >
+              Clear
+            </Button>
+          )}
+
         </Box>
 
         {/* Custom Table Component */}
         <CustomTable
           columns={columns}
-          rows={getCurrentPageData()}
+          rows={paginatedData}
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage="No waste data found."

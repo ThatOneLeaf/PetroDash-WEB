@@ -78,7 +78,7 @@ const Search = ({ onSearch, suggestions = [] }) => {
           height: 32,
           "& .MuiOutlinedInput-root": {
             borderRadius: 100,
-            border: "1px solid #182959",
+            border: "2px solid #1A1818",
             fontSize: 13,
             background: "#fff",
             color: "#555",

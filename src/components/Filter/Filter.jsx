@@ -92,6 +92,10 @@ const Filter = ({
         .join(", ")
     : options.find((opt) => opt.value === value)?.label;
 
+  const isActiveSelection = multi
+  ? Array.isArray(value) && value.length > 0 && !value.every((v) => v === options[0]?.value)
+  : value && value !== options[0]?.value;
+
   return (
     // Main container for filter dropdown
     <Box display="inline-block" position="relative">
@@ -101,15 +105,21 @@ const Filter = ({
         variant="outlined"
         color="inherit"
         onClick={handleToggle}
-        endIcon={open ? <ArrowDropUpIcon sx={{ color: "#000", fontSize: 18 }} /> : <ArrowDropDownIcon sx={{ color: "#000", fontSize: 18 }} />}
+        endIcon={
+          open ? (
+            <ArrowDropUpIcon sx={{ color: isActiveSelection ? "#fff" : "#5B5B5B", fontSize: 18 }} />
+          ) : (
+            <ArrowDropDownIcon sx={{ color: isActiveSelection ? "#fff" : "#5B5B5B", fontSize: 18 }} />
+          )
+        }
         sx={{
           borderRadius: 100,
           fontWeight: 500,
           fontSize: 14,
           px: 1.5,
           py: 0,
-          color: "#000",
-          border: "1.5px solid #182959",
+          color: "#5B5B5B",
+          border: "2px solid #5B5B5B",
           boxShadow: "0 2px 8px 0 rgba(0,0,0,0.03)",
           height: 40,
           minHeight: 40,
@@ -117,10 +127,11 @@ const Filter = ({
           justifyContent: "flex-start",
           alignItems: "center",
           transition: "all 0.18s",
+          backgroundColor: isActiveSelection ? "#5B5B5B" : "#fff", // Only change if not first
           "&:hover, &:focus": {
-            borderColor: "#000",
-            background: "#ededed",
-            color: "#000",
+            borderColor: "#A6A6A6",
+            color: "#ffffff",
+            backgroundColor: isActiveSelection ? "#A6A6A6" : "#ffffff",
           },
         }}
         aria-expanded={open}
@@ -128,9 +139,9 @@ const Filter = ({
         disabled={disabled}
       >
         {/* Show selected label(s) or fallback to label/placeholder */}
-        {selectedLabels
-          ? <span style={{ color: "#000", fontWeight: 500, fontSize: 14 }}>{selectedLabels}</span>
-          : <span style={{ fontWeight: 400, color: "#888", fontSize: 13 }}>{placeholder || label}</span>
+        {isActiveSelection
+          ? <span style={{ color: "#fff", fontWeight: 500, fontSize: 14 }}>{selectedLabels}</span>
+          : <span style={{ color: "#5B5B5B", fontWeight: 500, fontSize: 14 }}>{placeholder || label}</span>
         }
       </Button>
       {/* Dropdown popper for options */}
@@ -150,7 +161,7 @@ const Filter = ({
               minWidth: 180,
               background: "#fff",
               boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-              border: "1px solid #e0e0e0",
+              border: "1px solid #1A1818",
             }}
           >
             {/* List of options */}
@@ -165,14 +176,15 @@ const Filter = ({
                   borderRadius: 1.5,
                   mx: 0.5,
                   my: 0.25,
-                  color: "#000",
+                  color: "#1A1818",
                   fontWeight: 400,
                   fontSize: 13,
                   minHeight: 28,
                   transition: "background 0.15s",
                   "&.Mui-selected, &:hover": {
                     background: "#f0f0f0",
-                    color: "#000",
+                    color: "#182959",
+                    fontWeight: 800,
                   },
                 },
                 "& .MuiCheckbox-root": {
@@ -182,16 +194,20 @@ const Filter = ({
                   '& .MuiSvgIcon-root': { fontSize: 16 }
                 },
                 "& .MuiListItemText-root": {
-                  color: "#000",
+                  color: "#1A1818", // default
                   fontWeight: 400,
                   fontSize: 13,
+                  "&.selected-text": {
+                    color: "#182959", // 👈 your desired color for selected
+                    fontWeight: 800,
+                  },
                 },
               }}
             >
               {/* Show message if no options */}
               {options.length === 0 && (
                 <ListItem>
-                  <ListItemText primary="No options" sx={{ color: "#888", textAlign: "center", fontSize: 13 }} />
+                  <ListItemText primary="No options" sx={{ color: "#182959", textAlign: "center", fontSize: 13 }} />
                 </ListItem>
               )}
               {/* Render each option */}
@@ -212,10 +228,18 @@ const Filter = ({
                         tabIndex={-1}
                         disableRipple
                         size="small"
-                        sx={{ mr: 1, color: "#000", p: 0.5 }}
+                        sx={{ mr: 1, color: "#182959", p: 0.5 }}
                       />
                     )}
-                    <ListItemText primary={opt.label} />
+                    <ListItemText
+                      primary={opt.label}
+                      sx={{
+                        color: isSelected(opt.value) ? "#182959" : "#1A1818",
+                        fontWeight: isSelected(opt.value) ? 800 : 400,
+                        fontSize: 13,
+                      }}
+                    />
+
                   </ListItemButton>
                 </ListItem>
               ))}
