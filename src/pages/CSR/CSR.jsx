@@ -8,18 +8,21 @@ import {
 
 function CSR() {
     return (
-      <Box style={{ display: 'flex', flexDirection: 'row', height: '200dvh', width: '100%', margin: 0, padding: 0, overflowX: 'hidden' }}>
-          <Sidebar />
-        <Box sx={{ width: '100%', height: 'full', display: 'flex', flexDirection: 'column', padding: '40px' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', width: '100%', m: 0, p: 0, overflowX: 'hidden' }}>
+        <Sidebar />
+        <Box sx={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', p: 5 }}>
           {/* Title */}
-          <Typography variant="h6" sx={{  }}>Repository</Typography>
-          <Typography variant="h3" sx={{ color: '#182959' }}>Social - H.E.L.P</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '0.9rem', mb: 0.5 }}>Repository</Typography>
+            <Typography variant="h3" sx={{ color: '#182959', fontWeight: 800, fontSize: '2.75rem' }}>Social - H.E.L.P</Typography>
+          </Box>
           
           {/* Filter and buttons */}
-          <Box sx={{ display: 'flex', flexDirection: 'row-reverse' }}>
-            <Btn label="ADD RECORD" color="green"></Btn>
-            <Btn label="IMPORT" color="green"></Btn>
+          <Box sx={{ display: 'flex', flexDirection: 'row-reverse', gap: 2, mb: 2 }}>
+            <Btn label="ADD RECORD" color="green" />
+            <Btn label="IMPORT" color="green" />
           </Box>
+          {/* Add content here if needed */}
         </Box>
       </Box>
     )
