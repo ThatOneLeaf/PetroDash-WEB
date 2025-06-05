@@ -3,6 +3,7 @@ import { Button, Box } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
 import api from '../../services/api';
+import exportData from '../../services/export';
 import Overlay from '../../components/modal';
 import AddValueGeneratedModal from './modals/AddValueGeneratedModal';
 import ImportEconGeneratedModal from './modals/ImportEconGeneratedModal';
@@ -39,6 +40,23 @@ function EconomicGenerated() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle CSV export
+  const handleExport = () => {
+    const exportColumns = [
+      { key: 'year', label: 'Year' },
+      { key: 'electricitySales', label: 'Electricity Sales' },
+      { key: 'oilRevenues', label: 'Oil Revenues' },
+      { key: 'otherRevenues', label: 'Other Revenues' },
+      { key: 'interestIncome', label: 'Interest Income' },
+      { key: 'shareInNetIncomeOfAssociate', label: 'Share in Net Income of Associate' },
+      { key: 'miscellaneousIncome', label: 'Miscellaneous Income' },
+      { key: 'totalRevenue', label: 'Total Revenue' }
+    ];
+    
+    const filename = `economic_value_generated_${new Date().toISOString().split('T')[0]}`;
+    exportData(processedData, filename, exportColumns);
   };
 
   // Table columns config
@@ -162,6 +180,7 @@ function EconomicGenerated() {
                 variant="contained"
                 startIcon={<FileUploadIcon />}
                 style={{ backgroundColor: '#182959' }}
+                onClick={handleExport}
               >
                 EXPORT DATA
               </Button>

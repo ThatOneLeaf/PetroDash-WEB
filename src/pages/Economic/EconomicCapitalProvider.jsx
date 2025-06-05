@@ -9,6 +9,7 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
+import exportData from '../../services/export';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
 import Table from '../../components/Table/Table';
@@ -50,6 +51,20 @@ function EconomicCapitalProvider() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle CSV export
+  const handleExport = () => {
+    const exportColumns = [
+      { key: 'year', label: 'Year' },
+      { key: 'interest', label: 'Interest' },
+      { key: 'dividendsToNci', label: 'Dividends to NCI' },
+      { key: 'dividendsToParent', label: 'Dividends to Parent' },
+      { key: 'total', label: 'Total' }
+    ];
+    
+    const filename = `economic_capital_provider_${new Date().toISOString().split('T')[0]}`;
+    exportData(processedData, filename, exportColumns);
   };
 
   // Filtering and searching logic (no more manual sorting)
@@ -174,6 +189,7 @@ function EconomicCapitalProvider() {
                 variant="contained"
                 startIcon={<FileUploadIcon />}
                 style={{ backgroundColor: '#182959' }}
+                onClick={handleExport}
               >
                 EXPORT DATA
               </Button>

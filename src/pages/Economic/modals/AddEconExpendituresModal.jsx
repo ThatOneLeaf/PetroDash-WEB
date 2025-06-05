@@ -9,7 +9,8 @@ import {
   Box,
   Alert,
   FormControl,
-  InputLabel
+  InputLabel,
+  Divider
 } from '@mui/material';
 import api from '../../../services/api';
 
@@ -17,25 +18,18 @@ function AddExpendituresModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [companies, setCompanies] = useState([]);
   const [types, setTypes] = useState([]);
-  
-  const [formData, setFormData] = useState({
-    comp: '',
-    year: currentYear,
-    type: '',
-    government: '',
-    localSuppl: '',
-    foreignSupplierSpending: '',
-    employee: '',
-    community: '',
-    depreciation: '',
-    depletion: '',
-    others: ''
-  });
-
-  const [totalExpenditure, setTotalExpenditure] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Form data for both types
+  const [formData, setFormData] = useState({
+    comp: '',
+    year: currentYear,
+    types: {} // Will be populated when types are loaded
+  });
+
+  const [totalExpenditures, setTotalExpenditures] = useState({});
 
   useEffect(() => {
     // Fetch companies and types when component mounts
@@ -49,11 +43,25 @@ function AddExpendituresModal({ onClose }) {
         setCompanies(companiesRes.data);
         setTypes(typesRes.data);
         
-        // Set initial values
+        // Initialize form data for both types
+        const initialTypes = {};
+        typesRes.data.forEach(type => {
+          initialTypes[type.name] = {
+            government: '',
+            localSupplierSpending: '',
+            foreignSupplierSpending: '',
+            employee: '',
+            community: '',
+            depreciation: '',
+            depletion: '',
+            others: ''
+          };
+        });
+        
         setFormData(prev => ({
           ...prev,
           comp: companiesRes.data[0]?.id || '',
-          type: typesRes.data[0]?.id || ''
+          types: initialTypes
         }));
       } catch (error) {
         console.error('Error fetching options:', error);
@@ -64,22 +72,39 @@ function AddExpendituresModal({ onClose }) {
     fetchOptions();
   }, []);
 
-  const calculateTotal = (data) => {
-    const excludeFields = ['comp', 'year', 'type'];
-    const values = Object.entries(data)
-      .filter(([key]) => !excludeFields.includes(key))
-      .map(([_, value]) => Number(value) || 0);
-    const total = values.reduce((sum, value) => sum + value, 0);
-    setTotalExpenditure(total);
+  // Calculate totals for each type
+  useEffect(() => {
+    const newTotals = {};
+    Object.keys(formData.types || {}).forEach(typeName => {
+      const data = formData.types[typeName];
+      const values = Object.values(data).map(value => Number(value) || 0);
+      newTotals[typeName] = values.reduce((sum, value) => sum + value, 0);
+    });
+    setTotalExpenditures(newTotals);
+  }, [formData.types]);
+
+  const handleBasicChange = (field) => (event) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+    
+    // Clear any previous errors/success messages
+    setError('');
+    setSuccess('');
   };
 
-  const handleChange = (field) => (event) => {
-    const newFormData = {
-      ...formData,
-      [field]: event.target.value
-    };
-    setFormData(newFormData);
-    calculateTotal(newFormData);
+  const handleTypeChange = (typeName, field) => (event) => {
+    setFormData(prev => ({
+      ...prev,
+      types: {
+        ...prev.types,
+        [typeName]: {
+          ...prev.types[typeName],
+          [field]: event.target.value
+        }
+      }
+    }));
     
     // Clear any previous errors/success messages
     setError('');
@@ -94,10 +119,29 @@ function AddExpendituresModal({ onClose }) {
       
       console.log('Submitting expenditure data:', formData);
       
-      const response = await api.post('/economic/expenditures', formData);
+      // Create both records simultaneously
+      const createPromises = Object.keys(formData.types).map(typeName => {
+        const typeId = types.find(t => t.name === typeName)?.id;
+        const data = formData.types[typeName];
+        
+        return api.post('/economic/expenditures', {
+          comp: formData.comp,
+          year: formData.year,
+          type: typeId,
+          government: data.government || 0,
+          localSupplierSpending: data.localSupplierSpending || 0,
+          foreignSupplierSpending: data.foreignSupplierSpending || 0,
+          employee: data.employee || 0,
+          community: data.community || 0,
+          depreciation: data.depreciation || 0,
+          depletion: data.depletion || 0,
+          others: data.others || 0
+        });
+      });
       
-      console.log('API Response:', response.data);
-      setSuccess('Expenditure record created successfully!');
+      await Promise.all(createPromises);
+      
+      setSuccess('Expenditure records created successfully!');
       
       // Close modal after a short delay to show success message
       setTimeout(() => {
@@ -105,11 +149,11 @@ function AddExpendituresModal({ onClose }) {
       }, 1500);
       
     } catch (error) {
-      console.error('Error adding expenditure record:', error);
+      console.error('Error adding expenditure records:', error);
       setError(
         error.response?.data?.detail || 
         error.message || 
-        'An error occurred while creating the expenditure record'
+        'An error occurred while creating the expenditure records'
       );
     } finally {
       setLoading(false);
@@ -117,27 +161,41 @@ function AddExpendituresModal({ onClose }) {
   };
 
   const isFormValid = () => {
-    return formData.comp && formData.type && formData.year && 
-           Object.entries(formData)
-             .filter(([key]) => !['comp', 'year', 'type'].includes(key))
-             .some(([_, value]) => value !== '' && Number(value) > 0);
+    return formData.comp && formData.year && 
+           Object.keys(formData.types || {}).some(typeName => {
+             const data = formData.types[typeName];
+             return Object.values(data).some(value => value !== '' && Number(value) > 0);
+           });
+  };
+
+  // Get type abbreviations
+  const getTypeAbbreviation = (typeName) => {
+    if (typeName.toLowerCase().includes('cost of sales') || typeName.toLowerCase().includes('cos')) {
+      return 'CoS';
+    } else if (typeName.toLowerCase().includes('general') && typeName.toLowerCase().includes('administrative')) {
+      return 'G&A';
+    } else {
+      return typeName.split(' ').map(word => word[0]).join('').toUpperCase();
+    }
   };
 
   return (
-    <Paper 
-      sx={{
-        p: 4,
-        width: '900px',
-        borderRadius: '16px',
-        bgcolor: 'white'
-      }}
-    >
+    <Paper sx={{
+      p: 3,
+      width: { xs: '95vw', sm: '90vw', md: '80vw' },
+      maxWidth: '1200px',
+      borderRadius: '16px',
+      bgcolor: 'white',
+      maxHeight: '90vh',
+      overflow: 'auto'
+    }}>
       <Typography variant="h5" sx={{ 
         color: '#182959',
-        mb: 3,
-        fontWeight: 'bold' 
+        mb: 2,
+        fontWeight: 'bold',
+        textAlign: 'center'
       }}>
-        Add New Record
+        Add New Expenditure Records
       </Typography>
 
       {error && (
@@ -152,18 +210,23 @@ function AddExpendituresModal({ onClose }) {
         </Alert>
       )}
 
+      {/* Company and Year Selection */}
       <Box sx={{ 
         display: 'grid', 
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
         gap: 2,
-        mb: 3
+        mb: 3,
+        p: 2,
+        border: '2px solid #e0e0e0',
+        borderRadius: 2,
+        backgroundColor: '#fafafa'
       }}>
         <FormControl fullWidth>
           <InputLabel id="company-label">Company</InputLabel>
           <Select
             labelId="company-label"
             value={formData.comp}
-            onChange={handleChange('comp')}
+            onChange={handleBasicChange('comp')}
             label="Company"
             size="medium"
             disabled={loading}
@@ -198,50 +261,11 @@ function AddExpendituresModal({ onClose }) {
         </FormControl>
 
         <FormControl fullWidth>
-          <InputLabel id="type-label">Type</InputLabel>
-          <Select
-            labelId="type-label"
-            value={formData.type}
-            onChange={handleChange('type')}
-            label="Type"
-            size="medium"
-            disabled={loading}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  maxHeight: 300,
-                  '& .MuiMenuItem-root': {
-                    whiteSpace: 'normal',
-                    wordBreak: 'break-word'
-                  }
-                }
-              }
-            }}
-          >
-            <MenuItem value="" disabled>
-              Select Type
-            </MenuItem>
-            {types.map((type) => (
-              <MenuItem 
-                key={type.id} 
-                value={type.id}
-                sx={{
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word'
-                }}
-              >
-                {type.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth>
           <InputLabel id="year-label">Year</InputLabel>
           <Select
             labelId="year-label"
             value={formData.year}
-            onChange={handleChange('year')}
+            onChange={handleBasicChange('year')}
             label="Year"
             size="medium"
             disabled={loading}
@@ -256,126 +280,160 @@ function AddExpendituresModal({ onClose }) {
             ))}
           </Select>
         </FormControl>
+      </Box>
 
-        <TextField
-          label="Government Payments"
-          value={formData.government}
-          onChange={handleChange('government')}
-          type="number"
-          size="medium"
-          disabled={loading}
-          fullWidth
-        />
+      {/* Side-by-side type editing */}
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(auto-fit, minmax(400px, 1fr))' },
+        gap: 2,
+        mb: 1
+      }}>
+        {Object.keys(formData.types || {}).map((typeName) => (
+          <Box key={typeName} sx={{
+            border: '2px solid #e0e0e0',
+            borderRadius: 2,
+            p: 2,
+            backgroundColor: '#fafafa'
+          }}>
+            <Typography variant="h6" sx={{ 
+              color: '#182959',
+              mb: 1.5,
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              {typeName} ({getTypeAbbreviation(typeName)})
+            </Typography>
 
-        <TextField
-          label="Local Supplier Spending"
-          value={formData.localSuppl}
-          onChange={handleChange('localSuppl')}
-          type="number"
-          size="medium"
-          disabled={loading}
-          fullWidth
-        />
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr',
+              gap: 1.5,
+              mb: 1.5
+            }}>
+              <TextField
+                label="Government Payments"
+                value={formData.types[typeName]?.government || ''}
+                onChange={handleTypeChange(typeName, 'government')}
+                type="number"
+                size="medium"
+                disabled={loading}
+                fullWidth
+              />
 
-        <TextField
-          label="Foreign Supplier Spending"
-          value={formData.foreignSupplierSpending}
-          onChange={handleChange('foreignSupplierSpending')}
-          type="number"
-          size="medium"
-          disabled={loading}
-          fullWidth
-        />
+              <TextField
+                label="Local Supplier Spending"
+                value={formData.types[typeName]?.localSupplierSpending || ''}
+                onChange={handleTypeChange(typeName, 'localSupplierSpending')}
+                type="number"
+                size="medium"
+                disabled={loading}
+                fullWidth
+              />
 
-        <TextField
-          label="Employee Wages/Benefits"
-          value={formData.employee}
-          onChange={handleChange('employee')}
-          type="number"
-          size="medium"
-          disabled={loading}
-          fullWidth
-        />
+              <TextField
+                label="Foreign Supplier Spending"
+                value={formData.types[typeName]?.foreignSupplierSpending || ''}
+                onChange={handleTypeChange(typeName, 'foreignSupplierSpending')}
+                type="number"
+                size="medium"
+                disabled={loading}
+                fullWidth
+              />
 
-        <TextField
-          label="Community Investments"
-          value={formData.community}
-          onChange={handleChange('community')}
-          type="number"
-          size="medium"
-          disabled={loading}
-          fullWidth
-        />
+              <TextField
+                label="Employee Wages/Benefits"
+                value={formData.types[typeName]?.employee || ''}
+                onChange={handleTypeChange(typeName, 'employee')}
+                type="number"
+                size="medium"
+                disabled={loading}
+                fullWidth
+              />
 
-        <TextField
-          label="Depreciation"
-          value={formData.depreciation}
-          onChange={handleChange('depreciation')}
-          type="number"
-          size="medium"
-          disabled={loading}
-          fullWidth
-        />
+              <TextField
+                label="Community Investments"
+                value={formData.types[typeName]?.community || ''}
+                onChange={handleTypeChange(typeName, 'community')}
+                type="number"
+                size="medium"
+                disabled={loading}
+                fullWidth
+              />
 
-        <TextField
-          label="Depletion"
-          value={formData.depletion}
-          onChange={handleChange('depletion')}
-          type="number"
-          size="medium"
-          disabled={loading}
-          fullWidth
-        />
+              <TextField
+                label="Depreciation"
+                value={formData.types[typeName]?.depreciation || ''}
+                onChange={handleTypeChange(typeName, 'depreciation')}
+                type="number"
+                size="medium"
+                disabled={loading}
+                fullWidth
+              />
 
-        <TextField
-          label="Others"
-          value={formData.others}
-          onChange={handleChange('others')}
-          type="number"
-          size="medium"
-          disabled={loading}
-          fullWidth
-        />
+              <TextField
+                label="Depletion"
+                value={formData.types[typeName]?.depletion || ''}
+                onChange={handleTypeChange(typeName, 'depletion')}
+                type="number"
+                size="medium"
+                disabled={loading}
+                fullWidth
+              />
+
+              <TextField
+                label="Others"
+                value={formData.types[typeName]?.others || ''}
+                onChange={handleTypeChange(typeName, 'others')}
+                type="number"
+                size="medium"
+                disabled={loading}
+                fullWidth
+              />
+            </Box>
+
+            <Divider sx={{ mb: 1 }} />
+            
+            <Typography variant="h6" sx={{ textAlign: 'center', color: '#2B8C37' }}>
+              Total: ₱{(totalExpenditures[typeName] || 0).toLocaleString()}
+            </Typography>
+          </Box>
+        ))}
       </Box>
 
       <Box sx={{ 
         display: 'flex', 
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        mt: 2 
+        justifyContent: 'center',
+        gap: 2,
+        mt: 1
       }}>
-        <Typography variant="h6">
-          Total Expenditures: ₱{totalExpenditure.toLocaleString()}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            onClick={onClose}
-            disabled={loading}
-            sx={{ 
-              color: '#666',
-              borderColor: '#666',
-              '&:hover': { 
-                borderColor: '#333',
-                color: '#333'
-              }
-            }}
-          >
-            CANCEL
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={loading || !isFormValid()}
-            sx={{ 
-              bgcolor: '#2B8C37',
-              '&:hover': { bgcolor: '#1b5e20' },
-              '&:disabled': { bgcolor: '#ccc' }
-            }}
-          >
-            {loading ? 'ADDING...' : 'ADD'}
-          </Button>
-        </Box>
+        <Button
+          variant="outlined"
+          onClick={onClose}
+          disabled={loading}
+          sx={{ 
+            color: '#666',
+            borderColor: '#666',
+            '&:hover': { 
+              borderColor: '#333',
+              color: '#333'
+            }
+          }}
+        >
+          CANCEL
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={loading || !isFormValid()}
+          sx={{ 
+            bgcolor: '#2B8C37',
+            '&:hover': { bgcolor: '#1b5e20' },
+            '&:disabled': { bgcolor: '#ccc' }
+          }}
+        >
+          {loading ? 'ADDING...' : 'ADD'}
+        </Button>
       </Box>
     </Paper>
   );

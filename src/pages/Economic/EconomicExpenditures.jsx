@@ -11,10 +11,12 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
+import exportData from '../../services/export';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
 import AddEconExpendituresModal from './modals/AddEconExpendituresModal';
 import ImportEconExpendituresModal from './modals/ImportEconExpendituresModal';
+import EditEconExpendituresModal from './modals/EditEconExpendituresModal';
 import Table from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
@@ -29,6 +31,8 @@ function EconomicExpenditures() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInternalModalOpen, setIsInternalModalOpen] = useState(false);
   const [selectedInternal, setSelectedInternal] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEditRecord, setSelectedEditRecord] = useState(null);
   
   const rowsPerPage = 10;
 
@@ -54,6 +58,55 @@ function EconomicExpenditures() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle CSV export
+  const handleExport = () => {
+    // Flatten the grouped data for export
+    const flattenedData = [];
+    
+    processedData.forEach(row => {
+      Object.keys(row.types).forEach(type => {
+        const typeData = row.types[type];
+        flattenedData.push({
+          company: row.comp,
+          year: row.year,
+          type: type,
+          government: typeData.government,
+          localSupplierSpending: typeData.localSupplierSpending,
+          foreignSupplierSpending: typeData.foreignSupplierSpending,
+          employee: typeData.employee,
+          community: typeData.community,
+          depreciation: typeData.depreciation,
+          depletion: typeData.depletion,
+          others: typeData.others,
+          totalDistributed: typeData.government + typeData.localSupplierSpending + 
+                           typeData.foreignSupplierSpending + typeData.employee + typeData.community,
+          totalExpenditures: typeData.government + typeData.localSupplierSpending + 
+                           typeData.foreignSupplierSpending + typeData.employee + typeData.community +
+                           typeData.depreciation + typeData.depletion + typeData.others
+        });
+      });
+    });
+    
+    const exportColumns = [
+      { key: 'company', label: 'Company ID' },
+      { key: 'year', label: 'Year' },
+      { key: 'type', label: 'Type' },
+      { key: 'government', label: 'Government' },
+      { key: 'localSupplierSpending', label: 'Local Supplier Spending' },
+      { key: 'foreignSupplierSpending', label: 'Foreign Supplier Spending' },
+      { key: 'employee', label: 'Employee' },
+      { key: 'community', label: 'Community' },
+      { key: 'depreciation', label: 'Depreciation' },
+      { key: 'depletion', label: 'Depletion' },
+      { key: 'others', label: 'Others' },
+      { key: 'totalDistributed', label: 'Total Distributed' },
+      { key: 'totalExpenditures', label: 'Total Expenditures' }
+    ];
+    
+    const filename = `economic_expenditures_${new Date().toISOString().split('T')[0]}`;
+    exportData(flattenedData, filename, exportColumns);
   };
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -287,14 +340,14 @@ function EconomicExpenditures() {
       render: (val, row) => renderSplitCell(row, 'community', typeAbbrevMap)
     },
     { 
-      key: 'internal', 
-      label: 'Internal',
-      render: (val, row) => renderInternalCell(row, typeAbbrevMap)
-    },
-    { 
       key: 'totalDistributed', 
       label: 'Total Distributed (₱)', 
       render: (val, row) => `₱ ${Number(row.totalDistributed || 0).toLocaleString()}`
+    },
+    { 
+      key: 'internal', 
+      label: 'Internal',
+      render: (val, row) => renderInternalCell(row, typeAbbrevMap)
     },
     { 
       key: 'totalExpenditures', 
@@ -305,7 +358,14 @@ function EconomicExpenditures() {
 
   // Actions column for edit button
   const actions = (row) => (
-    <IconButton size="small">
+    <IconButton 
+      size="small" 
+      onClick={(e) => {
+        e.stopPropagation(); // Prevent row click
+        setSelectedEditRecord(row);
+        setIsEditModalOpen(true);
+      }}
+    >
       <EditIcon />
     </IconButton>
   );
@@ -373,6 +433,7 @@ function EconomicExpenditures() {
                 variant="contained"
                 startIcon={<FileUploadIcon />}
                 style={{ backgroundColor: '#182959' }}
+                onClick={handleExport}
               >
                 EXPORT DATA
               </Button>
@@ -487,12 +548,27 @@ function EconomicExpenditures() {
             </Overlay>
           )}
 
+          {/* Edit Modal */}
+          {isEditModalOpen && selectedEditRecord && (
+            <Overlay onClose={() => setIsEditModalOpen(false)}>
+              <EditEconExpendituresModal
+                selectedRecord={selectedEditRecord}
+                onClose={() => {
+                  setIsEditModalOpen(false);
+                  setSelectedEditRecord(null);
+                  fetchExpendituresData(); // Refresh data after editing
+                }}
+              />
+            </Overlay>
+          )}
+
           {/* Internal Breakdown Modal */}
           {isInternalModalOpen && selectedInternal && (
             <Overlay onClose={() => setIsInternalModalOpen(false)}>
               <Paper sx={{
                 p: 4,
-                width: '450px',
+                width: { xs: '90vw', sm: '80vw', md: '70vw', lg: '60vw' },
+                maxWidth: '800px',
                 borderRadius: '16px',
                 bgcolor: 'white'
               }}>
@@ -510,47 +586,59 @@ function EconomicExpenditures() {
                   </Typography>
                 </Box>
 
-                {/* Show breakdown by type */}
-                {selectedInternal.types.map((type) => {
-                  const typeData = selectedInternal.row.types[type];
-                  const typeLabel = typeAbbrevMap[type] || type;
-                  
-                  return (
-                    <Box key={type} sx={{ mb: 3, border: '1px solid #eee', borderRadius: 2, p: 3 }}>
-                      <Typography variant="h6" sx={{ color: '#182959', mb: 2, fontWeight: 'bold' }}>
-                        {type} ({typeLabel})
-                      </Typography>
-                      
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography>Depreciation:</Typography>
-                          <Typography>₱ {(typeData?.depreciation || 0).toLocaleString()}</Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography>Depletion:</Typography>
-                          <Typography>₱ {(typeData?.depletion || 0).toLocaleString()}</Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography>Others:</Typography>
-                          <Typography>₱ {(typeData?.others || 0).toLocaleString()}</Typography>
-                        </Box>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          borderTop: '1px solid #eee', 
-                          pt: 1, 
-                          fontWeight: 'bold',
-                          mt: 1
-                        }}>
-                          <Typography>Type Total:</Typography>
-                          <Typography sx={{ color: '#666', fontWeight: 'bold' }}>
-                            ₱ {((typeData?.depreciation || 0) + (typeData?.depletion || 0) + (typeData?.others || 0)).toLocaleString()}
-                          </Typography>
+                {/* Show breakdown by type - Side by side layout */}
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(auto-fit, minmax(300px, 1fr))' },
+                  gap: 3,
+                  mb: 3 
+                }}>
+                  {selectedInternal.types.map((type) => {
+                    const typeData = selectedInternal.row.types[type];
+                    const typeLabel = typeAbbrevMap[type] || type;
+                    
+                    return (
+                      <Box key={type} sx={{ 
+                        border: '1px solid #eee', 
+                        borderRadius: 2, 
+                        p: 3,
+                        minHeight: 'fit-content'
+                      }}>
+                        <Typography variant="h6" sx={{ color: '#182959', mb: 2, fontWeight: 'bold' }}>
+                          {type} ({typeLabel})
+                        </Typography>
+                        
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography>Depreciation:</Typography>
+                            <Typography>₱ {(typeData?.depreciation || 0).toLocaleString()}</Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography>Depletion:</Typography>
+                            <Typography>₱ {(typeData?.depletion || 0).toLocaleString()}</Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography>Others:</Typography>
+                            <Typography>₱ {(typeData?.others || 0).toLocaleString()}</Typography>
+                          </Box>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            borderTop: '1px solid #eee', 
+                            pt: 1, 
+                            fontWeight: 'bold',
+                            mt: 1
+                          }}>
+                            <Typography>Type Total:</Typography>
+                            <Typography sx={{ color: '#666', fontWeight: 'bold' }}>
+                              ₱ {((typeData?.depreciation || 0) + (typeData?.depletion || 0) + (typeData?.others || 0)).toLocaleString()}
+                            </Typography>
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
-                  );
-                })}
+                    );
+                  })}
+                </Box>
 
                 {/* Company Total */}
                 <Box sx={{ borderTop: '2px solid #182959', pt: 2, mt: 2 }}>
