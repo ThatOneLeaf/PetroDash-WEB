@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Button, Box } from '@mui/material';
+import { Button, Box, IconButton } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import exportData from '../../services/export';
 import Overlay from '../../components/modal';
 import AddValueGeneratedModal from './modals/AddValueGeneratedModal';
 import ImportEconGeneratedModal from './modals/ImportEconGeneratedModal';
+import EditValueGeneratedModal from './modals/EditValueGeneratedModal';
 import Sidebar from '../../components/Sidebar';
 import Table from '../../components/Table/Table';
 import Filter from '../../components/Filter/Filter';
@@ -19,6 +21,8 @@ function EconomicGenerated() {
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEditRecord, setSelectedEditRecord] = useState(null);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
@@ -135,10 +139,18 @@ function EconomicGenerated() {
       .filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)
   ];
 
-  // Table actions (optional)
+  // Table actions
   const renderActions = (row) => (
-    <></>
-    // Add action buttons here if needed
+    <IconButton 
+      size="small" 
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedEditRecord(row);
+        setIsEditModalOpen(true);
+      }}
+    >
+      <EditIcon />
+    </IconButton>
   );
 
   // Calculate total pages for external pagination
@@ -262,6 +274,20 @@ function EconomicGenerated() {
                   // Reset page to 1 to show new data at top
                   setPage(1);
                   fetchEconomicData(); // Refresh data after import
+                }}
+              />
+            </Overlay>
+          )}
+
+          {/* Edit Modal */}
+          {isEditModalOpen && selectedEditRecord && (
+            <Overlay onClose={() => setIsEditModalOpen(false)}>
+              <EditValueGeneratedModal
+                selectedRecord={selectedEditRecord}
+                onClose={() => {
+                  setIsEditModalOpen(false);
+                  setSelectedEditRecord(null);
+                  fetchEconomicData(); // Refresh data after editing
                 }}
               />
             </Overlay>

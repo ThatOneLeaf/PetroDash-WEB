@@ -18,6 +18,7 @@ import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import AddCapitalProviderModal from './modals/AddCapitalProviderPaymentsModal';
 import ImportEconCapitalProviderModal from './modals/ImportEconCapitalProviderModal';
+import EditCapitalProviderModal from './modals/EditCapitalProviderModal';
 
 function EconomicCapitalProvider() {
   const [data, setData] = useState([]);
@@ -26,6 +27,8 @@ function EconomicCapitalProvider() {
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEditRecord, setSelectedEditRecord] = useState(null);
   
   const rowsPerPage = 10;
 
@@ -135,7 +138,14 @@ function EconomicCapitalProvider() {
 
   // Actions column for edit button
   const actions = (row) => (
-    <IconButton size="small">
+    <IconButton 
+      size="small" 
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedEditRecord(row);
+        setIsEditModalOpen(true);
+      }}
+    >
       <EditIcon />
     </IconButton>
   );
@@ -281,6 +291,20 @@ function EconomicCapitalProvider() {
                   // Reset page to 1 to show new data at top
                   setPage(1);
                   fetchCapitalProviderData(); // Refresh data after import
+                }}
+              />
+            </Overlay>
+          )}
+
+          {/* Edit Modal */}
+          {isEditModalOpen && selectedEditRecord && (
+            <Overlay onClose={() => setIsEditModalOpen(false)}>
+              <EditCapitalProviderModal
+                selectedRecord={selectedEditRecord}
+                onClose={() => {
+                  setIsEditModalOpen(false);
+                  setSelectedEditRecord(null);
+                  fetchCapitalProviderData(); // Refresh data after editing
                 }}
               />
             </Overlay>
