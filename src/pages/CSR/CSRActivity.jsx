@@ -1,35 +1,41 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Btn from '../../components/ButtonComp';
-import { 
+import {
   Box,
-  Typography
- } from '@mui/material'
+  Typography,
+  Button,
+  Paper
+} from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Table from '../../components/Table/Table';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import Pagination from '../../components/Pagination/pagination';
-import Paper from '@mui/material/Paper';
+import AddRecordModalHelp from '../../components/help_components/AddRecordModalHelp';
+import IconButton from '@mui/material/IconButton';
+import VisibilityIcon from '@mui/icons-material/Visibility'; // Add this import
+
 
 function CSR() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [modalKey, setModalKey] = useState(0); // Add this line
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
   // Table state
   const [sortConfig, setSortConfig] = useState({
-    key: 'year',
+    key: 'projectYear', // Use a valid column key for default sort
     direction: 'desc'
   });
-  // Only filter by year for now, can add more filters as needed
-  const [filters, setFilters] = useState({ year: "", companyId: "", statusId: "", program: "" });
+  const [filters, setFilters] = useState({ year: "", companyId: "", statusId: "", program: "", projectAbbr: "" });
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -50,26 +56,30 @@ function CSR() {
 
   // Table columns config
   const columns = [
-    { key: 'companyId', label: 'Company ID',
+    { key: 'projectYear', label: 'Year', width: 80, align: 'center',
       render: (val) => val
     },
-    { key: 'projectId', label: 'Project ID',
+    { key: 'companyId', label: 'Company', width: 120,
       render: (val) => val
     },
-    { key: 'projectYear', label: 'Year',
+    { key: 'projectId', label: 'Project', width: 140,
       render: (val) => val
     },
-    { key: 'csrReport', label: 'Beneficiaries',
-      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    { key: 'csrReport', label: 'Beneficiaries', width: 120, align: 'right',
+      render: (val) => val != null ? Number(val).toLocaleString() : '-'
     },
-    { key: 'projectExpenses', label: 'Investments (₱)',
-      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    { key: 'projectExpenses', label: 'Investments (₱)', width: 140, align: 'right',
+      render: (val) => val != null ? `₱${Number(val).toLocaleString()}` : '-'
     },
-    { key: 'statusId', label: 'Approval Status',
+    { key: 'statusId', label: 'Status', width: 110,
       render: (val) => val
     },
-    { key: 'action', label: 'Action',
-      render: (val) => val != null ? Number(val).toLocaleString() : ''
+    { key: 'action', label: 'Action', width: 100, align: 'center',
+      render: (row) => (
+        <IconButton size="small">
+          <EditIcon /> {/* Use EditIcon for consistency with EnvironmentEnergy */}
+        </IconButton>
+      )
     }
   ];
 
@@ -80,6 +90,20 @@ function CSR() {
       direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
     }));
   };
+
+  // Extract project abbreviations from projectId (after the underscore)
+  const projectAbbrSet = new Set(
+    data
+      .map(d => {
+        const parts = String(d.projectId || '').split('_');
+        return parts.length > 1 ? parts[1] : '';
+      })
+      .filter(Boolean)
+  );
+  const projectAbbrOptions = [
+    { label: "All Projects", value: "" },
+    ...Array.from(projectAbbrSet).sort().map(abbr => ({ label: abbr, value: abbr }))
+  ];
 
   // Filtering and searching logic
   const filteredData = data
@@ -95,6 +119,12 @@ function CSR() {
         const prog = (row.ProgramID || row.programId || "").toString().substring(0, 2).toUpperCase();
         if (prog !== filters.program) return false;
       }
+      // Project Abbreviation filter (after _ in projectId)
+      if (filters.projectAbbr) {
+        const parts = String(row.projectId || '').split('_');
+        const abbr = parts.length > 1 ? parts[1] : '';
+        if (abbr !== filters.projectAbbr) return false;
+      }
       return true;
     })
     .filter(row => {
@@ -108,9 +138,17 @@ function CSR() {
 
   // Sorting
   const sortedData = [...filteredData].sort((a, b) => {
-    if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
+    const aVal = a[sortConfig.key];
+    const bVal = b[sortConfig.key];
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return 1;
+    if (bVal == null) return -1;
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+    }
+    return sortConfig.direction === 'asc'
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal));
   });
 
   // Pagination logic
@@ -166,6 +204,37 @@ function CSR() {
     ...new Set(data.map(d => d.projectId).filter(Boolean))
   ];
 
+  // Modal options (can be generated from data or static as needed)
+  const modalProgramOptions = [
+    { label: 'Health', value: 'health' },
+    { label: 'Education', value: 'education' },
+    { label: 'Livelihood', value: 'livelihood' }
+  ];
+  const modalProjectOptions = {
+    health: [
+      { label: 'Medical Mission', value: 'medical_mission' },
+      { label: 'Vaccination Drive', value: 'vaccination_drive' }
+    ],
+    education: [
+      { label: 'Scholarship', value: 'scholarship' },
+      { label: 'School Supplies', value: 'school_supplies' }
+    ],
+    livelihood: [
+      { label: 'Skills Training', value: 'skills_training' },
+      { label: 'Microfinance', value: 'microfinance' }
+    ]
+  };
+
+  // Optionally, generate year options from data for the modal
+  const modalYearOptions = [
+    ...new Set(data.map(d => d.projectYear).filter(Boolean))
+  ].sort((a, b) => b - a).map(y => ({ label: y, value: y }));
+
+  // Optionally, generate company options from data for the modal
+  const modalCompanyOptions = [
+    ...new Set(data.map(d => d.companyId).filter(Boolean))
+  ].sort().map(c => ({ label: c, value: c }));
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -194,8 +263,42 @@ function CSR() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-            <Btn label="IMPORT" color="green" />
-            <Btn label="ADD RECORD" color="green" />
+            <Button
+              variant="contained"
+              startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+            >
+              IMPORT
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{
+                backgroundColor: '#2B8C37',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#256d2f',
+                },
+              }}
+              onClick={() => {
+                setModalKey(k => k + 1); // Increment key to force remount
+                setIsAddModalOpen(true);
+              }}
+            >
+              ADD RECORD
+            </Button>
           </Box>
         </Box>
         {/* Filter/Search/Buttons row styled like screenshot */}
@@ -263,10 +366,18 @@ function CSR() {
               placeholder="Program"
             />
           </Box>
+          {/* Project Abbreviation Filter */}
+          <Box sx={{ flex: '0 0 auto', display: 'flex', gap: 1 }}>
+            <Filter
+              label="Project"
+              options={projectAbbrOptions}
+              value={filters.projectAbbr}
+              onChange={val => setFilters(f => ({ ...f, projectAbbr: val }))}
+              placeholder="Project"
+            />
+          </Box>
           {/* Spacer to push buttons to right */}
           <Box sx={{ flex: 1 }} />
-          {/* Action buttons at right */}
-          {/* Removed duplicate buttons here */}
         </Box>
         {/* Table */}
         <Box sx={{ mt: 0, mb: 0, p: 0 }}>
@@ -275,15 +386,24 @@ function CSR() {
             rows={pagedData}
             onSort={handleSort}
             sortConfig={sortConfig}
-            // actions={actions}
             emptyMessage="No data available."
             sx={{
               mt: 0,
               mb: 0,
               p: 0,
-              // Remove extra gaps/padding if your Table component supports sx prop
             }}
           />
+        </Box>
+        {/* Record Count */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+          <Typography sx={{ fontSize: '1rem' }}>
+            Showing {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
+          </Typography>
+          <Box />
+          <Typography sx={{ fontSize: '1rem' }}>
+            Showing {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
+            {Math.min(page * rowsPerPage, filteredData.length)} records
+          </Typography>
         </Box>
         {/* Centered Pagination */}
         <Box sx={{ mt: 2, mb: 0, p: 0, display: 'flex', justifyContent: 'center' }}>
@@ -293,6 +413,17 @@ function CSR() {
             onChange={setPage}
           />
         </Box>
+        {/* Add Record Modal */}
+        <AddRecordModalHelp
+          key={modalKey} // Add this line
+          open={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onAdd={fetchCSRData}
+          programOptions={modalProgramOptions}
+          projectOptions={modalProjectOptions}
+          yearOptions={modalYearOptions}
+          companyOptions={modalCompanyOptions}
+        />
       </Box>
     </Box>
   )
