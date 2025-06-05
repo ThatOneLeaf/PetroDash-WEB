@@ -123,9 +123,7 @@ async function exportExcelMultiSheet(finalFilteredData, title) {
       emptySheet.addRow(['No data to export']);
     }
 
-    console.log('Generating Excel buffer...');
     const buffer = await workbook.xlsx.writeBuffer();
-    console.log('Buffer generated, size:', buffer.byteLength);
 
     const blob = new Blob([buffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -143,14 +141,12 @@ async function exportExcelMultiSheet(finalFilteredData, title) {
       window.URL.revokeObjectURL(url);
     }, 1000);
 
-    console.log('Excel export completed successfully');
 
   } catch (error) {
     console.error("Excel export failed:", error);
     console.error("Error stack:", error.stack);
 
     try {
-      console.log('Attempting CSV fallback...');
       createCSVFallback(finalFilteredData);
     } catch (csvError) {
       console.error("CSV fallback also failed:", csvError);
@@ -208,7 +204,6 @@ function createCSVFallback(finalFilteredData) {
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 
-  console.log('CSV fallback export completed');
 }
 
 export default exportExcelMultiSheet;

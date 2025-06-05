@@ -144,11 +144,6 @@ reportTitle = "Exported Report"
 
   // NEW: Store the final filtered data in a dedicated variable
   const finalFilteredData = useMemo(() => {
-    console.log('Computing finalFilteredData...');
-    console.log('- data length:', data?.length);
-    console.log('- groupBy:', groupBy);
-    console.log('- filteredColumns:', filteredColumns);
-    console.log('- groupedData:', groupedData);
     
     if (!data || data.length === 0) {
       console.warn('No data available for export');
@@ -201,20 +196,11 @@ Object.entries(groupedData).forEach(([groupName, groupItems]) => {
         groupByColumn: groupByColumn,
         groupByKey: groupBy
       };
-      console.log('Grouped result:', result);
       return result;
     }
   }, [data, groupBy, groupedData, filteredColumns, groupByColumn]);
 
   const handleExport = async () => {
-    console.log('=== EXPORT DEBUG INFO ===');
-    console.log('finalFilteredData:', finalFilteredData);
-    console.log('Original data length:', data?.length);
-    console.log('Effective columns:', effectiveColumns);
-    console.log('Filtered columns:', filteredColumns);
-    console.log('Group by:', groupBy);
-    console.log('Excluded fields:', excludedFields);
-    console.log('========================');
     
     if (exportType === "excel") {
         await exportExcelMultiSheet(finalFilteredData, reportTitle);
