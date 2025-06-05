@@ -90,9 +90,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
         borderRight: "1px solid #eee",
         transition: "width 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1), position 0s linear 0.35s", // smooth transition
         boxShadow: "4px 0 12px 0 rgba(44,62,80,0.22)",
-        position: collapsed ? "sticky" : "absolute",
+        position: "sticky", // always sticky
         top: 0,
-        left: collapsed ? 0 : 0, // always 0, but transition is smooth
+        left: 0,
         overflowX: "hidden",
         zIndex: collapsed ? 100 : 1300,
         // Optional: fade shadow in/out for more smoothness

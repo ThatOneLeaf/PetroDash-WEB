@@ -23,7 +23,6 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Landing />} />
-            {/* <Route path="/energy" element={<Energy />} /> */}
             <Route path="/economic" element={<Economic />} />
             <Route path="/economic/generated" element={<EconomicGenerated />} />
             <Route
