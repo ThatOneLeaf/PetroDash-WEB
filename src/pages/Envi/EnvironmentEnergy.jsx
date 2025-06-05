@@ -17,9 +17,7 @@ import {
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import EditIcon from '@mui/icons-material/Edit';
+import LaunchIcon from '@mui/icons-material/Launch';
 import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
@@ -31,6 +29,7 @@ import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import CustomTable from '../../components/Table/Table'; // Adjust path as needed
 import Pagination from '../../components/Pagination/pagination'; // Adjust path as needed
+import ViewRecordModal from '../../components/ViewRecordModal'; // Adjust path as needed
 
 function EnvironmentEnergy() {
   const [data, setData] = useState([]);
@@ -41,6 +40,7 @@ function EnvironmentEnergy() {
   const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
   const [selected, setSelected] = useState('Electricity'); // Default selection
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState(null); // New
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -234,6 +234,30 @@ function EnvironmentEnergy() {
       console.error('Failed to export Excel:', error);
     }
   };
+
+  const getRecordID = (record) => {
+    if (record && typeof record === 'object') {
+      const firstKey = Object.keys(record)[0];
+      return record[firstKey];
+    }
+    return null;
+  };
+
+  const handleUpdateRecord = async (updatedData) => {
+    console.log('Updating record:', getRecordID(updatedData));
+    {/*
+
+    try {
+      await axios.put(`/api/energy-records/${updatedData.id}`, updatedData); // or fetch()
+      toast.success("Record updated!");
+      fetchRecords(); // reload data
+    } catch (err) {
+      toast.error("Failed to update record.");
+    }
+       */}
+    
+  };
+
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -477,9 +501,11 @@ function EnvironmentEnergy() {
           maxHeight="69vh"
           minHeight="300px"
           actions={(row) => (
-            <IconButton size="small">
-              <EditIcon />
-            </IconButton>
+            <>
+              <IconButton size="small" onClick={() => setSelectedRecord(row)}>
+                <LaunchIcon />
+              </IconButton>
+            </>
           )}
         />
         
@@ -537,6 +563,17 @@ function EnvironmentEnergy() {
                   onClose={() => setIsImportModalOpen(false)} // or any close handler
                 />       
             )}
+          </Overlay>
+        )}
+        {selectedRecord != null && (
+          console.log('Selected Record:', getRecordID(selectedRecord)),
+          <Overlay onClose={() => setSelectedRecord(null)}>
+            <ViewRecordModal 
+              title={`${selected} Consumption Details`}
+              record={selectedRecord} 
+              onSave={handleUpdateRecord}
+              onClose={() => setSelectedRecord(null)} 
+            />
           </Overlay>
         )}
       </Container>
