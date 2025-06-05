@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import SideBar from "../../components/Sidebar";
-import ImportPowerFileModal from "../../components/ImportPowerFileModal";
+import ImportFileModal from "../../components/ImportFileModal";
 import {
   Box,
   Container,
@@ -14,7 +14,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
+import LaunchIcon  from "@mui/icons-material/Launch";
 import Overlay from "../../components/modal";
 import AddEnergyGeneratedModal from "../../components/AddPowerGeneratedModal";
 import Pagination from "../../components/Pagination/pagination";
@@ -334,7 +334,7 @@ function Energy() {
               scrollable
               actions={(row) => (
                 <IconButton size="small">
-                  <EditIcon />
+                 <LaunchIcon />
                 </IconButton>
               )}
             />
@@ -364,12 +364,15 @@ function Energy() {
         )}
         {isImportEnergyModalOpen && (
           <Overlay onClose={() => setIsImportEnergyModalOpen(false)}>
-            <ImportPowerFileModal
-              onClose={() => {
-                setIsImportEnergyModalOpen(false);
-                fetchEnergyData();
-              }}
-            />
+            <ImportFileModal
+                  title="Daily Generation"
+                  downloadPath=""
+                  uploadPath=""
+                  onClose={() => {
+                            setIsImportEnergyModalOpen(false);
+                            fetchEnergyData();
+                          }} 
+                />
           </Overlay>
         )}
       </Box>
