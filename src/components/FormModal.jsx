@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Paper, Typography, Box, Button } from '@mui/material';
 
-function FormModal({ title, subtitle, children, actions, onClose, width = '600px' }) {
+function FormModal({ title, subtitle, children, actions, onClose, width = '600px', hideCancel }) {
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
   const [titleLines, setTitleLines] = useState(1);
@@ -63,19 +63,21 @@ function FormModal({ title, subtitle, children, actions, onClose, width = '600px
       <Box sx={{ display: 'grid', gap: 2 }}>{children}</Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, gap: 2 }}>
-        <Button
-          variant="outlined"
-          onClick={onClose}
-          sx={{
-            borderRadius: '999px',
-            px: 3,
-            py: 1,
-            fontWeight: 'bold',
-          }}
-        >
-          Cancel
-        </Button>
         {actions}
+        {!hideCancel && (
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            sx={{
+              borderRadius: '999px',
+              px: 3,
+              py: 1,
+              fontWeight: 'bold',
+            }}
+          >
+            Cancel
+          </Button>
+        )}
       </Box>
     </Paper>
   );

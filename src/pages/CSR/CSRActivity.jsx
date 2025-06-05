@@ -12,14 +12,15 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import ClearIcon from '@mui/icons-material/Clear';
+import LaunchIcon from '@mui/icons-material/Launch';
 import Table from '../../components/Table/Table';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import Pagination from '../../components/Pagination/pagination';
 import AddRecordModalHelp from '../../components/help_components/AddRecordModalHelp';
-// import ImportModalHelp from '../../components/help_components/ImportModalHelp';
+import ImportModalHelp from '../../components/help_components/ImportModalHelp'; // Restored
+import Overlay from '../../components/modal'; // Add this import if not present
 import api from '../../services/api';
-
 
 function CSR() {
   const [data, setData] = useState([]);
@@ -61,15 +62,19 @@ function CSR() {
   const columns = [
     { key: 'projectYear', label: 'Year', width: 80, align: 'center', render: val => val },
     { key: 'companyId', label: 'Company', width: 120, render: val => val },
-    { key: 'projectId', label: 'Project', width: 140, render: val => val },
+    { key: 'programName', label: 'Program', width: 140, render: val => val },
+    { key: 'projectName', label: 'Project', width: 140, render: val => val },
     { key: 'csrReport', label: 'Beneficiaries', width: 120, align: 'right', render: val => val != null ? Number(val).toLocaleString() : '-' },
     { key: 'projectExpenses', label: 'Investments (₱)', width: 140, align: 'right', render: val => val != null ? `₱${Number(val).toLocaleString()}` : '-' },
     { key: 'statusId', label: 'Status', width: 110, render: val => val },
     {
-      key: 'action', label: 'Action', width: 100, align: 'center',
-      render: () => (
-        <IconButton size="small">
-          <EditIcon />
+      key: 'actions',
+      label: 'Actions',
+      width: 80,
+      align: 'center',
+      render: (val, row) => (
+        <IconButton size="small" /* onClick={() => ...} */>
+          <LaunchIcon />
         </IconButton>
       )
     }
@@ -85,32 +90,22 @@ function CSR() {
 
   // --- Filter Option Extraction ---
 
-  // Get unique program abbreviations (first two letters of projectId)
-  const programAbbrSet = new Set(
-    data.map(d => String(d.projectId || '').substring(0, 2)).filter(Boolean)
-  );
+  // Get unique program names for filter
+  const programSet = new Set(data.map(d => d.programName).filter(Boolean));
   const programOptions = [
     { label: "All Programs", value: "" },
-    ...Array.from(programAbbrSet).sort().map(abbr => ({ label: abbr, value: abbr }))
+    ...Array.from(programSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }))
   ];
 
-  // Get unique project abbreviations (all segments after first underscore in projectId), filtered by selected program
+  // Get unique project names for filter, filtered by selected program
   const filteredProjects = data.filter(d => {
     if (!filters.program) return true;
-    return String(d.projectId || '').substring(0, 2) === filters.program;
+    return d.programName === filters.program;
   });
-  const projectAbbrSet = new Set(
-    filteredProjects
-      .flatMap(d => {
-        const parts = String(d.projectId || '').split('_');
-        // All segments after the first underscore are considered project abbreviations
-        return parts.length > 1 ? parts.slice(1) : [];
-      })
-      .filter(Boolean)
-  );
+  const projectSet = new Set(filteredProjects.map(d => d.projectName).filter(Boolean));
   const projectOptions = [
     { label: "All Projects", value: "" },
-    ...Array.from(projectAbbrSet).sort().map(abbr => ({ label: abbr, value: abbr }))
+    ...Array.from(projectSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }))
   ];
 
   // Year filter options
@@ -153,17 +148,10 @@ function CSR() {
       if (filters.companyId && String(row.companyId) !== String(filters.companyId)) return false;
       // Status filter
       if (filters.statusId && String(row.statusId) !== String(filters.statusId)) return false;
-      // Program filter (first two letters of projectId)
-      if (filters.program) {
-        const prog = String(row.projectId || '').substring(0, 2);
-        if (prog !== filters.program) return false;
-      }
-      // Project filter (any segment after first underscore in projectId)
-      if (filters.projectAbbr) {
-        const parts = String(row.projectId || '').split('_');
-        // Match if any segment after the first underscore matches the filter
-        if (!(parts.length > 1 && parts.slice(1).includes(filters.projectAbbr))) return false;
-      }
+      // Program filter (programName)
+      if (filters.program && row.programName !== filters.program) return false;
+      // Project filter (projectName)
+      if (filters.projectAbbr && row.projectName !== filters.projectAbbr) return false;
       return true;
     })
     .filter(row => {
@@ -203,20 +191,32 @@ function CSR() {
   // Modal options for AddRecordModalHelp
   const modalYearOptions = yearOptions.slice(1); // Remove "All Years"
   const modalCompanyOptions = companyIdOptions.slice(1); // Remove "All Companies"
-  // For modal, use programName/projectName from API, grouped by programName
-  const programSet = new Set(data.map(d => d.programName).filter(Boolean));
-  const modalProgramOptions = Array.from(programSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }));
+  // For modal, use programName/projectName/projectId from API, grouped by programName
+  const programSetModal = new Set(data.map(d => d.programName).filter(Boolean));
+  const modalProgramOptions = Array.from(programSetModal)
+    .sort((a, b) => String(a).localeCompare(String(b)))
+    .map(name => ({ label: name, value: name }));
+
+  // Group project options by program, include projectId
   const modalProjectOptions = {};
   data.forEach(d => {
-    if (d.programName && d.projectName) {
+    if (d.programName && d.projectName && d.projectId) {
       if (!modalProjectOptions[d.programName]) {
         modalProjectOptions[d.programName] = [];
       }
-      if (!modalProjectOptions[d.programName].some(opt => opt.value === d.projectName)) {
-        modalProjectOptions[d.programName].push({ label: d.projectName, value: d.projectName });
+      // Only push if not already present (by projectId)
+      if (!modalProjectOptions[d.programName].some(opt => opt.value === d.projectName && opt.projectId === d.projectId)) {
+        modalProjectOptions[d.programName].push({
+          label: d.projectName,
+          value: d.projectName,
+          projectId: d.projectId
+        });
       }
     }
   });
+
+  // Log modalProjectOptions to verify structure
+  console.log("modalProjectOptions:", modalProjectOptions);
 
   // --- Render ---
 
@@ -369,11 +369,7 @@ function CSR() {
           emptyMessage="No data available."
           maxHeight="69vh"
           minHeight="300px"
-          actions={(row) => (
-            <IconButton size="small">
-              <EditIcon />
-            </IconButton>
-          )}
+          // actions column is now handled in columns definition
         />
 
         {/* Record Count and Pagination */}
@@ -397,19 +393,31 @@ function CSR() {
           key={modalKey}
           open={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onAdd={fetchCSRData}
+          onAdd={() => {
+            fetchCSRData();
+            // Log the modal options used for adding
+            console.log("AddRecordModalHelp used with options:", {
+              yearOptions: modalYearOptions,
+              companyOptions: modalCompanyOptions,
+              programOptions: modalProgramOptions,
+              projectOptions: modalProjectOptions
+            });
+          }}
           yearOptions={modalYearOptions}
           companyOptions={modalCompanyOptions}
           programOptions={modalProgramOptions}
           projectOptions={modalProjectOptions}
         />
-
         {/* Import Modal */}
-        {/* <ImportModalHelp
-          open={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          onImport={fetchCSRData}
-        /> */}
+        {isImportModalOpen && (
+          <Overlay onClose={() => setIsImportModalOpen(false)}>
+            <ImportModalHelp
+              open={isImportModalOpen}
+              onClose={() => setIsImportModalOpen(false)}
+              onImportSuccess={fetchCSRData}
+            />
+          </Overlay>
+        )}
       </Container>
     </Box>
   );
