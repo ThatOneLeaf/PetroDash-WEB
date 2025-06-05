@@ -28,6 +28,7 @@ import DateRangePicker from "../../components/Filter/DateRangePicker";
 import RepositoryHeader from "../../components/RepositoryHeader";
 import ButtonComp from "../../components/ButtonComp";
 import DataExportModal from "../../components/ExportModal";
+import EnergyDetailModal from "../../components/ViewPowerGeneratedModal";
 
 function Energy() {
   const [data, setData] = useState([]);
@@ -59,6 +60,18 @@ function Energy() {
       endDate !== null
     );
   }, [filters, startDate, endDate]);
+    const [open, setOpen] = useState(false);
+  const [selectedEnergyId, setSelectedEnergyId] = useState(null);
+
+  const handleOpen = (energyId) => {
+    setSelectedEnergyId(energyId);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedEnergyId(null);
+  };
 
 
   const [powerPlants, setPowerPlants] = useState([]);
@@ -356,7 +369,7 @@ function Energy() {
               maxHeight={'75vh'}
               scrollable
               actions={(row) => (
-                <IconButton size="small">
+                <IconButton size="small" onClick={() => handleOpen(row.energyId)}>
                  <LaunchIcon />
                 </IconButton>
               )}
@@ -372,6 +385,11 @@ function Energy() {
             />
           </Box>
         </Container>
+        <EnergyDetailModal
+        open={open}
+        onClose={handleClose}
+        energyId={selectedEnergyId}
+        />
 
         {/* Modals */}
         {isExportModalOpen && (
