@@ -17,9 +17,7 @@ import {
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import EditIcon from '@mui/icons-material/Edit';
+import LaunchIcon from '@mui/icons-material/Launch';
 import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
@@ -32,6 +30,7 @@ import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
+import ViewRecordModal from '../../components/ViewRecordModal'; // Adjust path as needed
 
 function EnvironmentWater() {
   const [data, setData] = useState([]);
@@ -42,6 +41,8 @@ function EnvironmentWater() {
   const [selected, setSelected] = useState('Abstraction'); // Default selection
   const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+    const [selectedRecord, setSelectedRecord] = useState(null); // New
+
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -259,6 +260,29 @@ function EnvironmentWater() {
     }
   };
 
+  const getRecordID = (record) => {
+    if (record && typeof record === 'object') {
+      const firstKey = Object.keys(record)[0];
+      return record[firstKey];
+    }
+    return null;
+  };
+
+  const handleUpdateRecord = async (updatedData) => {
+    console.log('Updating record:', getRecordID(updatedData));
+    {/*
+
+    try {
+      await axios.put(`/api/energy-records/${updatedData.id}`, updatedData); // or fetch()
+      toast.success("Record updated!");
+      fetchRecords(); // reload data
+    } catch (err) {
+      toast.error("Failed to update record.");
+    }
+       */}
+    
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -466,8 +490,8 @@ function EnvironmentWater() {
           maxHeight="69vh"
           minHeight="300px"
           actions={(row) => (
-            <IconButton size="small">
-              <EditIcon />
+            <IconButton size="small" onClick={() => setSelectedRecord(row)}>
+              <LaunchIcon />
             </IconButton>
           )}
         />
@@ -544,6 +568,17 @@ function EnvironmentWater() {
                   onClose={() => setIsImportModalOpen(false)} // or any close handler
                 />
             )}
+          </Overlay>
+        )}
+        {selectedRecord != null && (
+          console.log('Selected Record:', getRecordID(selectedRecord)),
+          <Overlay onClose={() => setSelectedRecord(null)}>
+            <ViewRecordModal 
+              title={`Water ${selected} Details`}
+              record={selectedRecord} 
+              onSave={handleUpdateRecord}
+              onClose={() => setSelectedRecord(null)} 
+            />
           </Overlay>
         )}
       </Container>
