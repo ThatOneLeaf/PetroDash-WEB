@@ -263,9 +263,9 @@ function EnvironmentEnergy() {
   if (error) return <div>{error}</div>;
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', }}>
       <Sidebar />
-      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2rem' }}>
+      <Container maxWidth={false} disableGutters sx={{ height: '100vh', overflow: 'auto', padding: '2rem', flexGrow: 1 }}>
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between',
@@ -498,7 +498,7 @@ function EnvironmentEnergy() {
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage="No energy data found."
-          maxHeight="69vh"
+          maxHeight="60vh"
           minHeight="300px"
           actions={(row) => (
             <>
@@ -512,7 +512,7 @@ function EnvironmentEnergy() {
         {/* Custom Pagination Component */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
           {/* Row Count Display */}
-          <Typography sx={{ fontSize: '1rem'}}>
+          <Typography sx={{ fontSize: '0.85rem'}}>
             Showing {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
           </Typography>
           <Pagination 
@@ -520,7 +520,7 @@ function EnvironmentEnergy() {
             count={totalPages}
             onChange={handlePageChange}
           />
-          <Typography sx={{ fontSize: '1rem'}}>
+          <Typography sx={{ fontSize: '0.85rem'}}>
             Showing {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
             {Math.min(page * rowsPerPage, filteredData.length)} records
           </Typography>
