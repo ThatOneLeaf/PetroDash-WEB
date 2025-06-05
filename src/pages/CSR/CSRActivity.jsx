@@ -205,10 +205,10 @@ function CSR() {
         modalProjectOptions[d.programName] = [];
       }
       // Only push if not already present (by projectId)
-      if (!modalProjectOptions[d.programName].some(opt => opt.value === d.projectName && opt.projectId === d.projectId)) {
+      if (!modalProjectOptions[d.programName].some(opt => opt.value === d.projectId)) {
         modalProjectOptions[d.programName].push({
           label: d.projectName,
-          value: d.projectName,
+          value: d.projectId, 
           projectId: d.projectId
         });
       }
