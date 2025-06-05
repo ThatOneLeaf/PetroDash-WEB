@@ -51,13 +51,13 @@ function AddRecordModalHelp({
     }
     setLoading(true);
     try {
-      await api.post('/help/activities', {
+      await api.post('/help/activities-single', {
         // Map to API/database fields as used in CSRActivity.jsx
-        companyId: company,
-        projectName: project,
-        projectYear: year,
-        csrReport: beneficiaries,
-        projectExpenses: amountInvested,
+        company_id: company,
+        project_id: project,
+        project_year: Number(year),
+        csr_report: Number(beneficiaries),
+        project_expenses: Number(amountInvested),
       });
       if (onAdd) onAdd();
       onClose();

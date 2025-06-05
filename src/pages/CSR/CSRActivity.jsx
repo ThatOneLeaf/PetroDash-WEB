@@ -17,7 +17,7 @@ import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import Pagination from '../../components/Pagination/pagination';
 import AddRecordModalHelp from '../../components/help_components/AddRecordModalHelp';
-import ImportModalHelp from '../../components/help_components/ImportModalHelp';
+// import ImportModalHelp from '../../components/help_components/ImportModalHelp';
 import api from '../../services/api';
 
 
@@ -405,11 +405,11 @@ function CSR() {
         />
 
         {/* Import Modal */}
-        <ImportModalHelp
+        {/* <ImportModalHelp
           open={isImportModalOpen}
           onClose={() => setIsImportModalOpen(false)}
           onImport={fetchCSRData}
-        />
+        /> */}
       </Container>
     </Box>
   );
