@@ -29,7 +29,7 @@ import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import CustomTable from '../../components/Table/Table'; // Adjust path as needed
 import Pagination from '../../components/Pagination/pagination'; // Adjust path as needed
-import ViewRecordModal from '../../components/ViewRecordModal'; // Adjust path as needed
+import ViewEditRecordModal from '../../components/ViewEditRecordModal';
 
 function EnvironmentEnergy() {
   const [data, setData] = useState([]);
@@ -58,6 +58,14 @@ function EnvironmentEnergy() {
     status: '',
     month: '',
   });
+
+  const resetFiltersToNull = () => {
+    const nullFilters = Object.keys(filters).reduce((acc, key) => {
+      acc[key] = null;
+      return acc;
+    }, {});
+    setFilters(nullFilters);
+  };
 
   const isFiltering = useMemo(() => {
     return Object.values(filters).some(v => v !== null && v !== '');
@@ -244,20 +252,21 @@ function EnvironmentEnergy() {
   };
 
   const handleUpdateRecord = async (updatedData) => {
-    console.log('Updating record:', getRecordID(updatedData));
-    {/*
+    console.log("Passed Data:", updatedData);
 
     try {
-      await axios.put(`/api/energy-records/${updatedData.id}`, updatedData); // or fetch()
-      toast.success("Record updated!");
-      fetchRecords(); // reload data
-    } catch (err) {
-      toast.error("Failed to update record.");
-    }
-       */}
-    
-  };
+      let path = '';
+      if (selected === 'Electricity') {path = '/edit_electric_consumption';
+      } else { path = '/edit_diesel_consumption'; }
 
+      const response = await api.post(`environment${path}`, updatedData);
+      alert(response.data.message);
+
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || error.message || "Unknown error occurred";
+      alert(`Failed to save record: ${errorMessage}`);
+    } 
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -283,7 +292,7 @@ function EnvironmentEnergy() {
               REPOSITORY
             </Typography>
             <Typography sx={{ fontSize: '2.25rem', color: '#182959', fontWeight: 800}}>
-              Environment - Energy
+              Environment - {selected}
             </Typography>
           </Box>
           
@@ -345,7 +354,11 @@ function EnvironmentEnergy() {
           {['Electricity', 'Diesel'].map((type) => (
             <Button
               key={type}
-              onClick={() => setSelected(type)}
+              onClick={() => {
+                setSelected(type);
+                setSearchQuery("");
+                resetFiltersToNull();
+              }}
               variant="contained"
               sx={{
                 backgroundColor: selected === type ? '#2B8C37' : '#9ca3af',
@@ -474,16 +487,9 @@ function EnvironmentEnergy() {
                 fontSize: '0.85rem',
                 fontWeight: 'bold',
               }}
-              onClick={() => setFilters({
-                company: '',
-                year: '',
-                quarter: '',
-                source: '',
-                property: '',
-                type: '',
-                status: '',
-                month: '',
-              })}
+              onClick={() => {
+                resetFiltersToNull();
+              }}
             >
               Clear
             </Button>
@@ -566,13 +572,21 @@ function EnvironmentEnergy() {
           </Overlay>
         )}
         {selectedRecord != null && (
-          console.log('Selected Record:', getRecordID(selectedRecord)),
+          console.log('Selected Record:', selectedRecord),
           <Overlay onClose={() => setSelectedRecord(null)}>
-            <ViewRecordModal 
+            <ViewEditRecordModal 
+              source={'environment'}
+              table={selected}
               title={`${selected} Consumption Details`}
               record={selectedRecord} 
               onSave={handleUpdateRecord}
-              onClose={() => setSelectedRecord(null)} 
+              onClose={() => {setSelectedRecord(null);
+                if (selected === 'Electricity') {
+                  fetchElectricityData(); // Refresh data after editing
+                } else {
+                  fetchDieselData(); // Refresh data after editing
+                }
+              }} 
             />
           </Overlay>
         )}

@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+{/*import * as XLSX from 'xlsx';*/}
 
 // Utility function to auto-size columns based on content
 const autoSizeColumns = (worksheet, data, headers) => {
