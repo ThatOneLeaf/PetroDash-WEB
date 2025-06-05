@@ -64,7 +64,7 @@ function ImportPowerFileModal({ onClose }) {
       <Typography
         variant="body2"
         sx={{
-          color: "#2B8C37",
+          color: "#2E7D32",
           mb: 1,
           textAlign: "center",
           fontWeight: "bold",
