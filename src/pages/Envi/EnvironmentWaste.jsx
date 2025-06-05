@@ -526,7 +526,7 @@ function EnvironmentWaste() {
                 <ImportFileModal
                   title="Waste - Hazard Generated"
                   downloadPath="environment/create_template/envi_hazard_waste_generated"
-                  uploadPath="environment/bulk_upload_waste_generated"
+                  uploadPath="environment/bulk_upload_hazard_waste_generated"
                   onClose={() => setIsImportModalOpen(false)} // or any close handler
                 />     
             )}
@@ -534,7 +534,7 @@ function EnvironmentWaste() {
                 <ImportFileModal
                   title="Waste - Hazard Disposed"
                   downloadPath="environment/create_template/envi_hazard_waste_disposed"
-                  uploadPath="environment/bulk_upload_waste_disposed"
+                  uploadPath="environment/bulk_upload_hazard_waste_disposed"
                   onClose={() => setIsImportModalOpen(false)} // or any close handler
                 />
             )}
