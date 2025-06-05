@@ -27,6 +27,7 @@ import Search from "../../components/Filter/Search";
 import DateRangePicker from "../../components/Filter/DateRangePicker";
 import RepositoryHeader from "../../components/RepositoryHeader";
 import ButtonComp from "../../components/ButtonComp";
+import DataExportModal from "../../components/ExportModal";
 
 function Energy() {
   const [data, setData] = useState([]);
@@ -36,6 +37,7 @@ function Energy() {
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const [isAddEnergyModalOpen, setIsAddEnergyModalOpen] = useState(false);
   const [isImportEnergyModalOpen, setIsImportEnergyModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({
     key: 'date',
@@ -167,6 +169,27 @@ function Energy() {
     { key: "status", label: "Status", render: (val) => <StatusChip status={val} /> },
   ];
 
+    const exportFields = [
+    { key: "powerPlant", label: "Power Project" },
+     { key: "companyName", label: "Company" },
+     { key: "generationSource", label: "Source" },
+     { key: "province", label: "Location" },
+    {
+      key: "date",
+      label: "Date",
+      render: (val) => dayjs(val).format("MM-DD-YYYY"),
+    },
+    { key: "energyGenerated", label: "Energy Generated (kWh)" },
+    { key: "co2Avoidance", label: "CO² Avoidance (Metric Ton)" },
+    {
+        key: "status",
+        label: "Status",
+        render: (val) => {
+          const match = statusOptions.find((opt) => opt.value === val);
+          return match ? match.label : val;
+        }}
+  ];
+
   const renderActions = (row) => (
     <IconButton size="small">
       <EditIcon />
@@ -235,7 +258,7 @@ function Energy() {
               <ButtonComp
                 label="Export Data"
                 rounded={true}
-                onClick={() => {/* handle export logic */}}
+                onClick={() => setIsExportModalOpen(true)}
                 color="blue"
                 startIcon={<FileUploadIcon />}
               />
@@ -351,6 +374,25 @@ function Energy() {
         </Container>
 
         {/* Modals */}
+        {isExportModalOpen && (
+          <Overlay onClose={() => setIsExportModalOpen(false)}>
+            <DataExportModal
+              open={true}
+              onClose={() => {
+                            setIsExportModalOpen(false);
+                            fetchEnergyData();
+                          }}
+              data={filteredData}
+              columns={exportFields}
+              columnsToShow={["companyName","powerPlant", "generationSource", "province","date","energyGenerated","co2Avoidance","status"]} // Optional: show only these columns
+              excludeGroupByFields={["co2Avoidance","energyGenerated"]}          // Optional: fields you don’t want to appear in “Group By”
+              excludeColumnSelectionFields={["EnergyId","co2Avoidance","energyGenerated"]}  // Optional: fields not selectable for exclude
+              reportTitle="Daily Power Generation"
+            />
+
+          </Overlay>
+        )}
+
         {isAddEnergyModalOpen && (
           <Overlay onClose={() => setIsAddEnergyModalOpen(false)}>
             <AddEnergyGeneratedModal
