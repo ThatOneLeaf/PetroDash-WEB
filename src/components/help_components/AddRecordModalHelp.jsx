@@ -27,6 +27,7 @@ function AddRecordModalHelp({
   const [beneficiaries, setBeneficiaries] = useState('');
   const [amountInvested, setAmountInvested] = useState('');
   const [loading, setLoading] = useState(false);
+  const [yearError, setYearError] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -41,6 +42,13 @@ function AddRecordModalHelp({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Validate year: must be 4 digits and reasonable (e.g., 1900-2099)
+    if (!/^\d{4}$/.test(year) || Number(year) < 1900 || Number(year) > 2099) {
+      setYearError('Enter a valid 4-digit year');
+      return;
+    } else {
+      setYearError('');
+    }
     setLoading(true);
     try {
       await api.post('/help/activities', {
@@ -59,6 +67,7 @@ function AddRecordModalHelp({
       setProject('');
       setBeneficiaries('');
       setAmountInvested('');
+      setYearError('');
     } catch (err) {
       // handle error (show message, etc.)
     } finally {
@@ -115,13 +124,21 @@ function AddRecordModalHelp({
             {/* Row 1: Year & Company */}
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
-                select
                 label="Year"
+                type="text"
                 value={year}
-                onChange={e => setYear(e.target.value)}
+                onChange={e => {
+                  // Only allow numbers, max 4 digits
+                  const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                  setYear(val);
+                  if (yearError) setYearError('');
+                }}
                 fullWidth
                 required
                 placeholder="Year"
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 4 }}
+                error={!!yearError}
+                helperText={yearError || ''}
                 sx={{
                   background: '#f7f9fb',
                   borderRadius: 2,
@@ -130,11 +147,7 @@ function AddRecordModalHelp({
                     '&.Mui-focused fieldset': { borderColor: '#2B8C37' }
                   }
                 }}
-              >
-                {yearOptions.map(opt => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                ))}
-              </TextField>
+              />
               <TextField
                 select
                 label="Company"

@@ -15,7 +15,9 @@ import dayjs from 'dayjs';
 import api from '../services/api';
 import FormModal from './FormModal';
 
+// AddEnergyGenerationModal: Modal for adding daily power generation records
 function AddEnergyGenerationModal({ onClose, powerPlants }) {
+  // Form state
   const [formData, setFormData] = useState({
     powerPlant: powerPlants?.[0]?.power_plant_id || '',
     date: dayjs(),
@@ -23,6 +25,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
     metric: 'kWh'
   });
 
+  // Handle input changes for form fields
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({
       ...prev,
@@ -30,6 +33,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
     }));
   };
 
+  // Handle date picker change
   const handleDateChange = (newDate) => {
     setFormData((prev) => ({
       ...prev,
@@ -37,6 +41,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
     }));
   };
 
+  // Submit form data to API
   const handleSubmit = async () => {
     const submissionData = {
       ...formData,
@@ -48,19 +53,21 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
     form.append('date', submissionData.date);
     form.append('energyGenerated', submissionData.energyGenerated);
     form.append('metric', submissionData.metric);
-    form.append('checker','01JW5F4N9M7E9RG9MW3VX49ES5')
+    form.append('checker', '01JW5F4N9M7E9RG9MW3VX49ES5');
 
     try {
       await api.post('/energy/add_energy_record', form, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       onClose();
     } catch (error) {
+      // Log error for debugging
       console.error('Submission error:', error.response?.data || error.message);
     }
   };
+
+  // Metric units for dropdown
+  const metricUnits = ['kWh', 'MWh', 'GWh'];
 
   return (
     <FormModal
@@ -77,15 +84,14 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
             py: 1,
             fontSize: '1rem',
             fontWeight: 'bold',
-            '&:hover': {
-              backgroundColor: '#256d2f',
-            },
+            '&:hover': { backgroundColor: '#256d2f' },
           }}
         >
           ADD RECORD
         </Button>
       }
     >
+      {/* Power Plant Selector */}
       <FormControl fullWidth>
         <InputLabel id="power-plant-label">Power Project</InputLabel>
         <Select
@@ -103,6 +109,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
         </Select>
       </FormControl>
 
+      {/* Date Picker */}
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <DatePicker
           label="Date"
@@ -114,6 +121,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
         />
       </LocalizationProvider>
 
+      {/* Energy Generated and Metric */}
       <Box sx={{ display: 'flex', gap: 2 }}>
         <TextField
           label="Energy Generated"
@@ -123,7 +131,6 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
           size="medium"
           fullWidth
         />
-
         <FormControl fullWidth>
           <InputLabel id="metric-label">Metric Unit</InputLabel>
           <Select
@@ -133,7 +140,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
             label="Metric Unit"
             size="medium"
           >
-            {['kWh', 'MWh', 'GWh'].map((unit) => (
+            {metricUnits.map((unit) => (
               <MenuItem key={unit} value={unit}>
                 {unit}
               </MenuItem>
