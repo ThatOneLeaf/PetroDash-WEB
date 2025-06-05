@@ -6,9 +6,11 @@ import {
   Button,
   Select,
   MenuItem,
-  Box
+  Box,
+  FormControl,
+  InputLabel
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../../services/api';
 
 function AddCapitalProviderModal({ onClose }) {
   const currentYear = new Date().getFullYear();
@@ -68,44 +70,51 @@ function AddCapitalProviderModal({ onClose }) {
         gap: 2,
         mb: 3
       }}>
-        <Select
-          value={formData.year}
-          onChange={handleChange('year')}
-          sx={{ height: '40px' }}
-          displayEmpty
-        >
-          <MenuItem value="" disabled>
-            Year
-          </MenuItem>
-          {[...Array(10)].map((_, i) => (
-            <MenuItem key={currentYear - i} value={currentYear - i}>
-              {currentYear - i}
+        <FormControl fullWidth>
+          <InputLabel id="year-label">Year</InputLabel>
+          <Select
+            labelId="year-label"
+            value={formData.year}
+            onChange={handleChange('year')}
+            label="Year"
+            size="medium"
+          >
+            <MenuItem value="" disabled>
+              Year
             </MenuItem>
-          ))}
-        </Select>
+            {[...Array(10)].map((_, i) => (
+              <MenuItem key={currentYear - i} value={currentYear - i}>
+                {currentYear - i}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <TextField
-          placeholder="Interest"
+          label="Interest"
           value={formData.interest}
           onChange={handleChange('interest')}
           type="number"
-          sx={{ height: '40px' }}
+          size="medium"
+          fullWidth
         />
 
         <TextField
-          placeholder="Dividends to NCI"
+          label="Dividends to NCI"
           value={formData.dividendsToNci}
           onChange={handleChange('dividendsToNci')}
           type="number"
-          sx={{ height: '40px' }}
+          size="medium"
+          fullWidth
         />
 
         <TextField
-          placeholder="Dividends to Parent"
+          label="Dividends to Parent"
           value={formData.dividendsToParent}
           onChange={handleChange('dividendsToParent')}
           type="number"
-          sx={{ height: '40px' }}
+          size="medium"
+          fullWidth
         />
       </Box>
 

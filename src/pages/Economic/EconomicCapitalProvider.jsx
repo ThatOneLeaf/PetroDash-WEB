@@ -15,8 +15,8 @@ import Table from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
-import AddCapitalProviderModal from '../../components/AddCapitalProviderPaymentsModal';
-import ImportEconCapitalProviderModal from '../../components/ImportEconCapitalProviderModal';
+import AddCapitalProviderModal from './modals/AddCapitalProviderPaymentsModal';
+import ImportEconCapitalProviderModal from './modals/ImportEconCapitalProviderModal';
 
 function EconomicCapitalProvider() {
   const [data, setData] = useState([]);

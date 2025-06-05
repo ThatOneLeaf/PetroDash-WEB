@@ -8,7 +8,7 @@ import {
 
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import api from "../services/api";
+import api from "../../../services/api";
 
 function ImportEconGeneratedModal({ onClose }) {
   const [selectedFile, setSelectedFile] = useState(null);

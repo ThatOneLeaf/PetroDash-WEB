@@ -7,9 +7,11 @@ import {
   Select,
   MenuItem,
   Box,
-  Alert
+  Alert,
+  FormControl,
+  InputLabel
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../../services/api';
 
 function AddExpendituresModal({ onClose }) {
   const currentYear = new Date().getFullYear();
@@ -156,154 +158,183 @@ function AddExpendituresModal({ onClose }) {
         gap: 2,
         mb: 3
       }}>
-        <Select
-          value={formData.comp}
-          onChange={handleChange('comp')}
-          sx={{ height: '40px' }}
-          disabled={loading}
-          displayEmpty
-          MenuProps={{
-            PaperProps: {
-              sx: {
-                maxHeight: 300,
-                '& .MuiMenuItem-root': {
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word'
+        <FormControl fullWidth>
+          <InputLabel id="company-label">Company</InputLabel>
+          <Select
+            labelId="company-label"
+            value={formData.comp}
+            onChange={handleChange('comp')}
+            label="Company"
+            size="medium"
+            disabled={loading}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  maxHeight: 300,
+                  '& .MuiMenuItem-root': {
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word'
+                  }
                 }
               }
-            }
-          }}
-        >
-          <MenuItem value="" disabled>
-            Select Company
-          </MenuItem>
-          {companies.map((company) => (
-            <MenuItem 
-              key={company.id} 
-              value={company.id}
-              sx={{
-                whiteSpace: 'normal',
-                wordBreak: 'break-word'
-              }}
-            >
-              {company.name}
+            }}
+          >
+            <MenuItem value="" disabled>
+              Select Company
             </MenuItem>
-          ))}
-        </Select>
-
-        <Select
-          value={formData.type}
-          onChange={handleChange('type')}
-          sx={{ height: '40px' }}
-          disabled={loading}
-          displayEmpty
-          MenuProps={{
-            PaperProps: {
-              sx: {
-                maxHeight: 300,
-                '& .MuiMenuItem-root': {
+            {companies.map((company) => (
+              <MenuItem 
+                key={company.id} 
+                value={company.id}
+                sx={{
                   whiteSpace: 'normal',
                   wordBreak: 'break-word'
+                }}
+              >
+                {company.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth>
+          <InputLabel id="type-label">Type</InputLabel>
+          <Select
+            labelId="type-label"
+            value={formData.type}
+            onChange={handleChange('type')}
+            label="Type"
+            size="medium"
+            disabled={loading}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  maxHeight: 300,
+                  '& .MuiMenuItem-root': {
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word'
+                  }
                 }
               }
-            }
-          }}
-        >
-          <MenuItem value="" disabled>
-            Select Type
-          </MenuItem>
-          {types.map((type) => (
-            <MenuItem 
-              key={type.id} 
-              value={type.id}
-              sx={{
-                whiteSpace: 'normal',
-                wordBreak: 'break-word'
-              }}
-            >
-              {type.name}
+            }}
+          >
+            <MenuItem value="" disabled>
+              Select Type
             </MenuItem>
-          ))}
-        </Select>
+            {types.map((type) => (
+              <MenuItem 
+                key={type.id} 
+                value={type.id}
+                sx={{
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word'
+                }}
+              >
+                {type.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-        <Select
-          value={formData.year}
-          onChange={handleChange('year')}
-          sx={{ height: '40px' }}
-          disabled={loading}
-        >
-          {[...Array(10)].map((_, i) => (
-            <MenuItem 
-              key={currentYear - i} 
-              value={currentYear - i}
-            >
-              {currentYear - i}
-            </MenuItem>
-          ))}
-        </Select>
+        <FormControl fullWidth>
+          <InputLabel id="year-label">Year</InputLabel>
+          <Select
+            labelId="year-label"
+            value={formData.year}
+            onChange={handleChange('year')}
+            label="Year"
+            size="medium"
+            disabled={loading}
+          >
+            {[...Array(10)].map((_, i) => (
+              <MenuItem 
+                key={currentYear - i} 
+                value={currentYear - i}
+              >
+                {currentYear - i}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <TextField
-          placeholder="Government Payments"
+          label="Government Payments"
           value={formData.government}
           onChange={handleChange('government')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Local Supplier Spending"
+          label="Local Supplier Spending"
           value={formData.localSuppl}
           onChange={handleChange('localSuppl')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Foreign Supplier Spending"
+          label="Foreign Supplier Spending"
           value={formData.foreignSupplierSpending}
           onChange={handleChange('foreignSupplierSpending')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Employee Wages/Benefits"
+          label="Employee Wages/Benefits"
           value={formData.employee}
           onChange={handleChange('employee')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Community Investments"
+          label="Community Investments"
           value={formData.community}
           onChange={handleChange('community')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Depreciation"
+          label="Depreciation"
           value={formData.depreciation}
           onChange={handleChange('depreciation')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Depletion"
+          label="Depletion"
           value={formData.depletion}
           onChange={handleChange('depletion')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Others"
+          label="Others"
           value={formData.others}
           onChange={handleChange('others')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
       </Box>
 
@@ -350,4 +381,4 @@ function AddExpendituresModal({ onClose }) {
   );
 }
 
-export default AddExpendituresModal;
+export default AddExpendituresModal; 

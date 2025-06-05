@@ -7,9 +7,11 @@ import {
   Select,
   MenuItem,
   Box,
-  Alert
+  Alert,
+  FormControl,
+  InputLabel
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../../services/api';
 
 function AddValueGeneratedModal({ onClose }) {
   const currentYear = new Date().getFullYear();
@@ -117,68 +119,84 @@ function AddValueGeneratedModal({ onClose }) {
         gap: 2,
         mb: 3
       }}>
-        <Select
-          value={formData.year}
-          onChange={handleChange('year')}
-          sx={{ height: '40px' }}
-          displayEmpty
-        >
-          <MenuItem value="" disabled>
-            Year
-          </MenuItem>
-          {[...Array(10)].map((_, i) => (
-            <MenuItem key={currentYear - i} value={currentYear - i}>
-              {currentYear - i}
+        <FormControl fullWidth>
+          <InputLabel id="year-label">Year</InputLabel>
+          <Select
+            labelId="year-label"
+            value={formData.year}
+            onChange={handleChange('year')}
+            label="Year"
+            size="medium"
+          >
+            <MenuItem value="" disabled>
+              Year
             </MenuItem>
-          ))}
-        </Select>
+            {[...Array(10)].map((_, i) => (
+              <MenuItem key={currentYear - i} value={currentYear - i}>
+                {currentYear - i}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <TextField
-          placeholder="Electricity Sales"
+          label="Electricity Sales"
           value={formData.electricitySales}
           onChange={handleChange('electricitySales')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Oil Revenues"
+          label="Oil Revenues"
           value={formData.oilRevenues}
           onChange={handleChange('oilRevenues')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Other Revenues"
+          label="Other Revenues"
           value={formData.otherRevenues}
           onChange={handleChange('otherRevenues')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Interest Income"
+          label="Interest Income"
           value={formData.interestIncome}
           onChange={handleChange('interestIncome')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Share in Net Income of Associate"
+          label="Share in Net Income of Associate"
           value={formData.shareInNetIncomeOfAssociate}
           onChange={handleChange('shareInNetIncomeOfAssociate')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
 
         <TextField
-          placeholder="Miscellaneous Income"
+          label="Miscellaneous Income"
           value={formData.miscellaneousIncome}
           onChange={handleChange('miscellaneousIncome')}
           type="number"
+          size="medium"
           disabled={loading}
+          fullWidth
         />
       </Box>
 

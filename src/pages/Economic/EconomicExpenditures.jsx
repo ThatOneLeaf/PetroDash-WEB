@@ -4,6 +4,8 @@ import {
   Button,
   IconButton,
   Box,
+  Typography,
+  Tooltip,
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
@@ -11,8 +13,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddEconExpendituresModal from '../../components/AddEconExpendituresModal';
-import ImportEconExpendituresModal from '../../components/ImportEconExpendituresModal';
+import AddEconExpendituresModal from './modals/AddEconExpendituresModal';
+import ImportEconExpendituresModal from './modals/ImportEconExpendituresModal';
 import Table from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
@@ -25,6 +27,8 @@ function EconomicExpenditures() {
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isInternalModalOpen, setIsInternalModalOpen] = useState(false);
+  const [selectedInternal, setSelectedInternal] = useState(null);
   
   const rowsPerPage = 10;
 
@@ -74,7 +78,7 @@ function EconomicExpenditures() {
         
         // Search in expenditure values (formatted and raw)
         const expenditureFields = [
-          'government', 'localSuppl', 'foreignSupplierSpending', 
+          'government', 'localSupplierSpending', 'foreignSupplierSpending', 
           'employee', 'community', 'depreciation', 'depletion', 'others'
         ];
         
@@ -99,22 +103,204 @@ function EconomicExpenditures() {
     if (filters.type) filtered = filtered.filter(row => row.type === filters.type);
     if (filters.company) filtered = filtered.filter(row => row.comp === filters.company);
 
-    return filtered;
+    // Group by company and year to create split-cell rows
+    const grouped = {};
+    
+    filtered.forEach(row => {
+      const key = `${row.comp}-${row.year}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          comp: row.comp,
+          year: row.year,
+          types: {},
+          totalDistributed: 0,
+          totalExpenditures: 0
+        };
+      }
+      
+      // Store type data
+      grouped[key].types[row.type] = {
+        government: Number(row.government) || 0,
+        localSupplierSpending: Number(row.localSupplierSpending) || 0,
+        foreignSupplierSpending: Number(row.foreignSupplierSpending) || 0,
+        employee: Number(row.employee) || 0,
+        community: Number(row.community) || 0,
+        depreciation: Number(row.depreciation) || 0,
+        depletion: Number(row.depletion) || 0,
+        others: Number(row.others) || 0
+      };
+      
+      // Add to totals
+      grouped[key].totalDistributed += Number(row.totalDistributed) || 0;
+      grouped[key].totalExpenditures += Number(row.totalExpenditures) || 0;
+    });
+
+    // Convert to array and sort
+    return Object.values(grouped).sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return a.comp.localeCompare(b.comp);
+    });
   }, [data, filters, searchTerm]);
 
-  // Table columns definition for reusable Table
+  // Helper function to render split cell with both types
+  const renderSplitCell = (row, field, labelMap = {}) => {
+    const types = Object.keys(row.types).sort();
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minHeight: '40px', justifyContent: 'center' }}>
+        {types.map((type, index) => {
+          const value = row.types[type]?.[field] || 0;
+          const label = labelMap[type] || type;
+          return (
+            <Box key={type} sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              fontSize: '0.875rem',
+              borderBottom: index < types.length - 1 ? '1px solid #f0f0f0' : 'none',
+              pb: index < types.length - 1 ? 0.5 : 0
+            }}>
+              <Typography variant="caption" sx={{ color: '#666', fontSize: '0.75rem' }}>
+                {label}:
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                {value.toLocaleString()}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  };
+
+  // Helper function to render clickable internal column
+  const renderInternalCell = (row, labelMap = {}) => {
+    const types = Object.keys(row.types).sort();
+    
+    const handleInternalClick = (e) => {
+      e.stopPropagation(); // Prevent row click
+      setSelectedInternal({ row, types });
+      setIsInternalModalOpen(true);
+    };
+
+    return (
+      <Box 
+        onClick={handleInternalClick}
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 0.5, 
+          minHeight: '40px', 
+          justifyContent: 'center',
+          cursor: 'pointer',
+          '&:hover': {
+            backgroundColor: '#f5f5f5',
+            borderRadius: 1
+          },
+          p: 0.5,
+          m: -0.5
+        }}
+      >
+        {types.map((type, index) => {
+          const depreciation = row.types[type]?.depreciation || 0;
+          const depletion = row.types[type]?.depletion || 0;
+          const others = row.types[type]?.others || 0;
+          const total = depreciation + depletion + others;
+          const label = labelMap[type] || type;
+          
+          return (
+            <Box key={type} sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              fontSize: '0.875rem',
+              borderBottom: index < types.length - 1 ? '1px solid #f0f0f0' : 'none',
+              pb: index < types.length - 1 ? 0.5 : 0
+            }}>
+              <Typography variant="caption" sx={{ color: '#666', fontSize: '0.75rem' }}>
+                {label}:
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: '0.875rem', textDecoration: 'underline', color: '#1976d2' }}>
+                {total.toLocaleString()}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  };
+
+  // Get unique types for abbreviations
+  const uniqueTypes = useMemo(() => {
+    const types = new Set();
+    data.forEach(row => types.add(row.type));
+    return Array.from(types).sort();
+  }, [data]);
+
+  // Create type abbreviation map
+  const typeAbbrevMap = useMemo(() => {
+    const map = {};
+    uniqueTypes.forEach(type => {
+      // Create abbreviations: "Cost of Sales" -> "CoS", "General and Administrative" -> "G&A"
+      if (type.toLowerCase().includes('cost of sales') || type.toLowerCase().includes('cos')) {
+        map[type] = 'CoS';
+      } else if (type.toLowerCase().includes('general') && type.toLowerCase().includes('administrative')) {
+        map[type] = 'G&A';
+      } else {
+        // Fallback: take first letter of each word
+        map[type] = type.split(' ').map(word => word[0]).join('').toUpperCase();
+      }
+    });
+    return map;
+  }, [uniqueTypes]);
+
+  // Table columns definition with split cells
   const columns = [
-    { key: 'comp', label: 'Comp' },
-    { key: 'year', label: 'Year' },
-    { key: 'type', label: 'Type' },
-    { key: 'government', label: 'Government' },
-    { key: 'localSuppl', label: 'Local Supply' },
-    { key: 'foreignSupplierSpending', label: 'Foreign Supplier Spending' },
-    { key: 'employee', label: 'Employee' },
-    { key: 'community', label: 'Community' },
-    { key: 'depreciation', label: 'Depreciation' },
-    { key: 'depletion', label: 'Depletion' },
-    { key: 'others', label: 'Others' },
+    { 
+      key: 'comp', 
+      label: 'Company ID'
+    },
+    { 
+      key: 'year', 
+      label: 'Year'
+    },
+    { 
+      key: 'government', 
+      label: 'Government',
+      render: (val, row) => renderSplitCell(row, 'government', typeAbbrevMap)
+    },
+    { 
+      key: 'localSupplierSpending', 
+      label: 'Local Supplier Spending',
+      render: (val, row) => renderSplitCell(row, 'localSupplierSpending', typeAbbrevMap)
+    },
+    { 
+      key: 'foreignSupplierSpending', 
+      label: 'Foreign Supplier Spending',
+      render: (val, row) => renderSplitCell(row, 'foreignSupplierSpending', typeAbbrevMap)
+    },
+    { 
+      key: 'employee', 
+      label: 'Employee',
+      render: (val, row) => renderSplitCell(row, 'employee', typeAbbrevMap)
+    },
+    { 
+      key: 'community', 
+      label: 'Community',
+      render: (val, row) => renderSplitCell(row, 'community', typeAbbrevMap)
+    },
+    { 
+      key: 'internal', 
+      label: 'Internal',
+      render: (val, row) => renderInternalCell(row, typeAbbrevMap)
+    },
+    { 
+      key: 'totalDistributed', 
+      label: 'Total Distributed (₱)', 
+      render: (val, row) => `₱ ${Number(row.totalDistributed || 0).toLocaleString()}`
+    },
+    { 
+      key: 'totalExpenditures', 
+      label: 'Total Expenditures (₱)', 
+      render: (val, row) => `₱ ${Number(row.totalExpenditures || 0).toLocaleString()}`
+    },
   ];
 
   // Actions column for edit button
@@ -298,6 +484,110 @@ function EconomicExpenditures() {
                   fetchExpendituresData(); // Refresh data after import
                 }}
               />
+            </Overlay>
+          )}
+
+          {/* Internal Breakdown Modal */}
+          {isInternalModalOpen && selectedInternal && (
+            <Overlay onClose={() => setIsInternalModalOpen(false)}>
+              <Paper sx={{
+                p: 4,
+                width: '450px',
+                borderRadius: '16px',
+                bgcolor: 'white'
+              }}>
+                <Typography variant="h5" sx={{ 
+                  color: '#182959',
+                  mb: 3,
+                  fontWeight: 'bold' 
+                }}>
+                  Internal Accounting Breakdown
+                </Typography>
+                
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ color: '#182959', mb: 2 }}>
+                    {selectedInternal.row.comp} - {selectedInternal.row.year}
+                  </Typography>
+                </Box>
+
+                {/* Show breakdown by type */}
+                {selectedInternal.types.map((type) => {
+                  const typeData = selectedInternal.row.types[type];
+                  const typeLabel = typeAbbrevMap[type] || type;
+                  
+                  return (
+                    <Box key={type} sx={{ mb: 3, border: '1px solid #eee', borderRadius: 2, p: 3 }}>
+                      <Typography variant="h6" sx={{ color: '#182959', mb: 2, fontWeight: 'bold' }}>
+                        {type} ({typeLabel})
+                      </Typography>
+                      
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography>Depreciation:</Typography>
+                          <Typography>₱ {(typeData?.depreciation || 0).toLocaleString()}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography>Depletion:</Typography>
+                          <Typography>₱ {(typeData?.depletion || 0).toLocaleString()}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography>Others:</Typography>
+                          <Typography>₱ {(typeData?.others || 0).toLocaleString()}</Typography>
+                        </Box>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          borderTop: '1px solid #eee', 
+                          pt: 1, 
+                          fontWeight: 'bold',
+                          mt: 1
+                        }}>
+                          <Typography>Type Total:</Typography>
+                          <Typography sx={{ color: '#666', fontWeight: 'bold' }}>
+                            ₱ {((typeData?.depreciation || 0) + (typeData?.depletion || 0) + (typeData?.others || 0)).toLocaleString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  );
+                })}
+
+                {/* Company Total */}
+                <Box sx={{ borderTop: '2px solid #182959', pt: 2, mt: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      Company Internal Total:
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#182959', fontWeight: 'bold' }}>
+                      ₱ {selectedInternal.types.reduce((total, type) => {
+                        const typeData = selectedInternal.row.types[type];
+                        return total + (typeData?.depreciation || 0) + (typeData?.depletion || 0) + (typeData?.others || 0);
+                      }, 0).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center',
+                  mt: 3 
+                }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setIsInternalModalOpen(false)}
+                    sx={{ 
+                      color: '#666',
+                      borderColor: '#666',
+                      '&:hover': { 
+                        borderColor: '#333',
+                        color: '#333'
+                      }
+                    }}
+                  >
+                    CLOSE
+                  </Button>
+                </Box>
+              </Paper>
             </Overlay>
           )}
         </div>

@@ -9,7 +9,6 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
-import AddValueGeneratedModal from '../../components/AddValueGeneratedModal';
 import Table from '../../components/Table/Table';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
