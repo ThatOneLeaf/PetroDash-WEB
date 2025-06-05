@@ -50,6 +50,9 @@ function addHeaderFooter(doc, pageNumber, totalPages, img, title) {
 async function exportPDFMultiSection({ finalFilteredData, title }) {
   const img = new Image();
   img.src = logo;
+  const safeTitle = (title || 'report')
+  .replace(/[^a-zA-Z0-9-_]/g, '_') // Replace non-alphanum with underscores
+  .substring(0, 30); // Limit to 30 chars
 
   await new Promise((resolve, reject) => {
     img.onload = resolve;
@@ -59,16 +62,12 @@ async function exportPDFMultiSection({ finalFilteredData, title }) {
   const doc = new jsPDF();
 
   if (!finalFilteredData.data || typeof finalFilteredData.data !== 'object' || Object.keys(finalFilteredData.data).length === 0) {
-    doc.setFontSize(16);
-    doc.text("No Data Available", 14, 30);
-    doc.save("no-data.pdf");
+    window.alert("No data available to export.");
     return;
   }
 
   if (!finalFilteredData.columns || finalFilteredData.columns.length === 0) {
-    doc.setFontSize(16);
-    doc.text("No Columns Available", 14, 30);
-    doc.save("no-columns.pdf");
+    window.alert("No columns available to export.");
     return;
   }
 
@@ -96,7 +95,7 @@ async function exportPDFMultiSection({ finalFilteredData, title }) {
       addHeaderFooter(doc, i, totalPages, img, title);
     }
 
-    doc.save(`table-data-${finalFilteredData.groupByKey || 'export'}.pdf`);
+    doc.save(`${safeTitle}-data-${finalFilteredData.groupByKey || 'export'}.pdf`);
     return;
   }
 
@@ -142,7 +141,7 @@ async function exportPDFMultiSection({ finalFilteredData, title }) {
     addHeaderFooter(doc, i, totalPages, img, title);
   }
 
-  doc.save(`grouped-data-${finalFilteredData.groupByKey || 'export'}.pdf`);
+  doc.save(`${safeTitle}-data-${finalFilteredData.groupByKey || 'export'}.pdf`);
 }
 
 export default exportPDFMultiSection;
