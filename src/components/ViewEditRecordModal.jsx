@@ -17,23 +17,29 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-const ViewEditRecordModal = ({ source, table, title, record, onClose, onSave }) => {
+const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose, status }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedRecord, setEditedRecord] = useState(record || {});
   const permanentlyReadOnlyFields = [Object.keys(record)[0],"company", "status"];
-  const withOptionFields = ["source", "unit", "quarter", "year", "month", "property", "type"];
+  const withOptionFields = ["source", "unit", "quarter", "year", "month", "property", "type", "metrics"];
 
   const [sourceOptions, setSourceOptions] = useState([]);
   const [propertyOptions, setPropertyOptions] = useState([]);
   const [propertyTypeOptions, setPropertyTypeOptions] = useState([]);
-  
+  const [hazGenMetricsOptions, setHazGenMetricsOptions] = useState([]);
+  const [hazDisMetricsOptions, setHazDisMetricsOptions] = useState([]);
+  const [nonHazsMetricsOptions, setNonHazMetricsOptions] = useState([]);
+
   const [electricityUnitOptions, setElectricityUnitOptions] = useState([]);
   const [dieselUnitOptions, setDieselUnitOptions] = useState([]);
+  const [waterUnitOptions, setWaterUnitOptions] = useState([]);
+  const [hazGenUnitOptions, setHazGenUnitOptions] = useState([]);
+  const [hazDisUnitOptions, setHazDisUnitOptions] = useState([]);
+  const [nonHazUnitOptions, setNonHazUnitOptions] = useState([]);
 
   if (!record) return null;
 
   // Initialize Data Options
-
   useEffect(() => {
     if (source === "environment") {
       const fetchSourceOptions = async () => {
@@ -50,7 +56,7 @@ const ViewEditRecordModal = ({ source, table, title, record, onClose, onSave }) 
           const response = await api.get('environment/distinct_cp_names');
           setPropertyOptions(response.data);
         } catch (error) {
-          console.error("Error fetching source options:", error);
+          console.error("Error fetching property options:", error);
         }
       };
 
@@ -59,16 +65,45 @@ const ViewEditRecordModal = ({ source, table, title, record, onClose, onSave }) 
           const response = await api.get('environment/distinct_cp_type');
           setPropertyTypeOptions(response.data);
         } catch (error) {
-          console.error("Error fetching source options:", error);
+          console.error("Error fetching type options:", error);
         }
       };
 
+      const fetchHazGenMetricsOptions = async () => {
+        try {
+          const response = await api.get('environment/distinct_haz_waste_generated');
+          setHazGenMetricsOptions(response.data);
+        } catch (error) {
+          console.error("Error fetching metrics options:", error);
+        }
+      };
+
+      const fetchHazDisMetricsOptions = async () => {
+        try {
+          const response = await api.get('environment/distinct_haz_waste_disposed');
+          setHazDisMetricsOptions(response.data);
+        } catch (error) {
+          console.error("Error fetching metrics options:", error);
+        }
+      };
+
+      const fetchNonHazMetricsOptions = async () => {
+        try {
+          const response = await api.get('environment/distinct_non_haz_waste_metrics');
+          setNonHazMetricsOptions(response.data);
+        } catch (error) {
+          console.error("Error fetching metrics options:", error);
+        }
+      };
+
+
+      // Units
       const fetchElectricityUnitOptions = async () => {
         try {
           const response = await api.get('environment/distinct_electric_consumption_unit');
           setElectricityUnitOptions(response.data);
         } catch (error) {
-          console.error("Error fetching source options:", error);
+          console.error("Error fetching unit options:", error);
         }
       };
 
@@ -77,44 +112,98 @@ const ViewEditRecordModal = ({ source, table, title, record, onClose, onSave }) 
           const response = await api.get('environment/distinct_diesel_consumption_unit');
           setDieselUnitOptions(response.data);
         } catch (error) {
-          console.error("Error fetching source options:", error);
+          console.error("Error fetching unit options:", error);
         }
       };
 
-      fetchSourceOptions();
-      fetchPropertyOptions();
-      fetchPropertyTypeOptions();
+      const fetchWaterUnitOptions = async () => {
+        try {
+          const response = await api.get('environment/distinct_water_unit');
+          setWaterUnitOptions(response.data);
+        } catch (error) {
+          console.error("Error fetching unit options:", error);
+        }
+      };
+
+      const fetchHazGenUnitOptions = async () => {
+        try {
+          const response = await api.get('environment/distinct_hazard_waste_gen_unit');
+          setHazGenUnitOptions(response.data);
+        } catch (error) {
+          console.error("Error fetching unit options:", error);
+        }
+      };
+
+      const fetchHazDisUnitOptions = async () => {
+        try {
+          const response = await api.get('environment/distinct_hazard_waste_dis_unit');
+          setHazDisUnitOptions(response.data);
+        } catch (error) {
+          console.error("Error fetching unit options:", error);
+        }
+      };
+
+      const fetchNonHazUnitOptions = async () => {
+        try {
+          const response = await api.get('environment/distinct_non_haz_waste_unit');
+          setNonHazUnitOptions(response.data);
+        } catch (error) {
+          console.error("Error fetching unit options:", error);
+        }
+      };
 
       if (table === 'Electricity') {
+        fetchSourceOptions();
         fetchElectricityUnitOptions();
-      }
-      if (table === 'Diesel') {
+      } else if (table === 'Diesel') {
         fetchDieselUnitOptions();
+        fetchPropertyOptions();
+        fetchPropertyTypeOptions();
+      } else if (table === 'Water'){
+        fetchWaterUnitOptions();
+      } else {
+        fetchHazGenMetricsOptions();
+        fetchHazDisMetricsOptions();
+        fetchNonHazMetricsOptions();
+        fetchHazGenUnitOptions();
+        fetchHazDisUnitOptions();
+        fetchNonHazUnitOptions();
       }
     }
   }, [source]);
-  
-const handleChange = (key, value) => {
-  let newValue = value;
 
-  // Convert to number if key is a numeric field
-  if (["consumption"].includes(key)) {
-    newValue = parseFloat(value);
-    // Handle invalid number input (e.g., empty string becomes NaN)
-    if (isNaN(newValue)) newValue = '';
-  }
+  const handleChange = (key, value) => {
+    let newValue = value;
 
-  setEditedRecord(prev => ({
-    ...prev,
-    [key]: newValue
-  }));
-};
+    // Convert to number if key is a numeric field
+    if (["consumption", "volume"].includes(key)) {
+      newValue = parseFloat(value);
+      // Handle invalid number input (e.g., empty string becomes NaN)
+      if (isNaN(newValue)) newValue = '';
+    }
 
-  const handleSave = () => {
-    // You can send `editedRecord` to your backend
-    onSave(editedRecord); // parent should handle API call
-    setIsEditing(false);
+    setEditedRecord(prev => ({
+        ...prev,
+        [key]: newValue
+      }));
+    };
+
+  const handleSave = async () => {
+    console.log("Updated Data:", editedRecord);
+
+    try {
+      const response = await api.post(`${source}${updatePath}`, editedRecord);
+      alert(response.data.message);
+
+      setIsEditing(false);
+
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || error.message || "Unknown error occurred";
+      alert(`Failed to save record: ${errorMessage}`);
+    } 
   };
+
+  const isRecordUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
 
   return (
     <Paper sx={{
@@ -223,6 +312,29 @@ const handleChange = (key, value) => {
                           </MenuItem>
                         ))
                       )}
+
+                      {key === "metrics" && (
+                        table === 'Hazard Generated' ? 
+                        hazGenMetricsOptions.map((option) => (
+                          <MenuItem key={option.metrics} value={option.metrics}>
+                            {option.metrics}
+                          </MenuItem>
+                        )) :
+                        table === 'Hazard Disposed' ? 
+                        hazDisMetricsOptions.map((option) => (
+                          <MenuItem key={option.metrics} value={option.metrics}>
+                            {option.metrics}
+                          </MenuItem>
+                        )) :
+                        table === 'Non-Hazard Generated' ? 
+                        nonHazsMetricsOptions.map((option) => (
+                          <MenuItem key={option.metrics} value={option.metrics}>
+                            {option.metrics}
+                          </MenuItem>
+                        )) :
+                        <MenuItem value="N/A">N/A</MenuItem>
+                      )}
+
                       {key === "unit" && (
                         table === 'Diesel' ?
                         dieselUnitOptions.map((option) => (
@@ -232,6 +344,30 @@ const handleChange = (key, value) => {
                         )) :
                         table === 'Electricity' ?
                         electricityUnitOptions.map((option) => (
+                          <MenuItem key={option.unit} value={option.unit}>
+                            {option.unit}
+                          </MenuItem>
+                        )) :
+                        table === 'Water' ?
+                        waterUnitOptions.map((option) => (
+                          <MenuItem key={option.unit} value={option.unit}>
+                            {option.unit}
+                          </MenuItem>
+                        )) :
+                        table === 'Hazard Generated' ?
+                        hazGenUnitOptions.map((option) => (
+                          <MenuItem key={option.unit} value={option.unit}>
+                            {option.unit}
+                          </MenuItem>
+                        )) :
+                        table === 'Hazard Disposed' ?
+                        hazDisUnitOptions.map((option) => (
+                          <MenuItem key={option.unit} value={option.unit}>
+                            {option.unit}
+                          </MenuItem>
+                        )) :
+                        table === 'Non-Hazard Generated' ?
+                        nonHazUnitOptions.map((option) => (
                           <MenuItem key={option.unit} value={option.unit}>
                             {option.unit}
                           </MenuItem>
@@ -248,7 +384,7 @@ const handleChange = (key, value) => {
                         ))
                       )}
                       {key === "quarter" && (
-                        ["Q1", "Q2", "Q3", "Q4"].map((option) => (
+                        ["Q1", "Q2", "Q3", "Q4", "N/A"].map((option) => (
                           <MenuItem key={option} value={option}>
                             {option}
                           </MenuItem>
@@ -310,7 +446,12 @@ const handleChange = (key, value) => {
             }}
             onClick={() => {
               if (isEditing) {
-                handleSave();
+                if (!isRecordUnchanged) {
+                  handleSave(); // only save if changed
+                } else {
+                  alert('No changes were made')
+                  setIsEditing(false);
+                }
               } else {
                 setIsEditing(true);
               }
@@ -331,7 +472,15 @@ const handleChange = (key, value) => {
                 backgroundColor: '#256d2f',
               },
             }}
-            onClick={onClose}
+            onClick={() => {
+              const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
+              if (isEditing && !isUnchanged) {
+                const confirmClose = window.confirm("You have unsaved changes. Are you sure you want to close without saving?");
+                if (!confirmClose) return; // do nothing if user cancels
+              }
+              status(isUnchanged)
+              onClose();
+            }}
           >
             CLOSE
           </Button>

@@ -30,7 +30,7 @@ import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
-import ViewRecordModal from '../../components/ViewRecordModal'; // Adjust path as needed
+import ViewEditRecordModal from '../../components/ViewEditRecordModal';
 
 function EnvironmentWater() {
   const [data, setData] = useState([]);
@@ -41,8 +41,8 @@ function EnvironmentWater() {
   const [selected, setSelected] = useState('Abstraction'); // Default selection
   const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-    const [selectedRecord, setSelectedRecord] = useState(null); // New
-
+  const [selectedRecord, setSelectedRecord] = useState(null); // New
+  const [updatePath, setUpdatePath] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -58,18 +58,29 @@ function EnvironmentWater() {
     month: '',
   });
 
+  const resetFiltersToNull = () => {
+    const nullFilters = Object.keys(filters).reduce((acc, key) => {
+      acc[key] = null;
+      return acc;
+    }, {});
+    setFilters(nullFilters);
+  };
+
   const isFiltering = useMemo(() => {
     return Object.values(filters).some(v => v !== null && v !== '');
   }, [filters]);
 
   useEffect(() => {
     if (selected === 'Abstraction') {
+      setUpdatePath('/edit_water_abstraction');
       fetchAbstractionData();
     }
     if (selected === 'Discharged') {
+      setUpdatePath('/edit_water_discharge')
       fetchDischargedData();
     }
     if (selected === 'Consumption') {
+      setUpdatePath('/edit_water_consumption')
       fetchConsumptionData();
     }
   }, [selected]);
@@ -207,17 +218,9 @@ function EnvironmentWater() {
     return Array.from(uniqueValues);
   }, [data]);
 
-  // Update getCurrentPageData to use filtered data
-  const getCurrentPageData = () => {
-    const filteredData = getFilteredData();
-    const sortedData = getSortedData(filteredData);
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return sortedData.slice(start, end);
-  };
-
   const filteredData = useMemo(() => getFilteredData(), [data, filters, searchQuery]);
-  
+  console.log(filteredData);
+
   const sortedData = useMemo(() => getSortedData(filteredData), [filteredData, sortConfig]);
 
   const paginatedData = useMemo(() => {
@@ -266,21 +269,6 @@ function EnvironmentWater() {
       return record[firstKey];
     }
     return null;
-  };
-
-  const handleUpdateRecord = async (updatedData) => {
-    console.log('Updating record:', getRecordID(updatedData));
-    {/*
-
-    try {
-      await axios.put(`/api/energy-records/${updatedData.id}`, updatedData); // or fetch()
-      toast.success("Record updated!");
-      fetchRecords(); // reload data
-    } catch (err) {
-      toast.error("Failed to update record.");
-    }
-       */}
-    
   };
 
   if (loading) return <div>Loading...</div>;
@@ -369,7 +357,11 @@ function EnvironmentWater() {
           {['Abstraction','Discharged', 'Consumption'].map((type) => (
             <Button
               key={type}
-              onClick={() => setSelected(type)}
+              onClick={() => {
+                setSelected(type);
+                setSearchQuery("");
+                resetFiltersToNull();
+              }}
               variant="contained"
               sx={{
                 backgroundColor: selected === type ? '#2B8C37' : '#9ca3af',
@@ -512,8 +504,9 @@ function EnvironmentWater() {
             {Math.min(page * rowsPerPage, filteredData.length)} records
           </Typography>
         </Box>
-        
-        {isAddModalOpen && (
+
+      {/* Conditional rendering for modals */}
+      {isAddModalOpen && (
         <Overlay onClose={() => setIsAddModalOpen(false)}>
           {selected === 'Abstraction' && (
             <AddAbstractionModal 
@@ -542,7 +535,7 @@ function EnvironmentWater() {
         </Overlay>
         )}
 
-        { isImportdModalOpen && (
+        {isImportdModalOpen && (
           <Overlay onClose={() => setIsImportModalOpen(false)}>
             {selected === 'Abstraction' && (
                 <ImportFileModal
@@ -571,13 +564,27 @@ function EnvironmentWater() {
           </Overlay>
         )}
         {selectedRecord != null && (
-          console.log('Selected Record:', getRecordID(selectedRecord)),
+          console.log('Selected Record:', selectedRecord),
           <Overlay onClose={() => setSelectedRecord(null)}>
-            <ViewRecordModal 
+            <ViewEditRecordModal
+              source={'environment'}
+              table={'Water'}
               title={`Water ${selected} Details`}
-              record={selectedRecord} 
-              onSave={handleUpdateRecord}
-              onClose={() => setSelectedRecord(null)} 
+              record={selectedRecord}
+              updatePath={updatePath}
+              status={(data) => {
+                if (!data){
+                  if (selected === 'Abstraction') {
+                    fetchAbstractionData(); // Refresh data after editing
+                  } else if (selected === 'Discharged'){
+                    fetchDischargedData(); // Refresh data after editing
+                  } else {
+                    fetchConsumptionData();
+                  }
+                };
+                setSelectedRecord(null);
+              }}
+              onClose={() => setSelectedRecord(null)}
             />
           </Overlay>
         )}

@@ -30,7 +30,7 @@ import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
-import ViewRecordModal from '../../components/ViewRecordModal'; // Adjust path as needed
+import ViewEditRecordModal from '../../components/ViewEditRecordModal';
 
 function EnvironmentWaste() {
   const [data, setData] = useState([]);
@@ -41,6 +41,7 @@ function EnvironmentWaste() {
   const [selected, setSelected] = useState('Hazard Generated'); // Default selection
   const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [updatePath, setUpdatePath] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null); // New
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -53,10 +54,18 @@ function EnvironmentWaste() {
     year: '',
     quarter: '',
     company: '',
-    type: '',
     metrics: '',
+    unit: '',
     status: '',
   });
+
+  const resetFiltersToNull = () => {
+    const nullFilters = Object.keys(filters).reduce((acc, key) => {
+      acc[key] = null;
+      return acc;
+    }, {});
+    setFilters(nullFilters);
+  };
 
   const isFiltering = useMemo(() => {
     return Object.values(filters).some(v => v !== null && v !== '');
@@ -64,12 +73,15 @@ function EnvironmentWaste() {
 
   useEffect(() => {
     if (selected === 'Hazard Generated') {
+      setUpdatePath('/edit_hazard_waste_generated')
       fetchHazardGenData();
     }
     if (selected === 'Hazard Disposed') {
+      setUpdatePath('/edit_hazard_waste_disposed')
       fetchHazardDisData();
     }
     if (selected === 'Non-Hazard Generated') {
+      setUpdatePath('/edit_non_hazard_waste')
       fetchNonHazardsData();
     }
   }, [selected]);
@@ -153,8 +165,8 @@ function EnvironmentWaste() {
   const companyOptions = useMemo(() => generateOptions(data, 'company'), [data]);
   const yearOptions = useMemo(() => generateOptions(data, 'year'), [data]);
   const quarterOptions = useMemo(() => generateOptions(data, 'quarter'), [data]);
-  const metricsOptions = useMemo(() => generateOptions(data, 'metrics'), [data]); 
-  const typeOptions = useMemo(() => generateOptions(data, 'type'), [data]);
+  const unitOptions = useMemo(() => generateOptions(data, 'unit'), [data]); 
+  const metricsOptions = useMemo(() => generateOptions(data, 'metrics'), [data]);
   const statusOptions = useMemo(() => generateOptions(data, 'status'), [data]);
 
   const handleSort = (key) => {
@@ -184,13 +196,12 @@ function EnvironmentWaste() {
       const matchesCompany = !filters.company || item.company === filters.company;
       const matchesYear = !filters.year || Number(item.year) === Number(filters.year);
       const matchesQuarter = !filters.quarter || item.quarter === filters.quarter;
-      const matchesSource = !filters.source || item.source === filters.source;
+      const matchesUnit = !filters.unit || item.unit === filters.unit;
       const matchesMetrics = !filters.metrics || item.metrics === filters.metrics;
-      const matchesType = !filters.type || item.type === filters.type;
       const matchesStatus = !filters.status || item.status === filters.status;
 
       return matchesSearch && matchesCompany && matchesYear && matchesQuarter && 
-      matchesMetrics && matchesType && matchesStatus;
+      matchesMetrics && matchesUnit && matchesStatus;
     });
   };
 
@@ -205,6 +216,7 @@ function EnvironmentWaste() {
   }, [data]);
 
   const filteredData = useMemo(() => getFilteredData(), [data, filters, searchQuery]);
+  console.log(filteredData);
 
   const sortedData = useMemo(() => getSortedData(filteredData), [filteredData, sortConfig]);
 
@@ -254,21 +266,6 @@ function EnvironmentWaste() {
       return record[firstKey];
     }
     return null;
-  };
-
-  const handleUpdateRecord = async (updatedData) => {
-    console.log('Updating record:', getRecordID(updatedData));
-    {/*
-
-    try {
-      await axios.put(`/api/energy-records/${updatedData.id}`, updatedData); // or fetch()
-      toast.success("Record updated!");
-      fetchRecords(); // reload data
-    } catch (err) {
-      toast.error("Failed to update record.");
-    }
-       */}
-    
   };
 
   if (loading) return <div>Loading...</div>;
@@ -357,7 +354,12 @@ function EnvironmentWaste() {
           {['Hazard Generated', 'Hazard Disposed', 'Non-Hazard Generated'].map((type) => (
             <Button
               key={type}
-              onClick={() => setSelected(type)}
+              onClick={() => {
+                setSelected(type);
+                setSearchQuery("");
+                resetFiltersToNull();
+
+              }}
               variant="contained"
               sx={{
                 backgroundColor: selected === type ? '#2B8C37' : '#9ca3af',
@@ -395,31 +397,18 @@ function EnvironmentWaste() {
             placeholder="Company"
           />
           
-          {(selected === 'Hazard Generated' || selected === 'Hazard Disposed') && (
-            <Filter
-              label="Type"
-              options={[{ label: 'All Type', value: '' }, ...typeOptions]}
-              value={filters.type}
-              onChange={val => {
-                setFilters(prev => ({ ...prev, type: val }));
-                setPage(1);
-              }}
-              placeholder="Type"
-            />
-          )}
-          {selected === 'Non-Hazard Generated' && (
-            <Filter
-              label="Metrics"
-              options={[{ label: 'All Metrics', value: '' }, ...metricsOptions]}
-              value={filters.metrics}
-              onChange={val => {
-                setFilters(prev => ({ ...prev, metrics: val }));
-                setPage(1);
-              }}
-              placeholder="Metrics"
-            />
-          )}
-          { selected !== 'Hazard Disposed' && (
+          <Filter
+            label="Metrics"
+            options={[{ label: 'All Metrics', value: '' }, ...metricsOptions]}
+            value={filters.metrics}
+            onChange={val => {
+              setFilters(prev => ({ ...prev, metrics: val }));
+              setPage(1);
+            }}
+            placeholder="Metrics"
+          />
+
+          {selected !== 'Hazard Disposed' && (
             <Filter
               label="Quarter"
               options={[{ label: 'All Quarter', value: '' }, ...quarterOptions]}
@@ -463,16 +452,7 @@ function EnvironmentWaste() {
                 fontSize: '0.85rem',
                 fontWeight: 'bold',
               }}
-              onClick={() => setFilters({
-                company: '',
-                year: '',
-                quarter: '',
-                source: '',
-                property: '',
-                type: '',
-                status: '',
-                month: '',
-              })}
+              onClick={() => resetFiltersToNull()}
             >
               Clear
             </Button>
@@ -572,13 +552,27 @@ function EnvironmentWaste() {
         </Overlay>
         )}
         {selectedRecord != null && (
-          console.log('Selected Record:', getRecordID(selectedRecord)),
+          console.log('Selected Record:', selectedRecord),
           <Overlay onClose={() => setSelectedRecord(null)}>
-            <ViewRecordModal 
+            <ViewEditRecordModal
+              source={'environment'}
+              table={selected}
               title={`Waste ${selected} Details`}
               record={selectedRecord} 
-              onSave={handleUpdateRecord}
-              onClose={() => setSelectedRecord(null)} 
+              updatePath={updatePath}
+              status={(data) => {
+                if (!data){
+                  if (selected === 'Hazard Generated') {
+                    fetchHazardGenData(); // Refresh data after editing
+                  } else if (selected === 'Hazard Disposed'){
+                    fetchHazardDisData(); // Refresh data after editing
+                  } else {
+                    fetchNonHazardsData();
+                  }
+                };
+                setSelectedRecord(null);
+              }}
+              onClose={() => setSelectedRecord(null)}
             />
           </Overlay>
         )}

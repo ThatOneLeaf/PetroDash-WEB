@@ -38,9 +38,10 @@ function EnvironmentEnergy() {
   const [page, setPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
-  const [selected, setSelected] = useState('Electricity'); // Default selection
+  const [selected, setSelected] = useState('Electricity');  // Default selection
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRecord, setSelectedRecord] = useState(null); // New
+  const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
+  const [updatePath, setUpdatePath] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -73,9 +74,11 @@ function EnvironmentEnergy() {
 
   useEffect(() => {
     if (selected === 'Electricity') {
+      setUpdatePath('/edit_electric_consumption')
       fetchElectricityData();
     }
     if (selected === 'Diesel') {
+      setUpdatePath('/edit_diesel_consumption')
       fetchDieselData();
     }
   }, [selected]);
@@ -249,23 +252,6 @@ function EnvironmentEnergy() {
       return record[firstKey];
     }
     return null;
-  };
-
-  const handleUpdateRecord = async (updatedData) => {
-    console.log("Passed Data:", updatedData);
-
-    try {
-      let path = '';
-      if (selected === 'Electricity') {path = '/edit_electric_consumption';
-      } else { path = '/edit_diesel_consumption'; }
-
-      const response = await api.post(`environment${path}`, updatedData);
-      alert(response.data.message);
-
-    } catch (error) {
-      const errorMessage = error.response?.data?.detail || error.message || "Unknown error occurred";
-      alert(`Failed to save record: ${errorMessage}`);
-    } 
   };
 
   if (loading) return <div>Loading...</div>;
@@ -552,6 +538,7 @@ function EnvironmentEnergy() {
             )}
           </Overlay>
         )}
+        
         { isImportdModalOpen && (
           <Overlay onClose={() => setIsImportModalOpen(false)}>
             {selected === 'Electricity' ? (
@@ -579,14 +566,18 @@ function EnvironmentEnergy() {
               table={selected}
               title={`${selected} Consumption Details`}
               record={selectedRecord} 
-              onSave={handleUpdateRecord}
-              onClose={() => {setSelectedRecord(null);
-                if (selected === 'Electricity') {
-                  fetchElectricityData(); // Refresh data after editing
-                } else {
-                  fetchDieselData(); // Refresh data after editing
-                }
-              }} 
+              updatePath={updatePath}
+              status={(data) => {
+                if (!data){
+                  if (selected === 'Electricity') {
+                    fetchElectricityData(); // Refresh data after editing
+                  } else {
+                    fetchDieselData(); // Refresh data after editing
+                  }
+                };
+                setSelectedRecord(null);
+              }}
+              onClose={() => setSelectedRecord(null)}
             />
           </Overlay>
         )}
