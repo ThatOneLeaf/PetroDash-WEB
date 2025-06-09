@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Paper, 
   Typography, 
@@ -8,7 +8,7 @@ import {
   MenuItem,
   Box,
   FormControl,
-  InputLabel // ⬅️ Make sure this is imported
+  InputLabel
 } from '@mui/material';
 import api from '../services/api';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -18,27 +18,90 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 function AddEnvironmentDieselModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
-    company_id: '', // ⬅️ Initialize company
+    company_id: '',
     cp_id: '',
     consumption: '',
-    unit_of_measurement: 'Liter', // Default unit
+    unit_of_measurement: 'Liter',
     date: '',
   });
+
+  // State for dropdown options
+  const [companies, setCompanies] = useState([]);
+  const [companyProperties, setCompanyProperties] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [loadingProperties, setLoadingProperties] = useState(false);
+
+  // Fetch companies on component mount
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  // Fetch company properties when company changes
+  useEffect(() => {
+    if (formData.company_id) {
+      // Find the selected company name
+      const selectedCompany = companies.find(company => company.id === formData.company_id);
+      if (selectedCompany) {
+        fetchCompanyProperties(selectedCompany.name);
+      }
+    } else {
+      // Clear company properties if no company selected
+      setCompanyProperties([]);
+      setFormData(prev => ({ ...prev, cp_id: '' })); // Reset company property selection
+    }
+  }, [formData.company_id, companies]);
+
+  const fetchCompanies = async () => {
+    try {
+      setLoadingCompanies(true);
+      const response = await api.get('/reference/companies');
+      setCompanies(response.data);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      alert('Failed to load companies');
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  const fetchCompanyProperties = async (companyName) => {
+    try {
+      setLoadingProperties(true);
+      const response = await api.get(`/environment/distinct_cp_names/${encodeURIComponent(companyName)}`);
+      setCompanyProperties(response.data);
+    } catch (error) {
+      console.error('Error fetching company properties:', error);
+      alert('Failed to load company properties');
+      setCompanyProperties([]);
+    } finally {
+      setLoadingProperties(false);
+    }
+  };
 
   const handleChange = (field) => (event) => {
     const newFormData = {
       ...formData,
       [field]: event.target.value
     };
+    
+    // If company changes, reset company property
+    if (field === 'company_id') {
+      newFormData.cp_id = '';
+    }
+    
     setFormData(newFormData);
   };
 
   const handleSubmit = async (formData) => {
     console.log("Submitting form data:", formData);
     try {
+      // Find the selected company name for submission
+      const selectedCompany = companies.find(company => company.id === formData.company_id);
+      const selectedProperty = companyProperties.find(prop => prop.cp_id === formData.cp_id);
+      
       const payload = {
-        company_id: formData.company_id?.trim(),
-        cp_id: formData.cp_id?.trim(),
+        company_id: selectedCompany?.company_id?.trim() || formData.company_id?.trim(),
+        cp_id: selectedProperty?.cp_id?.trim() || formData.cp_id?.trim(),
         unit_of_measurement: formData.unit_of_measurement?.trim(),
         consumption: parseFloat(formData.consumption),
         date: formData.date,
@@ -50,7 +113,7 @@ function AddEnvironmentDieselModal({ onClose }) {
       );
 
       alert(response.data.message);
-      onClose(); // Close modal if needed
+      onClose();
     } catch (error) {
       console.error("Error uploading single record:", error);
       alert(error?.response?.data?.detail || "Add Record Failed.");
@@ -93,14 +156,16 @@ function AddEnvironmentDieselModal({ onClose }) {
             onChange={handleChange('company_id')}
             label="Company"
             sx={{ height: '55px' }}
+            disabled={loadingCompanies}
           >
-            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
-              <MenuItem key={company_id} value={company_id}>
-                {company_id}
+            {companies.map((company) => (
+              <MenuItem key={company.id} value={company.id}>
+                {company.name}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
+        
         <FormControl fullWidth>
           <InputLabel>Company Property</InputLabel>
           <Select
@@ -108,19 +173,11 @@ function AddEnvironmentDieselModal({ onClose }) {
             onChange={handleChange('cp_id')}
             label="Company Property"
             sx={{ height: '55px' }}
+            disabled={!formData.company_id || loadingProperties}
           >
-            {[
-              'Grass Cutter',
-              'Generator Sets',
-              'DMAX',
-              'MUX',
-              'MULTICAB',
-              'ELF TRUCK',
-              'WATER TRUCK (4l)',
-              'WATER TRUCK (6l)',
-            ].map((cp_id) => (
-              <MenuItem key={cp_id} value={cp_id}>
-                {cp_id}
+            {companyProperties.map((property) => (
+              <MenuItem key={property.cp_id} value={property.cp_id}>
+                {property.cp_name}
               </MenuItem>
             ))}
           </Select>
@@ -146,7 +203,6 @@ function AddEnvironmentDieselModal({ onClose }) {
           />
         </LocalizationProvider>
       </Box>
-
 
       <Box sx={{
         display: 'grid', 
@@ -187,12 +243,12 @@ function AddEnvironmentDieselModal({ onClose }) {
           variant="contained"
           sx={{ 
             backgroundColor: '#2B8C37',
-            borderRadius: '999px', // Fully rounded (pill-style)
-            padding: '9px 18px',    // Optional: adjust padding for better look 
-            fontSize: '1rem', // Optional: adjust font size
+            borderRadius: '999px',
+            padding: '9px 18px',
+            fontSize: '1rem',
             fontWeight: 'bold',
             '&:hover': {
-              backgroundColor: '#256d2f', // darker shade of #2B8C37
+              backgroundColor: '#256d2f',
             },
           }}
           onClick={() => handleSubmit(formData)}
