@@ -1,32 +1,31 @@
-import { useMemo, useState, useEffect } from "react";
-import SideBar from "../../components/Sidebar";
-import ImportFileModal from "../../components/ImportFileModal";
+import AddIcon from "@mui/icons-material/Add";
+import ClearIcon from '@mui/icons-material/Clear';
+import FileUploadIcon from "@mui/icons-material/FileUpload";
+import LaunchIcon from "@mui/icons-material/Launch";
 import {
   Box,
-  Container,
-  Typography,
   Button,
-  IconButton
+  Container,
+  IconButton,
+  Typography
 } from "@mui/material";
 import dayjs from "dayjs";
-import FileUploadIcon from "@mui/icons-material/FileUpload";
-import AddIcon from "@mui/icons-material/Add";
-import LaunchIcon  from "@mui/icons-material/Launch";
-import Overlay from "../../components/modal";
+import { useEffect, useMemo, useState } from "react";
 import AddEnergyGeneratedModal from "../../components/AddPowerGeneratedModal";
-import Pagination from "../../components/Pagination/pagination";
-import Table from "../../components/Table/Table";
-import Filter from "../../components/Filter/Filter"; 
-import StatusChip from "../../components/StatusChip";
-import ClearIcon from '@mui/icons-material/Clear';
-import api from '../../services/api';
-import Search from "../../components/Filter/Search";
-import DateRangePicker from "../../components/Filter/DateRangePicker";
-import RepositoryHeader from "../../components/RepositoryHeader";
 import ButtonComp from "../../components/ButtonComp";
-import DataExportModal from "../../components/ExportModal";
-import EnergyDetailModal from "../../components/ViewPowerGeneratedModal";
+import DateRangePicker from "../../components/Filter/DateRangePicker";
+import Filter from "../../components/Filter/Filter";
+import Search from "../../components/Filter/Search";
+import ImportFileModal from "../../components/ImportFileModal";
+import Overlay from "../../components/modal";
+import Pagination from "../../components/Pagination/pagination";
+import RepositoryHeader from "../../components/RepositoryHeader";
+import SideBar from "../../components/Sidebar";
+import StatusChip from "../../components/StatusChip";
+import Table from "../../components/Table/Table";
+import api from '../../services/api';
 import { exportExcelData } from "../../services/directExport";
+import ViewEditEnergyModal from "../../components/ViewEditEnergyModal";
 
 function Energy() {
   const [data, setData] = useState([]);
@@ -37,6 +36,7 @@ function Energy() {
   const [isAddEnergyModalOpen, setIsAddEnergyModalOpen] = useState(false);
   const [isImportEnergyModalOpen, setIsImportEnergyModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({
     key: 'date',
@@ -59,16 +59,17 @@ function Energy() {
     );
   }, [filters, startDate, endDate]);
     const [open, setOpen] = useState(false);
-  const [selectedEnergyId, setSelectedEnergyId] = useState(null);
 
-  const handleOpen = (energyId) => {
-    setSelectedEnergyId(energyId);
+
+
+  const handleOpen = (record) => {
+    setSelectedRecord(record);
     setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
-    setSelectedEnergyId(null);
+    setSelectedRecord(null);
   };
 
 
@@ -367,7 +368,7 @@ function Energy() {
               maxHeight={'75vh'}
               scrollable
               actions={(row) => (
-                <IconButton size="small" onClick={() => handleOpen(row.energyId)}>
+                <IconButton size="small" onClick={() => handleOpen(row)}>
                  <LaunchIcon />
                 </IconButton>
               )}
@@ -383,13 +384,27 @@ function Energy() {
             />
           </Box>
         </Container>
-        <EnergyDetailModal
-        open={open}
-        onClose={handleClose}
-        energyId={selectedEnergyId}
-        />
 
-        {/* Modals */}
+
+      {/* Modals */}
+      {open && selectedRecord && (
+        <Overlay onClose={handleClose}>
+        <ViewEditEnergyModal
+          title="Daily Power Generation"
+          energyId={selectedRecord.energyId}
+          powerplantId={selectedRecord.powerPlant}
+          companyName={selectedRecord.companyName}  // <-- add this line
+          updatePath="/energy/update"
+          onClose={handleClose}
+          status={(updated) => {
+            if (updated) fetchEnergyData();
+          }}
+        />
+        </Overlay>
+      )}
+
+
+
 
         {isAddEnergyModalOpen && (
           <Overlay onClose={() => setIsAddEnergyModalOpen(false)}>
