@@ -10,7 +10,7 @@ import {
   FormControl,
   InputLabel
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../services/api';
 
 function AddWasteHazardDisModal({ onClose }) {
   const currentYear = new Date().getFullYear();

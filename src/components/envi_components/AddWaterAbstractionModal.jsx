@@ -10,7 +10,7 @@ import {
   FormControl,
   InputLabel // ⬅️ Make sure this is imported
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../services/api';
 
 function AddWaterDischargedModal({ onClose }) {
   const currentYear = new Date().getFullYear();

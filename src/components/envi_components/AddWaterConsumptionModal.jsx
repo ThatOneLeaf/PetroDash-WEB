@@ -11,7 +11,7 @@ import {
   InputLabel,
   CircularProgress
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../services/api';
 
 function AddWaterConsumptionModal({ onClose }) {
   const currentYear = new Date().getFullYear();
