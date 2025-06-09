@@ -22,14 +22,14 @@ import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddEnergyElectricityModal from '../../envi_components/AddEnergyElectricityModal';
-import AddEnergyDieselModal from '../../envi_components/AddEnergyDieselModal';
+import AddEnergyElectricityModal from '../../components/envi_components/AddEnergyElectricityModal';
+import AddEnergyDieselModal from '../../components/envi_components/AddEnergyDieselModal';
 import ImportFileModal from '../../components/ImportFileModal';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import CustomTable from '../../components/Table/Table'; // Adjust path as needed
 import Pagination from '../../components/Pagination/pagination'; // Adjust path as needed
-import ViewEditRecordModal from '../../components/ViewEditRecordModal';
+import ViewEditRecordModal from '../../components/envi_components/ViewEditEnviModal';
 
 function EnvironmentEnergy() {
   const [data, setData] = useState([]);

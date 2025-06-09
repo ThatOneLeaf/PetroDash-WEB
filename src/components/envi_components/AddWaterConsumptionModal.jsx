@@ -8,112 +8,55 @@ import {
   MenuItem,
   Box,
   FormControl,
-  InputLabel
+  InputLabel,
+  CircularProgress
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../services/api';
 
-function AddWasteHazardGenModal({ onClose }) {
+function AddWaterConsumptionModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
+    company_id: '',
     year: currentYear, 
     quarter: '',
-    company_id: '',
-    metrics: '',
-    waste_generated: '',
-    unit_of_measurement: '',
+    volume: '',
+    unit_of_measurement: ''
   });
 
-  // State for dropdown options
-  const [dropdownOptions, setDropdownOptions] = useState({
-    companies: [],
-    metrics: [],
-    units: []
-  });
+  const [companies, setCompanies] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // State for loading states
-  const [loading, setLoading] = useState({
-    companies: false,
-    metrics: false,
-    units: false
-  });
-
-  // Fetch dropdown data on component mount
+  // Fetch companies and units on component mount
   useEffect(() => {
-    fetchInitialDropdownData();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [companiesResponse, unitsResponse] = await Promise.all([
+          api.get('/reference/companies'),
+          api.get('/environment/distinct_water_unit')
+        ]);
+        
+        setCompanies(companiesResponse.data);
+        setUnits(unitsResponse.data);
+        
+        // Set default unit if available
+        if (unitsResponse.data.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            unit_of_measurement: unitsResponse.data[0].unit
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        alert('Error loading form data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
-
-  // Fetch units when metrics changes
-  useEffect(() => {
-    if (formData.metrics) {
-      fetchUnitsForMetrics(formData.metrics);
-      // Reset unit selection when metrics changes
-      setFormData(prev => ({
-        ...prev,
-        unit_of_measurement: ''
-      }));
-    } else {
-      // Clear units when no metrics selected
-      setDropdownOptions(prev => ({
-        ...prev,
-        units: []
-      }));
-    }
-  }, [formData.metrics]);
-
-  const fetchInitialDropdownData = async () => {
-    try {
-      // Set loading states
-      setLoading({
-        companies: true,
-        metrics: true,
-        units: false
-      });
-
-      // Fetch companies and metrics data
-      const [companiesResponse, metricsResponse] = await Promise.all([
-        api.get('reference/companies'),
-        api.get('environment/distinct_haz_waste_generated')
-      ]);
-
-      setDropdownOptions({
-        companies: companiesResponse.data || [],
-        metrics: metricsResponse.data || [],
-        units: []
-      });
-
-    } catch (error) {
-      console.error('Error fetching dropdown data:', error);
-      alert('Failed to load dropdown options. Please refresh the page.');
-    } finally {
-      // Reset loading states
-      setLoading({
-        companies: false,
-        metrics: false,
-        units: false
-      });
-    }
-  };
-
-  const fetchUnitsForMetrics = async (selectedMetrics) => {
-    try {
-      setLoading(prev => ({ ...prev, units: true }));
-
-      const unitsResponse = await api.get('environment/distinct_hazard_waste_gen_unit', {
-        params: { metrics: selectedMetrics }
-      });
-
-      setDropdownOptions(prev => ({
-        ...prev,
-        units: unitsResponse.data || []
-      }));
-
-    } catch (error) {
-      console.error('Error fetching units for metrics:', error);
-      alert('Failed to load unit options for selected metrics.');
-    } finally {
-      setLoading(prev => ({ ...prev, units: false }));
-    }
-  };
 
   const handleChange = (field) => (event) => {
     const newFormData = {
@@ -128,30 +71,37 @@ function AddWasteHazardGenModal({ onClose }) {
     try {
       const payload = {
         company_id: formData.company_id?.trim(),
-        metrics: formData.metrics?.trim(),
-        waste_generated: parseFloat(formData.waste_generated),
-        unit_of_measurement: formData.unit_of_measurement?.trim(),
         quarter: formData.quarter,
-        year: parseInt(formData.year)
+        year: parseInt(formData.year),
+        volume: parseFloat(formData.volume),
+        unit_of_measurement: formData.unit_of_measurement?.trim(),
       };
 
       const response = await api.post(
-        "/environment/single_upload_hazard_waste_generated",
+        "/environment/single_upload_water_consumption",
         payload
       );
 
       alert(response.data.message);
-      onClose(); // Close modal if needed
+      onClose();
     } catch (error) {
       console.error("Error uploading single record:", error);
       alert(error?.response?.data?.detail || "Add Record Failed.");
     }
   };
 
+  if (loading) {
+    return (
+      <Paper sx={{ p: 4, width: '500px', borderRadius: '16px', bgcolor: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+        <CircularProgress />
+      </Paper>
+    );
+  }
+
   return (
     <Paper sx={{
       p: 4,
-      width: '600px',
+      width: '500px',
       borderRadius: '16px',
       bgcolor: 'white'
     }}>
@@ -167,13 +117,12 @@ function AddWasteHazardGenModal({ onClose }) {
           ADD NEW RECORD
         </Typography>
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
-          Waste - Hazard Generated
+          Water - Consumption
         </Typography>
       </Box>
 
-      <Box sx={{ 
+      <Box sx={{
         display: 'grid', 
-        gridTemplateColumns: '1fr 1fr',
         gap: 2,
         mb: 2
       }}>
@@ -184,28 +133,10 @@ function AddWasteHazardGenModal({ onClose }) {
             onChange={handleChange('company_id')}
             label="Company"
             sx={{ height: '55px' }}
-            disabled={loading.companies}
           >
-            {dropdownOptions.companies.map((company) => (
+            {companies.map((company) => (
               <MenuItem key={company.id} value={company.id}>
                 {company.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Metrics</InputLabel>
-          <Select
-            value={formData.metrics}
-            onChange={handleChange('metrics')}
-            label="Waste metrics"
-            sx={{ height: '55px' }}
-            disabled={loading.metrics}
-          >
-            {dropdownOptions.metrics.map((metric) => (
-              <MenuItem key={metric.metrics} value={metric.metrics}>
-                {metric.metrics}
               </MenuItem>
             ))}
           </Select>
@@ -253,16 +184,15 @@ function AddWasteHazardGenModal({ onClose }) {
           </Select>
         </FormControl>
       </Box>
-      
       <Box sx={{
         display: 'grid', 
         gap: 2,
         mb: 3
       }}>
-         <TextField
-          placeholder="Waste Generated"
-          value={formData.waste_generated}
-          onChange={handleChange('waste_generated')}
+        <TextField
+          placeholder="Water Volume"
+          value={formData.volume}
+          onChange={handleChange('volume')}
           type="number"
         />
 
@@ -273,11 +203,10 @@ function AddWasteHazardGenModal({ onClose }) {
             onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
-            disabled={loading.units || !formData.metrics}
           >
-            {dropdownOptions.units.map((unitObj) => (
-              <MenuItem key={unitObj.unit} value={unitObj.unit}>
-                {unitObj.unit}
+            {units.map((unitItem) => (
+              <MenuItem key={unitItem.unit} value={unitItem.unit}>
+                {unitItem.unit}
               </MenuItem>
             ))}
           </Select>
@@ -311,4 +240,4 @@ function AddWasteHazardGenModal({ onClose }) {
   );
 }
 
-export default AddWasteHazardGenModal;
+export default AddWaterConsumptionModal;

@@ -22,15 +22,15 @@ import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddAbstractionModal from '../../envi_components/AddWaterAbstractionModal';
-import AddDischargedModal from '../../envi_components/AddWaterDischargedModal';
-import AddConsumptionModal from '../../envi_components/AddWaterConsumptionModal';
+import AddAbstractionModal from '../../components/envi_components/AddWaterAbstractionModal';
+import AddDischargedModal from '../../components/envi_components/AddWaterDischargedModal';
+import AddConsumptionModal from '../../components/envi_components/AddWaterConsumptionModal';
 import ImportFileModal from '../../components/ImportFileModal';
 import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
-import ViewEditRecordModal from '../../components/ViewEditRecordModal';
+import ViewEditRecordModal from '../../components/envi_components/ViewEditEnviModal';
 
 function EnvironmentWater() {
   const [data, setData] = useState([]);

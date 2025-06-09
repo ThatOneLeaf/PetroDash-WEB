@@ -10,17 +10,16 @@ import {
   FormControl,
   InputLabel
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../services/api';
 
-function AddWasteNonHazGenModal({ onClose }) {
+function AddWasteHazardGenModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     year: currentYear, 
     quarter: '',
     company_id: '',
-    month: '',
     metrics: '',
-    waste: '',
+    waste_generated: '',
     unit_of_measurement: '',
   });
 
@@ -73,7 +72,7 @@ function AddWasteNonHazGenModal({ onClose }) {
       // Fetch companies and metrics data
       const [companiesResponse, metricsResponse] = await Promise.all([
         api.get('reference/companies'),
-        api.get('environment/distinct_non_haz_waste_metrics')
+        api.get('environment/distinct_haz_waste_generated')
       ]);
 
       setDropdownOptions({
@@ -99,7 +98,7 @@ function AddWasteNonHazGenModal({ onClose }) {
     try {
       setLoading(prev => ({ ...prev, units: true }));
 
-      const unitsResponse = await api.get('environment/distinct_non_haz_waste_unit', {
+      const unitsResponse = await api.get('environment/distinct_hazard_waste_gen_unit', {
         params: { metrics: selectedMetrics }
       });
 
@@ -130,15 +129,14 @@ function AddWasteNonHazGenModal({ onClose }) {
       const payload = {
         company_id: formData.company_id?.trim(),
         metrics: formData.metrics?.trim(),
-        waste: parseFloat(formData.waste),
+        waste_generated: parseFloat(formData.waste_generated),
         unit_of_measurement: formData.unit_of_measurement?.trim(),
-        month: formData.month?.trim(),
         quarter: formData.quarter,
         year: parseInt(formData.year)
       };
 
       const response = await api.post(
-        "/environment/single_upload_non_hazard_waste",
+        "/environment/single_upload_hazard_waste_generated",
         payload
       );
 
@@ -169,7 +167,7 @@ function AddWasteNonHazGenModal({ onClose }) {
           ADD NEW RECORD
         </Typography>
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
-          Waste - Non-Hazard Generated
+          Waste - Hazard Generated
         </Typography>
       </Box>
 
@@ -195,6 +193,7 @@ function AddWasteNonHazGenModal({ onClose }) {
             ))}
           </Select>
         </FormControl>
+        
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Metrics</InputLabel>
           <Select
@@ -215,27 +214,10 @@ function AddWasteNonHazGenModal({ onClose }) {
 
       <Box sx={{ 
         display: 'grid', 
-        gridTemplateColumns: '1fr 1fr 1fr',
+        gridTemplateColumns: '1fr 1fr',
         gap: 2,
         mb: 2
       }}>
-        <FormControl sx={{ minWidth: 120 }}>
-        <InputLabel>Month</InputLabel>
-          <Select
-            value={formData.month}
-            onChange={handleChange('month')}
-            label="Month"
-            sx={{ height: '55px' }}
-          >
-            {['January', 'February', 'March', 'April', 'May', 'June',
-              'July', 'August', 'September', 'October', 'November', 'December'
-            ].map((month) => (
-              <MenuItem key={month} value={month}>
-                {month}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Quarter</InputLabel>
           <Select
@@ -271,6 +253,7 @@ function AddWasteNonHazGenModal({ onClose }) {
           </Select>
         </FormControl>
       </Box>
+      
       <Box sx={{
         display: 'grid', 
         gap: 2,
@@ -278,8 +261,8 @@ function AddWasteNonHazGenModal({ onClose }) {
       }}>
          <TextField
           placeholder="Waste Generated"
-          value={formData.waste}
-          onChange={handleChange('waste')}
+          value={formData.waste_generated}
+          onChange={handleChange('waste_generated')}
           type="number"
         />
 
@@ -328,4 +311,4 @@ function AddWasteNonHazGenModal({ onClose }) {
   );
 }
 
-export default AddWasteNonHazGenModal;
+export default AddWasteHazardGenModal;

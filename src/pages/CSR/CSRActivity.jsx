@@ -29,6 +29,7 @@ function CSR() {
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [modalKey, setModalKey] = useState(0);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
@@ -261,9 +262,29 @@ function CSR() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
+            {/* EXPORT DATA BUTTON */}
             <Button
               variant="contained"
               startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+              onClick={() => exportToExcel(filteredData)}
+            >
+              EXPORT DATA
+            </Button>
+
+            {/* IMPORT DATA BUTTON */}
+            <Button
+              variant="contained"
+              // startIcon={<FileUploadIcon />}
               sx={{
                 backgroundColor: '#182959',
                 borderRadius: '999px',
@@ -278,6 +299,8 @@ function CSR() {
             >
               IMPORT
             </Button>
+
+            {/* SINGLE UPLOAD DATA BUTTON */}
             <Button
               variant="contained"
               startIcon={<AddIcon />}
@@ -433,10 +456,26 @@ function CSR() {
             <ViewHelpRecordModal
               title="CSR Activity Details"
               record={selectedRecord}
-              onClose={() => setSelectedRecord(null)}
-              onSave={async (updatedRecord) => {
-                // Optionally refresh data after save
-                fetchCSRData();
+              // updatePath={getUpdatePath(selectedRecord)}
+              status={(data, error) => {
+                if (error) {
+                  // Debug message for update API error
+                  console.error('Error updating CSR activity:', error);
+                  if (error.response) {
+                    console.error('Update API Response Error:', {
+                      status: error.response.status,
+                      data: error.response.data,
+                      headers: error.response.headers,
+                    });
+                  } else if (error.request) {
+                    console.error('Update API No Response:', error.request);
+                  } else {
+                    console.error('Update API Setup Error:', error.message);
+                  }
+                }
+                if (!data) {
+                  fetchCSRData();
+                }
                 setSelectedRecord(null);
               }}
             />

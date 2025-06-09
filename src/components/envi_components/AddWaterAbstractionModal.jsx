@@ -8,109 +8,49 @@ import {
   MenuItem,
   Box,
   FormControl,
-  InputLabel
+  InputLabel // ⬅️ Make sure this is imported
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../services/api';
 
-function AddWasteHazardDisModal({ onClose }) {
+function AddWaterDischargedModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
+    company_id: '', // ⬅️ Initialize company
     year: currentYear, 
-    company_id: '',
-    metrics: '',
-    waste_disposed: '',
-    unit_of_measurement: '',
+    month: '', // ⬅️ Initialize month
+    quarter: '', // ⬅️ Initialize quarter
+    volume: '',
+    unit_of_measurement: 'cubic meter' // Default unit
   });
-
+  
   // State for dropdown options
-  const [dropdownOptions, setDropdownOptions] = useState({
-    companies: [],
-    metrics: [],
-    units: []
-  });
+  const [companies, setCompanies] = useState([]);
+  const [units, setUnits] = useState([]);
 
-  // State for loading states
-  const [loading, setLoading] = useState({
-    companies: false,
-    metrics: false,
-    units: false
-  });
-
-  // Fetch dropdown data on component mount
+  // Fetch companies on component mount
   useEffect(() => {
-    fetchInitialDropdownData();
+    fetchCompanies();
+    fetchUnits();
   }, []);
 
-  // Fetch units when metrics changes
-  useEffect(() => {
-    if (formData.metrics) {
-      fetchUnitsForMetrics(formData.metrics);
-      // Reset unit selection when metrics changes
-      setFormData(prev => ({
-        ...prev,
-        unit_of_measurement: ''
-      }));
-    } else {
-      // Clear units when no metrics selected
-      setDropdownOptions(prev => ({
-        ...prev,
-        units: []
-      }));
-    }
-  }, [formData.metrics]);
-
-  const fetchInitialDropdownData = async () => {
+  const fetchCompanies = async () => {
     try {
-      // Set loading states
-      setLoading({
-        companies: true,
-        metrics: true,
-        units: false
-      });
-
-      // Fetch companies and metrics data
-      const [companiesResponse, metricsResponse] = await Promise.all([
-        api.get('reference/companies'),
-        api.get('environment/distinct_haz_waste_disposed')
-      ]);
-
-      setDropdownOptions({
-        companies: companiesResponse.data || [],
-        metrics: metricsResponse.data || [],
-        units: []
-      });
-
+      const response = await api.get('/reference/companies');
+      setCompanies(response.data);
     } catch (error) {
-      console.error('Error fetching dropdown data:', error);
-      alert('Failed to load dropdown options. Please refresh the page.');
+      console.error('Error fetching companies:', error);
+      alert('Failed to load companies');
     } finally {
-      // Reset loading states
-      setLoading({
-        companies: false,
-        metrics: false,
-        units: false
-      });
+      setLoadingCompanies(false);
     }
   };
 
-  const fetchUnitsForMetrics = async (selectedMetrics) => {
+  const fetchUnits = async () => {
     try {
-      setLoading(prev => ({ ...prev, units: true }));
-
-      const unitsResponse = await api.get('environment/distinct_hazard_waste_dis_unit', {
-        params: { metrics: selectedMetrics }
-      });
-
-      setDropdownOptions(prev => ({
-        ...prev,
-        units: unitsResponse.data || []
-      }));
-
+      const response = await api.get('environment/distinct_water_unit');
+      setUnits(response.data);
     } catch (error) {
-      console.error('Error fetching units for metrics:', error);
-      alert('Failed to load unit options for selected metrics.');
-    } finally {
-      setLoading(prev => ({ ...prev, units: false }));
+      console.error("Error fetching unit options:", error);
     }
   };
 
@@ -125,16 +65,19 @@ function AddWasteHazardDisModal({ onClose }) {
   const handleSubmit = async (formData) => {
     console.log("Submitting form data:", formData);
     try {
+      const selectedCompany = companies.find(company => company.id === formData.company_id);
+
       const payload = {
-        company_id: formData.company_id?.trim(),
-        metrics: formData.metrics?.trim(),
-        waste_disposed: parseFloat(formData.waste_disposed),
+        company_id: selectedCompany?.company_id?.trim() || formData.company_id?.trim(),
+        month: formData.month,
+        quarter: formData.quarter,
+        year: parseInt(formData.year),
+        volume: parseFloat(formData.volume),
         unit_of_measurement: formData.unit_of_measurement?.trim(),
-        year: parseInt(formData.year)
       };
 
       const response = await api.post(
-        "/environment/single_upload_hazard_waste_disposed",
+        "/environment/single_upload_water_abstraction",
         payload
       );
 
@@ -149,7 +92,7 @@ function AddWasteHazardDisModal({ onClose }) {
   return (
     <Paper sx={{
       p: 4,
-      width: '600px',
+      width: '500px',
       borderRadius: '16px',
       bgcolor: 'white'
     }}>
@@ -165,12 +108,13 @@ function AddWasteHazardDisModal({ onClose }) {
           ADD NEW RECORD
         </Typography>
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
-          Waste - Hazard Disposed
+          Water - Abstraction
         </Typography>
       </Box>
 
       <Box sx={{ 
-         display: 'grid', 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr',
         gap: 2,
         mb: 2
       }}>
@@ -181,11 +125,27 @@ function AddWasteHazardDisModal({ onClose }) {
             onChange={handleChange('company_id')}
             label="Company"
             sx={{ height: '55px' }}
-            disabled={loading.companies}
           >
-            {dropdownOptions.companies.map((company) => (
+            {companies.map((company) => (
               <MenuItem key={company.id} value={company.id}>
                 {company.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 120 }}>
+        <InputLabel>Month</InputLabel>
+          <Select
+            value={formData.month}
+            onChange={handleChange('month')}
+            label="Month"
+            sx={{ height: '55px' }}
+          >
+            {['January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ].map((month) => (
+              <MenuItem key={month} value={month}>
+                {month}
               </MenuItem>
             ))}
           </Select>
@@ -199,21 +159,21 @@ function AddWasteHazardDisModal({ onClose }) {
         mb: 2
       }}>
         <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Metrics</InputLabel>
+          <InputLabel>Quarter</InputLabel>
           <Select
-            value={formData.metrics}
-            onChange={handleChange('metrics')}
-            label="Waste metrics"
+            value={formData.quarter}
+            onChange={handleChange('quarter')}
+            label="Quarter"
             sx={{ height: '55px' }}
-            disabled={loading.metrics}
           >
-            {dropdownOptions.metrics.map((metric) => (
-              <MenuItem key={metric.metrics} value={metric.metrics}>
-                {metric.metrics}
+            {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => (
+              <MenuItem key={quarter} value={quarter}>
+                {quarter}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
+
         <FormControl sx={{ minWidth: 120 }}>
         <InputLabel>Year</InputLabel>
           <Select
@@ -238,10 +198,10 @@ function AddWasteHazardDisModal({ onClose }) {
         gap: 2,
         mb: 3
       }}>
-         <TextField
-          placeholder="Waste Disposed"
-          value={formData.waste_disposed}
-          onChange={handleChange('waste_disposed')}
+        <TextField
+          placeholder="Water Volume"
+          value={formData.volume}
+          onChange={handleChange('volume')}
           type="number"
         />
 
@@ -252,11 +212,10 @@ function AddWasteHazardDisModal({ onClose }) {
             onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
-            disabled={loading.units || !formData.metrics}
           >
-            {dropdownOptions.units.map((unitObj) => (
-              <MenuItem key={unitObj.unit} value={unitObj.unit}>
-                {unitObj.unit}
+            {units.map((option) => (
+              <MenuItem key={option.unit} value={option.unit}>
+                {option.unit}
               </MenuItem>
             ))}
           </Select>
@@ -273,12 +232,12 @@ function AddWasteHazardDisModal({ onClose }) {
           variant="contained"
           sx={{ 
             backgroundColor: '#2B8C37',
-            borderRadius: '999px',
-            padding: '9px 18px',
-            fontSize: '1rem',
+            borderRadius: '999px', // Fully rounded (pill-style)
+            padding: '9px 18px',    // Optional: adjust padding for better look 
+            fontSize: '1rem', // Optional: adjust font size
             fontWeight: 'bold',
             '&:hover': {
-              backgroundColor: '#256d2f',
+              backgroundColor: '#256d2f', // darker shade of #2B8C37
             },
           }}
           onClick={() => handleSubmit(formData)}
@@ -290,4 +249,4 @@ function AddWasteHazardDisModal({ onClose }) {
   );
 }
 
-export default AddWasteHazardDisModal;
+export default AddWaterDischargedModal;

@@ -8,55 +8,62 @@ import {
   MenuItem,
   Box,
   FormControl,
-  InputLabel,
-  CircularProgress
+  InputLabel // ⬅️ Make sure this is imported
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../services/api';
 
-function AddWaterConsumptionModal({ onClose }) {
+function AddEnvironmentEnergyModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
-    company_id: '',
+    company_id: '', // ⬅️ Initialize company
+    source: '',
     year: currentYear, 
-    quarter: '',
-    volume: '',
-    unit_of_measurement: ''
+    quarter: '', // ⬅️ Initialize quarter
+    consumption: '',
+    unit_of_measurement: 'kWh' // Default unit
   });
 
+  // State for dropdown options
   const [companies, setCompanies] = useState([]);
+  const [sources, setSources] = useState([]);
   const [units, setUnits] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  // Fetch companies and units on component mount
+  // Fetch companies on component mount
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [companiesResponse, unitsResponse] = await Promise.all([
-          api.get('/reference/companies'),
-          api.get('/environment/distinct_water_unit')
-        ]);
-        
-        setCompanies(companiesResponse.data);
-        setUnits(unitsResponse.data);
-        
-        // Set default unit if available
-        if (unitsResponse.data.length > 0) {
-          setFormData(prev => ({
-            ...prev,
-            unit_of_measurement: unitsResponse.data[0].unit
-          }));
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        alert('Error loading form data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchCompanies();
+    fetchSources();
+    fetchUnits();
   }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await api.get('/reference/companies');
+      setCompanies(response.data);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      alert('Failed to load companies');
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  const fetchSources = async () => {
+    try {
+      const response = await api.get('environment/distinct_electric_source');
+      setSources(response.data);
+    } catch (error) {
+      console.error("Error fetching source options:", error);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const response = await api.get('environment/distinct_electric_consumption_unit');
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching unit options:", error);
+    }
+  };
 
   const handleChange = (field) => (event) => {
     const newFormData = {
@@ -69,34 +76,29 @@ function AddWaterConsumptionModal({ onClose }) {
   const handleSubmit = async (formData) => {
     console.log("Submitting form data:", formData);
     try {
+      const selectedCompany = companies.find(company => company.id === formData.company_id);
+
       const payload = {
-        company_id: formData.company_id?.trim(),
-        quarter: formData.quarter,
-        year: parseInt(formData.year),
-        volume: parseFloat(formData.volume),
+        company_id: selectedCompany?.company_id?.trim() || formData.company_id?.trim(),
+        source: formData.source?.trim(),
         unit_of_measurement: formData.unit_of_measurement?.trim(),
+        consumption: parseFloat(formData.consumption),
+        quarter: formData.quarter,
+        year: parseInt(formData.year)
       };
 
       const response = await api.post(
-        "/environment/single_upload_water_consumption",
+        "/environment/single_upload_electric_consumption",
         payload
       );
 
       alert(response.data.message);
-      onClose();
+      onClose(); // Close modal if needed
     } catch (error) {
       console.error("Error uploading single record:", error);
       alert(error?.response?.data?.detail || "Add Record Failed.");
     }
   };
-
-  if (loading) {
-    return (
-      <Paper sx={{ p: 4, width: '500px', borderRadius: '16px', bgcolor: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-        <CircularProgress />
-      </Paper>
-    );
-  }
 
   return (
     <Paper sx={{
@@ -117,12 +119,13 @@ function AddWaterConsumptionModal({ onClose }) {
           ADD NEW RECORD
         </Typography>
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
-          Water - Consumption
+          Energy - Electricity
         </Typography>
       </Box>
 
-      <Box sx={{
+      <Box sx={{ 
         display: 'grid', 
+        gridTemplateColumns: '1fr 1fr',
         gap: 2,
         mb: 2
       }}>
@@ -137,6 +140,21 @@ function AddWaterConsumptionModal({ onClose }) {
             {companies.map((company) => (
               <MenuItem key={company.id} value={company.id}>
                 {company.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 120 }}>
+        <InputLabel>Source</InputLabel>
+          <Select
+            value={formData.source}
+            onChange={handleChange('source')}
+            label="Source"
+            sx={{ height: '55px' }}
+          >
+            {sources.map((option) => (
+              <MenuItem key={option.source} value={option.source}>
+                {option.source}
               </MenuItem>
             ))}
           </Select>
@@ -189,10 +207,10 @@ function AddWaterConsumptionModal({ onClose }) {
         gap: 2,
         mb: 3
       }}>
-        <TextField
-          placeholder="Water Volume"
-          value={formData.volume}
-          onChange={handleChange('volume')}
+         <TextField
+          placeholder="Electricity Consumption"
+          value={formData.consumption}
+          onChange={handleChange('consumption')}
           type="number"
         />
 
@@ -204,9 +222,9 @@ function AddWaterConsumptionModal({ onClose }) {
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {units.map((unitItem) => (
-              <MenuItem key={unitItem.unit} value={unitItem.unit}>
-                {unitItem.unit}
+            {units.map((option) => (
+              <MenuItem key={option.unit} value={option.unit}>
+                {option.unit}
               </MenuItem>
             ))}
           </Select>
@@ -223,12 +241,12 @@ function AddWaterConsumptionModal({ onClose }) {
           variant="contained"
           sx={{ 
             backgroundColor: '#2B8C37',
-            borderRadius: '999px',
-            padding: '9px 18px',
-            fontSize: '1rem',
+            borderRadius: '999px', // Fully rounded (pill-style)
+            padding: '9px 18px',    // Optional: adjust padding for better look 
+            fontSize: '1rem', // Optional: adjust font size
             fontWeight: 'bold',
             '&:hover': {
-              backgroundColor: '#256d2f',
+              backgroundColor: '#256d2f', // darker shade of #2B8C37
             },
           }}
           onClick={() => handleSubmit(formData)}
@@ -240,4 +258,4 @@ function AddWaterConsumptionModal({ onClose }) {
   );
 }
 
-export default AddWaterConsumptionModal;
+export default AddEnvironmentEnergyModal;

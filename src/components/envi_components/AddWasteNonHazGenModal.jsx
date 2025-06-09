@@ -8,60 +8,111 @@ import {
   MenuItem,
   Box,
   FormControl,
-  InputLabel // ⬅️ Make sure this is imported
+  InputLabel
 } from '@mui/material';
-import api from '../services/api';
+import api from '../../services/api';
 
-function AddEnvironmentEnergyModal({ onClose }) {
+function AddWasteNonHazGenModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
-    company_id: '', // ⬅️ Initialize company
-    source: '',
     year: currentYear, 
-    quarter: '', // ⬅️ Initialize quarter
-    consumption: '',
-    unit_of_measurement: 'kWh' // Default unit
+    quarter: '',
+    company_id: '',
+    month: '',
+    metrics: '',
+    waste: '',
+    unit_of_measurement: '',
   });
 
   // State for dropdown options
-  const [companies, setCompanies] = useState([]);
-  const [sources, setSources] = useState([]);
-  const [units, setUnits] = useState([]);
+  const [dropdownOptions, setDropdownOptions] = useState({
+    companies: [],
+    metrics: [],
+    units: []
+  });
 
-  // Fetch companies on component mount
+  // State for loading states
+  const [loading, setLoading] = useState({
+    companies: false,
+    metrics: false,
+    units: false
+  });
+
+  // Fetch dropdown data on component mount
   useEffect(() => {
-    fetchCompanies();
-    fetchSources();
-    fetchUnits();
+    fetchInitialDropdownData();
   }, []);
 
-  const fetchCompanies = async () => {
+  // Fetch units when metrics changes
+  useEffect(() => {
+    if (formData.metrics) {
+      fetchUnitsForMetrics(formData.metrics);
+      // Reset unit selection when metrics changes
+      setFormData(prev => ({
+        ...prev,
+        unit_of_measurement: ''
+      }));
+    } else {
+      // Clear units when no metrics selected
+      setDropdownOptions(prev => ({
+        ...prev,
+        units: []
+      }));
+    }
+  }, [formData.metrics]);
+
+  const fetchInitialDropdownData = async () => {
     try {
-      const response = await api.get('/reference/companies');
-      setCompanies(response.data);
+      // Set loading states
+      setLoading({
+        companies: true,
+        metrics: true,
+        units: false
+      });
+
+      // Fetch companies and metrics data
+      const [companiesResponse, metricsResponse] = await Promise.all([
+        api.get('reference/companies'),
+        api.get('environment/distinct_non_haz_waste_metrics')
+      ]);
+
+      setDropdownOptions({
+        companies: companiesResponse.data || [],
+        metrics: metricsResponse.data || [],
+        units: []
+      });
+
     } catch (error) {
-      console.error('Error fetching companies:', error);
-      alert('Failed to load companies');
+      console.error('Error fetching dropdown data:', error);
+      alert('Failed to load dropdown options. Please refresh the page.');
     } finally {
-      setLoadingCompanies(false);
+      // Reset loading states
+      setLoading({
+        companies: false,
+        metrics: false,
+        units: false
+      });
     }
   };
 
-  const fetchSources = async () => {
+  const fetchUnitsForMetrics = async (selectedMetrics) => {
     try {
-      const response = await api.get('environment/distinct_electric_source');
-      setSources(response.data);
-    } catch (error) {
-      console.error("Error fetching source options:", error);
-    }
-  };
+      setLoading(prev => ({ ...prev, units: true }));
 
-  const fetchUnits = async () => {
-    try {
-      const response = await api.get('environment/distinct_electric_consumption_unit');
-      setUnits(response.data);
+      const unitsResponse = await api.get('environment/distinct_non_haz_waste_unit', {
+        params: { metrics: selectedMetrics }
+      });
+
+      setDropdownOptions(prev => ({
+        ...prev,
+        units: unitsResponse.data || []
+      }));
+
     } catch (error) {
-      console.error("Error fetching unit options:", error);
+      console.error('Error fetching units for metrics:', error);
+      alert('Failed to load unit options for selected metrics.');
+    } finally {
+      setLoading(prev => ({ ...prev, units: false }));
     }
   };
 
@@ -76,19 +127,18 @@ function AddEnvironmentEnergyModal({ onClose }) {
   const handleSubmit = async (formData) => {
     console.log("Submitting form data:", formData);
     try {
-      const selectedCompany = companies.find(company => company.id === formData.company_id);
-
       const payload = {
-        company_id: selectedCompany?.company_id?.trim() || formData.company_id?.trim(),
-        source: formData.source?.trim(),
+        company_id: formData.company_id?.trim(),
+        metrics: formData.metrics?.trim(),
+        waste: parseFloat(formData.waste),
         unit_of_measurement: formData.unit_of_measurement?.trim(),
-        consumption: parseFloat(formData.consumption),
+        month: formData.month?.trim(),
         quarter: formData.quarter,
         year: parseInt(formData.year)
       };
 
       const response = await api.post(
-        "/environment/single_upload_electric_consumption",
+        "/environment/single_upload_non_hazard_waste",
         payload
       );
 
@@ -103,7 +153,7 @@ function AddEnvironmentEnergyModal({ onClose }) {
   return (
     <Paper sx={{
       p: 4,
-      width: '500px',
+      width: '600px',
       borderRadius: '16px',
       bgcolor: 'white'
     }}>
@@ -119,7 +169,7 @@ function AddEnvironmentEnergyModal({ onClose }) {
           ADD NEW RECORD
         </Typography>
         <Typography sx={{ fontSize: '2.2rem', color: '#182959', fontWeight: 800}}>
-          Energy - Electricity
+          Waste - Non-Hazard Generated
         </Typography>
       </Box>
 
@@ -136,8 +186,9 @@ function AddEnvironmentEnergyModal({ onClose }) {
             onChange={handleChange('company_id')}
             label="Company"
             sx={{ height: '55px' }}
+            disabled={loading.companies}
           >
-            {companies.map((company) => (
+            {dropdownOptions.companies.map((company) => (
               <MenuItem key={company.id} value={company.id}>
                 {company.name}
               </MenuItem>
@@ -145,16 +196,17 @@ function AddEnvironmentEnergyModal({ onClose }) {
           </Select>
         </FormControl>
         <FormControl sx={{ minWidth: 120 }}>
-        <InputLabel>Source</InputLabel>
+          <InputLabel>Metrics</InputLabel>
           <Select
-            value={formData.source}
-            onChange={handleChange('source')}
-            label="Source"
+            value={formData.metrics}
+            onChange={handleChange('metrics')}
+            label="Waste metrics"
             sx={{ height: '55px' }}
+            disabled={loading.metrics}
           >
-            {sources.map((option) => (
-              <MenuItem key={option.source} value={option.source}>
-                {option.source}
+            {dropdownOptions.metrics.map((metric) => (
+              <MenuItem key={metric.metrics} value={metric.metrics}>
+                {metric.metrics}
               </MenuItem>
             ))}
           </Select>
@@ -163,10 +215,27 @@ function AddEnvironmentEnergyModal({ onClose }) {
 
       <Box sx={{ 
         display: 'grid', 
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: '1fr 1fr 1fr',
         gap: 2,
         mb: 2
       }}>
+        <FormControl sx={{ minWidth: 120 }}>
+        <InputLabel>Month</InputLabel>
+          <Select
+            value={formData.month}
+            onChange={handleChange('month')}
+            label="Month"
+            sx={{ height: '55px' }}
+          >
+            {['January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ].map((month) => (
+              <MenuItem key={month} value={month}>
+                {month}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <FormControl sx={{ minWidth: 120 }}>
           <InputLabel>Quarter</InputLabel>
           <Select
@@ -208,9 +277,9 @@ function AddEnvironmentEnergyModal({ onClose }) {
         mb: 3
       }}>
          <TextField
-          placeholder="Electricity Consumption"
-          value={formData.consumption}
-          onChange={handleChange('consumption')}
+          placeholder="Waste Generated"
+          value={formData.waste}
+          onChange={handleChange('waste')}
           type="number"
         />
 
@@ -221,10 +290,11 @@ function AddEnvironmentEnergyModal({ onClose }) {
             onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
+            disabled={loading.units || !formData.metrics}
           >
-            {units.map((option) => (
-              <MenuItem key={option.unit} value={option.unit}>
-                {option.unit}
+            {dropdownOptions.units.map((unitObj) => (
+              <MenuItem key={unitObj.unit} value={unitObj.unit}>
+                {unitObj.unit}
               </MenuItem>
             ))}
           </Select>
@@ -241,12 +311,12 @@ function AddEnvironmentEnergyModal({ onClose }) {
           variant="contained"
           sx={{ 
             backgroundColor: '#2B8C37',
-            borderRadius: '999px', // Fully rounded (pill-style)
-            padding: '9px 18px',    // Optional: adjust padding for better look 
-            fontSize: '1rem', // Optional: adjust font size
+            borderRadius: '999px',
+            padding: '9px 18px',
+            fontSize: '1rem',
             fontWeight: 'bold',
             '&:hover': {
-              backgroundColor: '#256d2f', // darker shade of #2B8C37
+              backgroundColor: '#256d2f',
             },
           }}
           onClick={() => handleSubmit(formData)}
@@ -258,4 +328,4 @@ function AddEnvironmentEnergyModal({ onClose }) {
   );
 }
 
-export default AddEnvironmentEnergyModal;
+export default AddWasteNonHazGenModal;
