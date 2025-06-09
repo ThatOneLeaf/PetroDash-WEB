@@ -17,6 +17,7 @@ import CSR from "./pages/CSR/CSRActivity";
 import Energy from "./pages/Energy/Energy";
 import HR from "./pages/HR/HRMain";
 import HRDashboard from "./pages/HR/HRDashboard";
+import PowerDashboard from "./pages/Energy/PowerDashboard";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
             <Route path="/social/hr" element={<HR />} />
             <Route path="/social/hrdashboard" element={<HRDashboard />} />
             <Route path="/energy/power-generation" element={<Energy />} />
+            <Route path="/energy/dashboard" element={<PowerDashboard />} />
           </Routes>
         </main>
       </div>
