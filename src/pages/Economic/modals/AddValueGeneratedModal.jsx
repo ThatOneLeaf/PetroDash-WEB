@@ -94,7 +94,7 @@ function AddValueGeneratedModal({ onClose }) {
       bgcolor: 'white'
     }}>
       <Typography variant="h5" sx={{ 
-        color: '#1a237e',
+        color: '#182959',
         mb: 3,
         fontWeight: 'bold' 
       }}>
@@ -206,7 +206,7 @@ function AddValueGeneratedModal({ onClose }) {
         alignItems: 'center',
         mt: 2 
       }}>
-        <Typography variant="h6">
+        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#182959' }}>
           Total Revenue: ₱{totalRevenue.toLocaleString()}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -217,6 +217,10 @@ function AddValueGeneratedModal({ onClose }) {
             sx={{ 
               color: '#666',
               borderColor: '#666',
+              borderRadius: '999px',
+              padding: '9px 18px',
+              fontSize: '0.85rem',
+              fontWeight: 'bold',
               '&:hover': { 
                 borderColor: '#333',
                 color: '#333'
@@ -230,8 +234,12 @@ function AddValueGeneratedModal({ onClose }) {
             onClick={handleSubmit}
             disabled={loading || !isFormValid()}
             sx={{ 
-              bgcolor: '#2E7D32',
-              '&:hover': { bgcolor: '#1b5e20' },
+              bgcolor: '#2B8C37',
+              borderRadius: '999px',
+              padding: '9px 18px',
+              fontSize: '0.85rem',
+              fontWeight: 'bold',
+              '&:hover': { bgcolor: '#256d2f' },
               '&:disabled': { bgcolor: '#ccc' }
             }}
           >

@@ -414,6 +414,10 @@ function AddExpendituresModal({ onClose }) {
           sx={{ 
             color: '#666',
             borderColor: '#666',
+            borderRadius: '999px',
+            padding: '9px 18px',
+            fontSize: '0.85rem',
+            fontWeight: 'bold',
             '&:hover': { 
               borderColor: '#333',
               color: '#333'
@@ -428,7 +432,11 @@ function AddExpendituresModal({ onClose }) {
           disabled={loading || !isFormValid()}
           sx={{ 
             bgcolor: '#2B8C37',
-            '&:hover': { bgcolor: '#1b5e20' },
+            borderRadius: '999px',
+            padding: '9px 18px',
+            fontSize: '0.85rem',
+            fontWeight: 'bold',
+            '&:hover': { bgcolor: '#256d2f' },
             '&:disabled': { bgcolor: '#ccc' }
           }}
         >

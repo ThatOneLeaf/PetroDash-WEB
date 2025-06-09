@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tooltip,
 } from "@mui/material";
 
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -152,19 +153,6 @@ function ImportEconCapitalProviderModal({ onClose }) {
           DOWNLOAD EXCEL TEMPLATE
         </Typography>
 
-        <Typography
-          variant="body2"
-          sx={{
-            color: "#666",
-            mb: 3,
-            textAlign: "center",
-            fontSize: "0.875rem",
-          }}
-        >
-          Template includes: Year, Interest Payments, Dividends to NCI, 
-          Dividends to Parent Company, Total Payments
-        </Typography>
-
         <input
           type="file"
           accept=".xlsx,.xls"
@@ -180,7 +168,7 @@ function ImportEconCapitalProviderModal({ onClose }) {
               borderRadius: 2,
               p: 3,
               textAlign: "center",
-              mb: 3,
+              mb: 2,
               border: "4px dotted #9e9e9e",
               display: "flex",
               alignItems: "center",
@@ -197,6 +185,19 @@ function ImportEconCapitalProviderModal({ onClose }) {
             </Typography>
           </Box>
         </label>
+
+        <Typography
+          variant="body2"
+          sx={{
+            color: "#666",
+            mb: 3,
+            textAlign: "center",
+            fontSize: "0.8rem",
+            fontStyle: "italic",
+          }}
+        >
+          Expected columns: Year, Interest, Dividends to NCI, Dividends to Parent Company, Total Payments
+        </Typography>
 
         {selectedFile && (
           <Box

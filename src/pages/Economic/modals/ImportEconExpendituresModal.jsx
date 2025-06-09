@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tooltip,
 } from "@mui/material";
 
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -152,20 +153,6 @@ function ImportEconExpendituresModal({ onClose }) {
           DOWNLOAD EXCEL TEMPLATE
         </Typography>
 
-        <Typography
-          variant="body2"
-          sx={{
-            color: "#666",
-            mb: 3,
-            textAlign: "center",
-            fontSize: "0.875rem",
-          }}
-        >
-          Template includes: Year, Company ID, Type ID, Government Payments, 
-          Local Supplier Spending, Foreign Supplier Spending, Employee Wages & Benefits, 
-          Community Investments, Depreciation, Depletion, Others
-        </Typography>
-
         <input
           type="file"
           accept=".xlsx,.xls"
@@ -181,7 +168,7 @@ function ImportEconExpendituresModal({ onClose }) {
               borderRadius: 2,
               p: 3,
               textAlign: "center",
-              mb: 3,
+              mb: 2,
               border: "4px dotted #9e9e9e",
               display: "flex",
               alignItems: "center",
@@ -198,6 +185,19 @@ function ImportEconExpendituresModal({ onClose }) {
             </Typography>
           </Box>
         </label>
+
+        <Typography
+          variant="body2"
+          sx={{
+            color: "#666",
+            mb: 3,
+            textAlign: "center",
+            fontSize: "0.8rem",
+            fontStyle: "italic",
+          }}
+        >
+          Expected columns: Year, Company ID, Type ID, Government Payments, Local Supplier Spending, Foreign Supplier Spending, Employee Wages & Benefits, Community Investments, Depreciation, Depletion, Others
+        </Typography>
 
         {selectedFile && (
           <Box

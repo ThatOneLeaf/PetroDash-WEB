@@ -4,6 +4,7 @@ import {
   Typography,
   Button,
   Box,
+  Tooltip,
 } from "@mui/material";
 
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -112,7 +113,7 @@ function ImportEconGeneratedModal({ onClose }) {
       <Typography
         variant="h5"
         sx={{
-          color: "#1a237e",
+          color: "#182959",
           mb: 3,
           fontWeight: "bold",
         }}
@@ -135,19 +136,6 @@ function ImportEconGeneratedModal({ onClose }) {
         DOWNLOAD EXCEL TEMPLATE
       </Typography>
 
-      <Typography
-        variant="body2"
-        sx={{
-          color: "#666",
-          mb: 3,
-          textAlign: "center",
-          fontSize: "0.875rem",
-        }}
-      >
-        Template includes: Year, Electricity Sales, Oil Revenues, Other Revenues, 
-        Interest Income, Share in Net Income of Associate, Miscellaneous Income
-      </Typography>
-
       <input
         type="file"
         accept=".xlsx,.xls"
@@ -163,7 +151,7 @@ function ImportEconGeneratedModal({ onClose }) {
             borderRadius: 2,
             p: 3,
             textAlign: "center",
-            mb: 3,
+            mb: 2,
             border: "4px dotted #9e9e9e",
             display: "flex",
             alignItems: "center",
@@ -181,12 +169,25 @@ function ImportEconGeneratedModal({ onClose }) {
         </Box>
       </label>
 
+      <Typography
+        variant="body2"
+        sx={{
+          color: "#666",
+          mb: 3,
+          textAlign: "center",
+          fontSize: "0.8rem",
+          fontStyle: "italic",
+        }}
+      >
+        Expected columns: Year, Electricity Sales, Oil Revenues, Other Revenues, Interest Income, Share in Net Income of Associate, Miscellaneous Income
+      </Typography>
+
       {selectedFile && (
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
-            color: "#1a237e",
+            color: "#182959",
             mb: 3,
             fontWeight: "bold",
             justifyContent: "center",
@@ -213,6 +214,10 @@ function ImportEconGeneratedModal({ onClose }) {
           sx={{
             color: "#666",
             borderColor: "#666",
+            borderRadius: "999px",
+            padding: "9px 18px",
+            fontSize: "0.85rem",
+            fontWeight: "bold",
             "&:hover": {
               borderColor: "#333",
               color: "#333",
@@ -226,8 +231,12 @@ function ImportEconGeneratedModal({ onClose }) {
           onClick={handleSubmit}
           disabled={!selectedFile || isUploading}
           sx={{
-            bgcolor: "#2E7D32",
-            "&:hover": { bgcolor: "#1b5e20" },
+            bgcolor: "#2B8C37",
+            borderRadius: "999px",
+            padding: "9px 18px",
+            fontSize: "0.85rem",
+            fontWeight: "bold",
+            "&:hover": { bgcolor: "#256d2f" },
             "&:disabled": { bgcolor: "#ccc" },
           }}
         >

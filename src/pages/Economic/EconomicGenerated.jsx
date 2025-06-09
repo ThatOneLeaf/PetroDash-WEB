@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, Box, IconButton } from '@mui/material';
+import { Button, Box, IconButton, Typography } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -175,39 +175,73 @@ function EconomicGenerated() {
             alignItems: 'center',
             marginBottom: '2rem'
           }}>
-            <div>
-              <h1 style={{
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                marginBottom: '0.5rem'
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start'
+            }}>
+              <Typography sx={{ 
+                fontSize: '0.75rem', 
+                fontWeight: 800,
               }}>
                 REPOSITORY
-              </h1>
-              <h2 style={{ fontSize: '2rem', color: '#182959' }}>
+              </Typography>
+              <Typography sx={{ 
+                fontSize: '2.25rem', 
+                color: '#182959', 
+                fontWeight: 800
+              }}>
                 Economic - Generated
-              </h2>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+              </Typography>
+            </Box>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               <Button
                 variant="contained"
                 startIcon={<FileUploadIcon />}
-                style={{ backgroundColor: '#182959' }}
                 onClick={handleExport}
+                sx={{
+                  backgroundColor: '#182959',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#0f1a3c',
+                  },
+                }}
               >
                 EXPORT DATA
               </Button>
               <Button
                 variant="contained"
-                style={{ backgroundColor: '#182959' }}
                 onClick={() => setIsImportModalOpen(true)}
+                sx={{
+                  backgroundColor: '#182959',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#0f1a3c',
+                  },
+                }}
               >
                 IMPORT
               </Button>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                style={{ backgroundColor: '#2B8C37' }}
                 onClick={() => setIsAddModalOpen(true)}
+                sx={{
+                  backgroundColor: '#2B8C37',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#256d2f',
+                  },
+                }}
               >
                 ADD RECORD
               </Button>
