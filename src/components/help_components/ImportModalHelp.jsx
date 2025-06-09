@@ -16,7 +16,6 @@ function ImportModalHelp({ open, onClose, onImportSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const templateURL = "csr_template.xlsx"; // Change as needed
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -24,11 +23,29 @@ function ImportModalHelp({ open, onClose, onImportSuccess }) {
     setSuccess(null);
   };
 
-  const handleDownloadTemplate = () => {
-    const link = document.createElement("a");
-    link.href = `/templates/${templateURL}`;
-    link.download = templateURL;
-    link.click();
+  const handleDownloadTemplate = async () => {
+  try {
+      const response = await api.get('/help/help-activity-template', {
+        responseType: 'blob', // Important for file downloads
+      });
+      
+      // Create blob link to download the file
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'help_activity_template.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      showDialog('Download Error', 'Error downloading template. Please try again.', 'error');
+    }
   };
 
   const handleImportClick = async () => {
@@ -65,7 +82,7 @@ function ImportModalHelp({ open, onClose, onImportSuccess }) {
       open={open}
       onClose={onClose}
       title="Import Data"
-      subtitle="Daily Generation"
+      subtitle="Social - H.E.L.P"
       width="450px"
       actions={
         <Button
