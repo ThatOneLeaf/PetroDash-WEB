@@ -12,6 +12,7 @@ import EnvironmentWater from "./pages/Envi/EnvironmentWater";
 import EnvironmentWaste from "./pages/Envi/EnvironmentWaste";
 import EnvironmentAir from "./pages/Envi/EnvironmentAir";
 import EnvironmentCare from "./pages/Envi/EnvironmentCare";
+import EnvironmentWaterDash from "./pages/Envi/EnvironmentWaterDash";
 import CSR from "./pages/CSR/CSRActivity";
 import Energy from "./pages/Energy/Energy";
 import HR from "./pages/HR/HRMain";
@@ -38,6 +39,8 @@ function App() {
             <Route path="/environment/waste" element={<EnvironmentWaste />} />
             <Route path="/environment/air" element={<EnvironmentAir />} />
             <Route path="/environment/care" element={<EnvironmentCare />} />
+            <Route path="/environment/water-dash" element={<EnvironmentWaterDash />} />
+            
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
             <Route path="/social/help" element={<CSR />} />
