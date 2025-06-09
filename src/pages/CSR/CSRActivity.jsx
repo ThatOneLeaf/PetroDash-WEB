@@ -1,16 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Sidebar from '../../components/Sidebar';
 import {
   Box,
   Typography,
   Button,
   Container,
-  Paper,
   IconButton
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
 import ClearIcon from '@mui/icons-material/Clear';
 import LaunchIcon from '@mui/icons-material/Launch';
 import Table from '../../components/Table/Table';
@@ -18,11 +16,14 @@ import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import Pagination from '../../components/Pagination/pagination';
 import AddRecordModalHelp from '../../components/help_components/AddRecordModalHelp';
-import ImportModalHelp from '../../components/help_components/ImportModalHelp'; // Restored
-import Overlay from '../../components/modal'; // Add this import if not present
+import ImportModalHelp from '../../components/help_components/ImportModalHelp';
+import Overlay from '../../components/modal'; 
 import api from '../../services/api';
+import ViewEditRecordModal from '../../components/ViewEditRecordModal'; 
 
-function CSR() {
+const CSR_API_PATH = '/help/activities'; 
+
+function CSR() {  
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,8 +32,8 @@ function CSR() {
   const [modalKey, setModalKey] = useState(0);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
-  // Table and filter state
   const [sortConfig, setSortConfig] = useState({
     key: 'projectYear',
     direction: 'desc'
@@ -40,26 +41,175 @@ function CSR() {
   const [filters, setFilters] = useState({ year: "", companyId: "", statusId: "", program: "", projectAbbr: "" });
   const [search, setSearch] = useState('');
 
-  // Fetch data on mount
   useEffect(() => {
     fetchCSRData();
   }, []);
 
-  // Fetch CSR activities from API
-  const fetchCSRData = async () => {
+  const fetchCSRData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/help/activities');
+      const response = await api.get(CSR_API_PATH); // <-- use variable
       setData(response.data);
     } catch (error) {
+      // Debugging notes for API error
+      console.error('Error fetching CSR activities:', error);
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        console.error('API Response Error:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('API No Response:', error.request);
+      } else {
+        // Something happened in setting up the request
+        console.error('API Setup Error:', error.message);
+      }
       setError('Error fetching data');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Table columns configuration
-  const columns = [
+  // Memoize filter options for efficiency
+  const programOptions = useMemo(() => {
+    const programSet = new Set(data.map(d => d.programName).filter(Boolean));
+    return [
+      { label: "All Programs", value: "" },
+      ...Array.from(programSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }))
+    ];
+  }, [data]);
+
+  const projectOptions = useMemo(() => {
+    const filteredProjects = data.filter(d => !filters.program || d.programName === filters.program);
+    const projectSet = new Set(filteredProjects.map(d => d.projectName).filter(Boolean));
+    return [
+      { label: "All Projects", value: "" },
+      ...Array.from(projectSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }))
+    ];
+  }, [data, filters.program]);
+
+  const yearOptions = useMemo(() => [
+    { label: "All Years", value: "" },
+    ...Array.from(new Set(data.map(d => d.projectYear).filter(Boolean)))
+      .sort((a, b) => b - a)
+      .map(y => ({ label: y, value: y }))
+  ], [data]);
+
+  const companyIdOptions = useMemo(() => [
+    { label: "All Companies", value: "" },
+    ...Array.from(new Set(data.map(d => d.companyId).filter(Boolean)))
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map(c => ({ label: c, value: c }))
+  ], [data]);
+
+  const statusIdOptions = useMemo(() => [
+    { label: "All Statuses", value: "" },
+    ...Array.from(new Set(data.map(d => d.statusId).filter(Boolean)))
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map(s => ({ label: s, value: s }))
+  ], [data]);
+
+  const searchSuggestions = useMemo(() =>
+    [...new Set(data.map(d => d.projectId).filter(Boolean))]
+  , [data]);
+
+  // Memoize filtered, searched, and sorted data
+  const filteredData = useMemo(() => data
+    .filter(row => {
+      if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
+      if (filters.companyId && String(row.companyId) !== String(filters.companyId)) return false;
+      if (filters.statusId && String(row.statusId) !== String(filters.statusId)) return false;
+      if (filters.program && row.programName !== filters.program) return false;
+      if (filters.projectAbbr && row.projectName !== filters.projectAbbr) return false;
+      return true;
+    })
+    .filter(row => {
+      if (!search) return true;
+      const searchStr = search.toLowerCase();
+      return Object.values(row).some(val =>
+        String(val).toLowerCase().includes(searchStr)
+      );
+    })
+  , [data, filters, search]);
+
+  const sortedData = useMemo(() => {
+    const arr = [...filteredData];
+    const { key, direction } = sortConfig;
+    arr.sort((a, b) => {
+      const aVal = a[key];
+      const bVal = b[key];
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      return direction === 'asc'
+        ? String(aVal).localeCompare(String(bVal))
+        : String(bVal).localeCompare(String(aVal));
+    });
+    return arr;
+  }, [filteredData, sortConfig]);
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(sortedData.length / rowsPerPage)), [sortedData.length, rowsPerPage]);
+  const pagedData = useMemo(() => sortedData.slice((page - 1) * rowsPerPage, page * rowsPerPage), [sortedData, page, rowsPerPage]);
+
+  useEffect(() => {
+    setPage(1);
+    // eslint-disable-next-line
+  }, [filters, search, rowsPerPage]);
+
+  // Modal options for AddRecordModalHelp
+  const modalYearOptions = useMemo(() => yearOptions.slice(1), [yearOptions]);
+  const modalCompanyOptions = useMemo(() => companyIdOptions.slice(1), [companyIdOptions]);
+  const modalProgramOptions = useMemo(() => {
+    const programSetModal = new Set(data.map(d => d.programName).filter(Boolean));
+    return Array.from(programSetModal)
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map(name => ({ label: name, value: name }));
+  }, [data]);
+  const modalProjectOptions = useMemo(() => {
+    const result = {};
+    data.forEach(d => {
+      if (d.programName && d.projectName && d.projectId) {
+        if (!result[d.programName]) result[d.programName] = [];
+        if (!result[d.programName].some(opt => opt.value === d.projectId)) {
+          result[d.programName].push({
+            label: d.projectName,
+            value: d.projectId,
+            projectId: d.projectId
+          });
+        }
+      }
+    });
+    return result;
+  }, [data]);
+
+  // Disable body scroll when any modal is open
+  useEffect(() => {
+    const modalOpen = isAddModalOpen || isImportModalOpen || !!selectedRecord;
+    if (modalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isAddModalOpen, isImportModalOpen, selectedRecord]);
+
+  const handleSort = useCallback((key) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  }, []);
+
+  // Memoize columns to avoid hook order issues
+  const columns = useMemo(() => [
     { key: 'projectYear', label: 'Year', width: 80, align: 'center', render: val => val },
     { key: 'companyId', label: 'Company', width: 120, render: val => val },
     { key: 'programName', label: 'Program', width: 140, render: val => val },
@@ -73,152 +223,14 @@ function CSR() {
       width: 80,
       align: 'center',
       render: (val, row) => (
-        <IconButton size="small" /* onClick={() => ...} */>
+        <IconButton size="small" onClick={() => setSelectedRecord(row)}>
           <LaunchIcon />
         </IconButton>
       )
     }
-  ];
+  ], [setSelectedRecord]);
 
-  // Handle table sorting
-  const handleSort = (key) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-
-  // --- Filter Option Extraction ---
-
-  // Get unique program names for filter
-  const programSet = new Set(data.map(d => d.programName).filter(Boolean));
-  const programOptions = [
-    { label: "All Programs", value: "" },
-    ...Array.from(programSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }))
-  ];
-
-  // Get unique project names for filter, filtered by selected program
-  const filteredProjects = data.filter(d => {
-    if (!filters.program) return true;
-    return d.programName === filters.program;
-  });
-  const projectSet = new Set(filteredProjects.map(d => d.projectName).filter(Boolean));
-  const projectOptions = [
-    { label: "All Projects", value: "" },
-    ...Array.from(projectSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }))
-  ];
-
-  // Year filter options
-  const yearOptions = [
-    { label: "All Years", value: "" },
-    ...Array.from(new Set(data.map(d => d.projectYear).filter(Boolean)))
-      .sort((a, b) => b - a)
-      .map(y => ({ label: y, value: y }))
-  ];
-
-  // Company filter options
-  const companyIdOptions = [
-    { label: "All Companies", value: "" },
-    ...Array.from(new Set(data.map(d => d.companyId).filter(Boolean)))
-      .sort((a, b) => String(a).localeCompare(String(b)))
-      .map(c => ({ label: c, value: c }))
-  ];
-
-  // Status filter options
-  const statusIdOptions = [
-    { label: "All Statuses", value: "" },
-    ...Array.from(new Set(data.map(d => d.statusId).filter(Boolean)))
-      .sort((a, b) => String(a).localeCompare(String(b)))
-      .map(s => ({ label: s, value: s }))
-  ];
-
-  // Search suggestions (projectId)
-  const searchSuggestions = [
-    ...new Set(data.map(d => d.projectId).filter(Boolean))
-  ];
-
-  // --- Filtering, Searching, Sorting, Pagination ---
-
-  // Filter data based on all filters and search
-  const filteredData = data
-    .filter(row => {
-      // Year filter
-      if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
-      // Company filter
-      if (filters.companyId && String(row.companyId) !== String(filters.companyId)) return false;
-      // Status filter
-      if (filters.statusId && String(row.statusId) !== String(filters.statusId)) return false;
-      // Program filter (programName)
-      if (filters.program && row.programName !== filters.program) return false;
-      // Project filter (projectName)
-      if (filters.projectAbbr && row.projectName !== filters.projectAbbr) return false;
-      return true;
-    })
-    .filter(row => {
-      // Search filter (searches all fields as string)
-      if (!search) return true;
-      const searchStr = search.toLowerCase();
-      return Object.values(row).some(val =>
-        String(val).toLowerCase().includes(searchStr)
-      );
-    });
-
-  // Sort filtered data
-  const sortedData = [...filteredData].sort((a, b) => {
-    const aVal = a[sortConfig.key];
-    const bVal = b[sortConfig.key];
-    if (aVal == null && bVal == null) return 0;
-    if (aVal == null) return 1;
-    if (bVal == null) return -1;
-    if (typeof aVal === 'number' && typeof bVal === 'number') {
-      return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
-    }
-    return sortConfig.direction === 'asc'
-      ? String(aVal).localeCompare(String(bVal))
-      : String(bVal).localeCompare(String(aVal));
-  });
-
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
-  const pagedData = sortedData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-
-  // Reset to page 1 if filters/search change
-  useEffect(() => {
-    setPage(1);
-    // eslint-disable-next-line
-  }, [filters, search, rowsPerPage]);
-
-  // Modal options for AddRecordModalHelp
-  const modalYearOptions = yearOptions.slice(1); // Remove "All Years"
-  const modalCompanyOptions = companyIdOptions.slice(1); // Remove "All Companies"
-  // For modal, use programName/projectName/projectId from API, grouped by programName
-  const programSetModal = new Set(data.map(d => d.programName).filter(Boolean));
-  const modalProgramOptions = Array.from(programSetModal)
-    .sort((a, b) => String(a).localeCompare(String(b)))
-    .map(name => ({ label: name, value: name }));
-
-  // Group project options by program, include projectId
-  const modalProjectOptions = {};
-  data.forEach(d => {
-    if (d.programName && d.projectName && d.projectId) {
-      if (!modalProjectOptions[d.programName]) {
-        modalProjectOptions[d.programName] = [];
-      }
-      // Only push if not already present (by projectId)
-      if (!modalProjectOptions[d.programName].some(opt => opt.value === d.projectId)) {
-        modalProjectOptions[d.programName].push({
-          label: d.projectName,
-          value: d.projectId, 
-          projectId: d.projectId
-        });
-      }
-    }
-  });
-
-  // Log modalProjectOptions to verify structure
-  console.log("modalProjectOptions:", modalProjectOptions);
-
-  // --- Render ---
+  const getUpdatePath = useCallback((record) => `${CSR_API_PATH}/${record.projectId}`, []); // <-- use variable
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -369,7 +381,6 @@ function CSR() {
           emptyMessage="No data available."
           maxHeight="69vh"
           minHeight="300px"
-          // actions column is now handled in columns definition
         />
 
         {/* Record Count and Pagination */}
@@ -389,25 +400,23 @@ function CSR() {
         </Box>
 
         {/* Add Record Modal */}
-        <AddRecordModalHelp
-          key={modalKey}
-          open={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onAdd={() => {
-            fetchCSRData();
-            // Log the modal options used for adding
-            console.log("AddRecordModalHelp used with options:", {
-              yearOptions: modalYearOptions,
-              companyOptions: modalCompanyOptions,
-              programOptions: modalProgramOptions,
-              projectOptions: modalProjectOptions
-            });
-          }}
-          yearOptions={modalYearOptions}
-          companyOptions={modalCompanyOptions}
-          programOptions={modalProgramOptions}
-          projectOptions={modalProjectOptions}
-        />
+        {isAddModalOpen && (
+          <Overlay onClose={() => setIsAddModalOpen(false)}>
+            <AddRecordModalHelp
+              key={modalKey}
+              open={isAddModalOpen}
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={() => {
+                fetchCSRData();
+              }}
+              yearOptions={modalYearOptions}
+              companyOptions={modalCompanyOptions}
+              programOptions={modalProgramOptions}
+              projectOptions={modalProjectOptions}
+              apiPath={CSR_API_PATH} // <-- use variable
+            />
+          </Overlay>
+        )}
         {/* Import Modal */}
         {isImportModalOpen && (
           <Overlay onClose={() => setIsImportModalOpen(false)}>
@@ -415,6 +424,46 @@ function CSR() {
               open={isImportModalOpen}
               onClose={() => setIsImportModalOpen(false)}
               onImportSuccess={fetchCSRData}
+              apiPath={CSR_API_PATH} // <-- use variable
+            />
+          </Overlay>
+        )}
+        {/* View/Edit Record Modal */}
+        {selectedRecord && (
+          <Overlay onClose={() => setSelectedRecord(null)}>
+            <ViewEditRecordModal
+              source="" // Ensures PATCH is used
+              table="CSR"
+              title="CSR Activity Details"
+              record={selectedRecord}
+              updatePath={getUpdatePath(selectedRecord)}
+              status={(data, error) => {
+                if (error) {
+                  // Debug message for update API error
+                  console.error('Error updating CSR activity:', error);
+                  if (error.response) {
+                    console.error('Update API Response Error:', {
+                      status: error.response.status,
+                      data: error.response.data,
+                      headers: error.response.headers,
+                    });
+                  } else if (error.request) {
+                    console.error('Update API No Response:', error.request);
+                  } else {
+                    console.error('Update API Setup Error:', error.message);
+                  }
+                }
+                if (!data) {
+                  fetchCSRData();
+                }
+                setSelectedRecord(null);
+              }}
+              onClose={() => setSelectedRecord(null)}
+              companyOptions={modalCompanyOptions}
+              programOptions={modalProgramOptions}
+              projectOptions={modalProjectOptions}
+              statusOptions={statusIdOptions}
+              apiPath={CSR_API_PATH}
             />
           </Overlay>
         )}

@@ -90,7 +90,22 @@ function EnvironmentEnergy() {
       console.log('Electricity data from API:', response.data);
       setData(response.data);
     } catch (error) {
+      // Debugging notes for API error
       console.error('Error fetching electric consumption data:', error);
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        console.error('API Response Error:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('API No Response:', error.request);
+      } else {
+        // Something happened in setting up the request
+        console.error('API Setup Error:', error.message);
+      }
       setError('Error fetching data');
     } finally {
       setLoading(false);
@@ -104,7 +119,19 @@ function EnvironmentEnergy() {
       console.log('Diesel data from API:', response.data);
       setData(response.data);
     } catch (error) {
+      // Debugging notes for API error
       console.error('Error fetching diesel consumption data:', error);
+      if (error.response) {
+        console.error('API Response Error:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+      } else if (error.request) {
+        console.error('API No Response:', error.request);
+      } else {
+        console.error('API Setup Error:', error.message);
+      }
       setError('Error fetching data');
     } finally {
       setLoading(false);
@@ -242,7 +269,19 @@ function EnvironmentEnergy() {
       // Clean up
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      // Debugging notes for API error
       console.error('Failed to export Excel:', error);
+      if (error.response) {
+        console.error('API Response Error:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+      } else if (error.request) {
+        console.error('API No Response:', error.request);
+      } else {
+        console.error('API Setup Error:', error.message);
+      }
     }
   };
 

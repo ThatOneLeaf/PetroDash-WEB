@@ -192,11 +192,16 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
     console.log("Updated Data:", editedRecord);
 
     try {
-      const response = await api.post(`${source}${updatePath}`, editedRecord);
-      alert(response.data.message);
-
+      let response;
+      if (!source) {
+        // For CSR, use PATCH
+        response = await api.patch(updatePath, editedRecord);
+      } else {
+        // For EnvironmentEnergy, use POST
+        response = await api.post(`${source}${updatePath}`, editedRecord);
+      }
+      alert(response.data.message || "Record saved successfully.");
       setIsEditing(false);
-
     } catch (error) {
       const errorMessage = error.response?.data?.detail || error.message || "Unknown error occurred";
       alert(`Failed to save record: ${errorMessage}`);

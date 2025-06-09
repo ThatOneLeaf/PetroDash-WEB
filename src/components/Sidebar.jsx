@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 // Import icons and logos with corrected paths
 import PetroDashLogo from "../assets/petrodashlogo.png";
@@ -20,8 +23,21 @@ function SideBar({ collapsed: collapsedProp = false }) {
   const [collapsed, setCollapsed] = useState(true);
   const [envOpen, setEnvOpen] = useState(false);
   const [socialOpen, setSocialOpen] = useState(false);
+  const [dashboardOpen, setDashboardOpen] = useState(false); // Dashboard dropdown
+  const [dashboardHover, setDashboardHover] = useState(false); // Hover state for arrow
 
-  // Helper to open only one dropdown at a time
+  const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Additional function for Dashboard click
+  const handleDashboardClick = () => {
+    // Add any extra logic here (analytics, refresh, etc.)
+    navigate("/dashboard");
+  };
+
+  // Add this function back:
   const handleDropdownToggle = (dropdown) => {
     if (dropdown === "env") {
       setEnvOpen((open) => {
@@ -35,9 +51,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
       });
     }
   };
-
-  const navigate = useNavigate();
-  const location = useLocation();
 
   // Navigation items
   const navItems = [
@@ -101,7 +114,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
           : { boxShadow: "8px 0 24px 0 rgba(44,62,80,0.22)" }),
       }}
       onMouseEnter={() => setCollapsed(false)}
-      onMouseLeave={() => setCollapsed(true)}
+      onMouseLeave={() => {
+        setCollapsed(true);
+        setDashboardOpen(false); // Close dashboard dropdown on collapse
+      }}
     >
       {/* Top Section: Logos and Dashboard */}
       <Box>
@@ -157,9 +173,30 @@ function SideBar({ collapsed: collapsedProp = false }) {
             )}
           </div>
         </Box>
-        {/* Dashboard Button */}
+        {/* Dashboard Dropdown */}
         <Box sx={{ px: collapsed ? 1 : 3, mb: 2, mt: 2, transition: "padding 0.3s" }}>
-          <Link to="/dashboard" style={{ textDecoration: "none" }}>
+          <Box
+            sx={{
+              position: "relative",
+              width: "100%",
+              height: 40,
+            }}
+            onMouseEnter={() => {
+              if (!collapsed && !isMobile) {
+                clearTimeout(window.__dashboardDropdownTimeout);
+                setDashboardHover(true);
+                setDashboardOpen(true);
+              }
+            }}
+            onMouseLeave={() => {
+              if (!collapsed && !isMobile) {
+                window.__dashboardDropdownTimeout = setTimeout(() => {
+                  setDashboardHover(false);
+                  setDashboardOpen(false);
+                }, 180);
+              }
+            }}
+          >
             <Button
               fullWidth
               variant="contained"
@@ -170,20 +207,29 @@ function SideBar({ collapsed: collapsedProp = false }) {
                 height: 40,
                 fontWeight: 600,
                 fontSize: collapsed ? 0 : 16,
-                justifyContent: "center",
-                textAlign: "center",
-                pl: 0,
                 minWidth: 0,
                 borderLeft: location.pathname.startsWith("/dashboard") && !collapsed ? "6px solid #182959" : "6px solid transparent",
                 boxShadow: collapsed ? "none" : undefined,
                 "&:hover": { bgcolor: collapsed ? "transparent" : "#162a52" },
                 display: "flex",
                 alignItems: "center",
-                gap: 1.5,
+                justifyContent: "center",
+                position: "relative",
                 transition: "font-size 0.35s cubic-bezier(.4,0,.2,1), background 0.2s",
                 p: 0,
                 ...(collapsed && { justifyContent: "center", alignItems: "center" }),
+                overflow: "visible",
               }}
+              onClick={() => {
+                if (isMobile) {
+                  setDashboardOpen(true);
+                } else if (!collapsed) {
+                  setDashboardOpen((open) => !open);
+                } else {
+                  handleDashboardClick();
+                }
+              }}
+              disableRipple
             >
               {collapsed ? (
                 <img
@@ -195,15 +241,241 @@ function SideBar({ collapsed: collapsedProp = false }) {
                     display: "block",
                     margin: "0 auto",
                     filter:
-                      // This filter makes the icon #182959 (dark blue)
                       "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)",
                   }}
                 />
               ) : (
-                "DASHBOARD"
+                <>
+                  <span
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      textAlign: "center",
+                      transition: "transform 0.25s cubic-bezier(.4,0,.2,1)",
+                      transform: dashboardHover ? "translateX(-16px)" : "translateX(0)",
+                    }}
+                  >
+                    DASHBOARD
+                  </span>
+                  <span
+                    style={{
+                      position: "absolute",
+                      right: 24,
+                      top: "50%",
+                      transform: dashboardHover
+                        ? `translateY(-50%) translateX(0) rotate(${dashboardOpen ? 180 : 0}deg)`
+                        : "translateY(-50%) translateX(16px) rotate(0deg)",
+                      opacity: dashboardHover ? 1 : 0,
+                      transition: "opacity 0.25s, transform 0.25s cubic-bezier(.4,0,.2,1)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <img
+                      src={DropDownIcon}
+                      alt="Expand"
+                      style={{
+                        width: 22,
+                        height: 22,
+                        transition: "filter 0.2s",
+                        filter: dashboardOpen
+                          ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                          : undefined,
+                      }}
+                    />
+                  </span>
+                </>
               )}
             </Button>
-          </Link>
+            {/* Dashboard Dropdown Menu (Desktop) */}
+            {!collapsed && !isMobile && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: 44,
+                  zIndex: 200,
+                  bgcolor: "#fff",
+                  boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)",
+                  borderRadius: 2,
+                  border: "1px solid #e0e0e0",
+                  overflow: "hidden",
+                  opacity: dashboardOpen ? 1 : 0,
+                  pointerEvents: dashboardOpen ? "auto" : "none",
+                  transform: dashboardOpen ? "translateY(0)" : "translateY(-10px)",
+                  transition: "opacity 0.25s cubic-bezier(.4,0,.2,1), transform 0.25s cubic-bezier(.4,0,.2,1)",
+                }}
+                // --- Improved dropdown hover handling with timers ---
+                onMouseEnter={() => {
+                  clearTimeout(window.__dashboardDropdownTimeout);
+                  setDashboardHover(true);
+                  setDashboardOpen(true);
+                }}
+                onMouseLeave={() => {
+                  window.__dashboardDropdownTimeout = setTimeout(() => {
+                    setDashboardHover(false);
+                    setDashboardOpen(false);
+                  }, 180);
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                  }}
+                >
+                  <Button
+                    sx={{
+                      justifyContent: "flex-start",
+                      color: location.pathname.startsWith("/dashboard") ? "#fff" : "#1a3365",
+                      bgcolor: location.pathname.startsWith("/dashboard") ? "#182959" : "transparent",
+                      fontWeight: location.pathname.startsWith("/dashboard") ? 700 : 400,
+                      fontSize: 16,
+                      px: 3,
+                      py: 1.5,
+                      borderRadius: 0,
+                      borderBottom: "1px solid #eee",
+                      textTransform: "none",
+                      transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                      "&:hover": {
+                        bgcolor: "#182959",
+                        color: "#fff",
+                        fontWeight: 700,
+                      },
+                    }}
+                    onClick={() => {
+                      setDashboardOpen(false);
+                      handleDashboardClick();
+                    }}
+                  >
+                    Dashboard
+                  </Button>
+                  <Button
+                    sx={{
+                      justifyContent: "flex-start",
+                      color: location.pathname.startsWith("/repository") ? "#fff" : "#1a3365",
+                      bgcolor: location.pathname.startsWith("/repository") ? "#182959" : "transparent",
+                      fontWeight: location.pathname.startsWith("/repository") ? 700 : 400,
+                      fontSize: 16,
+                      px: 3,
+                      py: 1.5,
+                      borderRadius: 0,
+                      textTransform: "none",
+                      transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                      "&:hover": {
+                        bgcolor: "#182959",
+                        color: "#fff",
+                        fontWeight: 700,
+                      },
+                    }}
+                    onClick={() => {
+                      setDashboardOpen(false);
+                      navigate("/repository");
+                    }}
+                  >
+                    Repository
+                  </Button>
+                </Box>
+              </Box>
+            )}
+            {/* Dashboard Dropdown Menu (Mobile) */}
+            {isMobile && (
+              <Dialog
+                open={dashboardOpen}
+                onClose={() => setDashboardOpen(false)}
+                fullWidth
+                PaperProps={{
+                  sx: {
+                    position: "fixed",
+                    bottom: 0,
+                    m: 0,
+                    borderRadius: "16px 16px 0 0",
+                    width: "100%",
+                    maxWidth: "100vw",
+                  },
+                }}
+                sx={{
+                  zIndex: 2000,
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    p: 2,
+                    gap: 1,
+                    textAlign: "center", // Center text for all children
+                  }}
+                >
+                  <Button
+                    sx={{
+                      justifyContent: "center", // Center button text
+                      color: location.pathname.startsWith("/dashboard") ? "#fff" : "#1a3365",
+                      bgcolor: location.pathname.startsWith("/dashboard") ? "#182959" : "transparent",
+                      fontWeight: location.pathname.startsWith("/dashboard") ? 700 : 400,
+                      fontSize: 18,
+                      px: 2,
+                      py: 1.5,
+                      borderRadius: 2,
+                      textTransform: "none",
+                      transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                      "&:hover": {
+                        bgcolor: "#182959",
+                        color: "#fff",
+                        fontWeight: 700,
+                      },
+                    }}
+                    onClick={() => {
+                      setDashboardOpen(false);
+                      handleDashboardClick();
+                    }}
+                  >
+                    Dashboard
+                  </Button>
+                  <Button
+                    sx={{
+                      justifyContent: "center", // Center button text
+                      color: location.pathname.startsWith("/repository") ? "#fff" : "#1a3365",
+                      bgcolor: location.pathname.startsWith("/repository") ? "#182959" : "transparent",
+                      fontWeight: location.pathname.startsWith("/repository") ? 700 : 400,
+                      fontSize: 18,
+                      px: 2,
+                      py: 1.5,
+                      borderRadius: 2,
+                      textTransform: "none",
+                      transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                      "&:hover": {
+                        bgcolor: "#182959",
+                        color: "#fff",
+                        fontWeight: 700,
+                      },
+                    }}
+                    onClick={() => {
+                      setDashboardOpen(false);
+                      navigate("/repository");
+                    }}
+                  >
+                    Repository
+                  </Button>
+                  <Button
+                    sx={{
+                      mt: 1,
+                      color: "#1a3365",
+                      fontWeight: 400,
+                      fontSize: 16,
+                      textTransform: "none",
+                      justifyContent: "center", // Center button text
+                    }}
+                    onClick={() => setDashboardOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              </Dialog>
+            )}
+          </Box>
         </Box>
         {/* Navigation Items */}
         <Box>

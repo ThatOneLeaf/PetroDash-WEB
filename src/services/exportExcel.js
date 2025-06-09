@@ -1,131 +1,64 @@
-import ExcelJS from "exceljs";
+import * as XLSX from "xlsx";
 
 async function exportExcelMultiSheet(finalFilteredData, title) {
   try {
     console.log('Export data received:', finalFilteredData);
 
-    const workbook = new ExcelJS.Workbook();
-
     const safeTitle = (title || 'report')
-  .replace(/[^a-zA-Z0-9-_]/g, '-') // Replace non-alphanum with underscores
-  .substring(0, 30); // Limit to 30 chars
+      .replace(/[^a-zA-Z0-9-_]/g, '-') // Replace non-alphanum with dashes
+      .substring(0, 30); // Limit to 30 chars
 
-    // Add basic workbook properties
-    workbook.creator = 'Data Export Tool';
-    workbook.created = new Date();
-
-    const applyHeaderStyle = (headerRow) => {
-      headerRow.eachCell((cell) => {
-        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF4472C4' }
-        };
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      });
-    };
+    let wb = XLSX.utils.book_new();
 
     if (finalFilteredData.type === 'ungrouped') {
       // Single sheet for ungrouped data
-      const sheet = workbook.addWorksheet('Data');
-
-      // Add headers
       const headers = finalFilteredData.columns.map(col => col.label || col.key);
-      const headerRow = sheet.addRow(headers);
-      applyHeaderStyle(headerRow);
-
-      // Add data rows
-      finalFilteredData.data.forEach((row, rowIndex) => {
-        try {
-          const rowData = finalFilteredData.columns.map(col => {
-            let value = row[col.key];
-
-            // Sanitize value
-            if (value === null || value === undefined) {
-              return '';
-            }
-            if (typeof value === 'object') {
-              return JSON.stringify(value);
-            }
-            if (typeof value === 'boolean') {
-              return value.toString();
-            }
-            return value;
-          });
-
-          sheet.addRow(rowData);
-        } catch (error) {
-          console.warn(`Error adding row ${rowIndex}:`, error);
-        }
-      });
-
+      const dataRows = finalFilteredData.data.map(row =>
+        finalFilteredData.columns.map(col => {
+          let value = row[col.key];
+          if (value === null || value === undefined) return '';
+          if (typeof value === 'object') return JSON.stringify(value);
+          if (typeof value === 'boolean') return value.toString();
+          return value;
+        })
+      );
+      const wsData = [headers, ...dataRows];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, "Data");
     } else if (finalFilteredData.type === 'grouped') {
       // Multiple sheets for grouped data
       Object.entries(finalFilteredData.data).forEach(([groupKey, groupData]) => {
-        try {
-          let sheetName = String(groupKey)
-            .replace(/[\\\/\?\*\[\]:]/g, '_') // Replace invalid chars
-            .substring(0, 31);
-
-          if (!sheetName || sheetName.trim() === '') {
-            sheetName = 'Sheet_' + Math.random().toString(36).substr(2, 5);
-          }
-
-          const sheet = workbook.addWorksheet(sheetName);
-
-          // Add headers
-          const headers = finalFilteredData.columns.map(col => col.label || col.key);
-          const headerRow = sheet.addRow(headers);
-          applyHeaderStyle(headerRow);
-
-          // Add data rows for this group
-          if (groupData.items && Array.isArray(groupData.items)) {
-            groupData.items.forEach((row, rowIndex) => {
-              try {
-                const rowData = finalFilteredData.columns.map(col => {
-                  let value = row[col.key];
-
-                  // Sanitize value
-                  if (value === null || value === undefined) {
-                    return '';
-                  }
-                  if (typeof value === 'object') {
-                    return JSON.stringify(value);
-                  }
-                  if (typeof value === 'boolean') {
-                    return value.toString();
-                  }
-                  return value;
-                });
-
-                sheet.addRow(rowData);
-              } catch (error) {
-                console.warn(`Error adding row ${rowIndex} to sheet ${sheetName}:`, error);
-              }
-            });
-          }
-        } catch (error) {
-          console.warn(`Error creating sheet for group ${groupKey}:`, error);
+        let sheetName = String(groupKey)
+          .replace(/[\\\/\?\*\[\]:]/g, '_')
+          .substring(0, 31);
+        if (!sheetName || sheetName.trim() === '') {
+          sheetName = 'Sheet_' + Math.random().toString(36).substr(2, 5);
         }
+        const headers = finalFilteredData.columns.map(col => col.label || col.key);
+        const dataRows = (groupData.items || []).map(row =>
+          finalFilteredData.columns.map(col => {
+            let value = row[col.key];
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'object') return JSON.stringify(value);
+            if (typeof value === 'boolean') return value.toString();
+            return value;
+          })
+        );
+        const wsData = [headers, ...dataRows];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
       });
     }
 
-    // Ensure we have at least one worksheet
-    if (workbook.worksheets.length === 0) {
-      const emptySheet = workbook.addWorksheet('Empty');
-      emptySheet.addRow(['No data to export']);
+    // Ensure at least one worksheet
+    if (wb.SheetNames.length === 0) {
+      const ws = XLSX.utils.aoa_to_sheet([['No data to export']]);
+      XLSX.utils.book_append_sheet(wb, ws, "Empty");
     }
 
-    const buffer = await workbook.xlsx.writeBuffer();
-
-    const blob = new Blob([buffer], {
+    // Write workbook to blob and trigger download
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([wbout], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
 
@@ -141,13 +74,12 @@ async function exportExcelMultiSheet(finalFilteredData, title) {
       window.URL.revokeObjectURL(url);
     }, 1000);
 
-
   } catch (error) {
     console.error("Excel export failed:", error);
     console.error("Error stack:", error.stack);
 
     try {
-      createCSVFallback(finalFilteredData);
+      createCSVFallback(finalFilteredData, title);
     } catch (csvError) {
       console.error("CSV fallback also failed:", csvError);
       alert("Export failed. Please check the console for details.");
@@ -155,7 +87,7 @@ async function exportExcelMultiSheet(finalFilteredData, title) {
   }
 }
 
-function createCSVFallback(finalFilteredData) {
+function createCSVFallback(finalFilteredData, title) {
   let csvContent = '';
 
   if (finalFilteredData.type === 'ungrouped') {
@@ -194,6 +126,11 @@ function createCSVFallback(finalFilteredData) {
     });
   }
 
+  // Add safeTitle logic for fallback
+  const safeTitle = (title || 'report')
+    .replace(/[^a-zA-Z0-9-_]/g, '-')
+    .substring(0, 30);
+
   const blob = new Blob([csvContent], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -203,7 +140,6 @@ function createCSVFallback(finalFilteredData) {
   a.click();
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
-
 }
 
 export default exportExcelMultiSheet;
