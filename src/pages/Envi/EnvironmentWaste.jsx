@@ -22,15 +22,15 @@ import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
-import AddWasteHazardGenModal from '../../envi_components/AddWasteHazardGenModal';
-import AddWasteHazardDisModal from '../../envi_components/AddWasteHazardDisModal';
-import AddWasteNonHazGenModal from '../../envi_components/AddWasteNonHazGenModal';
+import AddWasteHazardGenModal from '../../components/envi_components/AddWasteHazardGenModal';
+import AddWasteHazardDisModal from '../../components/envi_components/AddWasteHazardDisModal';
+import AddWasteNonHazGenModal from '../../components/envi_components/AddWasteNonHazGenModal';
 import ImportFileModal from '../../components/ImportFileModal';
 import CustomTable from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
-import ViewEditRecordModal from '../../components/ViewEditRecordModal';
+import ViewEditRecordModal from '../../components/envi_components/ViewEditEnviModal';
 
 function EnvironmentWaste() {
   const [data, setData] = useState([]);
