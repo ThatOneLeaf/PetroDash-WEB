@@ -2,7 +2,6 @@ import * as XLSX from "xlsx";
 
 async function exportExcelMultiSheet(finalFilteredData, title) {
   try {
-    console.log('Export data received:', finalFilteredData);
 
     const safeTitle = (title || 'report')
       .replace(/[^a-zA-Z0-9-_]/g, '-') // Replace non-alphanum with dashes
