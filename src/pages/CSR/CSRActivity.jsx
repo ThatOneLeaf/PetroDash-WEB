@@ -19,9 +19,9 @@ import AddRecordModalHelp from '../../components/help_components/AddRecordModalH
 import ImportModalHelp from '../../components/help_components/ImportModalHelp';
 import Overlay from '../../components/modal'; 
 import api from '../../services/api';
-import ViewEditRecordModal from '../../components/ViewEditRecordModal'; 
+import ViewHelpRecordModal from '../../components/help_components/ViewHelpRecordModal'; 
 
-const CSR_API_PATH = '/help/activities'; 
+
 
 function CSR() {  
   const [data, setData] = useState([]);
@@ -48,7 +48,7 @@ function CSR() {
   const fetchCSRData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get(CSR_API_PATH); // <-- use variable
+      const response = await api.get('help/activities'); // <-- use variable
       setData(response.data);
     } catch (error) {
       // Debugging notes for API error
@@ -211,7 +211,7 @@ function CSR() {
   // Memoize columns to avoid hook order issues
   const columns = useMemo(() => [
     { key: 'projectYear', label: 'Year', width: 80, align: 'center', render: val => val },
-    { key: 'companyId', label: 'Company', width: 120, render: val => val },
+    { key: 'companyName', label: 'Company', width: 120, render: val => val },
     { key: 'programName', label: 'Program', width: 140, render: val => val },
     { key: 'projectName', label: 'Project', width: 140, render: val => val },
     { key: 'csrReport', label: 'Beneficiaries', width: 120, align: 'right', render: val => val != null ? Number(val).toLocaleString() : '-' },
@@ -230,7 +230,7 @@ function CSR() {
     }
   ], [setSelectedRecord]);
 
-  const getUpdatePath = useCallback((record) => `${CSR_API_PATH}/${record.projectId}`, []); // <-- use variable
+//const getUpdatePath = useCallback((record) => `${'/activities-update'}/${record.projectId}`, []); // <-- use variable
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -404,16 +404,16 @@ function CSR() {
           <Overlay onClose={() => setIsAddModalOpen(false)}>
             <AddRecordModalHelp
               key={modalKey}
-              open={isAddModalOpen}
               onClose={() => setIsAddModalOpen(false)}
               onAdd={() => {
+                // Only refresh data and close modal, do NOT expect any argument from onAdd
+                setIsAddModalOpen(false);
                 fetchCSRData();
               }}
               yearOptions={modalYearOptions}
               companyOptions={modalCompanyOptions}
               programOptions={modalProgramOptions}
               projectOptions={modalProjectOptions}
-              apiPath={CSR_API_PATH} // <-- use variable
             />
           </Overlay>
         )}
@@ -424,46 +424,21 @@ function CSR() {
               open={isImportModalOpen}
               onClose={() => setIsImportModalOpen(false)}
               onImportSuccess={fetchCSRData}
-              apiPath={CSR_API_PATH} // <-- use variable
             />
           </Overlay>
         )}
         {/* View/Edit Record Modal */}
         {selectedRecord && (
           <Overlay onClose={() => setSelectedRecord(null)}>
-            <ViewEditRecordModal
-              source="" // Ensures PATCH is used
-              table="CSR"
+            <ViewHelpRecordModal
               title="CSR Activity Details"
               record={selectedRecord}
-              updatePath={getUpdatePath(selectedRecord)}
-              status={(data, error) => {
-                if (error) {
-                  // Debug message for update API error
-                  console.error('Error updating CSR activity:', error);
-                  if (error.response) {
-                    console.error('Update API Response Error:', {
-                      status: error.response.status,
-                      data: error.response.data,
-                      headers: error.response.headers,
-                    });
-                  } else if (error.request) {
-                    console.error('Update API No Response:', error.request);
-                  } else {
-                    console.error('Update API Setup Error:', error.message);
-                  }
-                }
-                if (!data) {
-                  fetchCSRData();
-                }
+              onClose={() => setSelectedRecord(null)}
+              onSave={async (updatedRecord) => {
+                // Optionally refresh data after save
+                fetchCSRData();
                 setSelectedRecord(null);
               }}
-              onClose={() => setSelectedRecord(null)}
-              companyOptions={modalCompanyOptions}
-              programOptions={modalProgramOptions}
-              projectOptions={modalProjectOptions}
-              statusOptions={statusIdOptions}
-              apiPath={CSR_API_PATH}
             />
           </Overlay>
         )}
