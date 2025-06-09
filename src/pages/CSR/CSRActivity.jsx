@@ -19,7 +19,6 @@ import AddRecordModalHelp from '../../components/help_components/AddRecordModalH
 import ImportModalHelp from '../../components/help_components/ImportModalHelp';
 import Overlay from '../../components/modal'; 
 import api from '../../services/api';
-import ViewEditRecordModal from '../../components/ViewEditRecordModal'; 
 
 const CSR_API_PATH = '/help/activities'; 
 
