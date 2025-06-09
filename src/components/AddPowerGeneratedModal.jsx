@@ -15,17 +15,17 @@ import dayjs from 'dayjs';
 import api from '../services/api';
 import FormModal from './FormModal';
 
-// AddEnergyGenerationModal: Modal for adding daily power generation records
 function AddEnergyGenerationModal({ onClose, powerPlants }) {
   // Form state
   const [formData, setFormData] = useState({
     powerPlant: powerPlants?.[0]?.power_plant_id || '',
     date: dayjs(),
     energyGenerated: '',
-    metric: 'kWh'
+    metric: 'kWh',
+    remarks: '' 
   });
 
-  // Handle input changes for form fields
+  // Handle input changes
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({
       ...prev,
@@ -33,7 +33,6 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
     }));
   };
 
-  // Handle date picker change
   const handleDateChange = (newDate) => {
     setFormData((prev) => ({
       ...prev,
@@ -41,32 +40,40 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
     }));
   };
 
-  // Submit form data to API
   const handleSubmit = async () => {
-    const submissionData = {
-      ...formData,
-      date: formData.date.format('YYYY-MM-DD')
-    };
+  if (!formData.energyGenerated || isNaN(formData.energyGenerated)) {
+    alert('Please enter a valid energy generated value.');
+    return;
+  }
 
-    const form = new FormData();
-    form.append('powerPlant', submissionData.powerPlant);
-    form.append('date', submissionData.date);
-    form.append('energyGenerated', submissionData.energyGenerated);
-    form.append('metric', submissionData.metric);
-    form.append('checker', '01JW5F4N9M7E9RG9MW3VX49ES5');
-
-    try {
-      await api.post('/energy/add_energy_record', form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      onClose();
-    } catch (error) {
-      // Log error for debugging
-      console.error('Submission error:', error.response?.data || error.message);
-    }
+  const submissionData = {
+    ...formData,
+    date: formData.date.format('YYYY-MM-DD'),
   };
 
-  // Metric units for dropdown
+  const form = new FormData();
+  form.append('powerPlant', submissionData.powerPlant);
+  form.append('date', submissionData.date);
+  form.append('energyGenerated', submissionData.energyGenerated);
+  form.append('metric', submissionData.metric);
+  form.append('remarks', submissionData.remarks);
+  form.append('checker', '01JW5F4N9M7E9RG9MW3VX49ES5');
+
+  try {
+    await api.post('/energy/add_energy_record', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    onClose();
+  } catch (error) {
+        alert(
+      `Error submitting the form: ${
+        error.message ||error.response?.data?.message ||  'Unknown error'
+      }`
+    );
+  }
+};
+
+
   const metricUnits = ['kWh', 'MWh', 'GWh'];
 
   return (
@@ -74,21 +81,36 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
       title="ADD NEW RECORD"
       subtitle="Daily Power Generation"
       actions={
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          sx={{
-            backgroundColor: '#2B8C37',
-            borderRadius: '999px',
-            px: 3,
-            py: 1,
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            '&:hover': { backgroundColor: '#256d2f' },
-          }}
-        >
-          ADD RECORD
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            sx={{
+              borderRadius: '999px',
+              px: 3,
+              py: 1,
+              fontSize: '1rem',
+              fontWeight: 'bold',
+            }}
+          >
+            CANCEL
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            sx={{
+              backgroundColor: '#2B8C37',
+              borderRadius: '999px',
+              px: 3,
+              py: 1,
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              '&:hover': { backgroundColor: '#256d2f' },
+            }}
+          >
+            ADD RECORD
+          </Button>
+        </Box>
       }
     >
       {/* Power Plant Selector */}
@@ -131,6 +153,8 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
           type="number"
           size="medium"
           fullWidth
+          required
+          helperText={!formData.energyGenerated ? 'Required field' : ''}
         />
         <FormControl fullWidth>
           <InputLabel id="metric-label">Metric Unit</InputLabel>
@@ -149,8 +173,21 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
           </Select>
         </FormControl>
       </Box>
+
+      {/* Remarks Field */}
+      <TextField
+        label="Remarks (optional)"
+        value={formData.remarks}
+        onChange={handleChange('remarks')}
+        multiline
+        rows={3}
+        fullWidth
+        margin="normal"
+        size="medium"
+      />
     </FormModal>
   );
 }
 
 export default AddEnergyGenerationModal;
+

@@ -9,6 +9,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -24,8 +28,9 @@ const ViewEditEnergyModal = ({
   companyName,
   onClose,
   updatePath,
-  status,          // string status (e.g., "head_approved")
-  updateStatus,    // optional: function to update parent status
+  status,
+  remarks,
+  updateStatus,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [record, setRecord] = useState(null);
@@ -33,7 +38,11 @@ const ViewEditEnergyModal = ({
   const [loading, setLoading] = useState(false);
   const [powerPlants, setPowerPlants] = useState([]);
 
-  const isReadOnly = status === 'APP';
+  // Reject Dialog state
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectRemarks, setRejectRemarks] = useState('');
+
+  const isReadOnly = status === 'Approved';
   const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
 
   useEffect(() => {
@@ -71,11 +80,6 @@ const ViewEditEnergyModal = ({
     fetchRecord();
   }, [energyId, powerplantId]);
 
-  // ✅ Debug log for status
-useEffect(() => {
-  console.log('Received status:', status);
-}, [status]);
-
   const handleChange = (key, value) => {
     let newValue = value;
     if (key === 'energy_generated') {
@@ -85,18 +89,93 @@ useEffect(() => {
     setEditedRecord((prev) => ({ ...prev, [key]: newValue }));
   };
 
-  const handleSave = async () => {
-    try {
-      const response = await api.post(`${updatePath}`, editedRecord);
-      alert(response.data.message);
-      setIsEditing(false);
-      if (updateStatus) updateStatus(true);
-      setRecord(editedRecord);
-    } catch (error) {
-      const msg = error.response?.data?.detail || error.message;
-      alert(`Failed to save: ${msg}`);
-    }
-  };
+ const handleSave = async () => {
+  if (isUnchanged) {
+    alert('No changes to save.');
+    setIsEditing(false);
+    return;
+  }
+
+  const confirmed = window.confirm('Are you sure you want to save the changes?');
+  if (!confirmed) return;
+
+  try {
+    const formData = new FormData();
+    // Append all fields from editedRecord to formData
+    Object.entries(editedRecord).forEach(([key, value]) => {
+      // If value is null or undefined, skip it
+      if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
+    });
+
+    const response = await api.post(updatePath, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    alert(response.data.message);
+    setIsEditing(false);
+    if (updateStatus) updateStatus(true);
+    setRecord(editedRecord);
+  } catch (error) {
+    const msg = error.response?.data?.detail || error.message;
+    alert(`Failed to save: ${msg}`);
+  }
+};
+
+const handleApprove = async () => {
+  const confirm = window.confirm('Are you sure you want to approve this record?');
+  if (!confirm) return;
+
+  try {
+    const formData = new FormData();
+    formData.append('energy_id', energyId);
+    formData.append('checker_id', '01JW5F4N9M7E9RG9MW3VX49ES5');
+    formData.append('remarks', '');  // Required by backend
+    formData.append('action', 'approve');
+
+    const response = await api.post('/energy/update_status', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    alert(response.data.message || 'Record approved successfully.');
+    if (updateStatus) updateStatus('APP');
+    onClose();  // CLOSE MODAL HERE
+  } catch (error) {
+    const msg = error.response?.data?.detail || error.message;
+    alert(`Failed to approve: ${msg}`);
+  }
+};
+
+const handleRejectConfirm = async () => {
+  if (!rejectRemarks.trim()) {
+    alert('Please enter remarks before rejecting.');
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('energy_id', energyId);
+    formData.append('checker_id', '01JW5F4N9M7E9RG9MW3VX49ES5');
+    formData.append('remarks', rejectRemarks);
+    formData.append('action', 'revise');
+
+    const response = await api.post('/energy/update_status', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    alert(response.data.message || 'Record rejected successfully.');
+    if (updateStatus) updateStatus('REJ');
+    setRejectDialogOpen(false);
+    onClose();  // CLOSE MODAL HERE
+  } catch (error) {
+    const msg = error.response?.data?.detail || error.message;
+    alert(`Failed to reject: ${msg}`);
+  }
+};
+
+
 
   if (loading) {
     return (
@@ -123,140 +202,204 @@ useEffect(() => {
     return '';
   })();
 
+  const handleCloseClick = () => {
+  if (isEditing && !isUnchanged) {
+    const confirmClose = window.confirm('You have unsaved changes. Close anyway?');
+    if (!confirmClose) return;
+  }
+  if (updateStatus) updateStatus(isUnchanged);
+  onClose();
+};
+
+
   return (
-    <Paper sx={{ p: 4, width: 600, borderRadius: 2 }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 3 }}>
-        <Typography sx={{ fontSize: '0.85rem', fontWeight: 800 }}>
-          {isEditing ? 'EDIT RECORD' : 'VIEW RECORD'}
-        </Typography>
-        <Typography sx={{ fontSize: '1.75rem', color: '#182959', fontWeight: 800 }}>
-          {title}
-        </Typography>
-      </Box>
-
-      {isReadOnly && (
-        <Typography variant="caption" color="error" sx={{ mb: 2 }}>
-          This record has been approved and cannot be edited.
-        </Typography>
-      )}
-
-      {companyName && (
-        <Box
-          display="flex"
-          alignItems="center"
-          mb={3}
-          p={1}
-          borderRadius={1}
-          bgcolor="grey.100"
-          sx={{ maxWidth: 400 }}
+    <>
+      <Paper sx={{ p: 4, width: 600, borderRadius: 2, position: 'relative' }}>
+        {/* Close Button - Top Right */}
+        <Button
+          onClick={() => {handleCloseClick()}}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            minWidth: 'auto',
+            padding: 0,
+            color: 'grey.600',
+          }}
         >
-          <BusinessIcon color="primary" sx={{ mr: 1 }} />
-          <Typography variant="body1" color="text.secondary" fontWeight={500} noWrap title={companyName}>
-            {companyName}
+          ✕
+        </Button>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 3 }}>
+          <Typography sx={{ fontSize: '0.85rem', fontWeight: 800 }}>
+            {isEditing ? 'EDIT RECORD' : 'VIEW RECORD'}
+          </Typography>
+          <Typography sx={{ fontSize: '1.75rem', color: '#182959', fontWeight: 800 }}>
+            {title}
           </Typography>
         </Box>
-      )}
 
-      <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-        <FormControl fullWidth sx={{ gridColumn: '1 / -1' }}>
-          <InputLabel>Power Plant</InputLabel>
-          <Select
-            value={editedRecord.power_plant_id || ''}
-            onChange={(e) => handleChange('power_plant_id', e.target.value)}
-            disabled={!isEditing || isReadOnly}
-            label="Power Plant"
-          >
-            {powerPlants.length > 0 ? (
-              powerPlants.map((pp) => (
-                <MenuItem key={pp.power_plant_id} value={pp.power_plant_id}>
-                  {pp.site_name}
+
+        {companyName && (
+          <Box display="flex" alignItems="center" mb={3} p={1} borderRadius={1} bgcolor="grey.100" sx={{ maxWidth: 400 }}>
+            <BusinessIcon color="primary" sx={{ mr: 1 }} />
+            <Typography variant="body1" color="text.secondary" fontWeight={500} noWrap title={companyName}>
+              {companyName}
+            </Typography>
+          </Box>
+        )}
+        {/* Status and Remarks Display */}
+        <Box mb={2} width="100%">
+          <Typography variant="body2" fontWeight={600}>
+            Status: <span style={{ color: status === 'APP' ? 'green' : status === 'REJ' ? 'red' : '#555' }}>{status || 'PENDING'}</span>
+          </Typography>
+          {remarks && (
+            <Box mt={1} p={1} bgcolor="grey.100" borderRadius={1}>
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                Remarks:
+              </Typography>
+              <Typography variant="body2" color="text.primary">
+                {remarks}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+          <FormControl fullWidth sx={{ gridColumn: '1 / -1' }}>
+            <InputLabel>Power Project</InputLabel>
+            <Select
+              value={editedRecord.power_plant_id || ''}
+              onChange={(e) => handleChange('power_plant_id', e.target.value)}
+              disabled={!isEditing || isReadOnly}
+              label="Power Plant"
+            >
+              {powerPlants.length > 0 ? (
+                powerPlants.map((pp) => (
+                  <MenuItem key={pp.power_plant_id} value={pp.power_plant_id}>
+                    {pp.site_name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem value={editedRecord.power_plant_id || ''}>
+                  {editedRecord.power_plant_id || 'N/A'}
                 </MenuItem>
-              ))
-            ) : (
-              <MenuItem value={editedRecord.power_plant_id || ''}>
-                {editedRecord.power_plant_id || 'N/A'}
-              </MenuItem>
-            )}
-          </Select>
-        </FormControl>
+              )}
+            </Select>
+          </FormControl>
 
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <DatePicker
-            label="Date"
-            value={editedRecord.datetime ? new Date(editedRecord.datetime) : null}
-            onChange={(newDate) => {
-              const dateStr = newDate?.toISOString().split('T')[0];
-              handleChange('datetime', dateStr);
-            }}
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="Date"
+              value={editedRecord.datetime ? new Date(editedRecord.datetime) : null}
+              onChange={(newDate) => {
+                const dateStr = newDate?.toISOString().split('T')[0];
+                handleChange('datetime', dateStr);
+              }}
+              disabled={!isEditing || isReadOnly}
+              enableAccessibleFieldDOMStructure={false}
+              sx={{ gridColumn: '1 / -1' }}
+              slots={{ textField: TextField }}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                },
+              }}
+            />
+
+          </LocalizationProvider>
+
+
+          <TextField
+            label="Energy Generated"
+            type="number"
+            value={editedRecord.energy_generated !== undefined ? editedRecord.energy_generated : ''}
+            onChange={(e) => handleChange('energy_generated', e.target.value)}
+            fullWidth
             disabled={!isEditing || isReadOnly}
-            enableAccessibleFieldDOMStructure={false}
-            slots={{ textField: TextField }}
-            slotProps={{ textField: { fullWidth: true, sx: { gridColumn: '1 / -1' } } }}
-            sx={{ gridColumn: '1 / -1' }}
           />
-        </LocalizationProvider>
 
-        <TextField
-          label="Energy Generated"
-          type="number"
-          value={editedRecord.energy_generated !== undefined ? editedRecord.energy_generated : ''}
-          onChange={(e) => handleChange('energy_generated', e.target.value)}
-          fullWidth
-          disabled={!isEditing || isReadOnly}
-        />
+          <FormControl fullWidth>
+            <InputLabel>Unit</InputLabel>
+            <Select
+              value={normalizedUnit}
+              onChange={(e) => handleChange('unit_of_measurement', e.target.value)}
+              disabled={!isEditing || isReadOnly}
+              label="Unit"
+            >
+              <MenuItem value="kWh">kWh</MenuItem>
+              <MenuItem value="GWh">GWh</MenuItem>
+              <MenuItem value="mWh">mWh</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
-        <FormControl fullWidth>
-          <InputLabel>Unit</InputLabel>
-          <Select
-            value={normalizedUnit}
-            onChange={(e) => handleChange('unit_of_measurement', e.target.value)}
-            disabled={!isEditing || isReadOnly}
-            label="Unit"
-          >
-            <MenuItem value="kWh">kWh</MenuItem>
-            <MenuItem value="GWh">GWh</MenuItem>
-            <MenuItem value="mWh">mWh</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mt={4}>
+  {/* Left: Save/Edit */}
+  <Box display="flex" gap={1}>
+    <Button
+      startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
+      onClick={async () => {
+        if (isReadOnly) return;
+        if (isEditing) {
+          if (!isUnchanged) {
+            await handleSave();  // await the async save to complete
+          } else {
+            alert('No changes made.');
+            setIsEditing(false);
+          }
+        } else {
+          setIsEditing(true);
+        }
+      }}
 
-      <Box display="flex" justifyContent="space-between" mt={4}>
-        <Button
-          startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-          onClick={() => {
-            if (isReadOnly) return;
-            if (isEditing) {
-              if (!isUnchanged) {
-                handleSave();
-              } else {
-                alert('No changes made.');
-                setIsEditing(false);
-              }
-            } else {
-              setIsEditing(true);
-            }
-          }}
-          disabled={isReadOnly}
-        >
-          {isEditing ? 'Save' : 'Edit'}
-        </Button>
+      disabled={isReadOnly}
+    >
+      {isEditing ? 'Save' : 'Edit'}
+    </Button>
+  </Box>
 
-        <Button
-          variant="contained"
-          color="success"
-          onClick={() => {
-            if (isEditing && !isUnchanged) {
-              const confirmClose = window.confirm('You have unsaved changes. Close anyway?');
-              if (!confirmClose) return;
-            }
-            if (updateStatus) updateStatus(isUnchanged);
-            onClose();
-          }}
-        >
-          Close
-        </Button>
-      </Box>
-    </Paper>
+  {/* Right: Approve/Reject */}
+  {!isReadOnly && (
+    <Box display="flex" gap={1}>
+      <Button variant="outlined" color="success" onClick={handleApprove}>
+        Approve
+      </Button>
+      <Button variant="outlined" color="error" onClick={() => setRejectDialogOpen(true)}>
+        Revise
+      </Button>
+    </Box>
+  )}
+  
+        {isReadOnly && (
+          <Typography variant="caption" color="error" >
+            This record has been approved and cannot be edited.
+          </Typography>
+        )}
+</Box>
+
+      </Paper>
+
+      {/* Reject Remarks Dialog */}
+      <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Request to Revise Record</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Remarks"
+            multiline
+            fullWidth
+            rows={4}
+            value={rejectRemarks}
+            onChange={(e) => setRejectRemarks(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleRejectConfirm} variant="contained" color="error">
+            Confirm Revision Request
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

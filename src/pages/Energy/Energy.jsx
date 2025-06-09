@@ -85,6 +85,7 @@ function Energy() {
       const formattedData = records.map((item) => ({
         energyId: item.energy_id,
         powerPlant: item.power_plant_id,
+        companyId:item.company_id,
         companyName: item.company_name,
         generationSource: item.generation_source,
         province: item.province || "",
@@ -92,6 +93,8 @@ function Energy() {
         energyGenerated: parseFloat(item.energy_generated_kwh),
         co2Avoidance: (parseFloat(item.co2_avoidance_kg) / 1000).toFixed(3),
         status: item.status_id,
+        status_name: item.status_name,
+        remarks:item.remarks
       }));
 
       setData(formattedData);
@@ -314,7 +317,7 @@ function Energy() {
             <Filter label="Company" placeholder="Company" options={[{ label: "All Companies", value: "" }, ...companyOptions]} value={filters.company} onChange={(val) => { setFilters((prev) => ({ ...prev, company: val })); setPage(1); }} />
             <Filter label="Power Project" placeholder="Power Project" options={[{ label: "All Power Projects", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
             <Filter label="Generation Source" placeholder="Source" options={[{ label: "All Sources", value: "" }, ...generationSourceOptions]} value={filters.generationSource} onChange={(val) => { setFilters((prev) => ({ ...prev, generationSource: val })); setPage(1); }} />
-            <Filter label="Status" placeholder="Status" options={[{ label: "All Statuses", value: "" }, ...statusOptions]} value={filters.status} onChange={(val) => { setFilters((prev) => ({ ...prev, status: val })); setPage(1); }} />
+            <Filter label="Status" placeholder="Status" options={[{ label: "All Status", value: "" }, ...statusOptions]} value={filters.status} onChange={(val) => { setFilters((prev) => ({ ...prev, status: val })); setPage(1); }} />
             <DateRangePicker
               label="Date Range"
               startDate={startDate}
@@ -394,7 +397,8 @@ function Energy() {
           energyId={selectedRecord.energyId}
           powerplantId={selectedRecord.powerPlant}
           companyName={selectedRecord.companyName}  
-          status = {selectedRecord.status}
+          status = {selectedRecord.status_name}
+          remarks={selectedRecord.remarks}
           updatePath="/energy/update"
           onClose={handleClose}
           updateStatus={(updated) => {

@@ -64,20 +64,6 @@ function FormModal({ title, subtitle, children, actions, onClose, width = '600px
 
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, gap: 2 }}>
         {actions}
-        {!hideCancel && (
-          <Button
-            variant="outlined"
-            onClick={onClose}
-            sx={{
-              borderRadius: '999px',
-              px: 3,
-              py: 1,
-              fontWeight: 'bold',
-            }}
-          >
-            Cancel
-          </Button>
-        )}
       </Box>
     </Paper>
   );
