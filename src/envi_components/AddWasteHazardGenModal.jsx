@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Paper, 
   Typography, 
@@ -23,6 +23,48 @@ function AddWasteHazardGenModal({ onClose }) {
     unit_of_measurement: '', // Default unit
   });
 
+  // State for dropdown options
+  const [companies, setCompanies] = useState([]);
+  const [metrics, setMetrics] = useState([]);
+  const [units, setUnits] = useState([]);
+
+  // Fetch companies on component mount
+  useEffect(() => {
+    fetchCompanies();
+    fetchMetrics();
+    fetchUnits();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await api.get('/reference/companies');
+      setCompanies(response.data);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      alert('Failed to load companies');
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  const fetchMetrics = async () => {
+    try {
+      const response = await api.get('environment/distinct_haz_waste_generated');
+      setMetrics(response.data);
+    } catch (error) {
+      console.error("Error fetching metrics options:", error);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const response = await api.get('environment/distinct_hazard_waste_gen_unit');
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching unit options:", error);
+    }
+  };
+
   const handleChange = (field) => (event) => {
     const newFormData = {
       ...formData,
@@ -34,8 +76,10 @@ function AddWasteHazardGenModal({ onClose }) {
   const handleSubmit = async (formData) => {
     console.log("Submitting form data:", formData);
     try {
+      const selectedCompany = companies.find(company => company.id === formData.company_id);
+
       const payload = {
-        company_id: formData.company_id?.trim(),
+        company_id: selectedCompany?.company_id?.trim() || formData.company_id?.trim(),
         metrics: formData.metrics?.trim(),
         waste_generated: parseFloat(formData.waste_generated),
         unit_of_measurement: formData.unit_of_measurement?.trim(),
@@ -93,9 +137,9 @@ function AddWasteHazardGenModal({ onClose }) {
             label="Company"
             sx={{ height: '55px' }}
           >
-            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
-              <MenuItem key={company_id} value={company_id}>
-                {company_id}
+            {companies.map((company) => (
+              <MenuItem key={company.id} value={company.id}>
+                {company.name}
               </MenuItem>
             ))}
           </Select>
@@ -105,12 +149,12 @@ function AddWasteHazardGenModal({ onClose }) {
           <Select
             value={formData.metrics}
             onChange={handleChange('metrics')}
-            label="Waste metrics"
+            label="Metrics"
             sx={{ height: '55px' }}
           >
-            {['Empty Containers', 'Electronic Waste', 'Used Oil', 'BFL'].map((metrics) => (
-              <MenuItem key={metrics} value={metrics}>
-                {metrics}
+            {metrics.map((option) => (
+              <MenuItem key={option.metrics} value={option.metrics}>
+                {option.metrics}
               </MenuItem>
             ))}
           </Select>
@@ -158,13 +202,14 @@ function AddWasteHazardGenModal({ onClose }) {
           </Select>
         </FormControl>
       </Box>
-      <Box sx={{
+      <Box sx={{ 
         display: 'grid', 
+        gridTemplateColumns: '1fr 1fr',
         gap: 2,
-        mb: 3
+        mb: 2
       }}>
          <TextField
-          placeholder="Waste Generated"
+          label="Waste Generated"
           value={formData.waste_generated}
           onChange={handleChange('waste_generated')}
           type="number"
@@ -178,9 +223,9 @@ function AddWasteHazardGenModal({ onClose }) {
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['Kilogram', 'Liter'].map((unit_of_measurement) => (
-              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
-                {unit_of_measurement}
+            {units.map((option) => (
+              <MenuItem key={option.unit} value={option.unit}>
+                {option.unit}
               </MenuItem>
             ))}
           </Select>

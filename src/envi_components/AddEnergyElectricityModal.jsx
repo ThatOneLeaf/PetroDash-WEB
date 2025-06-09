@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Paper, 
   Typography, 
@@ -23,6 +23,48 @@ function AddEnvironmentEnergyModal({ onClose }) {
     unit_of_measurement: 'kWh' // Default unit
   });
 
+  // State for dropdown options
+  const [companies, setCompanies] = useState([]);
+  const [sources, setSources] = useState([]);
+  const [units, setUnits] = useState([]);
+
+  // Fetch companies on component mount
+  useEffect(() => {
+    fetchCompanies();
+    fetchSources();
+    fetchUnits();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await api.get('/reference/companies');
+      setCompanies(response.data);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      alert('Failed to load companies');
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  const fetchSources = async () => {
+    try {
+      const response = await api.get('environment/distinct_electric_source');
+      setSources(response.data);
+    } catch (error) {
+      console.error("Error fetching source options:", error);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const response = await api.get('environment/distinct_electric_consumption_unit');
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching unit options:", error);
+    }
+  };
+
   const handleChange = (field) => (event) => {
     const newFormData = {
       ...formData,
@@ -34,8 +76,10 @@ function AddEnvironmentEnergyModal({ onClose }) {
   const handleSubmit = async (formData) => {
     console.log("Submitting form data:", formData);
     try {
+      const selectedCompany = companies.find(company => company.id === formData.company_id);
+
       const payload = {
-        company_id: formData.company_id?.trim(),
+        company_id: selectedCompany?.company_id?.trim() || formData.company_id?.trim(),
         source: formData.source?.trim(),
         unit_of_measurement: formData.unit_of_measurement?.trim(),
         consumption: parseFloat(formData.consumption),
@@ -93,9 +137,9 @@ function AddEnvironmentEnergyModal({ onClose }) {
             label="Company"
             sx={{ height: '55px' }}
           >
-            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
-              <MenuItem key={company_id} value={company_id}>
-                {company_id}
+            {companies.map((company) => (
+              <MenuItem key={company.id} value={company.id}>
+                {company.name}
               </MenuItem>
             ))}
           </Select>
@@ -108,9 +152,9 @@ function AddEnvironmentEnergyModal({ onClose }) {
             label="Source"
             sx={{ height: '55px' }}
           >
-            {['Control Building', 'Logistics Station'].map((source) => (
-              <MenuItem key={source} value={source}>
-                {source}
+            {sources.map((option) => (
+              <MenuItem key={option.source} value={option.source}>
+                {option.source}
               </MenuItem>
             ))}
           </Select>
@@ -178,9 +222,9 @@ function AddEnvironmentEnergyModal({ onClose }) {
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['kWh', 'mWh', 'gWh'].map((unit_of_measurement) => (
-              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
-                {unit_of_measurement}
+            {units.map((option) => (
+              <MenuItem key={option.unit} value={option.unit}>
+                {option.unit}
               </MenuItem>
             ))}
           </Select>

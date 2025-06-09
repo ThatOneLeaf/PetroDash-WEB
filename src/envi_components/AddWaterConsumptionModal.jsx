@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Paper, 
   Typography, 
@@ -22,6 +22,37 @@ function AddWaterConsumptionModal({ onClose }) {
     unit_of_measurement: 'cubic meter' // Default unit
   });
 
+  // State for dropdown options
+  const [companies, setCompanies] = useState([]);
+  const [units, setUnits] = useState([]);
+
+  // Fetch companies on component mount
+  useEffect(() => {
+    fetchCompanies();
+    fetchUnits();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await api.get('/reference/companies');
+      setCompanies(response.data);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      alert('Failed to load companies');
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const response = await api.get('environment/distinct_water_unit');
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching unit options:", error);
+    }
+  };
+
   const handleChange = (field) => (event) => {
     const newFormData = {
       ...formData,
@@ -33,8 +64,10 @@ function AddWaterConsumptionModal({ onClose }) {
   const handleSubmit = async (formData) => {
     console.log("Submitting form data:", formData);
     try {
+      const selectedCompany = companies.find(company => company.id === formData.company_id);
+
       const payload = {
-        company_id: formData.company_id?.trim(),
+        company_id: selectedCompany?.company_id?.trim() || formData.company_id?.trim(),
         quarter: formData.quarter,
         year: parseInt(formData.year),
         volume: parseFloat(formData.volume),
@@ -90,9 +123,9 @@ function AddWaterConsumptionModal({ onClose }) {
             label="Company"
             sx={{ height: '55px' }}
           >
-            {['MGI', 'PWEI', 'PSC'].map((company_id) => (
-              <MenuItem key={company_id} value={company_id}>
-                {company_id}
+            {companies.map((company) => (
+              <MenuItem key={company.id} value={company.id}>
+                {company.name}
               </MenuItem>
             ))}
           </Select>
@@ -160,9 +193,9 @@ function AddWaterConsumptionModal({ onClose }) {
             label="Unit of Measurement"
             sx={{ height: '55px' }}
           >
-            {['cubic meter'].map((unit_of_measurement) => (
-              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
-                {unit_of_measurement}
+            {units.map((option) => (
+              <MenuItem key={option.unit} value={option.unit}>
+                {option.unit}
               </MenuItem>
             ))}
           </Select>
