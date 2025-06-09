@@ -118,6 +118,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
           slotProps={{
             textField: { fullWidth: true, size: 'medium' },
           }}
+          disableFuture={true} 
         />
       </LocalizationProvider>
 
