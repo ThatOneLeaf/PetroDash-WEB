@@ -16,6 +16,7 @@ import EnvironmentWaterDash from "./pages/Envi/EnvironmentWaterDash";
 import CSR from "./pages/CSR/CSRActivity";
 import Energy from "./pages/Energy/Energy";
 import HR from "./pages/HR/HRMain";
+import HRDashboard from "./pages/HR/HRDashboard";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
             <Route path="/economics" element={<Economic />} />
             <Route path="/social/help" element={<CSR />} />
             <Route path="/social/hr" element={<HR />} />
+            <Route path="/social/hrdashboard" element={<HRDashboard />} />
             <Route path="/energy/power-generation" element={<Energy />} />
           </Routes>
         </main>
