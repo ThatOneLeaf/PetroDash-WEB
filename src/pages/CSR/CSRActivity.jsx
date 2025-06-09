@@ -29,6 +29,7 @@ function CSR() {
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [modalKey, setModalKey] = useState(0);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
@@ -211,7 +212,7 @@ function CSR() {
   // Memoize columns to avoid hook order issues
   const columns = useMemo(() => [
     { key: 'projectYear', label: 'Year', width: 80, align: 'center', render: val => val },
-    { key: 'companyId', label: 'Company', width: 120, render: val => val },
+    { key: 'companyName', label: 'Company', width: 120, render: val => val },
     { key: 'programName', label: 'Program', width: 140, render: val => val },
     { key: 'projectName', label: 'Project', width: 140, render: val => val },
     { key: 'csrReport', label: 'Beneficiaries', width: 120, align: 'right', render: val => val != null ? Number(val).toLocaleString() : '-' },
@@ -261,9 +262,29 @@ function CSR() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
+            {/* EXPORT DATA BUTTON */}
             <Button
               variant="contained"
               startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+              onClick={() => exportToExcel(filteredData)}
+            >
+              EXPORT DATA
+            </Button>
+
+            {/* IMPORT DATA BUTTON */}
+            <Button
+              variant="contained"
+              // startIcon={<FileUploadIcon />}
               sx={{
                 backgroundColor: '#182959',
                 borderRadius: '999px',
@@ -278,6 +299,8 @@ function CSR() {
             >
               IMPORT
             </Button>
+
+            {/* SINGLE UPLOAD DATA BUTTON */}
             <Button
               variant="contained"
               startIcon={<AddIcon />}
@@ -436,7 +459,7 @@ function CSR() {
               table="CSR"
               title="CSR Activity Details"
               record={selectedRecord}
-              updatePath={getUpdatePath(selectedRecord)}
+              // updatePath={getUpdatePath(selectedRecord)}
               status={(data, error) => {
                 if (error) {
                   // Debug message for update API error
