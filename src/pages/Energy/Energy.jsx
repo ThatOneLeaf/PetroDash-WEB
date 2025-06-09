@@ -8,9 +8,6 @@ import {
   Button,
   IconButton
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
@@ -29,6 +26,7 @@ import RepositoryHeader from "../../components/RepositoryHeader";
 import ButtonComp from "../../components/ButtonComp";
 import DataExportModal from "../../components/ExportModal";
 import EnergyDetailModal from "../../components/ViewPowerGeneratedModal";
+import { exportExcelData } from "../../services/directExport";
 
 function Energy() {
   const [data, setData] = useState([]);
@@ -271,10 +269,10 @@ function Energy() {
               <ButtonComp
                 label="Export Data"
                 rounded={true}
-                onClick={() => setIsExportModalOpen(true)}
+                onClick={() => exportExcelData(filteredData, exportFields, "Daily Power Generated")}
                 color="blue"
                 startIcon={<FileUploadIcon />}
-              />
+              />    
 
               <ButtonComp
                 label="Import"
@@ -392,24 +390,6 @@ function Energy() {
         />
 
         {/* Modals */}
-        {isExportModalOpen && (
-          <Overlay onClose={() => setIsExportModalOpen(false)}>
-            <DataExportModal
-              open={true}
-              onClose={() => {
-                            setIsExportModalOpen(false);
-                            fetchEnergyData();
-                          }}
-              data={filteredData}
-              columns={exportFields}
-              columnsToShow={["companyName","powerPlant", "generationSource", "province","date","energyGenerated","co2Avoidance","status"]} // Optional: show only these columns
-              excludeGroupByFields={["co2Avoidance","energyGenerated"]}          // Optional: fields you don’t want to appear in “Group By”
-              excludeColumnSelectionFields={["EnergyId","co2Avoidance","energyGenerated"]}  // Optional: fields not selectable for exclude
-              reportTitle="Daily Power Generation"
-            />
-
-          </Overlay>
-        )}
 
         {isAddEnergyModalOpen && (
           <Overlay onClose={() => setIsAddEnergyModalOpen(false)}>
