@@ -89,7 +89,7 @@ const ViewEditEnergyModal = ({
     setEditedRecord((prev) => ({ ...prev, [key]: newValue }));
   };
 
- const handleSave = async () => {
+const handleSave = async () => {
   if (isUnchanged) {
     alert('No changes to save.');
     setIsEditing(false);
@@ -101,28 +101,42 @@ const ViewEditEnergyModal = ({
 
   try {
     const formData = new FormData();
-    // Append all fields from editedRecord to formData
-    Object.entries(editedRecord).forEach(([key, value]) => {
-      // If value is null or undefined, skip it
-      if (value !== null && value !== undefined) {
-        formData.append(key, value);
-      }
-    });
+
+    // Map frontend fields to backend field names
+    formData.append('energy_id', editedRecord.energy_id); // or energyId prop
+    formData.append('powerPlant', editedRecord.power_plant_id); // backend expects powerPlant
+    formData.append('date', editedRecord.datetime); // format should be YYYY-MM-DD
+    formData.append('energyGenerated', editedRecord.energy_generated);
+    formData.append('checker', '01JW5F4N9M7E9RG9MW3VX49ES5'); // static or dynamic
+    formData.append('metric', editedRecord.unit_of_measurement);
+    formData.append('remarks', remarks || ''); // fallback if remarks is optional
 
     const response = await api.post(updatePath, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+
     alert(response.data.message);
     setIsEditing(false);
     if (updateStatus) updateStatus(true);
     setRecord(editedRecord);
+    onClose(); 
   } catch (error) {
-    const msg = error.response?.data?.detail || error.message;
-    alert(`Failed to save: ${msg}`);
+    const detail = error.response?.data?.detail;
+
+    if (Array.isArray(detail)) {
+      const messages = detail.map((d) => d.msg || JSON.stringify(d)).join('\n');
+      alert(`Failed to save:\n${messages}`);
+    } else {
+      const msg = detail || error.message;
+      alert(`Failed to save: ${msg}`);
+    }
+    console.error('Save error:', error.response?.data || error);
   }
 };
+
+
 
 const handleApprove = async () => {
   const confirm = window.confirm('Are you sure you want to approve this record?');
@@ -359,7 +373,7 @@ const handleRejectConfirm = async () => {
   </Box>
 
   {/* Right: Approve/Reject */}
-  {!isReadOnly && (
+  {!isReadOnly  && !isEditing && (
     <Box display="flex" gap={1}>
       <Button variant="outlined" color="success" onClick={handleApprove}>
         Approve

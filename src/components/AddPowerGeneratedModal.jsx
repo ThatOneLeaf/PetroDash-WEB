@@ -60,7 +60,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
   form.append('checker', '01JW5F4N9M7E9RG9MW3VX49ES5');
 
   try {
-    await api.post('/energy/add_energy_record', form, {
+    await api.post('/energy/add', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     onClose();

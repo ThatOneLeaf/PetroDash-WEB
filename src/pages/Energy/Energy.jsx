@@ -399,7 +399,7 @@ function Energy() {
           companyName={selectedRecord.companyName}  
           status = {selectedRecord.status_name}
           remarks={selectedRecord.remarks}
-          updatePath="/energy/update"
+          updatePath="/energy/edit"
           onClose={handleClose}
           updateStatus={(updated) => {
             if (updated) fetchEnergyData();
