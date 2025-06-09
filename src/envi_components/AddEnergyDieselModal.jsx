@@ -21,19 +21,22 @@ function AddEnvironmentDieselModal({ onClose }) {
     company_id: '',
     cp_id: '',
     consumption: '',
-    unit_of_measurement: 'Liter',
+    unit_of_measurement: '',
     date: '',
   });
 
   // State for dropdown options
   const [companies, setCompanies] = useState([]);
   const [companyProperties, setCompanyProperties] = useState([]);
+  const [units, setUnits] = useState([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [loadingProperties, setLoadingProperties] = useState(false);
+  const [loadingUnits, setLoadingUnits] = useState(true);
 
-  // Fetch companies on component mount
+  // Fetch companies and units on component mount
   useEffect(() => {
     fetchCompanies();
+    fetchUnits();
   }, []);
 
   // Fetch company properties when company changes
@@ -75,6 +78,27 @@ function AddEnvironmentDieselModal({ onClose }) {
       setCompanyProperties([]);
     } finally {
       setLoadingProperties(false);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      setLoadingUnits(true);
+      const response = await api.get('/environment/distinct_diesel_consumption_unit');
+      setUnits(response.data);
+      
+      // Set default unit if available
+      if (response.data.length > 0) {
+        setFormData(prev => ({ 
+          ...prev, 
+          unit_of_measurement: response.data[0].unit 
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching units:', error);
+      alert('Failed to load units of measurement');
+    } finally {
+      setLoadingUnits(false);
     }
   };
 
@@ -223,10 +247,11 @@ function AddEnvironmentDieselModal({ onClose }) {
             onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
+            disabled={loadingUnits}
           >
-            {['Liter'].map((unit_of_measurement) => (
-              <MenuItem key={unit_of_measurement} value={unit_of_measurement}>
-                {unit_of_measurement}
+            {units.map((unitObj) => (
+              <MenuItem key={unitObj.unit} value={unitObj.unit}>
+                {unitObj.unit}
               </MenuItem>
             ))}
           </Select>

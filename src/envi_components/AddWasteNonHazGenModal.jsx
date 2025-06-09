@@ -8,7 +8,7 @@ import {
   MenuItem,
   Box,
   FormControl,
-  InputLabel // ⬅️ Make sure this is imported
+  InputLabel
 } from '@mui/material';
 import api from '../services/api';
 
@@ -16,53 +16,103 @@ function AddWasteNonHazGenModal({ onClose }) {
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState({
     year: currentYear, 
-    quarter: '', // ⬅️ Initialize quarter
-    company_id: '', // ⬅️ Initialize company
+    quarter: '',
+    company_id: '',
     month: '',
     metrics: '',
     waste: '',
-    unit_of_measurement: '', // Default unit
+    unit_of_measurement: '',
   });
 
   // State for dropdown options
-  const [companies, setCompanies] = useState([]);
-  const [metrics, setMetrics] = useState([]);
-  const [units, setUnits] = useState([]);
+  const [dropdownOptions, setDropdownOptions] = useState({
+    companies: [],
+    metrics: [],
+    units: []
+  });
 
-  // Fetch companies on component mount
+  // State for loading states
+  const [loading, setLoading] = useState({
+    companies: false,
+    metrics: false,
+    units: false
+  });
+
+  // Fetch dropdown data on component mount
   useEffect(() => {
-    fetchCompanies();
-    fetchMetrics();
-    fetchUnits();
+    fetchInitialDropdownData();
   }, []);
 
-  const fetchCompanies = async () => {
+  // Fetch units when metrics changes
+  useEffect(() => {
+    if (formData.metrics) {
+      fetchUnitsForMetrics(formData.metrics);
+      // Reset unit selection when metrics changes
+      setFormData(prev => ({
+        ...prev,
+        unit_of_measurement: ''
+      }));
+    } else {
+      // Clear units when no metrics selected
+      setDropdownOptions(prev => ({
+        ...prev,
+        units: []
+      }));
+    }
+  }, [formData.metrics]);
+
+  const fetchInitialDropdownData = async () => {
     try {
-      const response = await api.get('/reference/companies');
-      setCompanies(response.data);
+      // Set loading states
+      setLoading({
+        companies: true,
+        metrics: true,
+        units: false
+      });
+
+      // Fetch companies and metrics data
+      const [companiesResponse, metricsResponse] = await Promise.all([
+        api.get('reference/companies'),
+        api.get('environment/distinct_non_haz_waste_metrics')
+      ]);
+
+      setDropdownOptions({
+        companies: companiesResponse.data || [],
+        metrics: metricsResponse.data || [],
+        units: []
+      });
+
     } catch (error) {
-      console.error('Error fetching companies:', error);
-      alert('Failed to load companies');
+      console.error('Error fetching dropdown data:', error);
+      alert('Failed to load dropdown options. Please refresh the page.');
     } finally {
-      setLoadingCompanies(false);
+      // Reset loading states
+      setLoading({
+        companies: false,
+        metrics: false,
+        units: false
+      });
     }
   };
 
-  const fetchMetrics = async () => {
+  const fetchUnitsForMetrics = async (selectedMetrics) => {
     try {
-      const response = await api.get('environment/distinct_non_haz_waste_metrics');
-      setMetrics(response.data);
-    } catch (error) {
-      console.error("Error fetching metrics options:", error);
-    }
-  };
+      setLoading(prev => ({ ...prev, units: true }));
 
-  const fetchUnits = async () => {
-    try {
-      const response = await api.get('environment/distinct_non_haz_waste_unit');
-      setUnits(response.data);
+      const unitsResponse = await api.get('environment/distinct_non_haz_waste_unit', {
+        params: { metrics: selectedMetrics }
+      });
+
+      setDropdownOptions(prev => ({
+        ...prev,
+        units: unitsResponse.data || []
+      }));
+
     } catch (error) {
-      console.error("Error fetching unit options:", error);
+      console.error('Error fetching units for metrics:', error);
+      alert('Failed to load unit options for selected metrics.');
+    } finally {
+      setLoading(prev => ({ ...prev, units: false }));
     }
   };
 
@@ -77,10 +127,8 @@ function AddWasteNonHazGenModal({ onClose }) {
   const handleSubmit = async (formData) => {
     console.log("Submitting form data:", formData);
     try {
-      const selectedCompany = companies.find(company => company.id === formData.company_id);
-
       const payload = {
-        company_id: selectedCompany?.company_id?.trim() || formData.company_id?.trim(),
+        company_id: formData.company_id?.trim(),
         metrics: formData.metrics?.trim(),
         waste: parseFloat(formData.waste),
         unit_of_measurement: formData.unit_of_measurement?.trim(),
@@ -138,8 +186,9 @@ function AddWasteNonHazGenModal({ onClose }) {
             onChange={handleChange('company_id')}
             label="Company"
             sx={{ height: '55px' }}
+            disabled={loading.companies}
           >
-            {companies.map((company) => (
+            {dropdownOptions.companies.map((company) => (
               <MenuItem key={company.id} value={company.id}>
                 {company.name}
               </MenuItem>
@@ -151,12 +200,13 @@ function AddWasteNonHazGenModal({ onClose }) {
           <Select
             value={formData.metrics}
             onChange={handleChange('metrics')}
-            label="Metrics"
+            label="Waste metrics"
             sx={{ height: '55px' }}
+            disabled={loading.metrics}
           >
-            {metrics.map((option) => (
-              <MenuItem key={option.metrics} value={option.metrics}>
-                {option.metrics}
+            {dropdownOptions.metrics.map((metric) => (
+              <MenuItem key={metric.metrics} value={metric.metrics}>
+                {metric.metrics}
               </MenuItem>
             ))}
           </Select>
@@ -221,14 +271,13 @@ function AddWasteNonHazGenModal({ onClose }) {
           </Select>
         </FormControl>
       </Box>
-      <Box sx={{ 
+      <Box sx={{
         display: 'grid', 
-        gridTemplateColumns: '1fr 1fr',
         gap: 2,
-        mb: 2
+        mb: 3
       }}>
          <TextField
-          label="Waste Generated"
+          placeholder="Waste Generated"
           value={formData.waste}
           onChange={handleChange('waste')}
           type="number"
@@ -241,10 +290,11 @@ function AddWasteNonHazGenModal({ onClose }) {
             onChange={handleChange('unit_of_measurement')}
             label="Unit of Measurement"
             sx={{ height: '55px' }}
+            disabled={loading.units || !formData.metrics}
           >
-            {units.map((option) => (
-              <MenuItem key={option.unit} value={option.unit}>
-                {option.unit}
+            {dropdownOptions.units.map((unitObj) => (
+              <MenuItem key={unitObj.unit} value={unitObj.unit}>
+                {unitObj.unit}
               </MenuItem>
             ))}
           </Select>
@@ -261,12 +311,12 @@ function AddWasteNonHazGenModal({ onClose }) {
           variant="contained"
           sx={{ 
             backgroundColor: '#2B8C37',
-            borderRadius: '999px', // Fully rounded (pill-style)
-            padding: '9px 18px',    // Optional: adjust padding for better look 
-            fontSize: '1rem', // Optional: adjust font size
+            borderRadius: '999px',
+            padding: '9px 18px',
+            fontSize: '1rem',
             fontWeight: 'bold',
             '&:hover': {
-              backgroundColor: '#256d2f', // darker shade of #2B8C37
+              backgroundColor: '#256d2f',
             },
           }}
           onClick={() => handleSubmit(formData)}
