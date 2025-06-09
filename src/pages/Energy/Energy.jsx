@@ -137,9 +137,9 @@ function Energy() {
   ).map((val) => ({ label: val, value: val }));
 
   const statusOptions = [
-    { label: "Pending", value: "PND" },
-    { label: "Head Approved", value: "HAP" },
-    { label: "Site Approved", value: "SAP" },
+    { label: "Under Review (Site)", value: "URS" },
+    { label: "Under Review (Head)", value: "URH" },
+    { label: "Approved", value: "APP" },
     { label: "For Revision (Site)", value: "FRS" },
     { label: "For Revision (Head)", value: "FRH" },
   ];
@@ -393,18 +393,16 @@ function Energy() {
           title="Daily Power Generation"
           energyId={selectedRecord.energyId}
           powerplantId={selectedRecord.powerPlant}
-          companyName={selectedRecord.companyName}  // <-- add this line
+          companyName={selectedRecord.companyName}  
+          status = {selectedRecord.status}
           updatePath="/energy/update"
           onClose={handleClose}
-          status={(updated) => {
+          updateStatus={(updated) => {
             if (updated) fetchEnergyData();
           }}
         />
         </Overlay>
       )}
-
-
-
 
         {isAddEnergyModalOpen && (
           <Overlay onClose={() => setIsAddEnergyModalOpen(false)}>

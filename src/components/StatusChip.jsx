@@ -6,15 +6,15 @@ function StatusChip({ status }) {
   let color = "default";
 
   switch (code) {
-    case "PND":
-      label = "Pending";
+    case "URS":
+      label = "Under Review (Site)";
       break;
-    case "HAP":
-      label = "Head Approved";
+    case "APP":
+      label = "Approved";
       color = "success";
       break;
-    case "SAP":
-      label = "Site Approved";
+    case "URH":
+      label = "Under Review (Head)";
       color = "info";
       break;
     case "FRS":

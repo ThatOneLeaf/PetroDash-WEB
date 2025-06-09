@@ -18,13 +18,14 @@ import BusinessIcon from '@mui/icons-material/Business';
 import api from '../services/api';
 
 const ViewEditEnergyModal = ({
-    title,
+  title,
   energyId,
   powerplantId,
-  companyName, // New prop for displaying company name
+  companyName,
   onClose,
   updatePath,
-  status,
+  status,          // string status (e.g., "head_approved")
+  updateStatus,    // optional: function to update parent status
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [record, setRecord] = useState(null);
@@ -32,7 +33,9 @@ const ViewEditEnergyModal = ({
   const [loading, setLoading] = useState(false);
   const [powerPlants, setPowerPlants] = useState([]);
 
-  // Fetch power plants for dropdown
+  const isReadOnly = status === 'APP';
+  const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
+
   useEffect(() => {
     const fetchPowerPlants = async () => {
       try {
@@ -45,7 +48,6 @@ const ViewEditEnergyModal = ({
     fetchPowerPlants();
   }, []);
 
-  // Fetch energy record data
   useEffect(() => {
     if (!energyId || !powerplantId) return;
 
@@ -69,7 +71,10 @@ const ViewEditEnergyModal = ({
     fetchRecord();
   }, [energyId, powerplantId]);
 
-  const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
+  // ✅ Debug log for status
+useEffect(() => {
+  console.log('Received status:', status);
+}, [status]);
 
   const handleChange = (key, value) => {
     let newValue = value;
@@ -82,10 +87,10 @@ const ViewEditEnergyModal = ({
 
   const handleSave = async () => {
     try {
-      const response = await api.post(`energy${updatePath}`, editedRecord);
+      const response = await api.post(`${updatePath}`, editedRecord);
       alert(response.data.message);
       setIsEditing(false);
-      status(true);
+      if (updateStatus) updateStatus(true);
       setRecord(editedRecord);
     } catch (error) {
       const msg = error.response?.data?.detail || error.message;
@@ -109,133 +114,117 @@ const ViewEditEnergyModal = ({
     );
   }
 
-    const normalizedUnit = (() => {
+  const normalizedUnit = (() => {
     const val = editedRecord?.unit_of_measurement || '';
     if (['kWh', 'GWh', 'mWh'].includes(val)) return val;
     if (val.toLowerCase() === 'mwh') return 'mWh';
     if (val.toLowerCase() === 'kwh') return 'kWh';
     if (val.toLowerCase() === 'gwh') return 'GWh';
     return '';
-    })();
-
+  })();
 
   return (
     <Paper sx={{ p: 4, width: 600, borderRadius: 2 }}>
-        <Box sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          mb: 3}}>
-          <Typography sx={{ 
-            fontSize: '0.85rem', 
-            fontWeight: 800,
-          }}>
-            {isEditing ? 'EDIT RECORD' : 'VIEW RECORD'}
-          </Typography>
-          <Typography sx={{ fontSize: '1.75rem', color: '#182959', fontWeight: 800}}>
-            {title}
-          </Typography>
-        </Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 3 }}>
+        <Typography sx={{ fontSize: '0.85rem', fontWeight: 800 }}>
+          {isEditing ? 'EDIT RECORD' : 'VIEW RECORD'}
+        </Typography>
+        <Typography sx={{ fontSize: '1.75rem', color: '#182959', fontWeight: 800 }}>
+          {title}
+        </Typography>
+      </Box>
 
-        {companyName && (
+      {isReadOnly && (
+        <Typography variant="caption" color="error" sx={{ mb: 2 }}>
+          This record has been approved and cannot be edited.
+        </Typography>
+      )}
+
+      {companyName && (
         <Box
-            display="flex"
-            alignItems="center"
-            mb={3}
-            p={1}
-            borderRadius={1}
-            bgcolor="grey.100"
-            sx={{ maxWidth: 400 }}
+          display="flex"
+          alignItems="center"
+          mb={3}
+          p={1}
+          borderRadius={1}
+          bgcolor="grey.100"
+          sx={{ maxWidth: 400 }}
         >
-            <BusinessIcon color="primary" sx={{ mr: 1 }} />
-            <Typography
-            variant="body1"
-            color="text.secondary"
-            fontWeight={500}
-            noWrap
-            title={companyName}
-            >
+          <BusinessIcon color="primary" sx={{ mr: 1 }} />
+          <Typography variant="body1" color="text.secondary" fontWeight={500} noWrap title={companyName}>
             {companyName}
-            </Typography>
+          </Typography>
         </Box>
-        )}
+      )}
 
-        <Box
-        display="grid"
-        gridTemplateColumns="1fr 1fr"
-        gap={2}
-        >
-        {/* Power Plant - full width (span both columns) */}
+      <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
         <FormControl fullWidth sx={{ gridColumn: '1 / -1' }}>
-            <InputLabel>Power Plant</InputLabel>
-            <Select
+          <InputLabel>Power Plant</InputLabel>
+          <Select
             value={editedRecord.power_plant_id || ''}
             onChange={(e) => handleChange('power_plant_id', e.target.value)}
-            disabled={!isEditing}
+            disabled={!isEditing || isReadOnly}
             label="Power Plant"
-            >
+          >
             {powerPlants.length > 0 ? (
-                powerPlants.map((pp) => (
+              powerPlants.map((pp) => (
                 <MenuItem key={pp.power_plant_id} value={pp.power_plant_id}>
-                    {pp.site_name}
+                  {pp.site_name}
                 </MenuItem>
-                ))
+              ))
             ) : (
-                <MenuItem value={editedRecord.power_plant_id || ''}>
+              <MenuItem value={editedRecord.power_plant_id || ''}>
                 {editedRecord.power_plant_id || 'N/A'}
-                </MenuItem>
+              </MenuItem>
             )}
-            </Select>
+          </Select>
         </FormControl>
 
-        {/* Date - full width (span both columns) */}
         <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DatePicker
+          <DatePicker
             label="Date"
             value={editedRecord.datetime ? new Date(editedRecord.datetime) : null}
             onChange={(newDate) => {
-                const dateStr = newDate?.toISOString().split('T')[0];
-                handleChange('datetime', dateStr);
+              const dateStr = newDate?.toISOString().split('T')[0];
+              handleChange('datetime', dateStr);
             }}
-            disabled={!isEditing}
+            disabled={!isEditing || isReadOnly}
             enableAccessibleFieldDOMStructure={false}
             slots={{ textField: TextField }}
             slotProps={{ textField: { fullWidth: true, sx: { gridColumn: '1 / -1' } } }}
             sx={{ gridColumn: '1 / -1' }}
-            />
+          />
         </LocalizationProvider>
 
-        {/* Energy Generated - half width */}
         <TextField
-            label="Energy Generated"
-            type="number"
-            value={editedRecord.energy_generated !== undefined ? editedRecord.energy_generated : ''}
-            onChange={(e) => handleChange('energy_generated', e.target.value)}
-            fullWidth
-            disabled={!isEditing}
+          label="Energy Generated"
+          type="number"
+          value={editedRecord.energy_generated !== undefined ? editedRecord.energy_generated : ''}
+          onChange={(e) => handleChange('energy_generated', e.target.value)}
+          fullWidth
+          disabled={!isEditing || isReadOnly}
         />
 
-        {/* Unit - half width */}
         <FormControl fullWidth>
-        <InputLabel>Unit</InputLabel>
-            <Select
+          <InputLabel>Unit</InputLabel>
+          <Select
             value={normalizedUnit}
             onChange={(e) => handleChange('unit_of_measurement', e.target.value)}
-            disabled={!isEditing}
+            disabled={!isEditing || isReadOnly}
             label="Unit"
-            >
+          >
             <MenuItem value="kWh">kWh</MenuItem>
             <MenuItem value="GWh">GWh</MenuItem>
             <MenuItem value="mWh">mWh</MenuItem>
-            </Select>
+          </Select>
         </FormControl>
-        </Box>
-
+      </Box>
 
       <Box display="flex" justifyContent="space-between" mt={4}>
         <Button
           startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
           onClick={() => {
+            if (isReadOnly) return;
             if (isEditing) {
               if (!isUnchanged) {
                 handleSave();
@@ -247,6 +236,7 @@ const ViewEditEnergyModal = ({
               setIsEditing(true);
             }
           }}
+          disabled={isReadOnly}
         >
           {isEditing ? 'Save' : 'Edit'}
         </Button>
@@ -256,12 +246,10 @@ const ViewEditEnergyModal = ({
           color="success"
           onClick={() => {
             if (isEditing && !isUnchanged) {
-              const confirmClose = window.confirm(
-                'You have unsaved changes. Close anyway?'
-              );
+              const confirmClose = window.confirm('You have unsaved changes. Close anyway?');
               if (!confirmClose) return;
             }
-            status(isUnchanged);
+            if (updateStatus) updateStatus(isUnchanged);
             onClose();
           }}
         >
