@@ -181,7 +181,7 @@ function Energy() {
     },
     { key: "energyGenerated", label: "Energy Generated (kWh)" },
     { key: "co2Avoidance", label: "CO² Avoidance (Metric Ton)" },
-    { key: "status", label: "Status", render: (val) => <StatusChip status={val} /> },
+    { key: "status_name", label: "Status", render: (val) => <StatusChip status={val} /> },
   ];
 
     const exportFields = [
@@ -197,12 +197,8 @@ function Energy() {
     { key: "energyGenerated", label: "Energy Generated (kWh)" },
     { key: "co2Avoidance", label: "CO² Avoidance (Metric Ton)" },
     {
-        key: "status",
-        label: "Status",
-        render: (val) => {
-          const match = statusOptions.find((opt) => opt.value === val);
-          return match ? match.label : val;
-        }}
+        key: "status_name",
+        label: "Status"}
   ];
 
   const renderActions = (row) => (

@@ -18,19 +18,6 @@ import {
 } from 'recharts';
 import Sidebar from '../../components/Sidebar';
 
-
-// Mock data to match the dashboard
-const waterVolumeData = [
-  { year: 2018, abstracted: 2500, discharged: 1000, consumed: 1500 },
-  { year: 2019, abstracted: 2600, discharged: 1100, consumed: 1500 },
-  { year: 2020, abstracted: 2700, discharged: 1200, consumed: 1500 },
-  { year: 2021, abstracted: 2900, discharged: 1400, consumed: 1500 },
-  { year: 2022, abstracted: 3000, discharged: 1500, consumed: 1500 },
-  { year: 2023, abstracted: 3500, discharged: 2000, consumed: 1500 },
-  { year: 2024, abstracted: 2800, discharged: 1300, consumed: 1500 },
-  { year: 2025, abstracted: 800, discharged: 300, consumed: 500 }
-];
-
 const quarterlyData = [
   { quarter: 'Q1', abstracted: 6000, discharged: 4000, consumed: 6000 },
   { quarter: 'Q2', abstracted: 5500, discharged: 5500, consumed: 5000 },
@@ -53,14 +40,35 @@ function EnvironmentWaterDash() {
   const [quarter, setQuarter] = useState('');
   const [year, setYear] = useState('');
   const [unit, setUnit] = useState(''); // Optional, for units like cubic meters
+  
+  // New state for companies and line chart data
+  const [companies, setCompanies] = useState([]);
+  const [lineChartData, setLineChartData] = useState([]);
+  const [lineChartLabels, setLineChartLabels] = useState([]);
+
+  // Fetch companies on component mount
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await api.get('/reference/companies');
+        console.log('Companies fetched:', response.data);
+        setCompanies(response.data);
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+        setCompanies([]);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
 
   useEffect(() => {
   const fetchData = async () => {
     try {
       const [abstractedRes, dischargedRes, consumedRes] = await Promise.all([
-        api.get('/environment/abstraction'),
-        api.get('/environment/discharge'),
-        api.get('/environment/consumption')
+        api.get('/environment_dash/abstraction'),
+        api.get('/environment_dash/discharge'),
+        api.get('/environment_dash/consumption')
       ]);
 
       console.log('Abstracted:', abstractedRes.data);
@@ -88,8 +96,8 @@ function EnvironmentWaterDash() {
         if (companyId) {
             params.company_id = companyId;
         } else {
-            // Send all companies - FastAPI will receive this as a list
-            params.company_id = ['MGI', 'PWEI', 'PSC'];
+            // Send all companies from the fetched companies data
+            params.company_id = companies.map(company => company.id);
         }
         
         // For quarter: if empty, pass all quarters  
@@ -110,35 +118,67 @@ function EnvironmentWaterDash() {
         
         console.log('Sending params to API:', params); // Debug log
         
-        const response = await api.get('/environment/pie-chart', { 
-            params,
-            // This tells axios to handle arrays properly for FastAPI
-            paramsSerializer: {
-            indexes: null // This creates company_id=MGI&company_id=PWEI format
-            }
-        });
+        // Fetch both pie chart and line chart data
+        const [pieResponse, lineResponse] = await Promise.all([
+          api.get('/environment_dash/pie-chart', { 
+              params,
+              paramsSerializer: {
+                indexes: null
+              }
+          }),
+          api.get('/environment_dash/line-chart', { 
+              params,
+              paramsSerializer: {
+                indexes: null
+              }
+          })
+        ]);
 
-        console.log('Pie chart response:', response.data); // Debug log
+        console.log('Pie chart response:', pieResponse.data);
+        console.log('Line chart response:', lineResponse.data);
         
-        // Ensure data is properly formatted
-        const formattedData = response.data.data?.map((item, index) => ({
+        // Handle pie chart data
+        const formattedPieData = pieResponse.data.data?.map((item, index) => ({
             ...item,
-            value: Number(item.value) || 0, // Ensure value is a number
+            value: Number(item.value) || 0,
             color: item.color || COLORS[index % COLORS.length]
         })) || [];
 
-        console.log('Formatted pie data:', formattedData); // Debug log
-        setPieData(formattedData);
-        setUnit(response.data.unit || 'cubic meters');
+        console.log('Formatted pie data:', formattedPieData);
+        setPieData(formattedPieData);
+        setUnit(pieResponse.data.unit || 'cubic meters');
+        
+        // Handle line chart data
+        if (lineResponse.data.data && lineResponse.data.labels) {
+          const lineData = lineResponse.data.labels.map((year, index) => ({
+            year: year,
+            abstracted: lineResponse.data.data.find(d => d.label === 'Abstracted')?.data[index] || 0,
+            discharged: lineResponse.data.data.find(d => d.label === 'Discharged')?.data[index] || 0,
+            consumed: lineResponse.data.data.find(d => d.label === 'Consumed')?.data[index] || 0
+          }));
+          
+          console.log('Formatted line chart data:', lineData);
+          setLineChartData(lineData);
+          setLineChartLabels(lineResponse.data.labels);
+        } else {
+          setLineChartData([]);
+          setLineChartLabels([]);
+        }
+        
         } catch (error) {
-        console.error('Failed to fetch water summary pie data:', error);
-        console.error('Error response:', error.response?.data); // More detailed error logging
+        console.error('Failed to fetch chart data:', error);
+        console.error('Error response:', error.response?.data);
         setPieData([]);
+        setLineChartData([]);
+        setLineChartLabels([]);
         }
     };
 
-    fetchData();
-  }, [companyId, quarter, year]);
+    // Only fetch data if companies have been loaded
+    if (companies.length > 0) {
+      fetchData();
+    }
+  }, [companyId, quarter, year, companies]);
 
   // Custom tooltip for pie chart
   const renderCustomTooltip = ({ active, payload }) => {
@@ -244,9 +284,11 @@ function EnvironmentWaterDash() {
                 }}
             >
                 <option value="">All Companies</option>
-                <option value="MGI">MGI</option>
-                <option value="PWEI">PWEI</option>
-                <option value="PSC">PSC</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
             </select>
 
             {/* Quarter Filter */}
@@ -473,50 +515,71 @@ function EnvironmentWaterDash() {
               marginBottom: '20px',
               color: '#1e293b'
             }}>
-              Water Volumes Over Time - PWEI
+              Water Volumes Over Time
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={waterVolumeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="year" 
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#64748b' }}
-                />
-                <YAxis 
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#64748b' }}
-                />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="abstracted" 
-                  stroke="#3B82F6" 
-                  strokeWidth={2}
-                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                  name="Abstracted Volume"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="discharged" 
-                  stroke="#F97316" 
-                  strokeWidth={2}
-                  dot={{ fill: '#F97316', strokeWidth: 2, r: 4 }}
-                  name="Discharged Volume"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="consumed" 
-                  stroke="#10B981" 
-                  strokeWidth={2}
-                  dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
-                  name="Consumption Volume"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            
+            {!lineChartData || lineChartData.length === 0 ? (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '60px 20px',
+                color: '#64748b',
+                backgroundColor: '#f8fafc',
+                borderRadius: '8px'
+              }}>
+                <p style={{ margin: 0, fontSize: '14px' }}>
+                  {companies.length === 0 ? 'Loading companies...' : 'No data available for selected filters'}
+                </p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={lineChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="year" 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                  />
+                  <YAxis 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => [
+                      `${Number(value).toLocaleString()} ${unit}`, 
+                      name
+                    ]}
+                    labelStyle={{ color: '#1e293b' }}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="abstracted" 
+                    stroke="#3B82F6" 
+                    strokeWidth={2}
+                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                    name="Abstracted Volume"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="discharged" 
+                    stroke="#F97316" 
+                    strokeWidth={2}
+                    dot={{ fill: '#F97316', strokeWidth: 2, r: 4 }}
+                    name="Discharged Volume"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="consumed" 
+                    stroke="#10B981" 
+                    strokeWidth={2}
+                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                    name="Consumption Volume"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
