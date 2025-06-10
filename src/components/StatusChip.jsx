@@ -1,33 +1,17 @@
-import { Chip} from "@mui/material";
+import { Chip } from "@mui/material";
 
 function StatusChip({ status }) {
   const code = status?.toUpperCase() || "";
-  let label = "";
-  let color = "default";
 
-  switch (code) {
-    case "URS":
-      label = "Under Review (Site)";
-      break;
-    case "APP":
-      label = "Approved";
-      color = "success";
-      break;
-    case "URH":
-      label = "Under Review (Head)";
-      color = "info";
-      break;
-    case "FRS":
-      label = "For Revision (Site)";
-      color = "warning";
-      break;
-    case "FRH":
-      label = "For Revision (Head)";
-      color = "error";
-      break;
-    default:
-      label = code;
-  }
+  const statusMap = {
+    "UNDER REVIEW (SITE)": { label: "Under Review (Site)", color: "default" },
+    "APPROVED": { label: "Approved", color: "success" },
+    "UNDER REVIEW (HEAD)": { label: "Under Review (Head)", color: "info" },
+    "FOR REVISION (SITE)": { label: "For Revision (Site)", color: "warning" },
+    "FOR REVISION (HEAD)": { label: "For Revision (Head)", color: "error" },
+  };
+
+  const { label, color } = statusMap[code] || { label: status || "Unknown", color: "default" };
 
   return <Chip label={label} color={color} size="small" />;
 }

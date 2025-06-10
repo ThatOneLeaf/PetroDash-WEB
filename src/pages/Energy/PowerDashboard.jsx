@@ -297,20 +297,6 @@ function PowerDashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               </Box>
-            </Box>
-          )}
-
-          {/* Tab Panel for Details: Two Vertical Bar Charts */}
-          {tabValue === 1 && (
-            <Box
-              sx={{
-                display: "flex",
-                gap: 4,
-                flexWrap: "wrap",
-                justifyContent: "space-between",
-                mb: 4,
-              }}
-            >
               {/* Bar Chart 1 */}
               <Box sx={{ flex: "1 1 48%", minWidth: 300, height: 300, backgroundColor: "#fff", padding: 2, borderRadius: 2, boxShadow: 1 }}>
                 <Typography variant="h6" mb={2}>
@@ -344,6 +330,22 @@ function PowerDashboard() {
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
+            </Box>
+          )}
+
+          {/* Tab Panel for Details: Two Vertical Bar Charts */}
+          {tabValue === 1 && (
+            <Box
+              sx={{
+                display: "flex",
+                gap: 4,
+                flexWrap: "wrap",
+                justifyContent: "space-between",
+                mb: 4,
+              }}
+            >
+              
+              
             </Box>
           )}
 

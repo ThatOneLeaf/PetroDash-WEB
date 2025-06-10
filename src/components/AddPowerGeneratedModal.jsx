@@ -16,7 +16,6 @@ import api from '../services/api';
 import FormModal from './FormModal';
 
 function AddEnergyGenerationModal({ onClose, powerPlants }) {
-  // Form state
   const [formData, setFormData] = useState({
     powerPlant: powerPlants?.[0]?.power_plant_id || '',
     date: dayjs(),
@@ -25,7 +24,6 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
     remarks: '' 
   });
 
-  // Handle input changes
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({
       ...prev,
@@ -40,38 +38,55 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
     }));
   };
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
+
+  // Validate energyGenerated
   if (!formData.energyGenerated || isNaN(formData.energyGenerated)) {
     alert('Please enter a valid energy generated value.');
     return;
   }
 
+  // Format data
   const submissionData = {
     ...formData,
     date: formData.date.format('YYYY-MM-DD'),
   };
 
-  const form = new FormData();
-  form.append('powerPlant', submissionData.powerPlant);
-  form.append('date', submissionData.date);
-  form.append('energyGenerated', submissionData.energyGenerated);
-  form.append('metric', submissionData.metric);
-  form.append('remarks', submissionData.remarks);
-  form.append('checker', '01JW5F4N9M7E9RG9MW3VX49ES5');
-
   try {
-    await api.post('/energy/add', form, {
+    // Prepare multipart/form-data
+    const form = new FormData();
+    form.append('powerPlant', submissionData.powerPlant);
+    form.append('date', submissionData.date);
+    form.append('energyGenerated', submissionData.energyGenerated);
+    form.append('metric', submissionData.metric);
+    form.append('remarks', submissionData.remarks);
+    form.append('checker', '01JW5F4N9M7E9RG9MW3VX49ES5'); // You might want to replace this with dynamic user ID
+
+    // API call
+    const response = await api.post('/energy/add', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    onClose();
+
+    alert(response.data.message || 'Submission successful.');
+    onClose(); // Close the modal or form
   } catch (error) {
-        alert(
-      `Error submitting the form: ${
-        error.message ||error.response?.data?.message ||  'Unknown error'
-      }`
-    );
+    const errorDetail = error.response?.data?.detail;
+
+    if (typeof errorDetail === 'string') {
+      // e.g., "Date parsing error: invalid format"
+      alert(errorDetail);
+    } else if (typeof errorDetail === 'object') {
+      // e.g., { type: "duplicate_error", message: "..." }
+      alert(errorDetail.message || 'An error occurred while submitting.');
+    } else {
+      // Fallback
+      alert('An unexpected error occurred. Please try again later.');
+    }
+
+    console.error('Submission error:', error);
   }
 };
+
 
 
   const metricUnits = ['kWh', 'MWh', 'GWh'];
@@ -140,7 +155,7 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
           slotProps={{
             textField: { fullWidth: true, size: 'medium' },
           }}
-          disableFuture={true} 
+          disableFuture={true}
         />
       </LocalizationProvider>
 
@@ -190,4 +205,3 @@ function AddEnergyGenerationModal({ onClose, powerPlants }) {
 }
 
 export default AddEnergyGenerationModal;
-
