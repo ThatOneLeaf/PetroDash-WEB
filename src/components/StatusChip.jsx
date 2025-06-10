@@ -25,6 +25,25 @@ function StatusChip({ status }) {
       label = "For Revision (Head)";
       color = "error";
       break;
+    case "APPROVED":
+      label = "Approved";
+      color = "success";
+      break;
+    case "UNDER REVIEW (SITE)":
+      label = "Under Review (Site)";
+      break;
+    case "UNDER REVIEW (HEAD)":
+      label = "Under Review (Head)";
+      color = "info";
+      break;
+    case "FOR REVISION (SITE)":
+      label = "For Revision (Site)";
+      color = "warning";
+      break;
+    case "FOR REVISION (HEAD)":
+      label = "For Revision (Head)";
+      color = "error";
+      break;
     default:
       label = code;
   }

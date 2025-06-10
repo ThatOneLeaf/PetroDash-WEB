@@ -16,6 +16,7 @@ import api from '../../services/api';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import StatusChip from "../../components/StatusChip";
 
 const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose, status }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -404,9 +405,21 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
                       )}
                     </Select>
                   </FormControl>
-
               ) : 
-
+                key === 'status' ? (
+                  <Box
+                    sx={{
+                      p: 1
+                    }}>
+                    <Typography sx={{ 
+                      fontSize: '0.85rem', 
+                      color: 'grey'
+                    }}>
+                      Status:
+                    </Typography>
+                    <StatusChip status={value} />              
+                  </Box>       
+              ) :         
                 <TextField
                   label={isEditing && !permanentlyReadOnlyFields.includes(key) ? (
                     <> {key} <span style={{ color: 'red' }}>*</span> </>

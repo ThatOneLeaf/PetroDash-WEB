@@ -27,6 +27,7 @@ import AddWasteHazardDisModal from '../../components/envi_components/AddWasteHaz
 import AddWasteNonHazGenModal from '../../components/envi_components/AddWasteNonHazGenModal';
 import ImportFileModal from '../../components/ImportFileModal';
 import CustomTable from '../../components/Table/Table';
+import StatusChip from "../../components/StatusChip";
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
@@ -131,13 +132,29 @@ function EnvironmentWaste() {
 
   const columns = useMemo(() => {
     if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') return [];
+
     return Object.keys(data[0])
-      .slice(1) // This will exclude the first column
-      .map((key) => ({
-      key,
-      label: key.charAt(0).toUpperCase() + key.slice(1),
-    }));
+      .slice(1) // Exclude the first column (e.g., ID)
+      .map((key) => {
+        if (key === 'status') {
+          return {
+            key,
+            label: 'Status',
+            render: (row) => {
+            console.log('Rendering row:', row); // ← Debug here
+            return <StatusChip status={row} />;
+          }
+
+          };
+        }
+
+        return {
+          key,
+          label: key.charAt(0).toUpperCase() + key.slice(1),
+        };
+      });
   }, [data]);
+
 
   // Prepare options for Filter components (ensure no undefined/empty, sorted, and unique)
   const generateOptions = (data, field, sortFn = (a, b) => a.localeCompare(b)) => {
