@@ -1,12 +1,4 @@
-function PageButtons({ selected, setSelected }) {
-  const pages = [
-    "Employability",
-    "Parental Leave",
-    "Safety Work Data",
-    "Training",
-    "OSH",
-  ];
-
+function PageButtons({ pages = [], selected, setSelected }) {
   /*
 <Box
               sx={{

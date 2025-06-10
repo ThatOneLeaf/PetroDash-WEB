@@ -3,10 +3,19 @@ import { useMemo } from "react";
 export const useFilteredData = (data, filters, searchQuery = "") => {
   return useMemo(() => {
     return data.filter((item) => {
-      // Apply filters
       const matchesFilters = Object.entries(filters).every(([key, value]) => {
         if (!value) return true;
-        return item[key] && item[key].toString() === value;
+
+        const itemValue = item[key];
+
+        if (typeof itemValue === "string") {
+          return (
+            itemValue.trim().toLowerCase() ===
+            value.toString().trim().toLowerCase()
+          );
+        }
+
+        return itemValue?.toString() === value.toString();
       });
 
       // Apply search

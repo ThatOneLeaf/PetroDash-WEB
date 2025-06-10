@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, IconButton, Box, Typography } from "@mui/material";
 
-import EditIcon from "@mui/icons-material/Edit";
+import LaunchIcon from "@mui/icons-material/Launch";
+import ClearIcon from "@mui/icons-material/Clear";
 
 import api from "../../services/api";
 
@@ -85,7 +86,7 @@ function OSH({ onFilterChange }) {
         setRow(row);
       }}
     >
-      <EditIcon />
+      <LaunchIcon />
     </IconButton>
   );
 
@@ -134,6 +135,10 @@ function OSH({ onFilterChange }) {
     incident_title: "",
     status_id: "",
   });
+
+  const isFiltering = useMemo(() => {
+    return Object.values(filters).some((v) => v !== null && v !== "");
+  }, [filters]);
 
   //FILTERS --DONT CHANGE
 
@@ -281,6 +286,33 @@ function OSH({ onFilterChange }) {
             }}
             placeholder="Status"
           />
+
+          {isFiltering && (
+            <Button
+              variant="outline"
+              startIcon={<ClearIcon />}
+              sx={{
+                color: "#182959",
+                borderRadius: "999px",
+                padding: "9px 18px",
+                fontSize: "0.85rem",
+                fontWeight: "bold",
+              }}
+              onClick={() => {
+                setFilters({
+                  company_name: "",
+                  workforce_type: "",
+                  lost_time: "",
+                  incident_type: "",
+                  incident_title: "",
+                  status_id: "",
+                });
+                setPage(1);
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
         </Box>
 
         {/* Table or fallback */}

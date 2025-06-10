@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, Box, IconButton } from "@mui/material";
 
-import EditIcon from "@mui/icons-material/Edit";
+import LaunchIcon from "@mui/icons-material/Launch";
+import ClearIcon from "@mui/icons-material/Clear";
 import api from "../../services/api";
 
 import { useFilteredData } from "../../components/hr_components/filtering";
@@ -76,10 +77,51 @@ function Demographics({ onFilterChange }) {
   const columns = [
     { key: "company_name", label: "Company ID" },
     { key: "employee_id", label: "Employee ID" },
-    { key: "gender", label: "Gender" },
-    { key: "position_id", label: "Position" },
-    { key: "p_np", label: "Employee Category" },
+    {
+      key: "gender",
+      label: "Gender",
+      render: (val) =>
+        val?.toLowerCase() === "m"
+          ? "Male"
+          : val?.toLowerCase() === "f"
+          ? "Female"
+          : val,
+    },
+    {
+      key: "position_id",
+      label: "Position",
+      render: (val) =>
+        val?.toLowerCase() === "rf"
+          ? "Rank-and-File"
+          : val?.toLowerCase() === "mm"
+          ? "Middle Management"
+          : val?.toLowerCase() === "sm"
+          ? "Senior Management"
+          : val,
+    },
+
+    {
+      key: "p_np",
+      label: "Employee Category",
+      render: (val) =>
+        val?.toLowerCase() === "p"
+          ? "Professional"
+          : val?.toLowerCase() === "np"
+          ? "Non-Professional"
+          : val,
+    },
     { key: "employment_status", label: "Employee Status" },
+
+    {
+      key: "start_date",
+      label: "Start Date",
+      render: (val) => val.split("T")[0],
+    },
+    {
+      key: "end_date",
+      label: "End Date",
+      render: (val) => (val ? val.split("T")[0] : "N/A"),
+    },
     {
       key: "status_id",
       label: "Status",
@@ -96,7 +138,7 @@ function Demographics({ onFilterChange }) {
         setRow(row);
       }}
     >
-      <EditIcon />
+      <LaunchIcon />
     </IconButton>
   );
 
@@ -110,18 +152,34 @@ function Demographics({ onFilterChange }) {
   ).map((val) => ({ label: val, value: val }));
 
   const genderOptions = Array.from(
-    new Set(data.map((item) => item.gender))
-  ).map((val) => ({ label: val, value: val }));
-  const positionOptions = Array.from(
-    new Set(data.map((item) => item.position_id))
+    new Set(data.map((item) => item.gender?.trim().toLowerCase()))
   ).map((val) => ({
-    label: val,
+    label: val === "m" ? "Male" : val === "f" ? "Female" : val,
+    value: val,
+  }));
+
+  const positionOptions = Array.from(
+    new Set(data.map((item) => item.position_id?.trim().toLowerCase()))
+  ).map((val) => ({
+    label:
+      val?.toLowerCase() === "rf"
+        ? "Rank-and-File"
+        : val?.toLowerCase() === "mm"
+        ? "Middle Management"
+        : val?.toLowerCase() === "sm"
+        ? "Senior Management"
+        : val,
     value: val,
   }));
   const employementCategoryOptions = Array.from(
-    new Set(data.map((item) => item.p_np))
+    new Set(data.map((item) => item.p_np?.trim().toLowerCase()))
   ).map((val) => ({
-    label: val,
+    label:
+      val?.toLowerCase() === "p"
+        ? "Professional"
+        : val?.toLowerCase() === "np"
+        ? "Non-Professional"
+        : val,
     value: val,
   }));
   const employementStatusOptions = Array.from(
@@ -130,18 +188,25 @@ function Demographics({ onFilterChange }) {
 
   //STATUS DONT CHANGE
   const statusOptions = [
-    { label: "Pending", value: "PND" },
-    { label: "Head Approved", value: "HAP" },
-    { label: "Site Approved", value: "SAP" },
+    { label: "Under Review (Site)", value: "URS" },
+    { label: "Under Review (Head)", value: "URH" },
+    { label: "Approved", value: "APP" },
     { label: "For Revision (Site)", value: "FRS" },
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
   const [filters, setFilters] = useState({
     company_name: "",
-    type_of_leave: "",
+    gender: "",
+    position_id: "",
+    p_np: "",
+    employment_status: "",
     status_id: "",
   });
+
+  const isFiltering = useMemo(() => {
+    return Object.values(filters).some((v) => v !== null && v !== "");
+  }, [filters]);
 
   //FILTERS --DONT CHANGE
 
@@ -284,6 +349,33 @@ function Demographics({ onFilterChange }) {
             }}
             placeholder="Status"
           />
+
+          {isFiltering && (
+            <Button
+              variant="outline"
+              startIcon={<ClearIcon />}
+              sx={{
+                color: "#182959",
+                borderRadius: "999px",
+                padding: "9px 18px",
+                fontSize: "0.85rem",
+                fontWeight: "bold",
+              }}
+              onClick={() => {
+                setFilters({
+                  company_name: "",
+                  gender: "",
+                  position_id: "",
+                  p_np: "",
+                  employment_status: "",
+                  status_id: "",
+                });
+                setPage(1);
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
         </Box>
 
         {/* Table or fallback */}
@@ -315,6 +407,17 @@ function Demographics({ onFilterChange }) {
             />
           </Overlay>
         )}
+        {/* 
+        {isImportdModalOpen && (
+          <Overlay onClose={() => setIsImportModalOpen(false)}>
+            <ImportFileModal
+              title="Hr - Electricity"
+              downloadPath="environment/create_template/envi_electric_consumption"
+              uploadPath="environment/bulk_upload_electric_consumption"
+              onClose={() => setIsImportModalOpen(false)} // or any close handler
+            />
+          </Overlay>
+        )}*/}
 
         {isViewModal && (
           <Overlay onClose={() => setIsViewModal(false)}>

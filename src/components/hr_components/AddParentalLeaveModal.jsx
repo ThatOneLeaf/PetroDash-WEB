@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Paper,
   Typography,
@@ -6,19 +6,54 @@ import {
   Button,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
   Box,
 } from "@mui/material";
+
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 
 import api from "../../services/api";
 
 function AddParentalLeaveModal({ onClose }) {
   const [formData, setFormData] = useState({
-    companyId: "", // get current  company of emp
     employeeId: "",
-    dateAvailed: "",
+    dateAvailed: null,
     daysAvailed: "",
     typeOfLeave: "",
   });
+
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchParentalData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("hr/parental_leave_records_by_status");
+      console.log("Parental Data from API:", response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching Parental data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchParentalData();
+  }, []);
+
+  const uniqueOptions = (key) => {
+    return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
+      label: val,
+      value: val,
+    }));
+  };
 
   const handleChange = (field) => (event) => {
     const newFormData = {
@@ -28,41 +63,77 @@ function AddParentalLeaveModal({ onClose }) {
     setFormData(newFormData);
   };
 
-  const handleSubmit = () => {
-    console.log("Submit clicked", formData);
-    onClose();
+  const handleDateChange = (field) => (newValue) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: newValue,
+    }));
   };
 
-  /* API FOR SUBMIT OF ADD RECORD
   const handleSubmit = async () => {
+    console.log(formData);
+
     try {
-      await api.post('/economic/value-generated', formData);
+      setLoading(true);
+
+      await api.post("/hr/single_upload_parental_leave_record", {
+        employee_id: formData.employeeId.toUpperCase(),
+        type_of_leave: formData.daysAvailed,
+        date: formData.dateAvailed
+          ? dayjs(formData.dateAvailed).format("YYYY-MM-DD")
+          : null,
+        days: formData.daysAvailed,
+      });
+
+      console.log("success  ");
       onClose();
-      // You might want to refresh the data after adding
-    } catch (error) {
-      console.error('Error adding record:', error);
+
+      setFormData({
+        employeeId: "",
+        dateAvailed: null,
+        daysAvailed: "",
+        typeOfLeave: "",
+      });
+    } catch (err) {
+      console.error("Error submitting form:", err);
+    } finally {
+      setLoading(false);
     }
-  };*/
+  };
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <Paper
       sx={{
         p: 4,
-        width: "450px",
+        width: "500px",
         borderRadius: "16px",
         bgcolor: "white",
       }}
     >
-      <Typography
-        variant="h5"
+      <Box
         sx={{
-          color: "#1a237e",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
           mb: 3,
-          fontWeight: "bold",
         }}
       >
-        Add New Record
-      </Typography>
+        <Typography
+          sx={{
+            fontSize: "1rem",
+            fontWeight: 800,
+          }}
+        >
+          ADD NEW RECORD
+        </Typography>
+        <Typography
+          sx={{ fontSize: "2.2rem", color: "#182959", fontWeight: 800 }}
+        >
+          HR - Parental Leave
+        </Typography>
+      </Box>
 
       <Box
         sx={{
@@ -88,53 +159,45 @@ function AddParentalLeaveModal({ onClose }) {
         </Select>*/}
 
         <TextField
-          placeholder="Employee ID*"
+          label="Employee ID"
           value={formData.employeeId}
           onChange={handleChange("employeeId")}
           type="text"
         />
 
-        <Select
-          value={formData.typeOfLeave}
-          onChange={handleChange("typeOfLeave")}
-          displayEmpty
-          renderValue={(selected) => {
-            if (!selected) {
-              return (
-                <span style={{ color: "#999" }}>Select Type of Leave*</span>
-              );
-            }
-            const getLeave = (selected) => {
-              const map = {
-                SP: "Solo Parent",
-                MATERNITY: "Maternity",
-                PATERNITY: "Paternity",
-              };
-
-              return map[selected] || "Unknown";
-            };
-
-            return getLeave(selected);
-          }}
-        >
-          <MenuItem value="SP">Solo Parent </MenuItem>
-          <MenuItem value="MATERNITY">Maternity</MenuItem>
-          <MenuItem value="PATERNITY">Paternity</MenuItem>
-        </Select>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Type of Leave</InputLabel>
+          <Select
+            value={formData.typeOfLeave}
+            onChange={handleChange("typeOfLeave")}
+            label="Type of Leave"
+            sx={{ height: "55px" }}
+          >
+            {uniqueOptions("type_of_leave").map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <TextField
-          placeholder="Days Availed*"
+          label="Days Availed"
           value={formData.daysAvailed}
           onChange={handleChange("daysAvailed")}
           type="number"
         />
 
-        <TextField
-          placeholder="Date Avaled*"
-          value={formData.dateAvailed}
-          onChange={handleChange("dateAvailed")}
-          type="date"
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="Date Availed"
+            value={formData.dateAvailed}
+            onChange={handleDateChange("dateAvailed")}
+            slotProps={{
+              textField: { fullWidth: true, size: "medium" },
+            }}
+          />
+        </LocalizationProvider>
       </Box>
 
       <Box
@@ -142,25 +205,24 @@ function AddParentalLeaveModal({ onClose }) {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          mt: 2,
+          mt: 3,
         }}
       >
         <Button
-          onClick={handleSubmit}
           variant="contained"
           sx={{
-            width: "100px",
             backgroundColor: "#2B8C37",
             borderRadius: "999px",
             padding: "9px 18px",
-            fontSize: "0.85rem",
+            fontSize: "1rem",
             fontWeight: "bold",
             "&:hover": {
               backgroundColor: "#256d2f",
             },
           }}
+          onClick={handleSubmit}
         >
-          ADD
+          ADD RECORD
         </Button>
       </Box>
     </Paper>

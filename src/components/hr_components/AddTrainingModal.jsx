@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Paper,
   Typography,
@@ -9,16 +9,27 @@ import {
   Box,
 } from "@mui/material";
 
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 import api from "../../services/api";
 
 function AddTrainingModal({ onClose }) {
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
     trainingName: "",
-    date: "",
+    date: null,
     trainingHours: "",
     numberOfParticipants: "",
   });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(false);
+  }, []);
 
   const handleChange = (field) => (event) => {
     const newFormData = {
@@ -28,41 +39,76 @@ function AddTrainingModal({ onClose }) {
     setFormData(newFormData);
   };
 
-  const handleSubmit = () => {
-    console.log("Submit clicked", formData);
-    onClose();
+  const handleDateChange = (field) => (newValue) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: newValue,
+    }));
   };
 
-  /* API FOR SUBMIT OF ADD RECORD
   const handleSubmit = async () => {
-    try {
-      await api.post('/economic/value-generated', formData);
-      onClose();
-      // You might want to refresh the data after adding
-    } catch (error) {
-      console.error('Error adding record:', error);
-    }
-  };*/
+    console.log(formData);
 
+    try {
+      setLoading(true);
+
+      await api.post("/hr/single_upload_training_record", {
+        company_id: "PSC", //ADD COMPANY TO ADD RECORD
+        date: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : null,
+        training_title: formData.trainingName,
+        training_hours: formData.trainingHours,
+        number_of_participants: formData.numberOfParticipants,
+      });
+
+      console.log("success  ");
+      onClose();
+
+      setFormData({
+        companyId: "", // get current  company of emp
+        trainingName: "",
+        date: null,
+        trainingHours: "",
+        numberOfParticipants: "",
+      });
+    } catch (err) {
+      console.error("Error submitting form:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
   return (
     <Paper
       sx={{
         p: 4,
-        width: "450px",
+        width: "500px",
         borderRadius: "16px",
         bgcolor: "white",
       }}
     >
-      <Typography
-        variant="h5"
+      <Box
         sx={{
-          color: "#1a237e",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
           mb: 3,
-          fontWeight: "bold",
         }}
       >
-        Add New Record
-      </Typography>
+        <Typography
+          sx={{
+            fontSize: "1rem",
+            fontWeight: 800,
+          }}
+        >
+          ADD NEW RECORD
+        </Typography>
+        <Typography
+          sx={{ fontSize: "2.2rem", color: "#182959", fontWeight: 800 }}
+        >
+          HR - Training
+        </Typography>
+      </Box>
 
       <Box
         sx={{
@@ -88,58 +134,60 @@ function AddTrainingModal({ onClose }) {
         </Select>*/}
 
         <TextField
-          placeholder="Training Name*"
+          label="Training Name"
           value={formData.trainingName}
           onChange={handleChange("trainingName")}
           type="text"
         />
 
-        <TextField
-          placeholder="Date*"
-          value={formData.date}
-          onChange={handleChange("date")}
-          type="date"
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="Date"
+            value={formData.date}
+            onChange={handleDateChange("date")}
+            slotProps={{
+              textField: { fullWidth: true, size: "medium" },
+            }}
+          />
+        </LocalizationProvider>
 
         <TextField
-          placeholder="Training Hours*"
+          label="Training Hours"
           value={formData.trainingHours}
           onChange={handleChange("trainingHours")}
           type="number"
         />
 
         <TextField
-          placeholder="Number of Participants*"
+          label="Number of Participants"
           value={formData.numberOfParticipants}
           onChange={handleChange("numberOfParticipants")}
           type="number"
         />
       </Box>
-
       <Box
         sx={{
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          mt: 2,
+          mt: 3,
         }}
       >
         <Button
-          onClick={handleSubmit}
           variant="contained"
           sx={{
-            width: "100px",
             backgroundColor: "#2B8C37",
             borderRadius: "999px",
             padding: "9px 18px",
-            fontSize: "0.85rem",
+            fontSize: "1rem",
             fontWeight: "bold",
             "&:hover": {
               backgroundColor: "#256d2f",
             },
           }}
+          onClick={handleSubmit}
         >
-          ADD
+          ADD RECORD
         </Button>
       </Box>
     </Paper>

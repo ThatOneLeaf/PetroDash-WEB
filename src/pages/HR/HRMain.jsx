@@ -4,6 +4,8 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
 import Sidebar from "../../components/Sidebar";
 
+import api from "../../services/api";
+
 import PageButtons from "../../components/hr_components/page_button";
 
 import Overlay from "../../components/modal";
@@ -15,6 +17,7 @@ import AddParentalLeaveModal from "../../components/hr_components/AddParentalLea
 import AddSafetyWorkDataModal from "../../components/hr_components/AddSafetyWorkDataModal";
 
 import ImportHRModal from "../../components/hr_components/ImportHRModal";
+import ImportFileModal from "../../components/ImportFileModal";
 
 import HREmployability from "./HR";
 import HRParental from "./HRParentalLeave";
@@ -28,6 +31,14 @@ function HRMain() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [filteredExportData, setFilteredExportData] = useState(null);
+
+  const pages = [
+    "Employability",
+    "Parental Leave",
+    "Safety Work Data",
+    "Training",
+    "OSH",
+  ];
 
   const handleFilteredDataFromChild = (data) => {
     setFilteredExportData(data);
@@ -45,8 +56,10 @@ function HRMain() {
             )}
             {isImportModalOpen && (
               <Overlay onClose={() => setIsImportModalOpen(false)}>
-                <ImportHRModal
-                  context="employability"
+                <ImportFileModal
+                  title="HR - Employability"
+                  downloadPath="hr/template-employability"
+                  //uploadPath=
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -66,8 +79,10 @@ function HRMain() {
             )}
             {isImportModalOpen && (
               <Overlay onClose={() => setIsImportModalOpen(false)}>
-                <ImportHRModal
-                  context="parentalleave"
+                <ImportFileModal
+                  title="HR - Parental Leave"
+                  downloadPath="hr/template-parental-leave"
+                  //uploadPath=
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -86,8 +101,10 @@ function HRMain() {
             )}
             {isImportModalOpen && (
               <Overlay onClose={() => setIsImportModalOpen(false)}>
-                <ImportHRModal
-                  context="safetyworkdata"
+                <ImportFileModal
+                  title="HR - Safety Work Data"
+                  downloadPath="hr/template-safety-workdata"
+                  //uploadPath=
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -104,8 +121,10 @@ function HRMain() {
             )}
             {isImportModalOpen && (
               <Overlay onClose={() => setIsImportModalOpen(false)}>
-                <ImportHRModal
-                  context="training"
+                <ImportFileModal
+                  title="HR - Training"
+                  downloadPath="hr/template-training"
+                  //uploadPath=
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -123,8 +142,10 @@ function HRMain() {
             )}
             {isImportModalOpen && (
               <Overlay onClose={() => setIsImportModalOpen(false)}>
-                <ImportHRModal
-                  context="osh"
+                <ImportFileModal
+                  title="HR - OSH"
+                  downloadPath="hr/template-osh"
+                  //uploadPath=
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -187,9 +208,6 @@ function HRMain() {
 
   //create api for export
   const exportToExcel = async () => {
-    console.log(filteredExportData);
-
-    /*
     try {
       const response = await api.post("hr/export_excel", filteredExportData, {
         responseType: "blob",
@@ -202,14 +220,13 @@ function HRMain() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "exported_energy_data.xlsx";
+      a.download = "exported_hr_data.xlsx";
       a.click();
 
-      // Clean up
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Failed to export Excel:", error);
-    }*/
+    }
   };
 
   return (
@@ -296,7 +313,11 @@ function HRMain() {
           </div>
 
           {/* Common navigation buttons */}
-          <PageButtons selected={selected} setSelected={setSelected} />
+          <PageButtons
+            pages={pages}
+            selected={selected}
+            setSelected={setSelected}
+          />
 
           {/* Page-specific content with controls inside */}
           <Box mt={3}>{renderPage()}</Box>

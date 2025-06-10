@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, Box, IconButton } from "@mui/material";
 
-import EditIcon from "@mui/icons-material/Edit";
+import LaunchIcon from "@mui/icons-material/Launch";
+import ClearIcon from "@mui/icons-material/Clear";
 
 import api from "../../services/api";
 
@@ -77,7 +78,7 @@ function ParentalLeave({ onFilterChange }) {
         setRow(row);
       }}
     >
-      <EditIcon />
+      <LaunchIcon />
     </IconButton>
   );
 
@@ -96,9 +97,9 @@ function ParentalLeave({ onFilterChange }) {
 
   //STATUS DONT CHANGE
   const statusOptions = [
-    { label: "Pending", value: "PND" },
-    { label: "Head Approved", value: "HAP" },
-    { label: "Site Approved", value: "SAP" },
+    { label: "Under Review (Site)", value: "URS" },
+    { label: "Under Review (Head)", value: "URH" },
+    { label: "Approved", value: "APP" },
     { label: "For Revision (Site)", value: "FRS" },
     { label: "For Revision (Head)", value: "FRH" },
   ];
@@ -108,6 +109,10 @@ function ParentalLeave({ onFilterChange }) {
     type_of_leave: "",
     status_id: "",
   });
+
+  const isFiltering = useMemo(() => {
+    return Object.values(filters).some((v) => v !== null && v !== "");
+  }, [filters]);
 
   //FILTERS --DONT CHANGE
 
@@ -214,6 +219,30 @@ function ParentalLeave({ onFilterChange }) {
             }}
             placeholder="Status"
           />
+
+          {isFiltering && (
+            <Button
+              variant="outline"
+              startIcon={<ClearIcon />}
+              sx={{
+                color: "#182959",
+                borderRadius: "999px",
+                padding: "9px 18px",
+                fontSize: "0.85rem",
+                fontWeight: "bold",
+              }}
+              onClick={() => {
+                setFilters({
+                  company_name: "",
+                  type_of_leave: "",
+                  status_id: "",
+                });
+                setPage(1);
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
         </Box>
 
         {/* Table or fallback */}

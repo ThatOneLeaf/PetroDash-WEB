@@ -6,11 +6,15 @@ import {
   Button,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
   Box,
 } from "@mui/material";
 
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 import api from "../../services/api";
 
 function AddOSHModal({ onClose }) {
@@ -21,7 +25,7 @@ function AddOSHModal({ onClose }) {
     companyId: "", // get current  company of emp
     workforce_type: "",
     lost_time: "",
-    date: "",
+    date: null,
     incident_type: "",
     incident_title: "",
     incident_count: "",
@@ -53,6 +57,14 @@ function AddOSHModal({ onClose }) {
       value: val,
     }));
   };
+
+  const uniqueBoolOptions = (key) => {
+    return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
+      label: typeof val === "boolean" ? (val ? "Yes" : "No") : val,
+      value: String(val), // convert all to string for consistency in <Select />
+    }));
+  };
+
   const handleChange = (field) => (event) => {
     const newFormData = {
       ...formData,
@@ -61,9 +73,49 @@ function AddOSHModal({ onClose }) {
     setFormData(newFormData);
   };
 
-  const handleSubmit = () => {
-    console.log("Submit clicked", formData);
-    onClose();
+  const handleDateChange = (field) => (newValue) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: newValue,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    console.log(formData);
+
+    try {
+      setLoading(true);
+
+      await api.post("/hr/single_upload_occupational_safety_health_record", {
+        company_id: "PSC",
+        workforce_type: formData.workforce_type,
+        lost_time:
+          formData.lost_time === "true" || formData.lost_time === true
+            ? "TRUE"
+            : "FALSE",
+        date: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : null,
+        incident_type: formData.incident_type,
+        incident_title: formData.incident_title,
+        incident_count: formData.incident_count,
+      });
+
+      console.log("success  ");
+      onClose();
+
+      setFormData({
+        companyId: "", // get current  company of emp
+        workforce_type: "",
+        lost_time: "",
+        date: null,
+        incident_type: "",
+        incident_title: "",
+        incident_count: "",
+      });
+    } catch (err) {
+      console.error("Error submitting form:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) return <div>Loading...</div>;
@@ -78,16 +130,28 @@ function AddOSHModal({ onClose }) {
         bgcolor: "white",
       }}
     >
-      <Typography
-        variant="h5"
+      <Box
         sx={{
-          color: "#1a237e",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
           mb: 3,
-          fontWeight: "bold",
         }}
       >
-        Add New Record
-      </Typography>
+        <Typography
+          sx={{
+            fontSize: "1rem",
+            fontWeight: 800,
+          }}
+        >
+          ADD NEW RECORD
+        </Typography>
+        <Typography
+          sx={{ fontSize: "2.2rem", color: "#182959", fontWeight: 800 }}
+        >
+          HR - OSH
+        </Typography>
+      </Box>
 
       <Box
         sx={{
@@ -113,33 +177,38 @@ function AddOSHModal({ onClose }) {
         </Select>*/}
 
         <TextField
-          placeholder="Worforce Type*"
+          label="Worforce Type"
           value={formData.employeeId}
           onChange={handleChange("workforce_type")}
           type="text"
         />
 
-        <Select
-          value={formData.lost_time}
-          onChange={handleChange("lost_time")}
-          displayEmpty
-          renderValue={(selected) => {
-            if (!selected) {
-              return <span style={{ color: "#999" }}>Lost Time*</span>;
-            }
-            return selected === "yes" ? "Yes" : "No";
-          }}
-        >
-          <MenuItem value="yes">Yes</MenuItem>
-          <MenuItem value="no">No</MenuItem>
-        </Select>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Lost Time</InputLabel>
+          <Select
+            value={formData.lost_time}
+            onChange={handleChange("lost_time")}
+            label="Lost Time"
+            sx={{ height: "55px" }}
+          >
+            {uniqueBoolOptions("lost_time").map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-        <TextField
-          placeholder="Date*"
-          value={formData.tenureEnded}
-          onChange={handleChange("date")}
-          type="date"
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="Date"
+            value={formData.date}
+            onChange={handleDateChange("date")}
+            slotProps={{
+              textField: { fullWidth: true, size: "medium" },
+            }}
+          />
+        </LocalizationProvider>
 
         <Box
           sx={{
@@ -148,49 +217,41 @@ function AddOSHModal({ onClose }) {
             gap: 2,
           }}
         >
-          <Select
-            fullWidth
-            value={formData.incident_type}
-            onChange={handleChange("incident_type")}
-            displayEmpty
-            renderValue={(selected) =>
-              selected ? (
-                selected
-              ) : (
-                <span style={{ color: "#aaa" }}>Select Incident Type*</span>
-              )
-            }
-          >
-            {uniqueOptions("incident_type").map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>Incident Type</InputLabel>
+            <Select
+              value={formData.incident_type}
+              onChange={handleChange("incident_type")}
+              label="Incident Type"
+              sx={{ height: "55px" }}
+            >
+              {uniqueOptions("incident_type").map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-          <Select
-            fullWidth
-            value={formData.incident_title}
-            onChange={handleChange("incident_title")}
-            displayEmpty
-            renderValue={(selected) =>
-              selected ? (
-                selected
-              ) : (
-                <span style={{ color: "#aaa" }}>Select Incident Title*</span>
-              )
-            }
-          >
-            {uniqueOptions("incident_title").map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>Incident Title</InputLabel>
+            <Select
+              value={formData.incident_title}
+              onChange={handleChange("incident_title")}
+              label="Incident Title"
+              sx={{ height: "55px" }}
+            >
+              {uniqueOptions("incident_title").map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         <TextField
-          placeholder="Incident Count*"
+          label="Incident Count"
           value={formData.incident_count}
           onChange={handleChange("incident_count")}
           type="Number"
@@ -202,25 +263,24 @@ function AddOSHModal({ onClose }) {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          mt: 2,
+          mt: 3,
         }}
       >
         <Button
-          onClick={handleSubmit}
           variant="contained"
           sx={{
-            width: "100px",
             backgroundColor: "#2B8C37",
             borderRadius: "999px",
             padding: "9px 18px",
-            fontSize: "0.85rem",
+            fontSize: "1rem",
             fontWeight: "bold",
             "&:hover": {
               backgroundColor: "#256d2f",
             },
           }}
+          onClick={handleSubmit}
         >
-          ADD
+          ADD RECORD
         </Button>
       </Box>
     </Paper>

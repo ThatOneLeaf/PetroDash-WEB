@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Paper,
   Typography,
@@ -6,11 +6,15 @@ import {
   Button,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
   Box,
 } from "@mui/material";
 
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 import api from "../../services/api";
 
 function AddEmployeeModal({ onClose }) {
@@ -18,12 +22,43 @@ function AddEmployeeModal({ onClose }) {
     companyId: "", // get current  company of emp
     employeeId: "",
     gender: "",
+    birthdate: null,
     position: "",
     employeeCategory: "",
     employeeStatus: "",
-    tenureStart: "",
-    tenureEnded: "",
+    tenureStart: null,
+    tenureEnded: null,
   });
+
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // DATA -- CHANGE PER PAGE
+  const fetchEmployabilityData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("hr/employability_records_by_status");
+      console.log("Employability Data from API:", response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching Employability data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployabilityData();
+  }, []);
+
+  const uniqueOptions = (key) => {
+    return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
+      label: val,
+      value: val,
+    }));
+  };
 
   const handleChange = (field) => (event) => {
     const newFormData = {
@@ -33,41 +68,91 @@ function AddEmployeeModal({ onClose }) {
     setFormData(newFormData);
   };
 
-  const handleSubmit = () => {
-    console.log("Submit clicked", formData);
-    onClose();
+  const handleDateChange = (field) => (newValue) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: newValue,
+    }));
   };
 
-  /* API FOR SUBMIT OF ADD RECORD
   const handleSubmit = async () => {
+    console.log(formData);
+
     try {
-      await api.post('/economic/value-generated', formData);
+      setLoading(true);
+
+      await api.post("/hr/single_upload_employability_record", {
+        company_id: "PSC",
+        employee_id: formData.employeeId.toUpperCase(),
+        gender: formData.gender.toUpperCase(),
+        birthdate: formData.birthdate
+          ? dayjs(formData.birthdate).format("YYYY-MM-DD")
+          : null,
+        position_id: formData.position.toUpperCase(),
+        p_np: formData.employeeCategory.toUpperCase(),
+        employment_status: formData.employeeStatus,
+        start_date: formData.tenureStart
+          ? dayjs(formData.tenureStart).format("YYYY-MM-DD")
+          : null,
+        end_date: formData.tenureEnded
+          ? dayjs(formData.tenureEnded).format("YYYY-MM-DD")
+          : null,
+      });
+
+      console.log("success  ");
       onClose();
-      // You might want to refresh the data after adding
-    } catch (error) {
-      console.error('Error adding record:', error);
+
+      setFormData({
+        companyId: "",
+        employeeId: "",
+        gender: "",
+        birthdate: null,
+        position: "",
+        employeeCategory: "",
+        employeeStatus: "",
+        tenureStart: null,
+        tenureEnded: null,
+      });
+    } catch (err) {
+      console.error("Error submitting form:", err);
+    } finally {
+      setLoading(false);
     }
-  };*/
+  };
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <Paper
       sx={{
         p: 4,
-        width: "450px",
+        width: "500px",
         borderRadius: "16px",
         bgcolor: "white",
       }}
     >
-      <Typography
-        variant="h5"
+      <Box
         sx={{
-          color: "#1a237e",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
           mb: 3,
-          fontWeight: "bold",
         }}
       >
-        Add New Record
-      </Typography>
+        <Typography
+          sx={{
+            fontSize: "1rem",
+            fontWeight: 800,
+          }}
+        >
+          ADD NEW RECORD
+        </Typography>
+        <Typography
+          sx={{ fontSize: "2.2rem", color: "#182959", fontWeight: 800 }}
+        >
+          HR - Employability
+        </Typography>
+      </Box>
 
       <Box
         sx={{
@@ -93,7 +178,7 @@ function AddEmployeeModal({ onClose }) {
         </Select>*/}
 
         <TextField
-          placeholder="Employee ID*"
+          label="Employee ID"
           value={formData.employeeId}
           onChange={handleChange("employeeId")}
           type="text"
@@ -106,95 +191,122 @@ function AddEmployeeModal({ onClose }) {
             gap: 2,
           }}
         >
-          <Select
-            value={formData.gender}
-            onChange={handleChange("gender")}
-            displayEmpty
-            renderValue={(selected) => {
-              if (!selected) {
-                return <span style={{ color: "#999" }}>Select Gender*</span>;
-              }
-              return selected === "male" ? "Male" : "Female";
-            }}
-          >
-            <MenuItem value="male">Male</MenuItem>
-            <MenuItem value="female">Female</MenuItem>
-          </Select>
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>Gender</InputLabel>
+            <Select
+              value={formData.gender}
+              onChange={handleChange("gender")}
+              label="Gender"
+              sx={{ height: "55px" }}
+            >
+              {uniqueOptions("gender").map((option) => {
+                let label = option.label;
+                if (option.value === "M") label = "Male";
+                else if (option.value === "F") label = "Female";
 
-          <Select
-            value={formData.position}
-            onChange={handleChange("position")}
-            displayEmpty
-            renderValue={(selected) => {
-              if (!selected) {
-                return <span style={{ color: "#999" }}>Select Position*</span>;
-              }
-              const getPositionName = (selected) => {
-                const map = {
-                  RNF: "Rank-And-File",
-                  MM: "Middle Management",
-                  SM: "Senior Management",
-                };
+                return (
+                  <MenuItem key={option.value} value={option.value}>
+                    {label}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
 
-                return map[selected] || "Unknown";
-              };
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>Position</InputLabel>
+            <Select
+              value={formData.position}
+              onChange={handleChange("position")}
+              label="Position"
+              sx={{ height: "55px" }}
+            >
+              {uniqueOptions("position_id").map((option) => {
+                let label = option.label;
+                if (option.value === "RF") label = "Rank-And-File";
+                else if (option.value === "MM") label = "Middle Management";
+                else if (option.value === "SM") label = "Senior Management";
 
-              return getPositionName(selected);
-            }}
-          >
-            <MenuItem value="RNF">Rank-And-File</MenuItem>
-            <MenuItem value="MM">Middle Management</MenuItem>
-            <MenuItem value="SM">Senior Management</MenuItem>
-          </Select>
+                return (
+                  <MenuItem key={option.value} value={option.value}>
+                    {label}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
         </Box>
 
-        <Select
-          value={formData.employeeCategory}
-          onChange={handleChange("employeeCategory")}
-          displayEmpty
-          renderValue={(selected) => {
-            if (!selected) {
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="Birthdate"
+            value={formData.birthdate}
+            onChange={handleDateChange("birthdate")}
+            slotProps={{
+              textField: { fullWidth: true, size: "medium" },
+            }}
+          />
+        </LocalizationProvider>
+
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Employee Category</InputLabel>
+          <Select
+            value={formData.employeeCategory}
+            onChange={handleChange("employeeCategory")}
+            label="Employee Category"
+            sx={{ height: "55px" }}
+          >
+            {uniqueOptions("p_np").map((option) => {
+              let label = option.label;
+              if (option.value === "P") label = "Professional";
+              else if (option.value === "NP") label = "Non-Professional";
+
               return (
-                <span style={{ color: "#999" }}>Select Employee Category*</span>
+                <MenuItem key={option.value} value={option.value}>
+                  {label}
+                </MenuItem>
               );
-            }
-            return selected === "prof" ? "Professional" : "Non-Professional";
-          }}
-        >
-          <MenuItem value="prof">Professional</MenuItem>
-          <MenuItem value="nonprof">Non-Professional</MenuItem>
-        </Select>
+            })}
+          </Select>
+        </FormControl>
 
-        <Select
-          value={formData.employeeStatus}
-          onChange={handleChange("employeeStatus")}
-          displayEmpty
-          renderValue={(selected) => {
-            if (!selected) {
-              return (
-                <span style={{ color: "#999" }}>Select Employee Status*</span>
-              );
-            }
-            return selected === "perm" ? "Permanent" : "Temporary";
-          }}
-        >
-          <MenuItem value="perm">Permanent</MenuItem>
-          <MenuItem value="temp">Temporary</MenuItem>
-        </Select>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>Employee Status</InputLabel>
+          <Select
+            value={formData.employeeStatus}
+            onChange={handleChange("employeeStatus")}
+            label="Employee Status"
+            sx={{ height: "55px" }}
+          >
+            {uniqueOptions("employment_status").map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-        <TextField
-          placeholder="Tenure Start*"
-          value={formData.tenureStart}
-          onChange={handleChange("tenureStart")}
-          type="date"
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="Tenure Start"
+            value={formData.tenureStart}
+            onChange={handleDateChange("tenureStart")}
+            slotProps={{
+              textField: { fullWidth: true, size: "medium" },
+            }}
+          />
+        </LocalizationProvider>
 
-        <TextField
-          placeholder="Tenure Ended"
-          value={formData.tenureEnded}
-          onChange={handleChange("tenureEnded")}
-          type="date"
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="Tenure Ended"
+            value={formData.tenureEnded}
+            onChange={handleDateChange("tenureEnded")}
+            slotProps={{
+              textField: { fullWidth: true, size: "medium" },
+            }}
+          />
+        </LocalizationProvider>
       </Box>
 
       <Box
@@ -202,17 +314,16 @@ function AddEmployeeModal({ onClose }) {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          mt: 2,
+          mt: 3,
         }}
       >
         <Button
           variant="contained"
           sx={{
-            width: "100px",
             backgroundColor: "#2B8C37",
             borderRadius: "999px",
             padding: "9px 18px",
-            fontSize: "0.85rem",
+            fontSize: "1rem",
             fontWeight: "bold",
             "&:hover": {
               backgroundColor: "#256d2f",
@@ -220,7 +331,7 @@ function AddEmployeeModal({ onClose }) {
           }}
           onClick={handleSubmit}
         >
-          ADD
+          ADD RECORD
         </Button>
       </Box>
     </Paper>

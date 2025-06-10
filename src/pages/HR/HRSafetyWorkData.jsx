@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, IconButton, Box, Typography } from "@mui/material";
 
-import EditIcon from "@mui/icons-material/Edit";
+import LaunchIcon from "@mui/icons-material/Launch";
+import ClearIcon from "@mui/icons-material/Clear";
 import api from "../../services/api";
 
 import { useFilteredData } from "../../components/hr_components/filtering"; //change when moved
@@ -75,7 +76,7 @@ function SafetyWorkData({ onFilterChange }) {
         setRow(row);
       }}
     >
-      <EditIcon />
+      <LaunchIcon />
     </IconButton>
   );
 
@@ -106,6 +107,10 @@ function SafetyWorkData({ onFilterChange }) {
     contractor: "",
     status_id: "",
   });
+
+  const isFiltering = useMemo(() => {
+    return Object.values(filters).some((v) => v !== null && v !== "");
+  }, [filters]);
 
   //FILTERS --DONT CHANGE
 
@@ -211,6 +216,30 @@ function SafetyWorkData({ onFilterChange }) {
             }}
             placeholder="Status"
           />
+
+          {isFiltering && (
+            <Button
+              variant="outline"
+              startIcon={<ClearIcon />}
+              sx={{
+                color: "#182959",
+                borderRadius: "999px",
+                padding: "9px 18px",
+                fontSize: "0.85rem",
+                fontWeight: "bold",
+              }}
+              onClick={() => {
+                setFilters({
+                  companyName: "",
+                  contractor: "",
+                  status_id: "",
+                });
+                setPage(1);
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
         </Box>
 
         {/* Table or fallback */}
