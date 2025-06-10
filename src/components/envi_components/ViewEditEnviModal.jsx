@@ -7,7 +7,8 @@ import {
   Button, 
   TextField,
   FormControl,
-  InputLabel
+  InputLabel,
+  Modal
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -17,10 +18,17 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import StatusChip from "../../components/StatusChip";
+import ClearIcon from '@mui/icons-material/Clear';
+import Overlay from '../../components/modal';
 
 const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose, status }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editedRecord, setEditedRecord] = useState(record || {});
+  const statuses = ["URS","FRS","URH","FRH","APP"];
+  const [nextStatus, setNextStatus] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const recordIdKey = Object.keys(record)[0];
   const permanentlyReadOnlyFields = [Object.keys(record)[0],"company", "status"];
   const withOptionFields = ["source", "unit", "quarter", "year", "month", "property", "type", "metrics"];
 
@@ -203,10 +211,78 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
       }
       alert(response.data.message || "Record saved successfully.");
       setIsEditing(false);
+
     } catch (error) {
       const errorMessage = error.response?.data?.detail || error.message || "Unknown error occurred";
       alert(`Failed to save record: ${errorMessage}`);
     } 
+  };
+
+  const fetchNextStatus = (action) => {
+    let newStatus = '';
+    if (action === 'approve') {
+      switch (editedRecord.status){
+        case 'For Revision (Site)':
+          newStatus = statuses[0]; // "URS"
+          break;
+        case 'Under review (site)':
+        case 'For Revision (Head)':
+          newStatus = statuses[2]; // "URH"
+          break;
+        case 'Under review (head level)':
+          newStatus = statuses[4]; // "APP"
+          break;
+      }
+    } else if (action === 'revise') {
+      switch (editedRecord.status) {
+        case 'Under review (site)':
+          newStatus = statuses[1]; // "FRS"
+          break;
+        case 'Under review (head level)':
+          newStatus = statuses[3]; // "FRH"
+          break;
+      }
+    }
+    return newStatus;
+  }
+
+  //statuses = ["URS","FRS","URH","FRH","APP"]
+  const handleStatusUpdate = async (action) => {
+    const newStatus = fetchNextStatus(action);
+
+    if (newStatus) {
+      setNextStatus(newStatus);
+      console.log("Updated status to:", nextStatus);
+    } else {
+      console.warn("No matching status transition found.");
+    }
+
+    try {
+      if (action === 'revise') {
+        if (!remarks){
+          alert('Remarks is required for the status update')
+          return;
+        }
+      }
+      const payload = {
+        record_id: record[recordIdKey]?.toString().trim(),
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+
+      console.log(payload);
+
+      const response = await api.post(
+        "/usable_apis/update_status",
+        payload
+      );
+
+      alert(response.data.message);
+      status(false);
+    } catch (error) {
+      console.error("Error updating record status:", error);
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }
   };
 
   const isRecordUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
@@ -220,15 +296,41 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
     }}>
         <Box sx={{
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          mb: 3}}>
+          justifyContent: 'space-between'
+        }}>
           <Typography sx={{ 
             fontSize: '0.85rem', 
             fontWeight: 800,
           }}>
             {isEditing ? 'EDIT RECORD' : 'VIEW RECORD'}
           </Typography>
+          <ClearIcon
+            sx={{ 
+              color: 'grey',
+              borderRadius: '999px',
+              '&:hover': {
+                color: '#256d2f',
+              },
+            }}
+            onClick={() => {
+              const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
+              if (isEditing && !isUnchanged) {
+                const confirmClose = window.confirm("You have unsaved changes. Are you sure you want to close without saving?");
+                if (!confirmClose) return; // do nothing if user cancels
+              }
+              status(isUnchanged)
+              onClose();
+            }}
+          ></ClearIcon>
+        </Box>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          mb: 3
+        }}>
+          
+          
           <Typography sx={{ fontSize: '1.75rem', color: '#182959', fontWeight: 800}}>
             {title}
           </Typography>
@@ -409,7 +511,7 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
                 key === 'status' ? (
                   <Box
                     sx={{
-                      p: 1
+                      p: 0.5
                     }}>
                     <Typography sx={{ 
                       fontSize: '0.85rem', 
@@ -444,65 +546,144 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
             </Box>
           ))}
         </Box>
-        
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          mt: 3
-        }}>
-          <Button
-            startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-            sx={{ 
-              color: isEditing ? '#1976d2' : '#FFA000',
-              borderRadius: '999px',
-              padding: '9px 18px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              '&:hover': {
-                color: isEditing ? '#1565c0' : '#FB8C00',
-              },
-            }}
-            onClick={() => {
-              if (isEditing) {
-                if (!isRecordUnchanged) {
-                  handleSave(); // only save if changed
-                } else {
-                  alert('No changes were made')
-                  setIsEditing(false);
-                }
-              } else {
-                setIsEditing(true);
-              }
-            }}
-          >
-            {isEditing ? 'SAVE' : 'EDIT'}
-          </Button>
 
-          <Button
-            variant="contained"
-            sx={{ 
-              backgroundColor: '#2B8C37',
-              borderRadius: '999px',
-              padding: '9px 18px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              '&:hover': {
-                backgroundColor: '#256d2f',
-              },
-            }}
-            onClick={() => {
-              const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
-              if (isEditing && !isUnchanged) {
-                const confirmClose = window.confirm("You have unsaved changes. Are you sure you want to close without saving?");
-                if (!confirmClose) return; // do nothing if user cancels
-              }
-              status(isUnchanged)
-              onClose();
-            }}
-          >
-            CLOSE
-          </Button>
-        </Box>
+        {editedRecord.status !== 'Approved' && (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            mt: 3
+          }}>
+            <Button
+              startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
+              sx={{ 
+                color: isEditing ? '#1976d2' : '#FFA000',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  color: isEditing ? '#1565c0' : '#FB8C00',
+                },
+              }}
+              onClick={() => {
+                if (isEditing) {
+                  if (!isRecordUnchanged) {
+                    handleSave(); // only save if changed
+                  } else {
+                    alert('No changes were made')
+                    setIsEditing(false);
+                  }
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+            >
+              {isEditing ? 'SAVE' : 'EDIT'}
+            </Button>
+            <Box>
+              <Button 
+                variant='contained'
+                sx={{ 
+                  backgroundColor: '#2B8C37',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#256d2f',
+                  },
+                }}
+                onClick={() => handleStatusUpdate("approve")}
+              >
+                Approve
+              </Button>
+              {(editedRecord.status !== 'For Revisions (Site)' || editedRecord.status !== 'For Revisions (Head)') && (
+                <Button 
+                  variant='contained'
+                  sx={{ 
+                    marginLeft: 1,
+                    backgroundColor: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#0f1a3c',
+                    },
+                  }}
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  Revise
+                </Button>
+              )}    
+            </Box>
+          </Box>
+        )}
+        {isModalOpen && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <Paper
+              sx={{
+                p: 4,
+                width: "500px",
+                borderRadius: "16px",
+                bgcolor: "white",
+              }}
+            >
+              <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
+                Revision Request
+              </Typography>
+              <TextField
+                sx={{
+                  mt: 2,
+                  mb: 2
+                }}
+                label={<> Remarks <span style={{ color: 'red' }}>*</span> </>}
+                variant="outlined"
+                fullWidth
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                multiline
+              />
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}>
+                <Button 
+                  sx={{ 
+                    color: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      color: '#0f1a3c',
+                    },
+                  }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant='contained'
+                  sx={{ 
+                    marginLeft: 1,
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={() => handleStatusUpdate("revise")}
+                >
+                  Confirm
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>          
+        )}      
     </Paper>
   );
 };
