@@ -8,6 +8,7 @@ import {
   TableRow,
   Paper,
   Box,
+  Checkbox,
   IconButton,
   Tooltip,
 } from "@mui/material";
@@ -70,9 +71,12 @@ const Table = ({
   height,
   maxHeight,
   minHeight,
+  onSelectionChange,
 }) => {
   // Internal sort state - always used for actual sorting
   const [sortConfig, setSortConfig] = React.useState(initialSort);
+  const [selected, setSelected] = React.useState([]); // State for selected row IDs
+  const minRows = 3; // Minimum number of rows to show
 
   // Calculate dynamic height based on content
   const calculateDynamicHeight = () => {
@@ -171,6 +175,39 @@ const Table = ({
     );
   };
 
+  // Selection logic for checkboxes
+  const isAllSelected = paginatedData.length > 0 && paginatedData.every(row => selected.includes(row.id));
+  const isIndeterminate = paginatedData.some(row => selected.includes(row.id)) && !isAllSelected;
+
+  // Handler for selecting all rows on current page
+  const handleSelectAll = (event) => {
+    let newSelected;
+    if (event.target.checked) {
+      newSelected = [
+        ...selected,
+        ...paginatedData
+          .map(row => row.id)
+          .filter(id => !selected.includes(id))
+      ];
+    } else {
+      newSelected = selected.filter(id => !paginatedData.some(row => row.id === id));
+    }
+    setSelected(newSelected);
+    if (onSelectionChange) onSelectionChange(newSelected);
+  };
+
+  // Handler for selecting a single row
+  const handleSelectRow = (id) => {
+    let newSelected;
+    if (selected.includes(id)) {
+      newSelected = selected.filter(selId => selId !== id);
+    } else {
+      newSelected = [...selected, id];
+    }
+    setSelected(newSelected);
+    if (onSelectionChange) onSelectionChange(newSelected);
+  };
+
   return (
     // Main container for table with horizontal scroll
     <Box sx={{ width: "100%", overflowX: "auto" }}>
@@ -210,6 +247,30 @@ const Table = ({
                 },
               }}
             >
+              {/* Checkbox header cell */}
+              <TableCell
+                padding="checkbox"
+                sx={{
+                  background: "#182959",
+                  color: "#fff",
+                  borderBottom: "none",
+                  position: "sticky",
+                  left: 0,
+                  zIndex: 2,
+                  width: 48,
+                  textAlign: "center",
+                }}
+              >
+                <Checkbox
+                  color="primary"
+                  indeterminate={isIndeterminate}
+                  checked={isAllSelected}
+                  onChange={handleSelectAll}
+                  inputProps={{ "aria-label": "select all rows" }}
+                  sx={{ color: "#fff", '&.Mui-checked': { color: "#fff" } }}
+                />
+              </TableCell>
+
               {/* Render column headers */}
               {columns.map((col) => {
                 const words = col.label.replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
@@ -280,6 +341,7 @@ const Table = ({
                   </TableCell>
                 );
               })}
+
               {/* Render Action header if actions prop is provided */}
               {actions && (
                 <TableCell
@@ -322,7 +384,29 @@ const Table = ({
                   onClick={() => {
                     if (onRowClick) onRowClick(row);
                   }}
+                  selected={selected.includes(row.id)}
                 >
+                  {/* Checkbox cell */}
+                  <TableCell
+                    padding="checkbox"
+                    sx={{
+                      position: "sticky",
+                      left: 0,
+                      background: "#fff",
+                      zIndex: 1,
+                      width: 48,
+                      textAlign: "center",
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      color="primary"
+                      checked={selected.includes(row.id)}
+                      onChange={() => handleSelectRow(row.id)}
+                      inputProps={{ "aria-label": `select row ${row.id}` }}
+                    />
+                  </TableCell>
+
                   {/* Render each cell for the row */}
                   {columns.map((col) => (
                     <TableCell
