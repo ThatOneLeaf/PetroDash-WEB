@@ -324,6 +324,7 @@ function EnvironmentWaterDash() {
               Environment - Water
             </h1>
           </div>
+          {/* COMMENT OUT EXPORT BUTTON (Low Priority)
           <button style={{
             backgroundColor: '#f8fafc',
             border: '1px solid #e2e8f0',
@@ -338,6 +339,7 @@ function EnvironmentWaterDash() {
           }}>
             📊 EXPORT DATA
           </button>
+          */}
         </div>
 
         {/* Filters - Compact */}
