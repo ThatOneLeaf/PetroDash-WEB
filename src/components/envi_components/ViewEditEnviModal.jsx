@@ -54,7 +54,7 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
 
       const fetchPropertyOptions = async () => {
         try {
-          const response = await api.get('environment/distinct_cp_names');
+          const response = await api.get(`environment/distinct_cp_names/${editedRecord.company}`);
           setPropertyOptions(response.data);
         } catch (error) {
           console.error("Error fetching property options:", error);
