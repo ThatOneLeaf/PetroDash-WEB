@@ -369,7 +369,11 @@ function EnvironmentEnergy() {
           alert('Remarks is required for the status update')
           return;
         }
+      } else {
+        const confirm = window.confirm('Are you sure you want to approve this record?');
+          if (!confirmed) return;
       }
+
       const payload = {
         record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
         new_status: newStatus.trim(),

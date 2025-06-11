@@ -263,6 +263,9 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
           alert('Remarks is required for the status update')
           return;
         }
+      } else {
+        const confirm = window.confirm('Are you sure you want to approve this record?');
+          if (!confirmed) return;
       }
       const payload = {
         record_id: record[recordIdKey]?.toString().trim(),
