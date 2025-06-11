@@ -47,6 +47,18 @@ function EnvironmentEnergyDash() {
   const [propertyTypes, setPropertyTypes] = useState([]);
   const [dieselYears, setDieselYears] = useState([]);
 
+  // Chart data from APIs (Electricity)
+  const [electricityPieData, setElectricityPieData] = useState([]);
+  const [electricityLineData, setElectricityLineData] = useState([]);
+  const [lineChartColors, setLineChartColors] = useState({});
+  const [electricityBarData, setElectricityBarData] = useState([]);
+  const [hoveredBar, setHoveredBar] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [electricitySourceData, setElectricitySourceData] = useState([]);
+  const [sourceColors, setSourceColors] = useState({});
+  const [electricityQuarterData, setElectricityQuarterData] = useState([]);
+  const [quarterCompanyColors, setQuarterCompanyColors] = useState({});
+
   // Static key metrics - fetched once on mount and don't change with filters
   const [staticElectricityMetrics, setStaticElectricityMetrics] = useState({
     total_consumption: 0,
@@ -64,24 +76,29 @@ function EnvironmentEnergyDash() {
 
   // Mock chart data (to be replaced with API calls later)
   const electricityChartData = {
-    pieData: [
-      { label: 'PSC', value: 1845732, color: '#3B82F6' },
-      { label: 'PMC', value: 867535, color: '#F97316' }
-    ],
     lineChartData: [
-      { year: 2018, psc: 150000, pmc: 120000 },
-      { year: 2019, psc: 160000, pmc: 125000 },
-      { year: 2020, psc: 155000, pmc: 115000 },
-      { year: 2021, psc: 170000, pmc: 130000 },
-      { year: 2022, psc: 180000, pmc: 140000 },
-      { year: 2023, psc: 185000, pmc: 145000 },
-      { year: 2024, psc: 190000, pmc: 150000 }
+      { year: 2018, PSC: 75000, PWEI: 120000 },
+      { year: 2019, PSC: 150000, PWEI: 125000 },
+      { year: 2020, PSC: 160000, PWEI: 115000 },
+      { year: 2021, PSC: 170000, PWEI: 130000 },
+      { year: 2022, PSC: 180000, PWEI: 140000 },
+      { year: 2023, PSC: 250000, PWEI: 145000 },
+      { year: 2024, PSC: 950000, PWEI: 150000 },
+      { year: 2025, PSC: 150000, PWEI: 80000 }
+    ],
+    barChartData: [
+      { company: 'PSC', consumption: 1400000, color: '#3B82F6' },
+      { company: 'PWEI', consumption: 950000, color: '#F97316' }
+    ],
+    companySourceData: [
+      { company: 'PSC', 'Control Building': 1455393, 'Logistics Station': 0 },
+      { company: 'PWEI', 'Control Building': 937604, 'Logistics Station': 305413 }
     ],
     stackedBarData: [
-      { quarter: 'Q1', psc: 150000, pmc: 65000 },
-      { quarter: 'Q2', psc: 165000, pmc: 70000 },
-      { quarter: 'Q3', psc: 180000, pmc: 75000 },
-      { quarter: 'Q4', psc: 170000, pmc: 68000 }
+      { quarter: 'Q1', PSC: 150000, PWEI: 65000 },
+      { quarter: 'Q2', PSC: 165000, PWEI: 70000 },
+      { quarter: 'Q3', PSC: 185000, PWEI: 60000 },
+      { quarter: 'Q4', PSC: 155000, PWEI: 68000 }
     ]
   };
 
@@ -118,9 +135,11 @@ function EnvironmentEnergyDash() {
   const getCurrentData = () => {
     if (activeTab === 'electricity') {
       return {
-        pieData: electricityChartData.pieData,
-        lineChartData: electricityChartData.lineChartData,
-        stackedBarData: electricityChartData.stackedBarData,
+        pieData: electricityPieData, // Use API data for pie chart
+        lineChartData: electricityLineData, // Use API data for line chart
+        barChartData: electricityBarData, // Use API data for bar chart
+        companySourceData: electricitySourceData, // Use API data for source chart
+        stackedBarData: electricityQuarterData, // Use API data for quarterly chart
         unit: staticElectricityMetrics.unit_of_measurement || 'kWh'
       };
     } else {
@@ -134,6 +153,173 @@ function EnvironmentEnergyDash() {
   };
 
   const currentData = getCurrentData();
+
+  const transformLineChartData = (apiData, colors) => {
+    if (!apiData || Object.keys(apiData).length === 0) {
+      return [];
+    }
+
+    // Get all unique years from all companies
+    const allYears = new Set();
+    Object.values(apiData).forEach(companyData => {
+      companyData.forEach(item => allYears.add(item.year));
+    });
+
+    // Sort years
+    const sortedYears = Array.from(allYears).sort();
+
+    // Transform data for Recharts
+    const transformedData = sortedYears.map(year => {
+      const yearData = { year };
+      
+      // For each company, find the consumption for this year
+      Object.keys(apiData).forEach(companyId => {
+        const companyYearData = apiData[companyId].find(item => item.year === year);
+        yearData[companyId] = companyYearData ? companyYearData.total_consumption : 0;
+      });
+      
+      return yearData;
+    });
+
+    return transformedData;
+  };
+
+  const transformBarChartData = (apiData) => {
+    if (!apiData || apiData.length === 0) {
+      return [];
+    }
+
+    console.log('Raw API data for bar chart:', apiData);
+
+    // Transform API response to match the format expected by the bar chart
+    const transformed = apiData.map(item => ({
+      company: item.label || 'Unknown',
+      consumption: Number(item.value) || 0,
+      color: item.color || '#3B82F6'
+    }));
+
+    console.log('Transformed bar chart data:', transformed);
+    
+    return transformed;
+  };
+
+  const transformSourceBarChartData = (apiData) => {
+    if (!apiData || apiData.length === 0) {
+      return { chartData: [], sources: [], colors: {} };
+    }
+
+    console.log('Raw API data for source chart:', apiData);
+
+    // Group data by company
+    const groupedByCompany = {};
+    const allSources = new Set();
+    const sourceColorMap = {};
+
+    apiData.forEach(item => {
+      const company = item.company_id;
+      const source = item.source;
+      const value = item.value;
+      
+      // Collect all sources and their colors
+      allSources.add(source);
+      sourceColorMap[source] = item.color;
+      
+      // Group by company
+      if (!groupedByCompany[company]) {
+        groupedByCompany[company] = { company };
+      }
+      
+      groupedByCompany[company][source] = value;
+    });
+
+    // Convert to array format for Recharts
+    const chartData = Object.values(groupedByCompany);
+    
+    // Ensure all companies have all sources (fill missing with 0)
+    const sources = Array.from(allSources);
+    chartData.forEach(companyData => {
+      sources.forEach(source => {
+        if (!companyData[source]) {
+          companyData[source] = 0;
+        }
+      });
+    });
+
+    console.log('Transformed source chart data:', chartData);
+    console.log('Available sources:', sources);
+    console.log('Source colors:', sourceColorMap);
+
+    return {
+      chartData,
+      sources,
+      colors: sourceColorMap
+    };
+  };
+
+  const transformQuarterBarChartData = (apiData) => {
+    if (!apiData || apiData.length === 0) {
+      return { chartData: [], companies: [], colors: {} };
+    }
+
+    console.log('Raw API data for quarterly chart:', apiData);
+
+    // Group data by quarter
+    const groupedByQuarter = {};
+    const allCompanies = new Set();
+    const companyColorMap = {};
+
+    apiData.forEach(item => {
+      const quarter = item.quarter;
+      const company = item.company_id;
+      const value = item.value;
+      
+      // Collect all companies and their colors
+      allCompanies.add(company);
+      companyColorMap[company] = item.color;
+      
+      // Group by quarter
+      if (!groupedByQuarter[quarter]) {
+        groupedByQuarter[quarter] = { quarter };
+      }
+      
+      groupedByQuarter[quarter][company] = value;
+    });
+
+    // Convert to array format for Recharts with proper quarter order
+    const quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+    const chartData = quarterOrder.map(quarter => {
+      if (groupedByQuarter[quarter]) {
+        return groupedByQuarter[quarter];
+      } else {
+        // Create empty quarter data if no data exists
+        const emptyQuarter = { quarter };
+        Array.from(allCompanies).forEach(company => {
+          emptyQuarter[company] = 0;
+        });
+        return emptyQuarter;
+      }
+    });
+
+    // Ensure all quarters have all companies (fill missing with 0)
+    const companies = Array.from(allCompanies);
+    chartData.forEach(quarterData => {
+      companies.forEach(company => {
+        if (!quarterData[company]) {
+          quarterData[company] = 0;
+        }
+      });
+    });
+
+    console.log('Transformed quarterly chart data:', chartData);
+    console.log('Available companies:', companies);
+    console.log('Company colors:', companyColorMap);
+
+    return {
+      chartData,
+      companies,
+      colors: companyColorMap
+    };
+  };
 
   // Fetch companies and available years on component mount
   useEffect(() => {
@@ -181,6 +367,410 @@ function EnvironmentEnergyDash() {
 
     fetchInitialData();
   }, []);
+
+  // Fetch electricity pie chart data when filters change
+  useEffect(() => {
+    const fetchElectricityPieChart = async () => {
+      if (activeTab !== 'electricity') return;
+
+      try {
+        setLoading(true); // Add loading state
+        
+        // Build parameters
+        const params = {};
+        
+        // For company_id: if empty, pass all companies as individual parameters
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          // Send all companies from the fetched companies data
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        // For consumption_source: if empty, pass all sources
+        if (consumptionSource) {
+          params.consumption_source = consumptionSource;
+        } else {
+          // Send all consumption sources from the fetched sources data
+          params.consumption_source = consumptionSources;
+        }
+        
+        // For quarter: if empty, pass all quarters  
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          // Send all quarters
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        // For year range: handle both single years and ranges using available years
+        if (fromYear && toYear) {
+          // Generate array of years from fromYear to toYear, filtered by available years
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          // Only from year specified - use from year to latest available year
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          // Only to year specified - use earliest available year to to year
+          const yearRange = availableYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          // No year filter - send all available years
+          params.year = availableYears;
+        }
+        
+        console.log('Sending params to electricity pie chart API:', params);
+        
+        const response = await api.get('/environment_dash/elec-pie-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Electricity pie chart response:', response.data);
+        
+        // Validate response data
+        const responseData = response.data?.data || [];
+        console.log('Validated response data:', responseData);
+        
+        // Make sure data has the correct structure
+        const validatedData = responseData.map(item => ({
+          label: item.label || 'Unknown',
+          value: Number(item.value) || 0,
+          percentage: Number(item.percentage) || 0,
+          color: item.color || COLORS[0]
+        }));
+        
+        console.log('Final validated data for pie chart:', validatedData);
+        
+        // Set the pie chart data from API response
+        setElectricityPieData(validatedData);
+        
+      } catch (error) {
+        console.error('Failed to fetch electricity pie chart:', error);
+        console.error('Error response:', error.response?.data);
+        setElectricityPieData([]); // Set empty array on error
+        setError('Failed to load pie chart data'); // Add error state
+      } finally {
+        setLoading(false); // Always clear loading state
+      }
+    };
+
+    // Only fetch data if companies and available years have been loaded
+    if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
+      fetchElectricityPieChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+
+  useEffect(() => {
+    const fetchElectricityLineChart = async () => {
+      if (activeTab !== 'electricity') return;
+
+      try {
+        // Build parameters (same logic as pie chart)
+        const params = {};
+        
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        if (consumptionSource) {
+          params.consumption_source = consumptionSource;
+        } else {
+          params.consumption_source = consumptionSources;
+        }
+        
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        if (fromYear && toYear) {
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = availableYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = availableYears;
+        }
+        
+        console.log('Sending params to electricity line chart API:', params);
+        
+        const response = await api.get('/environment_dash/elect-line-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Electricity line chart response:', response.data);
+        
+        // Transform the data for Recharts
+        const transformedData = transformLineChartData(response.data.data, response.data.colors);
+        
+        console.log('Transformed line chart data:', transformedData);
+        
+        setElectricityLineData(transformedData);
+        setLineChartColors(response.data.colors || {});
+        
+      } catch (error) {
+        console.error('Failed to fetch electricity line chart:', error);
+        console.error('Error response:', error.response?.data);
+        setElectricityLineData([]);
+        setLineChartColors({});
+      }
+    };
+
+    // Only fetch data if companies and available years have been loaded
+    if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
+      fetchElectricityLineChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+
+  useEffect(() => {
+    const fetchElectricityBarChart = async () => {
+      if (activeTab !== 'electricity') return;
+
+      try {
+        console.log('Fetching electricity bar chart...');
+        
+        // Build parameters (same logic as other charts)
+        const params = {};
+        
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        if (consumptionSource) {
+          params.consumption_source = consumptionSource;
+        } else {
+          params.consumption_source = consumptionSources;
+        }
+        
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        if (fromYear && toYear) {
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = availableYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = availableYears;
+        }
+        
+        console.log('Bar chart API params:', params);
+        
+        const response = await api.get('/environment_dash/elect-perc-bar-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Bar chart API response:', response.data);
+        
+        // Make sure we're getting the right data structure
+        const responseData = response.data?.data || [];
+        console.log('Response data array:', responseData);
+        
+        if (!Array.isArray(responseData)) {
+          console.error('API response data is not an array:', responseData);
+          setElectricityBarData([]);
+          return;
+        }
+        
+        // Transform the data
+        const transformedData = transformBarChartData(responseData);
+        
+        console.log('Final transformed data for bar chart:', transformedData);
+        
+        // Validate that transformed data has the right structure
+        const isValidData = transformedData.every(item => 
+          item.hasOwnProperty('company') && 
+          item.hasOwnProperty('consumption') && 
+          typeof item.consumption === 'number'
+        );
+        
+        if (!isValidData) {
+          console.error('Transformed data is invalid:', transformedData);
+          setElectricityBarData([]);
+          return;
+        }
+        
+        setElectricityBarData(transformedData);
+        
+      } catch (error) {
+        console.error('Failed to fetch electricity bar chart:', error);
+        console.error('Error response:', error.response?.data);
+        setElectricityBarData([]);
+      }
+    };
+
+    // Only fetch data if companies and available years have been loaded
+    if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
+      fetchElectricityBarChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+
+  useEffect(() => {
+    const fetchElectricitySourceChart = async () => {
+      if (activeTab !== 'electricity') return;
+
+      try {
+        // Build parameters (same logic as other charts)
+        const params = {};
+        
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        if (consumptionSource) {
+          params.consumption_source = consumptionSource;
+        } else {
+          params.consumption_source = consumptionSources;
+        }
+        
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        if (fromYear && toYear) {
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = availableYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = availableYears;
+        }
+        
+        console.log('Sending params to electricity source chart API:', params);
+        
+        const response = await api.get('/environment_dash/elect-source-bar-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Electricity source chart response:', response.data);
+        
+        // Transform the data for stacked bar chart
+        const transformedData = transformSourceBarChartData(response.data.data);
+        
+        setElectricitySourceData(transformedData.chartData);
+        setSourceColors(transformedData.colors);
+        
+      } catch (error) {
+        console.error('Failed to fetch electricity source chart:', error);
+        console.error('Error response:', error.response?.data);
+        setElectricitySourceData([]);
+        setSourceColors({});
+      }
+    };
+
+    // Only fetch data if companies and available years have been loaded
+    if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
+      fetchElectricitySourceChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+
+  useEffect(() => {
+    const fetchElectricityQuarterChart = async () => {
+      if (activeTab !== 'electricity') return;
+
+      try {
+        // Build parameters (same logic as other charts)
+        const params = {};
+        
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        if (consumptionSource) {
+          params.consumption_source = consumptionSource;
+        } else {
+          params.consumption_source = consumptionSources;
+        }
+        
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        if (fromYear && toYear) {
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = availableYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = availableYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = availableYears;
+        }
+        
+        console.log('Sending params to electricity quarterly chart API:', params);
+        
+        const response = await api.get('/environment_dash/elect-quarter-bar-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Electricity quarterly chart response:', response.data);
+        
+        // Transform the data for stacked bar chart
+        const transformedData = transformQuarterBarChartData(response.data.data);
+        
+        setElectricityQuarterData(transformedData.chartData);
+        setQuarterCompanyColors(transformedData.colors);
+        
+      } catch (error) {
+        console.error('Failed to fetch electricity quarterly chart:', error);
+        console.error('Error response:', error.response?.data);
+        setElectricityQuarterData([]);
+        setQuarterCompanyColors({});
+      }
+    };
+
+    // Only fetch data if companies and available years have been loaded
+    if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
+      fetchElectricityQuarterChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
 
   // Fetch static key metrics once on component mount (no filter dependencies)
   useEffect(() => {
@@ -290,7 +880,7 @@ function EnvironmentEnergyDash() {
           <p style={{ margin: '0 0 4px 0', fontWeight: 'bold' }}>{label}</p>
           {payload.map((entry, index) => (
             <p key={index} style={{ margin: 0, color: entry.color }}>
-              {entry.name.toUpperCase()}: {Number(entry.value).toLocaleString()} {currentData.unit}
+              {entry.dataKey.toUpperCase()}: {Number(entry.value).toLocaleString()} {currentData.unit}
             </p>
           ))}
         </div>
@@ -477,7 +1067,7 @@ function EnvironmentEnergyDash() {
                 minWidth: '100px'
               }}
             >
-              <option value="">All Company Properties</option>
+              <option value="">Company Properties</option>
               {companyProperties.map((property, index) => (
                 <option key={index} value={property}>
                   {property}
@@ -502,7 +1092,7 @@ function EnvironmentEnergyDash() {
                 minWidth: '100px'
               }}
             >
-              <option value="">All Property Types</option>
+              <option value="">Property Types</option>
               {propertyTypes.map((type, index) => (
                 <option key={index} value={type}>
                   {type}
@@ -580,14 +1170,6 @@ function EnvironmentEnergyDash() {
               ))}
             </select>
 
-            <span style={{ 
-              color: '#64748b', 
-              fontSize: '12px', 
-              fontWeight: '500' 
-            }}>
-              to
-            </span>
-
             <select 
               value={toYear}
               onChange={(e) => setToYear(e.target.value)}
@@ -654,7 +1236,7 @@ function EnvironmentEnergyDash() {
                   YEAR-ON-YEAR CUMULATIVE ELECTRICITY CONSUMPTION
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-                  {loading ? 'Loading...' : staticElectricityMetrics.total_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                  {staticElectricityMetrics.total_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
                 </div>
               </div>
 
@@ -669,7 +1251,7 @@ function EnvironmentEnergyDash() {
                   YEAR WITH HIGHEST ELECTRICITY CONSUMPTION
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-                  {loading ? 'Loading...' : staticElectricityMetrics.peak_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                  {staticElectricityMetrics.peak_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
                 </div>
                 <div style={{ fontSize: '9px', opacity: 0.8 }}>
                   {staticElectricityMetrics.peak_year || ''}
@@ -687,7 +1269,7 @@ function EnvironmentEnergyDash() {
                   AVERAGE ANNUAL ELECTRICITY CONSUMPTION
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-                  {loading ? 'Loading...' : staticElectricityMetrics.average_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                  {staticElectricityMetrics.average_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
                 </div>
               </div>
             </>
@@ -730,7 +1312,7 @@ function EnvironmentEnergyDash() {
         <div style={{ 
           flex: 1,
           display: 'grid', 
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: activeTab === 'electricity' ? '1fr 1fr 1fr' : '1fr 1fr',
           gap: '15px',
           minHeight: 0
         }}>
@@ -754,71 +1336,119 @@ function EnvironmentEnergyDash() {
               {activeTab === 'electricity' ? 'Distribution of Electricity Consumption by Company' : 'Distribution of Diesel Consumption by Company'}
             </h3>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              <div style={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={currentData.pieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      innerRadius={35}
-                      fill="#8884d8"
-                      dataKey="value"
-                      paddingAngle={2}
-                      startAngle={90}
-                      endAngle={450}
-                    >
-                      {currentData.pieData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.color || COLORS[index % COLORS.length]} 
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip content={renderCustomTooltip} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+            {/* Debug info - remove this in production */}
+            <div style={{ 
+              fontSize: '10px', 
+              color: '#64748b', 
+              marginBottom: '8px',
+              padding: '4px 8px',
+              backgroundColor: '#f1f5f9',
+              borderRadius: '4px'
+            }}>
+              Debug: {currentData.pieData.length} items, Loading: {loading ? 'Yes' : 'No'}
+            </div>
 
-              {/* Legend */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-                gap: '8px',
-                fontSize: '10px',
-                flexShrink: 0,
-                marginTop: '8px'
-              }}>
-                {currentData.pieData.map((entry, index) => (
-                  <div
-                    key={index}
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '4px'
-                    }}
-                  >
-                    <div style={{
-                      width: '8px',
-                      height: '8px',
-                      backgroundColor: entry.color || COLORS[index % COLORS.length],
-                      borderRadius: '1px',
-                      flexShrink: 0
-                    }}></div>
-                    <span style={{ fontWeight: '500', fontSize: '9px' }}>
-                      {entry.label}: {(entry.value || 0).toLocaleString()}
-                    </span>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              {/* Show loading state */}
+              {loading ? (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '200px',
+                  color: '#64748b',
+                  fontSize: '14px'
+                }}>
+                  Loading chart data...
+                </div>
+              ) : currentData.pieData.length === 0 ? (
+                // Show no data message
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '200px',
+                  color: '#64748b',
+                  fontSize: '14px',
+                  textAlign: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                    <div>No data available</div>
+                    <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                      Try adjusting your filters
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                // Show pie chart
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={currentData.pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={200}
+                        innerRadius={70}
+                        fill="#8884d8"
+                        dataKey="value"
+                        paddingAngle={2}
+                        startAngle={90}
+                        endAngle={450}
+                      >
+                        {currentData.pieData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color || COLORS[index % COLORS.length]} 
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip content={renderCustomTooltip} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Legend - only show if there's data */}
+              {!loading && currentData.pieData.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  fontSize: '10px',
+                  flexShrink: 0,
+                  marginTop: '8px'
+                }}>
+                  {currentData.pieData.map((entry, index) => (
+                    <div
+                      key={index}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px'
+                      }}
+                    >
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: entry.color || COLORS[index % COLORS.length],
+                        borderRadius: '1px',
+                        flexShrink: 0
+                      }}></div>
+                      <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                        {entry.label}: {(entry.value || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Second Column - Line Chart and Stacked Bar Chart */}
+          {/* Line Chart - Only show for electricity, or second column for diesel */}
           <div style={{ 
             display: 'flex',
             flexDirection: 'column',
@@ -846,54 +1476,484 @@ function EnvironmentEnergyDash() {
                 {activeTab === 'electricity' ? 'Electricity Consumption Over Years by Company' : 'Diesel Consumption Over Time - PSC'}
               </h3>
               
+              {/* Debug info - remove in production */}
+              {activeTab === 'electricity' && (
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: '#64748b', 
+                  marginBottom: '8px',
+                  padding: '4px 8px',
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: '4px'
+                }}>
+                  Debug: {currentData.lineChartData.length} data points, Loading: {loading ? 'Yes' : 'No'}
+                </div>
+              )}
+              
               <div style={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={currentData.lineChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="year" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                    />
-                    <YAxis 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                    />
-                    <Tooltip 
-                      formatter={(value, name) => [
-                        `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                        name.toUpperCase()
-                      ]}
-                      labelStyle={{ color: '#1e293b', fontSize: '12px' }}
-                      contentStyle={{ fontSize: '12px' }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="psc" 
-                      stroke="#3B82F6" 
-                      strokeWidth={2}
-                      dot={{ fill: '#3B82F6', strokeWidth: 2, r: 3 }}
-                      name="PSC"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="pmc" 
-                      stroke="#F97316" 
-                      strokeWidth={2}
-                      dot={{ fill: '#F97316', strokeWidth: 2, r: 3 }}
-                      name="PMC"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {loading && activeTab === 'electricity' ? (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100%',
+                    color: '#64748b',
+                    fontSize: '14px'
+                  }}>
+                    Loading chart data...
+                  </div>
+                ) : currentData.lineChartData.length === 0 && activeTab === 'electricity' ? (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100%',
+                    color: '#64748b',
+                    fontSize: '14px',
+                    textAlign: 'center'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+                      <div>No line chart data available</div>
+                      <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                        Try adjusting your filters
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={currentData.lineChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis 
+                        dataKey="year" 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10, fill: '#64748b' }}
+                      />
+                      <YAxis 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10, fill: '#64748b' }}
+                        tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                          name.toUpperCase()
+                        ]}
+                        labelStyle={{ color: '#1e293b', fontSize: '12px' }}
+                        contentStyle={{ fontSize: '12px' }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      
+                      {/* Dynamically render lines based on available companies */}
+                      {activeTab === 'electricity' ? (
+                        // For electricity, render lines for each company in the data
+                        Object.keys(lineChartColors).map((companyId, index) => (
+                          <Line 
+                            key={companyId}
+                            type="monotone" 
+                            dataKey={companyId} 
+                            stroke={lineChartColors[companyId] || COLORS[index % COLORS.length]} 
+                            strokeWidth={2}
+                            dot={{ fill: lineChartColors[companyId] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
+                            name={companyId}
+                          />
+                        ))
+                      ) : (
+                        // For diesel, use the existing static lines
+                        <>
+                          <Line 
+                            type="monotone" 
+                            dataKey="psc" 
+                            stroke="#3B82F6" 
+                            strokeWidth={2}
+                            dot={{ fill: '#3B82F6', strokeWidth: 2, r: 3 }}
+                            name="PSC"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="pmc" 
+                            stroke="#F97316" 
+                            strokeWidth={2}
+                            dot={{ fill: '#F97316', strokeWidth: 2, r: 3 }}
+                            name="PMC"
+                          />
+                        </>
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
-            {/* Stacked Bar Chart */}
+            {/* Horizontal Bar Chart - Only for electricity */}
+            {activeTab === 'electricity' && (
+              <div style={{ 
+                flex: 1,
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                position: 'relative'
+              }}>
+                <h3 style={{ 
+                  fontSize: '13px', 
+                  fontWeight: '600', 
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  Total Electricity Consumption per Company
+                </h3>
+                
+                <div style={{ flex: 1, minHeight: 0, padding: '10px' }}>
+                  {loading ? (
+                    <div>Loading...</div>
+                  ) : currentData.barChartData.length === 0 ? (
+                    <div>No data available</div>
+                  ) : (
+                    <div style={{ 
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'space-around',
+                      position: 'relative'
+                    }}>
+                      {currentData.barChartData.map((item, index) => {
+                        const maxValue = Math.max(...currentData.barChartData.map(d => d.consumption));
+                        const barWidth = (item.consumption / maxValue) * 80;
+                        const percentage = ((item.consumption / currentData.barChartData.reduce((sum, d) => sum + d.consumption, 0)) * 100);
+                        
+                        return (
+                          <div 
+                            key={index} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              marginBottom: '15px',
+                              position: 'relative'
+                            }}
+                          >
+                            <div style={{ 
+                              width: '60px', 
+                              fontSize: '11px', 
+                              fontWeight: '500',
+                              textAlign: 'right',
+                              marginRight: '10px',
+                              color: '#64748b'
+                            }}>
+                              {item.company}
+                            </div>
+                            <div style={{ flex: 1, position: 'relative' }}>
+                              <div 
+                                style={{
+                                  height: '25px',
+                                  width: `${barWidth}%`,
+                                  backgroundColor: item.color,
+                                  borderRadius: '0 4px 4px 0',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'flex-end',
+                                  paddingRight: '8px',
+                                  minWidth: '80px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  position: 'relative'
+                                }}
+                                onMouseEnter={() => setHoveredBar(index)}
+                                onMouseLeave={() => setHoveredBar(null)}
+                                title={`${item.company}: ${item.consumption.toLocaleString()} ${currentData.unit} (${percentage.toFixed(1)}%)`}
+                              >
+                                <span style={{ 
+                                  color: 'white', 
+                                  fontSize: '9px', 
+                                  fontWeight: '600',
+                                  textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
+                                }}>
+                                  {(item.consumption / 1000000).toFixed(1)}M
+                                </span>
+
+                                {/* Inline tooltip that appears on hover */}
+                                {hoveredBar === index && (
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      left: '100%',
+                                      top: '50%',
+                                      transform: 'translateY(-50%)',
+                                      marginLeft: '10px',
+                                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                      color: 'white',
+                                      padding: '6px 10px',
+                                      borderRadius: '4px',
+                                      fontSize: '11px',
+                                      whiteSpace: 'nowrap',
+                                      zIndex: 10,
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                    }}
+                                  >
+                                    <div style={{ fontWeight: 'bold' }}>
+                                      {item.company}
+                                    </div>
+                                    <div>
+                                      {item.consumption.toLocaleString()} {currentData.unit}
+                                    </div>
+                                    <div style={{ fontSize: '10px', opacity: 0.8 }}>
+                                      {percentage.toFixed(1)}% of total
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Third Column for Electricity - Two charts stacked */}
+          {activeTab === 'electricity' ? (
             <div style={{ 
-              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '15px',
+              minHeight: 0
+            }}>
+              {/* Total Electricity Consumption by Company and Source */}
+              <div style={{ 
+                flex: 1,
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
+              }}>
+                <h3 style={{ 
+                  fontSize: '13px', 
+                  fontWeight: '600', 
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  Total Electricity Consumption by Company and Source
+                </h3>
+                
+                {/* Debug info - remove in production */}
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: '#64748b', 
+                  marginBottom: '8px',
+                  padding: '4px 8px',
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: '4px'
+                }}>
+                  Debug: {currentData.companySourceData.length} companies, Sources: {Object.keys(sourceColors).join(', ')}
+                </div>
+                
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  {loading ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      color: '#64748b',
+                      fontSize: '14px'
+                    }}>
+                      Loading chart data...
+                    </div>
+                  ) : currentData.companySourceData.length === 0 ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                        <div>No source data available</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Try adjusting your filters
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={currentData.companySourceData}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis 
+                          dataKey="company"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fill: '#64748b' }}
+                        />
+                        <YAxis 
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fill: '#64748b' }}
+                          tickFormatter={(value) => {
+                            if (value >= 1000000) {
+                              return `${(value / 1000000).toFixed(1)}M`;
+                            } else if (value >= 1000) {
+                              return `${(value / 1000).toFixed(0)}K`;
+                            } else {
+                              return value.toString();
+                            }
+                          }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name) => [
+                            `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                            name
+                          ]}
+                          labelStyle={{ color: '#1e293b', fontSize: '12px' }}
+                          contentStyle={{ fontSize: '12px' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        
+                        {/* Dynamically render bars for each source */}
+                        {Object.keys(sourceColors).map((source, index) => (
+                          <Bar 
+                            key={source}
+                            dataKey={source} 
+                            stackId="a" 
+                            fill={sourceColors[source] || COLORS[index % COLORS.length]}
+                            name={source}
+                            radius={index === Object.keys(sourceColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                          />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Electricity Consumption per Quarter */}
+              <div style={{ 
+                flex: 1,
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
+              }}>
+                <h3 style={{ 
+                  fontSize: '13px', 
+                  fontWeight: '600', 
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  Electricity Consumption per Quarter - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
+                </h3>
+                
+                {/* Debug info - remove in production */}
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: '#64748b', 
+                  marginBottom: '8px',
+                  padding: '4px 8px',
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: '4px'
+                }}>
+                  Debug: {currentData.stackedBarData.length} quarters, Companies: {Object.keys(quarterCompanyColors).join(', ')}
+                </div>
+                
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  {loading ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      color: '#64748b',
+                      fontSize: '14px'
+                    }}>
+                      Loading chart data...
+                    </div>
+                  ) : currentData.stackedBarData.length === 0 ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                        <div>No quarterly data available</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Try adjusting your filters
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={currentData.stackedBarData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis 
+                          dataKey="quarter"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fill: '#64748b' }}
+                        />
+                        <YAxis 
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fill: '#64748b' }}
+                          tickFormatter={(value) => {
+                            if (value >= 1000000) {
+                              return `${(value / 1000000).toFixed(1)}M`;
+                            } else if (value >= 1000) {
+                              return `${(value / 1000).toFixed(0)}K`;
+                            } else {
+                              return value.toString();
+                            }
+                          }}
+                        />
+                        <Tooltip content={renderStackedBarTooltip} />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        
+                        {/* Dynamically render bars for each company */}
+                        {Object.keys(quarterCompanyColors).map((company, index) => (
+                          <Bar 
+                            key={company}
+                            dataKey={company} 
+                            stackId="a" 
+                            fill={quarterCompanyColors[company] || COLORS[index % COLORS.length]}
+                            name={company}
+                            radius={index === Object.keys(quarterCompanyColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                          />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Diesel Stacked Bar Chart */
+            <div style={{ 
               backgroundColor: 'white', 
               padding: '12px', 
               borderRadius: '8px', 
@@ -909,7 +1969,7 @@ function EnvironmentEnergyDash() {
                 color: '#1e293b',
                 flexShrink: 0
               }}>
-                {activeTab === 'electricity' ? 'Electricity Consumption per Quarter - 2024' : 'PSC: Diesel Consumption by Property (2024)'}
+                PSC: Diesel Consumption by Property (2024)
               </h3>
               
               <div style={{ flex: 1, minHeight: 0 }}>
@@ -948,7 +2008,7 @@ function EnvironmentEnergyDash() {
                 </ResponsiveContainer>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
