@@ -42,9 +42,7 @@ function AddEnvironmentEnergyModal({ onClose }) {
     } catch (error) {
       console.error('Error fetching companies:', error);
       alert('Failed to load companies');
-    } finally {
-      setLoadingCompanies(false);
-    }
+    } 
   };
 
   const fetchSources = async () => {
