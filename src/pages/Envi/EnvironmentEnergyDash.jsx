@@ -1170,6 +1170,14 @@ function EnvironmentEnergyDash() {
               ))}
             </select>
 
+            <span style={{ 
+              color: '#64748b', 
+              fontSize: '12px', 
+              fontWeight: '500' 
+            }}>
+              to
+            </span>
+
             <select 
               value={toYear}
               onChange={(e) => setToYear(e.target.value)}
