@@ -59,6 +59,10 @@ function EnvironmentEnergyDash() {
   const [electricityQuarterData, setElectricityQuarterData] = useState([]);
   const [quarterCompanyColors, setQuarterCompanyColors] = useState({});
 
+  // Chart data from APIs (Diesel)
+  const [dieselPieData, setDieselPieData] = useState([]);
+  const [dieselPropertyPieData, setDieselPropertyPieData] = useState([]);
+
   // Static key metrics - fetched once on mount and don't change with filters
   const [staticElectricityMetrics, setStaticElectricityMetrics] = useState({
     total_consumption: 0,
@@ -135,16 +139,17 @@ function EnvironmentEnergyDash() {
   const getCurrentData = () => {
     if (activeTab === 'electricity') {
       return {
-        pieData: electricityPieData, // Use API data for pie chart
-        lineChartData: electricityLineData, // Use API data for line chart
-        barChartData: electricityBarData, // Use API data for bar chart
-        companySourceData: electricitySourceData, // Use API data for source chart
-        stackedBarData: electricityQuarterData, // Use API data for quarterly chart
+        pieData: electricityPieData,
+        lineChartData: electricityLineData,
+        barChartData: electricityBarData,
+        companySourceData: electricitySourceData,
+        stackedBarData: electricityQuarterData,
         unit: staticElectricityMetrics.unit_of_measurement || 'kWh'
       };
     } else {
       return {
-        pieData: dieselChartData.pieData,
+        pieData: dieselPieData, // Company distribution pie chart
+        propertyPieData: dieselPropertyPieData, // Property distribution pie chart
         lineChartData: dieselChartData.lineChartData,
         stackedBarData: dieselChartData.stackedBarData,
         unit: staticDieselMetrics.unit_of_measurement || 'Liters'
@@ -319,6 +324,47 @@ function EnvironmentEnergyDash() {
       companies,
       colors: companyColorMap
     };
+  };
+
+  const transformDieselPieData = (apiData) => {
+    if (!apiData || apiData.length === 0) {
+      return [];
+    }
+
+    console.log('Raw diesel pie API data:', apiData);
+
+    // Transform API response to match pie chart format
+    const transformedData = apiData.map(item => ({
+      label: item.company_id || 'Unknown',
+      value: Number(item.value) || 0,
+      percentage: Number(item.percentage) || 0,
+      color: item.color || '#3B82F6'
+    }));
+
+    console.log('Transformed diesel pie data:', transformedData);
+    
+    return transformedData;
+  };
+
+  const transformDieselPropertyPieData = (apiData) => {
+    if (!apiData || apiData.length === 0) {
+      return [];
+    }
+
+    console.log('Raw diesel property pie API data:', apiData);
+
+    // Transform API response to match pie chart format
+    // Note: The API already includes formatted labels with value and percentage
+    const transformedData = apiData.map(item => ({
+      label: item.label || 'Unknown', // This already includes the formatted text
+      value: Number(item.value) || 0,
+      percentage: Number(item.percentage) || 0,
+      color: item.color || '#3B82F6'
+    }));
+
+    console.log('Transformed diesel property pie data:', transformedData);
+    
+    return transformedData;
   };
 
   // Fetch companies and available years on component mount
@@ -772,6 +818,184 @@ function EnvironmentEnergyDash() {
     }
   }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
 
+  useEffect(() => {
+    const fetchDieselPieChart = async () => {
+      if (activeTab !== 'diesel') return;
+
+      try {
+        // Build parameters for diesel API
+        const params = {};
+        
+        // Company filter
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        // Property name filter (diesel-specific)
+        if (companyPropertyName) {
+          params.property_name = companyPropertyName;
+        } else {
+          params.property_name = companyProperties;
+        }
+        
+        // Property type filter (diesel-specific)
+        if (companyPropertyType) {
+          params.property_type = companyPropertyType;
+        } else {
+          params.property_type = propertyTypes;
+        }
+        
+        // Quarter filter
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        // Month filter (diesel-specific)
+        if (month) {
+          params.month = month;
+        } else {
+          // If no specific month, use all months for quarterly data
+          params.month = monthOptions;
+        }
+        
+        // Year filter using diesel years
+        if (fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = dieselYears;
+        }
+        
+        console.log('Sending params to diesel pie chart API:', params);
+        
+        const response = await api.get('/environment_dash/diesel-pie-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Diesel pie chart response:', response.data);
+        
+        // Transform the data for pie chart
+        const transformedData = transformDieselPieData(response.data.data);
+        
+        setDieselPieData(transformedData);
+        
+      } catch (error) {
+        console.error('Failed to fetch diesel pie chart:', error);
+        console.error('Error response:', error.response?.data);
+        setDieselPieData([]);
+      }
+    };
+
+    // Only fetch data if companies and diesel years have been loaded
+    if (companies.length > 0 && dieselYears.length > 0 && 
+        companyProperties.length > 0 && propertyTypes.length > 0) {
+      fetchDieselPieChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
+      companies, dieselYears, companyProperties, propertyTypes]);
+
+  useEffect(() => {
+    const fetchDieselPropertyPieChart = async () => {
+      if (activeTab !== 'diesel') return;
+
+      try {
+        // Build parameters for diesel property API
+        const params = {};
+        
+        // Company filter
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        // Property name filter (diesel-specific)
+        if (companyPropertyName) {
+          params.company_property_name = companyPropertyName;
+        } else {
+          params.company_property_name = companyProperties;
+        }
+        
+        // Property type filter (diesel-specific)
+        if (companyPropertyType) {
+          params.company_property_type = companyPropertyType;
+        } else {
+          params.company_property_type = propertyTypes;
+        }
+        
+        // Quarter filter
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        // Month filter (diesel-specific)
+        if (month) {
+          params.month = month;
+        } else {
+          // If no specific month, use all months
+          params.month = monthOptions;
+        }
+        
+        // Year filter using diesel years
+        if (fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = dieselYears;
+        }
+        
+        console.log('Sending params to diesel property pie chart API:', params);
+        
+        const response = await api.get('/environment_dash/diesel-cp-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Diesel property pie chart response:', response.data);
+        
+        // Transform the data for pie chart
+        const transformedData = transformDieselPropertyPieData(response.data.data);
+        
+        setDieselPropertyPieData(transformedData);
+        
+      } catch (error) {
+        console.error('Failed to fetch diesel property pie chart:', error);
+        console.error('Error response:', error.response?.data);
+        setDieselPropertyPieData([]);
+      }
+    };
+
+    // Only fetch data if companies and diesel years have been loaded
+    if (companies.length > 0 && dieselYears.length > 0 && 
+        companyProperties.length > 0 && propertyTypes.length > 0) {
+      fetchDieselPropertyPieChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
+      companies, dieselYears, companyProperties, propertyTypes]);
+
   // Fetch static key metrics once on component mount (no filter dependencies)
   useEffect(() => {
     const fetchStaticKeyMetrics = async () => {
@@ -840,6 +1064,33 @@ function EnvironmentEnergyDash() {
     setCompanyPropertyName('');
     setCompanyPropertyType('');
     setMonth('');
+  };
+
+  const renderDieselPropertyTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      // Extract property name from the formatted label (before the newline)
+      const propertyName = data.payload.label.split('\n')[0];
+      return (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '8px 12px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          fontSize: '12px'
+        }}>
+          <p style={{ margin: 0, fontWeight: 'bold' }}>{propertyName}</p>
+          <p style={{ margin: 0, color: data.payload.color }}>
+            {data.value.toLocaleString()} L
+          </p>
+          <p style={{ margin: 0, fontSize: '10px' }}>
+            {data.payload.percentage}%
+          </p>
+        </div>
+      );
+    }
+    return null;
   };
 
   // Custom tooltip for pie chart
@@ -1968,28 +2219,119 @@ function EnvironmentEnergyDash() {
                     Distribution of Diesel Consumption by Company
                   </h3>
 
+                  {/* Debug info - remove in production */}
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: '#64748b', 
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '4px'
+                  }}>
+                    Debug: {currentData.pieData.length} items, Loading: {loading ? 'Yes' : 'No'}
+                  </div>
+
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '200px',
-                      color: '#64748b',
-                      fontSize: '14px',
-                      textAlign: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                        <div>Diesel Pie Chart</div>
-                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          API integration pending
+                    {/* Show loading state */}
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '200px',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : currentData.pieData.length === 0 ? (
+                      // Show no data message
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '200px',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                          <div>No diesel data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      // Show pie chart
+                      <div style={{ flex: 1, minHeight: 0 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={currentData.pieData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              innerRadius={35}
+                              fill="#8884d8"
+                              dataKey="value"
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
+                            >
+                              {currentData.pieData.map((entry, index) => (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={entry.color || COLORS[index % COLORS.length]} 
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip content={renderCustomTooltip} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* Legend - only show if there's data */}
+                    {!loading && currentData.pieData.length > 0 && (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        fontSize: '10px',
+                        flexShrink: 0,
+                        marginTop: '8px'
+                      }}>
+                        {currentData.pieData.map((entry, index) => (
+                          <div
+                            key={index}
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '4px'
+                            }}
+                          >
+                            <div style={{
+                              width: '8px',
+                              height: '8px',
+                              backgroundColor: entry.color || COLORS[index % COLORS.length],
+                              borderRadius: '1px',
+                              flexShrink: 0
+                            }}></div>
+                            <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                              {entry.label}: {(entry.value || 0).toLocaleString()} L
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* PSC - Diesel Consumption by Property (Pie Chart) */}
+                {/* Diesel Consumption by Property (Pie Chart) */}
                 <div style={{ 
                   flex: 1,
                   backgroundColor: 'white', 
@@ -2007,27 +2349,122 @@ function EnvironmentEnergyDash() {
                     color: '#1e293b',
                     flexShrink: 0
                   }}>
-                    PSC - Diesel Consumption by Property
+                    Diesel Consumption by Property
                   </h3>
 
+                  {/* Debug info - remove in production */}
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: '#64748b', 
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '4px'
+                  }}>
+                    Debug: {currentData.propertyPieData ? currentData.propertyPieData.length : 0} properties, Loading: {loading ? 'Yes' : 'No'}
+                  </div>
+
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '200px',
-                      color: '#64748b',
-                      fontSize: '14px',
-                      textAlign: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>🥧</div>
-                        <div>Property Consumption Pie Chart</div>
-                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          API integration pending
+                    {/* Show loading state */}
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '200px',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : (!currentData.propertyPieData || currentData.propertyPieData.length === 0) ? (
+                      // Show no data message
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '200px',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>🥧</div>
+                          <div>No property data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      // Show pie chart
+                      <div style={{ flex: 1, minHeight: 0 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={currentData.propertyPieData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              innerRadius={35}
+                              fill="#8884d8"
+                              dataKey="value"
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
+                            >
+                              {currentData.propertyPieData.map((entry, index) => (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={entry.color || COLORS[index % COLORS.length]} 
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip content={renderDieselPropertyTooltip} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* Legend - only show if there's data */}
+                    {!loading && currentData.propertyPieData && currentData.propertyPieData.length > 0 && (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        fontSize: '10px',
+                        flexShrink: 0,
+                        marginTop: '8px'
+                      }}>
+                        {currentData.propertyPieData.map((entry, index) => {
+                          // Extract property name from formatted label (before newline)
+                          const propertyName = entry.label.split('\n')[0];
+                          return (
+                            <div
+                              key={index}
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '4px'
+                              }}
+                            >
+                              <div style={{
+                                width: '8px',
+                                height: '8px',
+                                backgroundColor: entry.color || COLORS[index % COLORS.length],
+                                borderRadius: '1px',
+                                flexShrink: 0
+                              }}></div>
+                              <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                                {propertyName}: {(entry.value || 0).toLocaleString()} L
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
