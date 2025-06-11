@@ -1315,7 +1315,7 @@ function EnvironmentEnergyDash() {
             </>
           )}
         </div>
-
+            
         {/* Charts Section */}
         <div style={{ 
           flex: 1,
@@ -1324,168 +1324,30 @@ function EnvironmentEnergyDash() {
           gap: '15px',
           minHeight: 0
         }}>
-          {/* Pie Chart */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            padding: '12px', 
-            borderRadius: '8px', 
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0
-          }}>
-            <h3 style={{
-              fontSize: '13px',
-              fontWeight: '600',
-              marginBottom: '10px',
-              color: '#1e293b',
-              flexShrink: 0
-            }}>
-              {activeTab === 'electricity' ? 'Distribution of Electricity Consumption by Company' : 'Distribution of Diesel Consumption by Company'}
-            </h3>
-
-            {/* Debug info - remove this in production */}
-            <div style={{ 
-              fontSize: '10px', 
-              color: '#64748b', 
-              marginBottom: '8px',
-              padding: '4px 8px',
-              backgroundColor: '#f1f5f9',
-              borderRadius: '4px'
-            }}>
-              Debug: {currentData.pieData.length} items, Loading: {loading ? 'Yes' : 'No'}
-            </div>
-
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              {/* Show loading state */}
-              {loading ? (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '200px',
-                  color: '#64748b',
-                  fontSize: '14px'
-                }}>
-                  Loading chart data...
-                </div>
-              ) : currentData.pieData.length === 0 ? (
-                // Show no data message
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '200px',
-                  color: '#64748b',
-                  fontSize: '14px',
-                  textAlign: 'center'
-                }}>
-                  <div>
-                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                    <div>No data available</div>
-                    <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                      Try adjusting your filters
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Show pie chart
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={currentData.pieData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={200}
-                        innerRadius={70}
-                        fill="#8884d8"
-                        dataKey="value"
-                        paddingAngle={2}
-                        startAngle={90}
-                        endAngle={450}
-                      >
-                        {currentData.pieData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.color || COLORS[index % COLORS.length]} 
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip content={renderCustomTooltip} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {/* Legend - only show if there's data */}
-              {!loading && currentData.pieData.length > 0 && (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  flexWrap: 'wrap',
-                  gap: '8px',
-                  fontSize: '10px',
-                  flexShrink: 0,
-                  marginTop: '8px'
-                }}>
-                  {currentData.pieData.map((entry, index) => (
-                    <div
-                      key={index}
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px'
-                      }}
-                    >
-                      <div style={{
-                        width: '8px',
-                        height: '8px',
-                        backgroundColor: entry.color || COLORS[index % COLORS.length],
-                        borderRadius: '1px',
-                        flexShrink: 0
-                      }}></div>
-                      <span style={{ fontWeight: '500', fontSize: '9px' }}>
-                        {entry.label}: {(entry.value || 0).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Line Chart - Only show for electricity, or second column for diesel */}
-          <div style={{ 
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '15px',
-            minHeight: 0
-          }}>
-            {/* Line Chart */}
-            <div style={{ 
-              flex: 1,
-              backgroundColor: 'white', 
-              padding: '12px', 
-              borderRadius: '8px', 
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 0
-            }}>
-              <h3 style={{ 
-                fontSize: '13px', 
-                fontWeight: '600', 
-                marginBottom: '10px',
-                color: '#1e293b',
-                flexShrink: 0
+          {/* Electricity charts */}
+          {activeTab === 'electricity' && (
+            <>
+              {/* Pie Chart */}
+              <div style={{ 
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
               }}>
-                {activeTab === 'electricity' ? 'Electricity Consumption Over Years by Company' : 'Diesel Consumption Over Time - PSC'}
-              </h3>
-              
-              {/* Debug info - remove in production */}
-              {activeTab === 'electricity' && (
+                <h3 style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  Distribution of Electricity Consumption by Company
+                </h3>
+
+                {/* Debug info - remove this in production */}
                 <div style={{ 
                   fontSize: '10px', 
                   color: '#64748b', 
@@ -1494,528 +1356,858 @@ function EnvironmentEnergyDash() {
                   backgroundColor: '#f1f5f9',
                   borderRadius: '4px'
                 }}>
-                  Debug: {currentData.lineChartData.length} data points, Loading: {loading ? 'Yes' : 'No'}
+                  Debug: {currentData.pieData.length} items, Loading: {loading ? 'Yes' : 'No'}
                 </div>
-              )}
-              
-              <div style={{ flex: 1, minHeight: 0 }}>
-                {loading && activeTab === 'electricity' ? (
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100%',
-                    color: '#64748b',
-                    fontSize: '14px'
-                  }}>
-                    Loading chart data...
-                  </div>
-                ) : currentData.lineChartData.length === 0 && activeTab === 'electricity' ? (
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100%',
-                    color: '#64748b',
-                    fontSize: '14px',
-                    textAlign: 'center'
-                  }}>
-                    <div>
-                      <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
-                      <div>No line chart data available</div>
-                      <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                        Try adjusting your filters
+
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  {/* Show loading state */}
+                  {loading ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '200px',
+                      color: '#64748b',
+                      fontSize: '14px'
+                    }}>
+                      Loading chart data...
+                    </div>
+                  ) : currentData.pieData.length === 0 ? (
+                    // Show no data message
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '200px',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                        <div>No data available</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Try adjusting your filters
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={currentData.lineChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="year" 
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 10, fill: '#64748b' }}
-                      />
-                      <YAxis 
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 10, fill: '#64748b' }}
-                        tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-                      />
-                      <Tooltip 
-                        formatter={(value, name) => [
-                          `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                          name.toUpperCase()
-                        ]}
-                        labelStyle={{ color: '#1e293b', fontSize: '12px' }}
-                        contentStyle={{ fontSize: '12px' }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      
-                      {/* Dynamically render lines based on available companies */}
-                      {activeTab === 'electricity' ? (
-                        // For electricity, render lines for each company in the data
-                        Object.keys(lineChartColors).map((companyId, index) => (
-                          <Line 
-                            key={companyId}
-                            type="monotone" 
-                            dataKey={companyId} 
-                            stroke={lineChartColors[companyId] || COLORS[index % COLORS.length]} 
-                            strokeWidth={2}
-                            dot={{ fill: lineChartColors[companyId] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
-                            name={companyId}
-                          />
-                        ))
-                      ) : (
-                        // For diesel, use the existing static lines
-                        <>
-                          <Line 
-                            type="monotone" 
-                            dataKey="psc" 
-                            stroke="#3B82F6" 
-                            strokeWidth={2}
-                            dot={{ fill: '#3B82F6', strokeWidth: 2, r: 3 }}
-                            name="PSC"
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="pmc" 
-                            stroke="#F97316" 
-                            strokeWidth={2}
-                            dot={{ fill: '#F97316', strokeWidth: 2, r: 3 }}
-                            name="PMC"
-                          />
-                        </>
-                      )}
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
+                  ) : (
+                    // Show pie chart
+                    <div style={{ flex: 1, minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={currentData.pieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={200}
+                            innerRadius={70}
+                            fill="#8884d8"
+                            dataKey="value"
+                            paddingAngle={2}
+                            startAngle={90}
+                            endAngle={450}
+                          >
+                            {currentData.pieData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.color || COLORS[index % COLORS.length]} 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip content={renderCustomTooltip} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
 
-            {/* Horizontal Bar Chart - Only for electricity */}
-            {activeTab === 'electricity' && (
+                  {/* Legend - only show if there's data */}
+                  {!loading && currentData.pieData.length > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      fontSize: '10px',
+                      flexShrink: 0,
+                      marginTop: '8px'
+                    }}>
+                      {currentData.pieData.map((entry, index) => (
+                        <div
+                          key={index}
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '4px'
+                          }}
+                        >
+                          <div style={{
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: entry.color || COLORS[index % COLORS.length],
+                            borderRadius: '1px',
+                            flexShrink: 0
+                          }}></div>
+                          <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                            {entry.label}: {(entry.value || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Second Column - Line Chart and Horizontal Bar Chart */}
               <div style={{ 
-                flex: 1,
-                backgroundColor: 'white', 
-                padding: '12px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
-                minHeight: 0,
-                position: 'relative'
+                gap: '15px',
+                minHeight: 0
               }}>
-                <h3 style={{ 
-                  fontSize: '13px', 
-                  fontWeight: '600', 
-                  marginBottom: '10px',
-                  color: '#1e293b',
-                  flexShrink: 0
+                {/* Line Chart */}
+                <div style={{ 
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
                 }}>
-                  Total Electricity Consumption per Company
-                </h3>
-                
-                <div style={{ flex: 1, minHeight: 0, padding: '10px' }}>
-                  {loading ? (
-                    <div>Loading...</div>
-                  ) : currentData.barChartData.length === 0 ? (
-                    <div>No data available</div>
-                  ) : (
-                    <div style={{ 
-                      height: '100%', 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      justifyContent: 'space-around',
-                      position: 'relative'
-                    }}>
-                      {currentData.barChartData.map((item, index) => {
-                        const maxValue = Math.max(...currentData.barChartData.map(d => d.consumption));
-                        const barWidth = (item.consumption / maxValue) * 80;
-                        const percentage = ((item.consumption / currentData.barChartData.reduce((sum, d) => sum + d.consumption, 0)) * 100);
-                        
-                        return (
-                          <div 
-                            key={index} 
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              marginBottom: '15px',
-                              position: 'relative'
-                            }}
-                          >
-                            <div style={{ 
-                              width: '60px', 
-                              fontSize: '11px', 
-                              fontWeight: '500',
-                              textAlign: 'right',
-                              marginRight: '10px',
-                              color: '#64748b'
-                            }}>
-                              {item.company}
-                            </div>
-                            <div style={{ flex: 1, position: 'relative' }}>
-                              <div 
-                                style={{
-                                  height: '25px',
-                                  width: `${barWidth}%`,
-                                  backgroundColor: item.color,
-                                  borderRadius: '0 4px 4px 0',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'flex-end',
-                                  paddingRight: '8px',
-                                  minWidth: '80px',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease',
-                                  position: 'relative'
-                                }}
-                                onMouseEnter={() => setHoveredBar(index)}
-                                onMouseLeave={() => setHoveredBar(null)}
-                                title={`${item.company}: ${item.consumption.toLocaleString()} ${currentData.unit} (${percentage.toFixed(1)}%)`}
-                              >
-                                <span style={{ 
-                                  color: 'white', 
-                                  fontSize: '9px', 
-                                  fontWeight: '600',
-                                  textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
-                                }}>
-                                  {(item.consumption / 1000000).toFixed(1)}M
-                                </span>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Electricity Consumption Over Years by Company
+                  </h3>
+                  
+                  {/* Debug info - remove in production */}
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: '#64748b', 
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '4px'
+                  }}>
+                    Debug: {currentData.lineChartData.length} data points, Loading: {loading ? 'Yes' : 'No'}
+                  </div>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : currentData.lineChartData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+                          <div>No line chart data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={currentData.lineChartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="year" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                              name.toUpperCase()
+                            ]}
+                            labelStyle={{ color: '#1e293b', fontSize: '12px' }}
+                            contentStyle={{ fontSize: '12px' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          
+                          {/* Dynamically render lines based on available companies */}
+                          {Object.keys(lineChartColors).map((companyId, index) => (
+                            <Line 
+                              key={companyId}
+                              type="monotone" 
+                              dataKey={companyId} 
+                              stroke={lineChartColors[companyId] || COLORS[index % COLORS.length]} 
+                              strokeWidth={2}
+                              dot={{ fill: lineChartColors[companyId] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
+                              name={companyId}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
 
-                                {/* Inline tooltip that appears on hover */}
-                                {hoveredBar === index && (
-                                  <div
-                                    style={{
-                                      position: 'absolute',
-                                      left: '100%',
-                                      top: '50%',
-                                      transform: 'translateY(-50%)',
-                                      marginLeft: '10px',
-                                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                      color: 'white',
-                                      padding: '6px 10px',
-                                      borderRadius: '4px',
-                                      fontSize: '11px',
-                                      whiteSpace: 'nowrap',
-                                      zIndex: 10,
-                                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }}
-                                  >
-                                    <div style={{ fontWeight: 'bold' }}>
-                                      {item.company}
+                {/* Horizontal Bar Chart */}
+                <div style={{ 
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0,
+                  position: 'relative'
+                }}>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Total Electricity Consumption per Company
+                  </h3>
+                  
+                  <div style={{ flex: 1, minHeight: 0, padding: '10px' }}>
+                    {loading ? (
+                      <div>Loading...</div>
+                    ) : currentData.barChartData.length === 0 ? (
+                      <div>No data available</div>
+                    ) : (
+                      <div style={{ 
+                        height: '100%', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'space-around',
+                        position: 'relative'
+                      }}>
+                        {currentData.barChartData.map((item, index) => {
+                          const maxValue = Math.max(...currentData.barChartData.map(d => d.consumption));
+                          const barWidth = (item.consumption / maxValue) * 80;
+                          const percentage = ((item.consumption / currentData.barChartData.reduce((sum, d) => sum + d.consumption, 0)) * 100);
+                          
+                          return (
+                            <div 
+                              key={index} 
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                marginBottom: '15px',
+                                position: 'relative'
+                              }}
+                            >
+                              <div style={{ 
+                                width: '60px', 
+                                fontSize: '11px', 
+                                fontWeight: '500',
+                                textAlign: 'right',
+                                marginRight: '10px',
+                                color: '#64748b'
+                              }}>
+                                {item.company}
+                              </div>
+                              <div style={{ flex: 1, position: 'relative' }}>
+                                <div 
+                                  style={{
+                                    height: '25px',
+                                    width: `${barWidth}%`,
+                                    backgroundColor: item.color,
+                                    borderRadius: '0 4px 4px 0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end',
+                                    paddingRight: '8px',
+                                    minWidth: '80px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    position: 'relative'
+                                  }}
+                                  onMouseEnter={() => setHoveredBar(index)}
+                                  onMouseLeave={() => setHoveredBar(null)}
+                                  title={`${item.company}: ${item.consumption.toLocaleString()} ${currentData.unit} (${percentage.toFixed(1)}%)`}
+                                >
+                                  <span style={{ 
+                                    color: 'white', 
+                                    fontSize: '9px', 
+                                    fontWeight: '600',
+                                    textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
+                                  }}>
+                                    {(item.consumption / 1000000).toFixed(1)}M
+                                  </span>
+
+                                  {/* Inline tooltip that appears on hover */}
+                                  {hoveredBar === index && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        left: '100%',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        marginLeft: '10px',
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        color: 'white',
+                                        padding: '6px 10px',
+                                        borderRadius: '4px',
+                                        fontSize: '11px',
+                                        whiteSpace: 'nowrap',
+                                        zIndex: 10,
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                      }}
+                                    >
+                                      <div style={{ fontWeight: 'bold' }}>
+                                        {item.company}
+                                      </div>
+                                      <div>
+                                        {item.consumption.toLocaleString()} {currentData.unit}
+                                      </div>
+                                      <div style={{ fontSize: '10px', opacity: 0.8 }}>
+                                        {percentage.toFixed(1)}% of total
+                                      </div>
                                     </div>
-                                    <div>
-                                      {item.consumption.toLocaleString()} {currentData.unit}
-                                    </div>
-                                    <div style={{ fontSize: '10px', opacity: 0.8 }}>
-                                      {percentage.toFixed(1)}% of total
-                                    </div>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
                               </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Third Column - Source Chart and Quarterly Chart */}
+              <div style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                minHeight: 0
+              }}>
+                {/* Total Electricity Consumption by Company and Source */}
+                <div style={{ 
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
+                }}>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Total Electricity Consumption by Company and Source
+                  </h3>
+                  
+                  {/* Debug info - remove in production */}
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: '#64748b', 
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '4px'
+                  }}>
+                    Debug: {currentData.companySourceData.length} companies, Sources: {Object.keys(sourceColors).join(', ')}
+                  </div>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : currentData.companySourceData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                          <div>No source data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart 
+                          data={currentData.companySourceData}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="company"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) {
+                                return `${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `${(value / 1000).toFixed(0)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                              name
+                            ]}
+                            labelStyle={{ color: '#1e293b', fontSize: '12px' }}
+                            contentStyle={{ fontSize: '12px' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          
+                          {/* Dynamically render bars for each source */}
+                          {Object.keys(sourceColors).map((source, index) => (
+                            <Bar 
+                              key={source}
+                              dataKey={source} 
+                              stackId="a" 
+                              fill={sourceColors[source] || COLORS[index % COLORS.length]}
+                              name={source}
+                              radius={index === Object.keys(sourceColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                            />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+                {/* Electricity Consumption per Quarter */}
+                <div style={{ 
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
+                }}>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Electricity Consumption per Quarter - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
+                  </h3>
+                  
+                  {/* Debug info - remove in production */}
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: '#64748b', 
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '4px'
+                  }}>
+                    Debug: {currentData.stackedBarData.length} quarters, Companies: {Object.keys(quarterCompanyColors).join(', ')}
+                  </div>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : currentData.stackedBarData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                          <div>No quarterly data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={currentData.stackedBarData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="quarter"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) {
+                                return `${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `${(value / 1000).toFixed(0)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip content={renderStackedBarTooltip} />
+                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          
+                          {/* Dynamically render bars for each company */}
+                          {Object.keys(quarterCompanyColors).map((company, index) => (
+                            <Bar 
+                              key={company}
+                              dataKey={company} 
+                              stackId="a" 
+                              fill={quarterCompanyColors[company] || COLORS[index % COLORS.length]}
+                              name={company}
+                              radius={index === Object.keys(quarterCompanyColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                            />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
+            </>
+          )}
 
-          {/* Third Column for Electricity - Two charts stacked */}
-          {activeTab === 'electricity' ? (
-            <div style={{ 
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '15px',
-              minHeight: 0
-            }}>
-              {/* Total Electricity Consumption by Company and Source */}
+          {/* Diesel charts - NEW STRUCTURE */}
+          {activeTab !== 'electricity' && (
+            <>
+              {/* First Column - Left side charts */}
               <div style={{ 
-                flex: 1,
-                backgroundColor: 'white', 
-                padding: '12px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
+                gap: '15px',
                 minHeight: 0
               }}>
-                <h3 style={{ 
-                  fontSize: '13px', 
-                  fontWeight: '600', 
-                  marginBottom: '10px',
-                  color: '#1e293b',
-                  flexShrink: 0
-                }}>
-                  Total Electricity Consumption by Company and Source
-                </h3>
-                
-                {/* Debug info - remove in production */}
+                {/* Diesel Pie Chart - Distribution of Diesel Consumption by Company */}
                 <div style={{ 
-                  fontSize: '10px', 
-                  color: '#64748b', 
-                  marginBottom: '8px',
-                  padding: '4px 8px',
-                  backgroundColor: '#f1f5f9',
-                  borderRadius: '4px'
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
                 }}>
-                  Debug: {currentData.companySourceData.length} companies, Sources: {Object.keys(sourceColors).join(', ')}
-                </div>
-                
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  {loading ? (
+                  <h3 style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Distribution of Diesel Consumption by Company
+                  </h3>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     <div style={{
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      height: '100%',
-                      color: '#64748b',
-                      fontSize: '14px'
-                    }}>
-                      Loading chart data...
-                    </div>
-                  ) : currentData.companySourceData.length === 0 ? (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '100%',
+                      height: '200px',
                       color: '#64748b',
                       fontSize: '14px',
                       textAlign: 'center'
                     }}>
                       <div>
                         <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                        <div>No source data available</div>
+                        <div>Diesel Pie Chart</div>
                         <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          Try adjusting your filters
+                          API integration pending
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
-                        data={currentData.companySourceData}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                        <XAxis 
-                          dataKey="company"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fill: '#64748b' }}
-                        />
-                        <YAxis 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fill: '#64748b' }}
-                          tickFormatter={(value) => {
-                            if (value >= 1000000) {
-                              return `${(value / 1000000).toFixed(1)}M`;
-                            } else if (value >= 1000) {
-                              return `${(value / 1000).toFixed(0)}K`;
-                            } else {
-                              return value.toString();
-                            }
-                          }}
-                        />
-                        <Tooltip 
-                          formatter={(value, name) => [
-                            `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                            name
-                          ]}
-                          labelStyle={{ color: '#1e293b', fontSize: '12px' }}
-                          contentStyle={{ fontSize: '12px' }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: '10px' }} />
-                        
-                        {/* Dynamically render bars for each source */}
-                        {Object.keys(sourceColors).map((source, index) => (
-                          <Bar 
-                            key={source}
-                            dataKey={source} 
-                            stackId="a" 
-                            fill={sourceColors[source] || COLORS[index % COLORS.length]}
-                            name={source}
-                            radius={index === Object.keys(sourceColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                          />
-                        ))}
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
+                  </div>
+                </div>
+
+                {/* PSC - Diesel Consumption by Property (Pie Chart) */}
+                <div style={{ 
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
+                }}>
+                  <h3 style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    PSC - Diesel Consumption by Property
+                  </h3>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '200px',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>🥧</div>
+                        <div>Property Consumption Pie Chart</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          API integration pending
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Electricity Consumption per Quarter */}
+              {/* Second Column - Right side charts */}
               <div style={{ 
-                flex: 1,
-                backgroundColor: 'white', 
-                padding: '12px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
+                gap: '15px',
                 minHeight: 0
               }}>
-                <h3 style={{ 
-                  fontSize: '13px', 
-                  fontWeight: '600', 
-                  marginBottom: '10px',
-                  color: '#1e293b',
-                  flexShrink: 0
-                }}>
-                  Electricity Consumption per Quarter - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
-                </h3>
-                
-                {/* Debug info - remove in production */}
+                {/* Diesel Consumption by Property Type - PSC (Horizontal Bar Chart) */}
                 <div style={{ 
-                  fontSize: '10px', 
-                  color: '#64748b', 
-                  marginBottom: '8px',
-                  padding: '4px 8px',
-                  backgroundColor: '#f1f5f9',
-                  borderRadius: '4px'
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
                 }}>
-                  Debug: {currentData.stackedBarData.length} quarters, Companies: {Object.keys(quarterCompanyColors).join(', ')}
-                </div>
-                
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  {loading ? (
+                  <h3 style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Diesel Consumption by Property Type - PSC
+                  </h3>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     <div style={{
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      height: '100%',
-                      color: '#64748b',
-                      fontSize: '14px'
-                    }}>
-                      Loading chart data...
-                    </div>
-                  ) : currentData.stackedBarData.length === 0 ? (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '100%',
+                      height: '150px',
                       color: '#64748b',
                       fontSize: '14px',
                       textAlign: 'center'
                     }}>
                       <div>
                         <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                        <div>No quarterly data available</div>
+                        <div>Property Type Bar Chart</div>
                         <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          Try adjusting your filters
+                          Vehicle vs Equipment
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={currentData.stackedBarData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                        <XAxis 
-                          dataKey="quarter"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fill: '#64748b' }}
-                        />
-                        <YAxis 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 10, fill: '#64748b' }}
-                          tickFormatter={(value) => {
-                            if (value >= 1000000) {
-                              return `${(value / 1000000).toFixed(1)}M`;
-                            } else if (value >= 1000) {
-                              return `${(value / 1000).toFixed(0)}K`;
-                            } else {
-                              return value.toString();
-                            }
-                          }}
-                        />
-                        <Tooltip content={renderStackedBarTooltip} />
-                        <Legend wrapperStyle={{ fontSize: '10px' }} />
-                        
-                        {/* Dynamically render bars for each company */}
-                        {Object.keys(quarterCompanyColors).map((company, index) => (
-                          <Bar 
-                            key={company}
-                            dataKey={company} 
-                            stackId="a" 
-                            fill={quarterCompanyColors[company] || COLORS[index % COLORS.length]}
-                            name={company}
-                            radius={index === Object.keys(quarterCompanyColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                          />
-                        ))}
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
+                  </div>
+                </div>
+
+                {/* Diesel Consumption Over Time - PSC (Line Chart) */}
+                <div style={{ 
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
+                }}>
+                  <h3 style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Diesel Consumption Over Time - PSC
+                  </h3>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '150px',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+                        <div>Time Series Line Chart</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Multiple company properties over time
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PSC: Diesel Consumption - 2024 (Quarterly Stacked Bar Chart) */}
+                <div style={{ 
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
+                }}>
+                  <h3 style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    PSC: Diesel Consumption - 2024
+                  </h3>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '150px',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                        <div>Quarterly Stacked Bar Chart</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Q1, Q2, Q3, Q4 breakdown by property
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PSC - Diesel Consumption by Property (2024) (Monthly Line Chart) */}
+                <div style={{ 
+                  flex: 1,
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
+                }}>
+                  <h3 style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    PSC - Diesel Consumption by Property (2024)
+                  </h3>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '150px',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+                        <div>Monthly Property Line Chart</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Jan-Dec breakdown by property names
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            /* Diesel Stacked Bar Chart */
-            <div style={{ 
-              backgroundColor: 'white', 
-              padding: '12px', 
-              borderRadius: '8px', 
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 0
-            }}>
-              <h3 style={{ 
-                fontSize: '13px', 
-                fontWeight: '600', 
-                marginBottom: '10px',
-                color: '#1e293b',
-                flexShrink: 0
-              }}>
-                PSC: Diesel Consumption by Property (2024)
-              </h3>
-              
-              <div style={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={currentData.stackedBarData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="quarter"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                    />
-                    <YAxis 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                      tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
-                    />
-                    <Tooltip content={renderStackedBarTooltip} />
-                    <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Bar 
-                      dataKey="psc" 
-                      stackId="a" 
-                      fill="#3B82F6" 
-                      name="PSC" 
-                      radius={[0, 0, 0, 0]}
-                    />
-                    <Bar 
-                      dataKey="pmc" 
-                      stackId="a" 
-                      fill="#F97316" 
-                      name="PMC" 
-                      radius={[3, 3, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            </>
           )}
         </div>
       </div>
