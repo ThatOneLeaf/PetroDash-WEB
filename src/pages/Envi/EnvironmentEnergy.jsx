@@ -393,6 +393,7 @@ function EnvironmentEnergy() {
       }
 
       setIsModalOpen(false);
+      setSelectedRowIds([]);
       setRemarks("");
     } catch (error) {
       console.error("Error updating record status:", error);
@@ -422,9 +423,9 @@ function EnvironmentEnergy() {
   };
 
   const isApprove = selectedRowIds
-            .map(id => filteredData.find(row => row[idKey] === id))
-            .filter(Boolean)
-            .every(row => row.status === 'Approved');
+    .map(id => filteredData.find(row => row[idKey] === id))
+    .filter(Boolean)
+    .every(row => row.status === 'Approved');
 
   const allowedStatuses = ['For Revision (Site)', 'For Revision (Head)'];
   const isForRevision = selectedRowIds

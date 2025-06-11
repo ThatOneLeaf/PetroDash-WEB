@@ -45,6 +45,9 @@ function EnvironmentWater() {
   const [selectedRecord, setSelectedRecord] = useState(null); // New
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [updatePath, setUpdatePath] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [remarks, setRemarks] = useState("");
+  const statuses = ["URS","FRS","URH","FRH","APP"];
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -235,7 +238,6 @@ function EnvironmentWater() {
   }, [data]);
 
   const filteredData = useMemo(() => getFilteredData(), [data, filters, searchQuery]);
-  console.log(filteredData);
 
   const sortedData = useMemo(() => getSortedData(filteredData), [filteredData, sortConfig]);
 
@@ -287,6 +289,98 @@ function EnvironmentWater() {
     return null;
   };
 
+  const fetchNextStatus = (action, currentStatus) => {
+    let newStatus = '';
+    if (action === 'approve') {
+      switch (currentStatus){
+        case 'For Revision (Site)':
+          newStatus = statuses[0]; // "URS"
+          break;
+        case 'Under review (site)':
+        case 'For Revision (Head)':
+          newStatus = statuses[2]; // "URH"
+          break;
+        case 'Under review (head level)':
+          newStatus = statuses[4]; // "APP"
+          break;
+      }
+    } else if (action === 'revise') {
+      switch (currentStatus) {
+        case 'Under review (site)':
+          newStatus = statuses[1]; // "FRS"
+          break;
+        case 'Under review (head level)':
+          newStatus = statuses[3]; // "FRH"
+          break;
+      }
+    }
+    return newStatus;
+  }
+
+  //statuses = ["URS","FRS","URH","FRH","APP"]
+  const handleBulkStatusUpdate = async (action) => {
+
+    //Check if the selected row ids status are the same
+    const isSame = areSelectedStatusesSame();
+    let currentStatus = null;
+    if (isSame && selectedRowIds.length > 0) {
+      // Get the status from the first selected row
+      const firstRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
+      currentStatus = firstRow?.status || null;
+      } else {
+      alert("Selected rows have different statuses.");
+      return; // Optionally stop if not the same
+    }
+
+    const newStatus = fetchNextStatus(action, currentStatus);
+
+    if (newStatus) {
+      console.log("Updated status to:", newStatus);
+    } else {
+      console.warn("No matching status transition found.");
+    }
+
+    try {
+      if (action === 'revise') {
+        if (!remarks){
+          alert('Remarks is required for the status update')
+          return;
+        }
+      }
+      const payload = {
+        record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+
+      console.log(payload);
+
+      const response = await api.post(
+        "/usable_apis/bulk_update_status",
+        payload
+      );
+
+      alert(response.data.message);
+
+      if (selected === 'Abstraction') {
+        fetchAbstractionData();
+      }
+      if (selected === 'Discharged') {
+        fetchDischargedData();
+      }
+      if (selected === 'Consumption') {
+        fetchConsumptionData();
+      }
+
+      setIsModalOpen(false);
+      setSelectedRowIds([]);
+      setRemarks("");
+    } catch (error) {
+      console.error("Error updating record status:", error);
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }  
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -300,7 +394,26 @@ function EnvironmentWater() {
         : 'id'
   : 'id';
 
-  console.log('Updated selectedRowIds:', selectedRowIds);
+  const areSelectedStatusesSame = () => {
+    if (!selectedRowIds.length) return false;
+    const selectedStatuses = selectedRowIds
+      .map(id => filteredData.find(row => row[idKey] === id))
+      .filter(Boolean)
+      .map(row => row.status);
+
+    return selectedStatuses.every(status => status === selectedStatuses[0]);
+  };
+
+  const isApprove = selectedRowIds
+    .map(id => filteredData.find(row => row[idKey] === id))
+    .filter(Boolean)
+    .every(row => row.status === 'Approved');
+
+  const allowedStatuses = ['For Revision (Site)', 'For Revision (Head)'];
+  const isForRevision = selectedRowIds
+    .map(id => filteredData.find(row => row[idKey] === id))
+    .filter(Boolean)
+    .every(row => allowedStatuses.includes(row.status));
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -328,56 +441,97 @@ function EnvironmentWater() {
           </Box>
           
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
-            <Button
-              variant="contained"
-              onClick={() => exportToExcel(filteredData)}
-              startIcon={<FileUploadIcon />}
-              sx={{
-                backgroundColor: '#182959',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: '#0f1a3c',
-                },
-              }}
-            >
-              EXPORT DATA
-            </Button>
-            <Button
-              variant="contained"
-              sx={{ 
-                backgroundColor: '#182959',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: '#0f1a3c',
-                },
-              }}
-              onClick={() => setIsImportModalOpen(true)}
-            >
-              IMPORT
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              sx={{ 
-                backgroundColor: '#2B8C37',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: '#256d2f',
-                },
-              }}
-              onClick={() => setIsAddModalOpen(true)}
-            >
-              ADD RECORD
-            </Button>
+            {selectedRowIds.length > 0 && !isApprove ? (
+              <>
+                <Button 
+                  variant='contained'
+                  sx={{ 
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={() => handleBulkStatusUpdate("approve")}
+                >
+                  Approve
+                </Button>
+                {(selectedRowIds.length > 0 && !isForRevision) && (
+                  <Button 
+                    variant='contained'
+                    sx={{ 
+                      backgroundColor: '#182959',
+                      borderRadius: '999px',
+                      padding: '9px 18px',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      '&:hover': {
+                        backgroundColor: '#0f1a3c',
+                      },
+                    }}
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    Revise
+                </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  onClick={() => exportToExcel(filteredData)}
+                  startIcon={<FileUploadIcon />}
+                  sx={{
+                    backgroundColor: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#0f1a3c',
+                    },
+                  }}
+                >
+                  EXPORT DATA
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={{ 
+                    backgroundColor: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#0f1a3c',
+                    },
+                  }}
+                  onClick={() => setIsImportModalOpen(true)}
+                >
+                  IMPORT
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  sx={{ 
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={() => setIsAddModalOpen(true)}
+                >
+                  ADD RECORD
+                </Button>
+              </>
+            )}
           </Box>
         </Box>
 
@@ -617,6 +771,71 @@ function EnvironmentWater() {
               onClose={() => setSelectedRecord(null)}
             />
           </Overlay>
+        )}
+        {isModalOpen && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <Paper
+              sx={{
+                p: 4,
+                width: "500px",
+                borderRadius: "16px",
+                bgcolor: "white",
+              }}
+            >
+              <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
+                Revision Request
+              </Typography>
+              <TextField
+                sx={{
+                  mt: 2,
+                  mb: 2
+                }}
+                label={<> Remarks <span style={{ color: 'red' }}>*</span> </>}
+                variant="outlined"
+                fullWidth
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                multiline
+              />
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}>
+                <Button 
+                  sx={{ 
+                    color: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      color: '#0f1a3c',
+                    },
+                  }}
+                  onClick={() => {setIsModalOpen(false); setRemarks("");}}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant='contained'
+                  sx={{ 
+                    marginLeft: 1,
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={() => handleBulkStatusUpdate("revise")}
+                >
+                  Confirm
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>          
         )}
       </Container>
     </Box>
