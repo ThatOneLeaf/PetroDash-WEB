@@ -19,6 +19,7 @@ import HR from "./pages/HR/HRMain";
 import HRDashboard from "./pages/HR/HRDashboard";
 import PowerDashboard from "./pages/Energy/PowerDashboard";
 import EnvironmentEnergyDash from "./pages/Envi/EnvironmentEnergyDash";
+import EnvironmentWasteDash from "./pages/Envi/EnvironmentWasteDash";
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
             <Route path="/environment/care" element={<EnvironmentCare />} />
             <Route path="/environment/water-dash" element={<EnvironmentWaterDash />} />
             <Route path="/environment/energy-dash" element={<EnvironmentEnergyDash />} />
+            <Route path="/environment/waste-dash" element={<EnvironmentWasteDash />} />
             
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
