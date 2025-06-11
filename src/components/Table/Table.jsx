@@ -209,8 +209,6 @@ const Table = ({
     if (onSelectionChange) onSelectionChange(newSelected);
   };
 
-  console.log(selected);
-
   return (
     // Main container for table with horizontal scroll
     <Box sx={{ width: "100%", overflowX: "auto" }}>

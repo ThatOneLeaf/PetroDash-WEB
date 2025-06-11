@@ -42,6 +42,7 @@ function EnvironmentEnergy() {
   const [selected, setSelected] = useState('Electricity');  // Default selection
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [updatePath, setUpdatePath] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -320,6 +321,8 @@ function EnvironmentEnergy() {
       : 'id'
   : 'id';
 
+  console.log('Updated selectedRowIds:', selectedRowIds);
+
   return (
     <Box sx={{ display: 'flex', }}>
       <Sidebar />
@@ -551,6 +554,7 @@ function EnvironmentEnergy() {
           columns={columns}
           rows={paginatedData}
           idKey={idKey} // or "id", "recordId", etc. depending on the page
+          onSelectionChange={(selectedRows) => setSelectedRowIds(selectedRows)}
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage="No energy data found."

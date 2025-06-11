@@ -44,6 +44,7 @@ function EnvironmentWaste() {
   const [searchQuery, setSearchQuery] = useState("");
   const [updatePath, setUpdatePath] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null); // New
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -297,6 +298,8 @@ function EnvironmentWaste() {
         : 'id'
   : 'id';
 
+  console.log('Updated selectedRowIds:', selectedRowIds);
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
@@ -491,6 +494,7 @@ function EnvironmentWaste() {
           columns={columns}
           rows={paginatedData}
           idKey={idKey} // or "id", "recordId", etc. depending on the page
+          onSelectionChange={(selectedRows) => setSelectedRowIds(selectedRows)}
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage="No waste data found."

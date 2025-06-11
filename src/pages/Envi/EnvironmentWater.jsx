@@ -43,6 +43,7 @@ function EnvironmentWater() {
   const [isImportdModalOpen, setIsImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null); // New
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [updatePath, setUpdatePath] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -299,6 +300,8 @@ function EnvironmentWater() {
         : 'id'
   : 'id';
 
+  console.log('Updated selectedRowIds:', selectedRowIds);
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
@@ -502,6 +505,7 @@ function EnvironmentWater() {
           columns={columns}
           rows={paginatedData}
           idKey={idKey} // or "id", "recordId", etc. depending on the page
+          onSelectionChange={(selectedRows) => setSelectedRowIds(selectedRows)}
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage="No water data found."
