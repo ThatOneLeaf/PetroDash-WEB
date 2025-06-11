@@ -419,8 +419,8 @@ function Energy() {
           <Overlay onClose={() => setIsImportEnergyModalOpen(false)}>
             <ImportFileModal
                   title="Daily Generation"
-                  downloadPath=""
-                  uploadPath=""
+                  downloadPath="/energy/download_template"
+                  uploadPath="/energy/bulk_add"
                   onClose={() => {
                             setIsImportEnergyModalOpen(false);
                             fetchEnergyData();
