@@ -141,7 +141,6 @@ function EnvironmentWaste() {
             key,
             label: 'Status',
             render: (row) => {
-            console.log('Rendering row:', row); // ← Debug here
             return <StatusChip status={row} />;
           }
 
@@ -287,6 +286,16 @@ function EnvironmentWaste() {
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
+
+  const idKey = filteredData.length > 0
+  ? filteredData[0].hwg_id !== undefined
+    ? 'hwg_id'
+    : filteredData[0].hwd_id !== undefined
+      ? 'hwd_id'
+      : filteredData[0].nhw_id !== undefined
+        ? 'nhw_id'
+        : 'id'
+  : 'id';
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -481,6 +490,7 @@ function EnvironmentWaste() {
         <CustomTable
           columns={columns}
           rows={paginatedData}
+          idKey={idKey} // or "id", "recordId", etc. depending on the page
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage="No waste data found."

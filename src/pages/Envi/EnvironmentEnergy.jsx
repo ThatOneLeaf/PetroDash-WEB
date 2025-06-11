@@ -150,7 +150,6 @@ function EnvironmentEnergy() {
             key,
             label: 'Status',
             render: (row) => {
-            console.log('Rendering row:', row); // ← Debug here
             return <StatusChip status={row} />;
           }
 
@@ -312,6 +311,14 @@ function EnvironmentEnergy() {
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
+
+  const idKey = filteredData.length > 0
+  ? filteredData[0].ec_id !== undefined
+    ? 'ec_id'
+    : filteredData[0].dc_id !== undefined
+      ? 'dc_id'
+      : 'id'
+  : 'id';
 
   return (
     <Box sx={{ display: 'flex', }}>
@@ -543,6 +550,7 @@ function EnvironmentEnergy() {
         <CustomTable
           columns={columns}
           rows={paginatedData}
+          idKey={idKey} // or "id", "recordId", etc. depending on the page
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage="No energy data found."

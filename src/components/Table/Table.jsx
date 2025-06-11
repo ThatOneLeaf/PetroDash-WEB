@@ -61,6 +61,7 @@ const Table = ({
   columns,
   rows, // ALL data, not pre-paginated
   page = 1,
+  idKey,
   rowsPerPage = 10,
   onPageChange,
   initialSort = { key: null, direction: "asc" },
@@ -176,8 +177,8 @@ const Table = ({
   };
 
   // Selection logic for checkboxes
-  const isAllSelected = paginatedData.length > 0 && paginatedData.every(row => selected.includes(row.id));
-  const isIndeterminate = paginatedData.some(row => selected.includes(row.id)) && !isAllSelected;
+  const isAllSelected = paginatedData.length > 0 && paginatedData.every(row => selected.includes(row[idKey]));
+  const isIndeterminate = paginatedData.some(row => selected.includes(row[idKey])) && !isAllSelected;
 
   // Handler for selecting all rows on current page
   const handleSelectAll = (event) => {
@@ -186,11 +187,11 @@ const Table = ({
       newSelected = [
         ...selected,
         ...paginatedData
-          .map(row => row.id)
+          .map(row => row[idKey])
           .filter(id => !selected.includes(id))
       ];
     } else {
-      newSelected = selected.filter(id => !paginatedData.some(row => row.id === id));
+      newSelected = selected.filter(id => !paginatedData.some(row => row[idKey] === id));
     }
     setSelected(newSelected);
     if (onSelectionChange) onSelectionChange(newSelected);
@@ -207,6 +208,8 @@ const Table = ({
     setSelected(newSelected);
     if (onSelectionChange) onSelectionChange(newSelected);
   };
+
+  console.log(selected);
 
   return (
     // Main container for table with horizontal scroll
@@ -256,7 +259,8 @@ const Table = ({
                   borderBottom: "none",
                   position: "sticky",
                   left: 0,
-                  zIndex: 2,
+                  top: 0, // Make this sticky on top too!
+                  zIndex: 3, // Higher than body checkbox cell (which is 1)
                   width: 48,
                   textAlign: "center",
                 }}
@@ -267,7 +271,7 @@ const Table = ({
                   checked={isAllSelected}
                   onChange={handleSelectAll}
                   inputProps={{ "aria-label": "select all rows" }}
-                  sx={{ color: "#fff", '&.Mui-checked': { color: "#fff" } }}
+                  sx={{ color: "#fff", '&.Mui-checked': { color: "#fff" }, ml: 0.5 }}
                 />
               </TableCell>
 
@@ -374,7 +378,7 @@ const Table = ({
               // Render table rows (paginated data)
               paginatedData.map((row, idx) => (
                 <TableRow
-                  key={row.id ?? `${row.year ?? ""}-${row.comp ?? ""}-${row.type ?? ""}-${idx}`}
+                  key={row[idKey] ?? `${row.year ?? ""}-${row.comp ?? ""}-${row.type ?? ""}-${idx}`}
                   hover
                   sx={{
                     background: "#fff",
@@ -384,13 +388,12 @@ const Table = ({
                   onClick={() => {
                     if (onRowClick) onRowClick(row);
                   }}
-                  selected={selected.includes(row.id)}
+                  selected={selected.includes(row[idKey])}
                 >
                   {/* Checkbox cell */}
                   <TableCell
                     padding="checkbox"
                     sx={{
-                      position: "sticky",
                       left: 0,
                       background: "#fff",
                       zIndex: 1,
@@ -401,9 +404,9 @@ const Table = ({
                   >
                     <Checkbox
                       color="primary"
-                      checked={selected.includes(row.id)}
-                      onChange={() => handleSelectRow(row.id)}
-                      inputProps={{ "aria-label": `select row ${row.id}` }}
+                      checked={selected.includes(row[idKey])}
+                      onChange={() => handleSelectRow(row[idKey])}
+                      inputProps={{ "aria-label": `select row ${row[idKey]}` }}
                     />
                   </TableCell>
 

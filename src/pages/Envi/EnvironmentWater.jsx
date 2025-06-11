@@ -139,7 +139,6 @@ function EnvironmentWater() {
             key,
             label: 'Status',
             render: (row) => {
-            console.log('Rendering row:', row); // ← Debug here
             return <StatusChip status={row} />;
           }
 
@@ -289,6 +288,16 @@ function EnvironmentWater() {
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
+
+  const idKey = filteredData.length > 0
+  ? filteredData[0].wa_id !== undefined
+    ? 'wa_id'
+    : filteredData[0].wd_id !== undefined
+      ? 'wd_id'
+      : filteredData[0].wc_id !== undefined
+        ? 'wc_id'
+        : 'id'
+  : 'id';
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -492,6 +501,7 @@ function EnvironmentWater() {
         <CustomTable
           columns={columns}
           rows={paginatedData}
+          idKey={idKey} // or "id", "recordId", etc. depending on the page
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage="No water data found."
