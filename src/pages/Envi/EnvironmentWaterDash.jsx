@@ -23,6 +23,7 @@ const COLORS = ['#3B82F6', '#F97316', '#10B981'];
 function EnvironmentWaterDash() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
 
   const [totalAbstracted, setTotalAbstracted] = useState(0);
   const [totalDischarged, setTotalDischarged] = useState(0);
@@ -46,6 +47,25 @@ function EnvironmentWaterDash() {
   // New state for available years from API
   const [availableYears, setAvailableYears] = useState([]);
 
+  // Function to format the current date and time
+  const formatDateTime = (date) => {
+    const options = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    };
+    return date.toLocaleString('en-US', options);
+  };
+
+  // Function to refresh the entire page
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
   // Fetch companies and available years on component mount
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -60,6 +80,7 @@ function EnvironmentWaterDash() {
         
         setCompanies(companiesResponse.data);
         setAvailableYears(yearsResponse.data.data || []);
+        setLastUpdated(new Date()); // Update the last updated time
       } catch (error) {
         console.error('Error fetching initial data:', error);
         setCompanies([]);
@@ -86,6 +107,7 @@ function EnvironmentWaterDash() {
       setTotalAbstracted(abstractedRes.data?.total_volume ?? 0);
       setTotalDischarged(dischargedRes.data?.total_volume ?? 0);
       setTotalConsumed(consumedRes.data?.total_volume ?? 0);
+      setLastUpdated(new Date()); // Update the last updated time
     } catch (error) {
       console.error('Error fetching totals:', error);
     }
@@ -205,6 +227,8 @@ function EnvironmentWaterDash() {
           setStackedBarData([]);
         }
         
+        setLastUpdated(new Date()); // Update the last updated time after successful data fetch
+        
         } catch (error) {
         console.error('Failed to fetch chart data:', error);
         console.error('Error response:', error.response?.data);
@@ -323,23 +347,38 @@ function EnvironmentWaterDash() {
             }}>
               Environment - Water
             </h1>
+            {/* Add "As of now" timestamp */}
+            <div style={{ 
+              color: '#64748b', 
+              fontSize: '10px',
+              fontWeight: '400',
+              marginTop: '4px'
+            }}>
+               The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
+            </div>
           </div>
-          {/* COMMENT OUT EXPORT BUTTON (Low Priority)
-          <button style={{
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            padding: '8px 16px', // Reduced padding
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            fontSize: '12px', // Reduced from 14px
-            fontWeight: '500'
-          }}>
-            📊 EXPORT DATA
+          {/* Add Refresh Button */}
+          <button 
+            onClick={handleRefresh}
+            style={{
+              backgroundColor: '#3B82F6',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '500',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#2563EB'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#3B82F6'}
+          >
+            🔄 REFRESH
           </button>
-          */}
         </div>
 
         {/* Filters - Compact */}
@@ -592,8 +631,8 @@ function EnvironmentWaterDash() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        outerRadius={320} // Increased from 80 to 110 for larger circle
-                        innerRadius={150} // Increased proportionally from 35 to 45
+                        outerRadius={250} // Increased from 80 to 110 for larger circle
+                        innerRadius={100} // Increased proportionally from 35 to 45
                         fill="#8884d8"
                         dataKey="value"
                         paddingAngle={2}

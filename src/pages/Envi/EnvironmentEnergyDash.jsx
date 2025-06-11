@@ -24,6 +24,7 @@ function EnvironmentEnergyDash() {
   const [activeTab, setActiveTab] = useState('electricity'); // 'electricity' or 'diesel'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
 
   // Filters
   const [companyId, setCompanyId] = useState('');
@@ -62,6 +63,14 @@ function EnvironmentEnergyDash() {
   // Chart data from APIs (Diesel)
   const [dieselPieData, setDieselPieData] = useState([]);
   const [dieselPropertyPieData, setDieselPropertyPieData] = useState([]);
+  const [dieselLineData, setDieselLineData] = useState([]);
+  const [dieselLineColors, setDieselLineColors] = useState({});
+  const [dieselPropertyTypeData, setDieselPropertyTypeData] = useState([]);
+  const [hoveredPropertyTypeBar, setHoveredPropertyTypeBar] = useState(null);
+  const [dieselMonthlyLineData, setDieselMonthlyLineData] = useState([]);
+  const [dieselMonthlyLineColors, setDieselMonthlyLineColors] = useState({});
+  const [dieselQuarterlyBarData, setDieselQuarterlyBarData] = useState([]);
+  const [dieselQuarterlyBarColors, setDieselQuarterlyBarColors] = useState({});
 
   // Static key metrics - fetched once on mount and don't change with filters
   const [staticElectricityMetrics, setStaticElectricityMetrics] = useState({
@@ -135,6 +144,19 @@ function EnvironmentEnergyDash() {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  const formatDateTime = (date) => {
+    const options = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    };
+    return date.toLocaleString('en-US', options);
+  };
+
   // Get current data based on active tab
   const getCurrentData = () => {
     if (activeTab === 'electricity') {
@@ -150,11 +172,18 @@ function EnvironmentEnergyDash() {
       return {
         pieData: dieselPieData, // Company distribution pie chart
         propertyPieData: dieselPropertyPieData, // Property distribution pie chart
-        lineChartData: dieselChartData.lineChartData,
+        propertyTypeData: dieselPropertyTypeData, // Property type horizontal bar chart
+        lineChartData: dieselLineData, // Use API data for diesel line chart
+        monthlyLineData: dieselMonthlyLineData, // Monthly line chart data
+        quarterlyBarData: dieselQuarterlyBarData, // Quarterly stacked bar chart data
         stackedBarData: dieselChartData.stackedBarData,
         unit: staticDieselMetrics.unit_of_measurement || 'Liters'
       };
     }
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   const currentData = getCurrentData();
@@ -367,6 +396,204 @@ function EnvironmentEnergyDash() {
     return transformedData;
   };
 
+  const transformDieselLineChartData = (apiData) => {
+    if (!apiData || apiData.length === 0) {
+      return { chartData: [], properties: [], colors: {} };
+    }
+
+    console.log('Raw diesel line API data:', apiData);
+
+    // Get all unique years from all properties
+    const allYears = new Set();
+    apiData.forEach(propertyData => {
+      propertyData.data.forEach(item => allYears.add(item.year));
+    });
+
+    // Sort years
+    const sortedYears = Array.from(allYears).sort();
+
+    // Transform data for Recharts (group by year, properties as columns)
+    const transformedData = sortedYears.map(year => {
+      const yearData = { year };
+      
+      // For each property, find the consumption for this year
+      apiData.forEach(propertyData => {
+        const propertyName = propertyData.property_name;
+        const yearConsumption = propertyData.data.find(item => item.year === year);
+        yearData[propertyName] = yearConsumption ? yearConsumption.total_consumption : 0;
+      });
+      
+      return yearData;
+    });
+
+    // USE COLORS FROM API RESPONSE (not generate new ones)
+    const properties = apiData.map(item => item.property_name);
+    const colorMap = {};
+    apiData.forEach(propertyData => {
+      colorMap[propertyData.property_name] = propertyData.color;
+    });
+
+    console.log('Transformed diesel line data:', transformedData);
+    console.log('Properties:', properties);
+    console.log('Colors from API:', colorMap);
+
+    return {
+      chartData: transformedData,
+      properties,
+      colors: colorMap
+    };
+  };
+
+  const transformDieselPropertyTypeData = (apiData) => {
+    if (!apiData || apiData.length === 0) {
+      return [];
+    }
+
+    console.log('Raw diesel property type API data:', apiData);
+
+    // Transform API response to match horizontal bar chart format
+    const transformedData = apiData.map(item => ({
+      label: item.label || 'Unknown',
+      value: Number(item.value) || 0,
+      color: item.color || '#3B82F6'
+    }));
+
+    console.log('Transformed diesel property type data:', transformedData);
+    
+    return transformedData;
+  };
+
+  const transformDieselMonthlyLineData = (apiData, colorMap) => {
+    if (!apiData || Object.keys(apiData).length === 0) {
+      return { chartData: [], properties: [], colors: {} };
+    }
+
+    console.log('Raw diesel monthly line API data:', apiData);
+    console.log('Color map:', colorMap);
+
+    // Month order for proper sorting
+    const monthOrder = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    // Combine all months across all years
+    const combinedMonthData = {};
+    
+    // Initialize combined data structure
+    monthOrder.forEach(month => {
+      combinedMonthData[month] = { month };
+    });
+
+    // Get all properties from the API data
+    const allProperties = new Set();
+    Object.values(apiData).forEach(yearData => {
+      Object.keys(yearData).forEach(property => {
+        allProperties.add(property);
+      });
+    });
+
+    // Initialize properties with 0 values for each month
+    Array.from(allProperties).forEach(property => {
+      monthOrder.forEach(month => {
+        combinedMonthData[month][property] = 0;
+      });
+    });
+
+    // Sum up consumption across all years for each month and property
+    Object.keys(apiData).forEach(year => {
+      const yearData = apiData[year];
+      
+      Object.keys(yearData).forEach(property => {
+        const propertyData = yearData[property];
+        
+        Object.keys(propertyData).forEach(month => {
+          const consumption = propertyData[month] || 0;
+          if (combinedMonthData[month]) {
+            combinedMonthData[month][property] += consumption;
+          }
+        });
+      });
+    });
+
+    // Convert to array format for Recharts
+    const transformedData = monthOrder.map(month => combinedMonthData[month]);
+
+    const properties = Array.from(allProperties);
+
+    console.log('Transformed diesel monthly line data (combined):', transformedData);
+    console.log('Properties:', properties);
+
+    return {
+      chartData: transformedData,
+      properties,
+      colors: colorMap || {}
+    };
+  };
+
+  const transformDieselQuarterlyBarData = (apiData, colorMap) => {
+    if (!apiData || apiData.length === 0) {
+      return { chartData: [], properties: [], colors: {} };
+    }
+
+    console.log('Raw diesel quarterly bar API data:', apiData);
+    console.log('Color map:', colorMap);
+
+    // Group data by quarter
+    const groupedByQuarter = {};
+    const allProperties = new Set();
+
+    apiData.forEach(item => {
+      const quarter = item.quarter;
+      const property = item.property_name;
+      const value = item.total_consumption;
+      
+      // Collect all properties
+      allProperties.add(property);
+      
+      // Group by quarter
+      if (!groupedByQuarter[quarter]) {
+        groupedByQuarter[quarter] = { quarter };
+      }
+      
+      groupedByQuarter[quarter][property] = value;
+    });
+
+    // Convert to array format for Recharts with proper quarter order
+    const quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+    const chartData = quarterOrder.map(quarter => {
+      if (groupedByQuarter[quarter]) {
+        return groupedByQuarter[quarter];
+      } else {
+        // Create empty quarter data if no data exists
+        const emptyQuarter = { quarter };
+        Array.from(allProperties).forEach(property => {
+          emptyQuarter[property] = 0;
+        });
+        return emptyQuarter;
+      }
+    });
+
+    // Ensure all quarters have all properties (fill missing with 0)
+    const properties = Array.from(allProperties);
+    chartData.forEach(quarterData => {
+      properties.forEach(property => {
+        if (!quarterData[property]) {
+          quarterData[property] = 0;
+        }
+      });
+    });
+
+    console.log('Transformed diesel quarterly bar data:', chartData);
+    console.log('Properties:', properties);
+
+    return {
+      chartData,
+      properties,
+      colors: colorMap || {}
+    };
+  };
+
   // Fetch companies and available years on component mount
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -400,6 +627,7 @@ function EnvironmentEnergyDash() {
         setCompanyProperties(companyPropertiesResponse.data.data || []);
         setPropertyTypes(propertyTypesResponse.data.data || []);
         setDieselYears(dieselYearsResponse.data.data || []);
+        setLastUpdated(new Date()); // Update the last updated time
       } catch (error) {
         console.error('Error fetching initial data:', error);
         setCompanies([]);
@@ -996,6 +1224,368 @@ function EnvironmentEnergyDash() {
   }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
       companies, dieselYears, companyProperties, propertyTypes]);
 
+  useEffect(() => {
+    const fetchDieselLineChart = async () => {
+      if (activeTab !== 'diesel') return;
+
+      try {
+        // Build parameters for diesel line chart API
+        const params = {};
+        
+        // Company filter
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        // Property name filter (diesel-specific)
+        if (companyPropertyName) {
+          params.property_name = companyPropertyName;
+        } else {
+          params.property_name = companyProperties;
+        }
+        
+        // Property type filter (diesel-specific)
+        if (companyPropertyType) {
+          params.property_type = companyPropertyType;
+        } else {
+          params.property_type = propertyTypes;
+        }
+        
+        // Quarter filter
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        // Month filter (diesel-specific)
+        if (month) {
+          params.month = month;
+        } else {
+          // If no specific month, use all months
+          params.month = monthOptions;
+        }
+        
+        // Year filter using diesel years
+        if (fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = dieselYears;
+        }
+        
+        console.log('Sending params to diesel line chart API:', params);
+        
+        const response = await api.get('/environment_dash/diesel-line-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Diesel line chart response:', response.data);
+        
+        // Transform the data for line chart
+        const transformedData = transformDieselLineChartData(response.data.data);
+        
+        setDieselLineData(transformedData.chartData);
+        setDieselLineColors(transformedData.colors);
+        
+      } catch (error) {
+        console.error('Failed to fetch diesel line chart:', error);
+        console.error('Error response:', error.response?.data);
+        setDieselLineData([]);
+        setDieselLineColors({});
+      }
+    };
+
+    // Only fetch data if companies and diesel years have been loaded
+    if (companies.length > 0 && dieselYears.length > 0 && 
+        companyProperties.length > 0 && propertyTypes.length > 0) {
+      fetchDieselLineChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
+      companies, dieselYears, companyProperties, propertyTypes]);
+    
+  useEffect(() => {
+    const fetchDieselPropertyTypeChart = async () => {
+      if (activeTab !== 'diesel') return;
+
+      try {
+        // Build parameters for diesel property type API
+        const params = {};
+        
+        // Company filter
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        // Property name filter (diesel-specific)
+        if (companyPropertyName) {
+          params.property_name = companyPropertyName;
+        } else {
+          params.property_name = companyProperties;
+        }
+        
+        // Property type filter (diesel-specific)
+        if (companyPropertyType) {
+          params.property_type = companyPropertyType;
+        } else {
+          params.property_type = propertyTypes;
+        }
+        
+        // Quarter filter
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        // Month filter (diesel-specific)
+        if (month) {
+          params.month = month;
+        } else {
+          // If no specific month, use all months
+          params.month = monthOptions;
+        }
+        
+        // Year filter using diesel years
+        if (fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = dieselYears;
+        }
+        
+        console.log('Sending params to diesel property type chart API:', params);
+        
+        const response = await api.get('/environment_dash/diesel-cp-type-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Diesel property type chart response:', response.data);
+        
+        // Transform the data for horizontal bar chart
+        const transformedData = transformDieselPropertyTypeData(response.data.data);
+        
+        setDieselPropertyTypeData(transformedData);
+        
+      } catch (error) {
+        console.error('Failed to fetch diesel property type chart:', error);
+        console.error('Error response:', error.response?.data);
+        setDieselPropertyTypeData([]);
+      }
+    };
+
+    // Only fetch data if companies and diesel years have been loaded
+    if (companies.length > 0 && dieselYears.length > 0 && 
+        companyProperties.length > 0 && propertyTypes.length > 0) {
+      fetchDieselPropertyTypeChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
+      companies, dieselYears, companyProperties, propertyTypes]);
+
+  useEffect(() => {
+    const fetchDieselMonthlyLineChart = async () => {
+      if (activeTab !== 'diesel') return;
+
+      try {
+        // Build parameters for diesel monthly line chart API
+        const params = {};
+        
+        // Company filter
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        // Property name filter (diesel-specific)
+        if (companyPropertyName) {
+          params.company_property_name = companyPropertyName;
+        } else {
+          params.company_property_name = companyProperties;
+        }
+        
+        // Property type filter (diesel-specific)
+        if (companyPropertyType) {
+          params.company_property_type = companyPropertyType;
+        } else {
+          params.company_property_type = propertyTypes;
+        }
+        
+        // Quarter filter
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        // Month filter (diesel-specific)
+        if (month) {
+          params.month = month;
+        } else {
+          // If no specific month, use all months
+          params.month = monthOptions;
+        }
+        
+        // Year filter using diesel years
+        if (fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = dieselYears;
+        }
+        
+        console.log('Sending params to diesel monthly line chart API:', params);
+        
+        const response = await api.get('/environment_dash/diesel-cp-line-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Diesel monthly line chart response:', response.data);
+        
+        // Transform the data for line chart
+        const transformedData = transformDieselMonthlyLineData(response.data.data, response.data.color_map);
+        
+        setDieselMonthlyLineData(transformedData.chartData);
+        setDieselMonthlyLineColors(transformedData.colors);
+        
+      } catch (error) {
+        console.error('Failed to fetch diesel monthly line chart:', error);
+        console.error('Error response:', error.response?.data);
+        setDieselMonthlyLineData([]);
+        setDieselMonthlyLineColors({});
+      }
+    };
+
+    // Only fetch data if companies and diesel years have been loaded
+    if (companies.length > 0 && dieselYears.length > 0 && 
+        companyProperties.length > 0 && propertyTypes.length > 0) {
+      fetchDieselMonthlyLineChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
+      companies, dieselYears, companyProperties, propertyTypes]);
+
+  useEffect(() => {
+    const fetchDieselQuarterlyBarChart = async () => {
+      if (activeTab !== 'diesel') return;
+
+      try {
+        // Build parameters for diesel quarterly bar chart API
+        const params = {};
+        
+        // Company filter
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+        
+        // Property name filter (diesel-specific)
+        if (companyPropertyName) {
+          params.company_property_name = companyPropertyName;
+        } else {
+          params.company_property_name = companyProperties;
+        }
+        
+        // Property type filter (diesel-specific)
+        if (companyPropertyType) {
+          params.company_property_type = companyPropertyType;
+        } else {
+          params.company_property_type = propertyTypes;
+        }
+        
+        // Quarter filter
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        // Month filter (diesel-specific)
+        if (month) {
+          params.month = month;
+        } else {
+          // If no specific month, use all months
+          params.month = monthOptions;
+        }
+        
+        // Year filter using diesel years
+        if (fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = dieselYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = dieselYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = dieselYears;
+        }
+        
+        console.log('Sending params to diesel quarterly bar chart API:', params);
+        
+        const response = await api.get('/environment_dash/diesel-quarter-bar-chart', { 
+          params,
+          paramsSerializer: {
+            indexes: null
+          }
+        });
+
+        console.log('Diesel quarterly bar chart response:', response.data);
+        
+        // Transform the data for stacked bar chart
+        const transformedData = transformDieselQuarterlyBarData(response.data.data, response.data.color_map);
+        
+        setDieselQuarterlyBarData(transformedData.chartData);
+        setDieselQuarterlyBarColors(transformedData.colors);
+        
+      } catch (error) {
+        console.error('Failed to fetch diesel quarterly bar chart:', error);
+        console.error('Error response:', error.response?.data);
+        setDieselQuarterlyBarData([]);
+        setDieselQuarterlyBarColors({});
+      }
+    };
+
+    // Only fetch data if companies and diesel years have been loaded
+    if (companies.length > 0 && dieselYears.length > 0 && 
+        companyProperties.length > 0 && propertyTypes.length > 0) {
+      fetchDieselQuarterlyBarChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
+      companies, dieselYears, companyProperties, propertyTypes]);
+
   // Fetch static key metrics once on component mount (no filter dependencies)
   useEffect(() => {
     const fetchStaticKeyMetrics = async () => {
@@ -1187,20 +1777,37 @@ function EnvironmentEnergyDash() {
             }}>
               Environment - Energy
             </h1>
+            {/* Add "As of now" timestamp */}
+            <div style={{ 
+              color: '#64748b', 
+              fontSize: '10px',
+              fontWeight: '400',
+              marginTop: '4px'
+            }}>
+              The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
+            </div>
           </div>
-          <button style={{
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: '500'
-          }}>
-            📊 EXPORT DATA
+          {/* Add Refresh Button */}
+          <button 
+            onClick={handleRefresh}
+            style={{
+              backgroundColor: '#3B82F6',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '500',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#2563EB'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#3B82F6'}
+          >
+            🔄 REFRESH
           </button>
         </div>
 
@@ -1567,15 +2174,16 @@ function EnvironmentEnergyDash() {
           )}
         </div>
             
-        {/* Charts Section */}
+                {/* Charts Section */}
         <div style={{ 
           flex: 1,
           display: 'grid', 
-          gridTemplateColumns: activeTab === 'electricity' ? '1fr 1fr 1fr' : '1fr 1fr',
+          gridTemplateColumns: activeTab === 'electricity' ? '1fr 1fr 1fr' : '1fr 1fr 1fr', // Diesel: 3 columns 
+          gridTemplateRows: activeTab === 'electricity' ? 'auto' : '1fr 1fr', // Diesel: 2 rows to accommodate 6 charts
           gap: '15px',
           minHeight: 0
         }}>
-          {/* Electricity charts */}
+          {/* Electricity charts (keep existing structure) */}
           {activeTab === 'electricity' && (
             <>
               {/* Pie Chart */}
@@ -2188,38 +2796,31 @@ function EnvironmentEnergyDash() {
             </>
           )}
 
-          {/* Diesel charts - NEW STRUCTURE */}
-          {activeTab !== 'electricity' && (
+          {/* Diesel charts - 3 COLUMN x 2 ROW LAYOUT */}
+          {activeTab === 'diesel' && (
             <>
-              {/* First Column - Left side charts */}
+              {/* Row 1 - Top 3 charts */}
+              
+              {/* Column 1 - Company Distribution Pie Chart */}
               <div style={{ 
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '15px',
                 minHeight: 0
               }}>
-                {/* Diesel Pie Chart - Distribution of Diesel Consumption by Company */}
-                <div style={{ 
-                  flex: 1,
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0
+                <h3 style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
                 }}>
-                  <h3 style={{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    marginBottom: '10px',
-                    color: '#1e293b',
-                    flexShrink: 0
-                  }}>
-                    Distribution of Diesel Consumption by Company
-                  </h3>
-
-                  {/* Debug info - remove in production */}
+                  Distribution of Diesel Consumption by Company
+                </h3>
+                {/* Debug info - remove in production */}
                   <div style={{ 
                     fontSize: '10px', 
                     color: '#64748b', 
@@ -2273,7 +2874,7 @@ function EnvironmentEnergyDash() {
                               cx="50%"
                               cy="50%"
                               labelLine={false}
-                              outerRadius={80}
+                              outerRadius={100}
                               innerRadius={35}
                               fill="#8884d8"
                               dataKey="value"
@@ -2329,30 +2930,306 @@ function EnvironmentEnergyDash() {
                       </div>
                     )}
                   </div>
+              </div>
+
+              {/* Column 2 - Property Type Horizontal Bar Chart */}
+              <div style={{ 
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
+              }}>
+                <h3 style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  Diesel Consumption by Property Type
+                </h3>
+
+                {/* Debug info - remove in production */}
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: '#64748b', 
+                  marginBottom: '8px',
+                  padding: '4px 8px',
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: '4px'
+                }}>
+                  Debug: {currentData.propertyTypeData ? currentData.propertyTypeData.length : 0} types, Loading: {loading ? 'Yes' : 'No'}
                 </div>
 
-                {/* Diesel Consumption by Property (Pie Chart) */}
-                <div style={{ 
-                  flex: 1,
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0
-                }}>
-                  <h3 style={{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    marginBottom: '10px',
-                    color: '#1e293b',
-                    flexShrink: 0
-                  }}>
-                    Diesel Consumption by Property
-                  </h3>
+                <div style={{ flex: 1, minHeight: 0, padding: '10px' }}>
+                  {loading ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      color: '#64748b',
+                      fontSize: '14px'
+                    }}>
+                      Loading chart data...
+                    </div>
+                  ) : (!currentData.propertyTypeData || currentData.propertyTypeData.length === 0) ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                        <div>No property type data available</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Try adjusting your filters
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'space-around',
+                      position: 'relative'
+                    }}>
+                      {currentData.propertyTypeData.map((item, index) => {
+                        const maxValue = Math.max(...currentData.propertyTypeData.map(d => d.value));
+                        const barWidth = (item.value / maxValue) * 80;
+                        const percentage = ((item.value / currentData.propertyTypeData.reduce((sum, d) => sum + d.value, 0)) * 100);
+                        
+                        return (
+                          <div 
+                            key={index} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              marginBottom: '15px',
+                              position: 'relative'
+                            }}
+                          >
+                            <div style={{ 
+                              width: '80px', 
+                              fontSize: '11px', 
+                              fontWeight: '500',
+                              textAlign: 'right',
+                              marginRight: '10px',
+                              color: '#64748b'
+                            }}>
+                              {item.label}
+                            </div>
+                            <div style={{ flex: 1, position: 'relative' }}>
+                              <div 
+                                style={{
+                                  height: '25px',
+                                  width: `${barWidth}%`,
+                                  backgroundColor: item.color,
+                                  borderRadius: '0 4px 4px 0',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'flex-end',
+                                  paddingRight: '8px',
+                                  minWidth: '80px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  position: 'relative'
+                                }}
+                                onMouseEnter={() => setHoveredPropertyTypeBar(index)}
+                                onMouseLeave={() => setHoveredPropertyTypeBar(null)}
+                                title={`${item.label}: ${item.value.toLocaleString()} L (${percentage.toFixed(1)}%)`}
+                              >
+                                <span style={{ 
+                                  color: 'white', 
+                                  fontSize: '9px', 
+                                  fontWeight: '600',
+                                  textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
+                                }}>
+                                  {item.value >= 1000 ? `${(item.value / 1000).toFixed(1)}K` : item.value.toFixed(0)} L
+                                </span>
 
-                  {/* Debug info - remove in production */}
+                                {/* Inline tooltip that appears on hover */}
+                                {hoveredPropertyTypeBar === index && (
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      left: '100%',
+                                      top: '50%',
+                                      transform: 'translateY(-50%)',
+                                      marginLeft: '10px',
+                                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                      color: 'white',
+                                      padding: '6px 10px',
+                                      borderRadius: '4px',
+                                      fontSize: '11px',
+                                      whiteSpace: 'nowrap',
+                                      zIndex: 10,
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                    }}
+                                  >
+                                    <div style={{ fontWeight: 'bold' }}>
+                                      {item.label}
+                                    </div>
+                                    <div>
+                                      {item.value.toLocaleString()} L
+                                    </div>
+                                    <div style={{ fontSize: '10px', opacity: 0.8 }}>
+                                      {percentage.toFixed(1)}% of total
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Column 3 - Line Chart (Consumption Over Time) */}
+              <div style={{ 
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
+              }}>
+                <h3 style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  Diesel Consumption Over Time - PSC
+                </h3>
+                {/* Debug info - remove in production */}
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: '#64748b', 
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '4px'
+                  }}>
+                    Debug: {currentData.lineChartData.length} data points, Properties: {Object.keys(dieselLineColors).join(', ')}, Loading: {loading ? 'Yes' : 'No'}
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '200px',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : currentData.lineChartData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '200px',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+                          <div>No line chart data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={currentData.lineChartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="year" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000) {
+                                return `${(value / 1000).toFixed(1)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                              name
+                            ]}
+                            labelStyle={{ color: '#1e293b', fontSize: '12px' }}
+                            contentStyle={{ fontSize: '12px' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          
+                          {/* Dynamically render lines for each property */}
+                          {Object.keys(dieselLineColors).map((property, index) => (
+                            <Line 
+                              key={property}
+                              type="monotone" 
+                              dataKey={property} 
+                              stroke={dieselLineColors[property] || COLORS[index % COLORS.length]} 
+                              strokeWidth={2}
+                              dot={{ fill: dieselLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
+                              name={property}
+                              connectNulls={false}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+              </div>
+
+              {/* Row 2 - Bottom 3 charts */}
+              
+              {/* Column 1 - Property Distribution Pie Chart */}
+              <div style={{ 
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
+              }}>
+                <h3 style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  Diesel Consumption by Property
+                </h3>
+                {/* Debug info - remove in production */}
                   <div style={{ 
                     fontSize: '10px', 
                     color: '#64748b', 
@@ -2406,7 +3283,7 @@ function EnvironmentEnergyDash() {
                               cx="50%"
                               cy="50%"
                               labelLine={false}
-                              outerRadius={80}
+                              outerRadius={100}
                               innerRadius={35}
                               fill="#8884d8"
                               dataKey="value"
@@ -2466,182 +3343,232 @@ function EnvironmentEnergyDash() {
                       </div>
                     )}
                   </div>
+              </div>
+
+              {/* Column 2 - Quarterly Stacked Bar Chart */}
+              <div style={{ 
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
+              }}>
+                <h3 style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  PSC: Diesel Consumption - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
+                </h3>
+
+                {/* Debug info - remove in production */}
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: '#64748b', 
+                  marginBottom: '8px',
+                  padding: '4px 8px',
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: '4px'
+                }}>
+                  Debug: {currentData.quarterlyBarData ? currentData.quarterlyBarData.length : 0} quarters, Properties: {Object.keys(dieselQuarterlyBarColors).join(', ')}, Loading: {loading ? 'Yes' : 'No'}
+                </div>
+
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  {loading ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '200px',
+                      color: '#64748b',
+                      fontSize: '14px'
+                    }}>
+                      Loading chart data...
+                    </div>
+                  ) : (!currentData.quarterlyBarData || currentData.quarterlyBarData.length === 0) ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '200px',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                        <div>No quarterly data available</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Try adjusting your filters
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={currentData.quarterlyBarData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis 
+                          dataKey="quarter"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fill: '#64748b' }}
+                        />
+                        <YAxis 
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fill: '#64748b' }}
+                          tickFormatter={(value) => {
+                            if (value >= 1000) {
+                              return `${(value / 1000).toFixed(1)}K`;
+                            } else {
+                              return value.toString();
+                            }
+                          }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name) => [
+                            `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                            name
+                          ]}
+                          labelStyle={{ color: '#1e293b', fontSize: '12px' }}
+                          contentStyle={{ fontSize: '12px' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        
+                        {/* Dynamically render bars for each property */}
+                        {Object.keys(dieselQuarterlyBarColors).map((property, index) => (
+                          <Bar 
+                            key={property}
+                            dataKey={property} 
+                            stackId="a" 
+                            fill={dieselQuarterlyBarColors[property] || COLORS[index % COLORS.length]}
+                            name={property}
+                            radius={index === Object.keys(dieselQuarterlyBarColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                          />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
 
-              {/* Second Column - Right side charts */}
+              {/* Column 3 - Monthly Property Line Chart */}
               <div style={{ 
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '15px',
                 minHeight: 0
               }}>
-                {/* Diesel Consumption by Property Type - PSC (Horizontal Bar Chart) */}
-                <div style={{ 
-                  flex: 1,
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0
+                <h3 style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
                 }}>
-                  <h3 style={{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    marginBottom: '10px',
-                    color: '#1e293b',
-                    flexShrink: 0
-                  }}>
-                    Diesel Consumption by Property Type - PSC
-                  </h3>
+                  Diesel Consumption by Property ({fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'})
+                </h3>
 
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '150px',
-                      color: '#64748b',
-                      fontSize: '14px',
-                      textAlign: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                        <div>Property Type Bar Chart</div>
-                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          Vehicle vs Equipment
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                {/* Debug info - remove in production */}
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: '#64748b', 
+                  marginBottom: '8px',
+                  padding: '4px 8px',
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: '4px'
+                }}>
+                  Debug: {currentData.monthlyLineData ? currentData.monthlyLineData.length : 0} data points, Properties: {Object.keys(dieselMonthlyLineColors).join(', ')}, Loading: {loading ? 'Yes' : 'No'}
                 </div>
 
-                {/* Diesel Consumption Over Time - PSC (Line Chart) */}
-                <div style={{ 
-                  flex: 1,
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0
-                }}>
-                  <h3 style={{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    marginBottom: '10px',
-                    color: '#1e293b',
-                    flexShrink: 0
-                  }}>
-                    Diesel Consumption Over Time - PSC
-                  </h3>
-
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  {loading ? (
                     <div style={{
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      height: '150px',
+                      height: '200px',
+                      color: '#64748b',
+                      fontSize: '14px'
+                    }}>
+                      Loading chart data...
+                    </div>
+                  ) : (!currentData.monthlyLineData || currentData.monthlyLineData.length === 0) ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '200px',
                       color: '#64748b',
                       fontSize: '14px',
                       textAlign: 'center'
                     }}>
                       <div>
                         <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
-                        <div>Time Series Line Chart</div>
+                        <div>No monthly data available</div>
                         <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          Multiple company properties over time
+                          Try adjusting your filters
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* PSC: Diesel Consumption - 2024 (Quarterly Stacked Bar Chart) */}
-                <div style={{ 
-                  flex: 1,
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0
-                }}>
-                  <h3 style={{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    marginBottom: '10px',
-                    color: '#1e293b',
-                    flexShrink: 0
-                  }}>
-                    PSC: Diesel Consumption - 2024
-                  </h3>
-
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '150px',
-                      color: '#64748b',
-                      fontSize: '14px',
-                      textAlign: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                        <div>Quarterly Stacked Bar Chart</div>
-                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          Q1, Q2, Q3, Q4 breakdown by property
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* PSC - Diesel Consumption by Property (2024) (Monthly Line Chart) */}
-                <div style={{ 
-                  flex: 1,
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0
-                }}>
-                  <h3 style={{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    marginBottom: '10px',
-                    color: '#1e293b',
-                    flexShrink: 0
-                  }}>
-                    PSC - Diesel Consumption by Property (2024)
-                  </h3>
-
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '150px',
-                      color: '#64748b',
-                      fontSize: '14px',
-                      textAlign: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
-                        <div>Monthly Property Line Chart</div>
-                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          Jan-Dec breakdown by property names
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={currentData.monthlyLineData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis 
+                          dataKey="month" 
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 8, fill: '#64748b' }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis 
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fill: '#64748b' }}
+                          tickFormatter={(value) => {
+                            if (value >= 1000) {
+                              return `${(value / 1000).toFixed(1)}K`;
+                            } else {
+                              return value.toString();
+                            }
+                          }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name) => [
+                            `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                            name
+                          ]}
+                          labelStyle={{ color: '#1e293b', fontSize: '12px' }}
+                          contentStyle={{ fontSize: '12px' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        
+                        {/* Dynamically render lines for each property */}
+                        {Object.keys(dieselMonthlyLineColors).map((property, index) => (
+                          <Line 
+                            key={property}
+                            type="monotone" 
+                            dataKey={property} 
+                            stroke={dieselMonthlyLineColors[property] || COLORS[index % COLORS.length]} 
+                            strokeWidth={2}
+                            dot={{ fill: dieselMonthlyLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
+                            name={property}
+                            connectNulls={false}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
             </>
