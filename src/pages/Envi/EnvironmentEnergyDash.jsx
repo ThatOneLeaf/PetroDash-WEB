@@ -2098,11 +2098,11 @@ function EnvironmentEnergyDash() {
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-                  YEAR-ON-YEAR CUMULATIVE ELECTRICITY CONSUMPTION
-                </div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
                   {staticElectricityMetrics.total_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                </div>
+                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+                  YEAR-ON-YEAR CUMULATIVE ELECTRICITY CONSUMPTION
                 </div>
               </div>
 
@@ -2113,11 +2113,11 @@ function EnvironmentEnergyDash() {
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-                  YEAR WITH HIGHEST ELECTRICITY CONSUMPTION
-                </div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
                   {staticElectricityMetrics.peak_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                </div>
+                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+                  YEAR WITH HIGHEST ELECTRICITY CONSUMPTION
                 </div>
                 <div style={{ fontSize: '9px', opacity: 0.8 }}>
                   {staticElectricityMetrics.peak_year || ''}
@@ -2131,11 +2131,11 @@ function EnvironmentEnergyDash() {
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-                  AVERAGE ANNUAL ELECTRICITY CONSUMPTION
-                </div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
                   {staticElectricityMetrics.average_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                </div>
+                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+                  AVERAGE ANNUAL ELECTRICITY CONSUMPTION
                 </div>
               </div>
             </>
@@ -2148,11 +2148,11 @@ function EnvironmentEnergyDash() {
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-                  YEAR-ON-YEAR CUMULATIVE DIESEL CONSUMPTION
-                </div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
                   {loading ? 'Loading...' : staticDieselMetrics.total_diesel_consumption.toLocaleString()} {staticDieselMetrics.unit_of_measurement}
+                </div>
+                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+                  YEAR-ON-YEAR CUMULATIVE DIESEL CONSUMPTION
                 </div>
               </div>
 
@@ -2163,11 +2163,11 @@ function EnvironmentEnergyDash() {
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-                  AVERAGE ANNUAL DIESEL CONSUMPTION
-                </div>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
                   {loading ? 'Loading...' : staticDieselMetrics.average_annual_consumption.toLocaleString()} {staticDieselMetrics.unit_of_measurement}
+                </div>
+                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+                  AVERAGE ANNUAL DIESEL CONSUMPTION
                 </div>
               </div>
             </>

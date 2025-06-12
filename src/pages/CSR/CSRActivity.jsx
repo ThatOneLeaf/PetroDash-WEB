@@ -49,26 +49,32 @@ function CSR() {
   const fetchCSRData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('help/activities'); // <-- use variable
+      setError(null);
+      const response = await api.get('help/activities');
+      // Defensive: check if response.data is an array
+      if (!Array.isArray(response.data)) {
+        throw new Error('Malformed API response: expected an array');
+      }
       setData(response.data);
     } catch (error) {
       // Debugging notes for API error
-      console.error('Error fetching CSR activities:', error);
+      let errorMsg = 'Error fetching data';
       if (error.response) {
         // The request was made and the server responded with a status code
+        errorMsg = error.response.data?.message || error.response.statusText || errorMsg;
         console.error('API Response Error:', {
           status: error.response.status,
           data: error.response.data,
           headers: error.response.headers,
         });
       } else if (error.request) {
-        // The request was made but no response was received
+        errorMsg = 'No response from server';
         console.error('API No Response:', error.request);
       } else {
-        // Something happened in setting up the request
+        errorMsg = error.message || errorMsg;
         console.error('API Setup Error:', error.message);
       }
-      setError('Error fetching data');
+      setError({ message: errorMsg, raw: error });
     } finally {
       setLoading(false);
     }
@@ -233,8 +239,31 @@ function CSR() {
 
 //const getUpdatePath = useCallback((record) => `${'/activities-update'}/${record.projectId}`, []); // <-- use variable
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <Typography variant="h6">Loading...</Typography>
+    </Box>
+  );
+  if (error) return (
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h6" color="error"><b>Error:</b> {error.message || String(error)}</Typography>
+      {error.raw?.response?.data && (
+        <pre style={{color: 'red', fontSize: '0.9em', background: '#f8d7da', padding: '1em', borderRadius: 4, marginTop: 8}}>
+          {JSON.stringify(error.raw.response.data, null, 2)}
+        </pre>
+      )}
+      <Button
+        variant="contained"
+        sx={{ mt: 2, backgroundColor: '#182959', borderRadius: '999px' }}
+        onClick={fetchCSRData}
+      >
+        Retry
+      </Button>
+      <Typography sx={{ mt: 2, color: '#888', fontSize: '0.95em' }}>
+        Please check your backend logs for more details.
+      </Typography>
+    </Box>
+  );
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -401,7 +430,7 @@ function CSR() {
           rows={pagedData}
           onSort={handleSort}
           sortConfig={sortConfig}
-          emptyMessage="No data available."
+          emptyMessage={loading ? "Loading..." : error ? "Error loading data." : "No data available."}
           maxHeight="69vh"
           minHeight="300px"
         />

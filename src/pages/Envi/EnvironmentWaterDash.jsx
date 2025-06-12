@@ -523,11 +523,11 @@ function EnvironmentWaterDash() {
             borderRadius: '8px', // Reduced from 12px
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              CUMULATIVE WATER ABSTRACTION
-            </div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {totalAbstracted.toLocaleString()} m³
+            </div>
+            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+              CUMULATIVE WATER ABSTRACTION
             </div>
             <div style={{ fontSize: '9px', opacity: 0.8 }}>
               ({availableYears.length > 0 ? Math.min(...availableYears) : '2018'} to PRESENT)
@@ -541,11 +541,11 @@ function EnvironmentWaterDash() {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              CUMULATIVE WATER DISCHARGE
-            </div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {totalDischarged.toLocaleString()} m³
+            </div>
+            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+              CUMULATIVE WATER DISCHARGE
             </div>
             <div style={{ fontSize: '9px', opacity: 0.8 }}>
               ({availableYears.length > 0 ? Math.min(...availableYears) : '2018'} to PRESENT)
@@ -559,11 +559,11 @@ function EnvironmentWaterDash() {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              CUMULATIVE WATER CONSUMPTION
-            </div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {totalConsumed.toLocaleString()} m³
+            </div>
+            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+              CUMULATIVE WATER CONSUMPTION
             </div>
             <div style={{ fontSize: '9px', opacity: 0.8 }}>
               ({availableYears.length > 0 ? Math.min(...availableYears) : '2018'} to PRESENT)
@@ -799,7 +799,7 @@ function EnvironmentWaterDash() {
                 color: '#1e293b',
                 flexShrink: 0
               }}>
-                Quarterly Water Volume Distribution
+                Water Management by Quarter
               </h3>
               
               {!stackedBarData || stackedBarData.length === 0 ? (
@@ -816,10 +816,10 @@ function EnvironmentWaterDash() {
               ) : (
                 <div style={{ flex: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stackedBarData}>
+                    <ComposedChart data={stackedBarData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis 
-                        dataKey="quarter"
+                        dataKey="quarter" 
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 10, fill: '#64748b' }}
@@ -828,32 +828,41 @@ function EnvironmentWaterDash() {
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 10, fill: '#64748b' }}
-                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
                       />
-                      <Tooltip content={renderStackedBarTooltip} />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          `${Number(value).toLocaleString()} ${unit}`, 
+                          name
+                        ]}
+                        labelStyle={{ color: '#1e293b', fontSize: '12px' }}
+                        contentStyle={{ fontSize: '12px' }}
+                      />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
                       <Bar 
                         dataKey="abstracted" 
                         stackId="a" 
-                        fill="#3B82F6" 
-                        name="Abstracted" 
-                        radius={[0, 0, 0, 0]}
+                        strokeWidth={2}
+                        stroke="#3B82F6"
+                        fill="#3B82F6"
+                        name="Abstracted"
                       />
                       <Bar 
                         dataKey="discharged" 
                         stackId="a" 
-                        fill="#F97316" 
-                        name="Discharged" 
-                        radius={[0, 0, 0, 0]}
+                        strokeWidth={2}
+                        stroke="#F97316"
+                        fill="#F97316"
+                        name="Discharged"
                       />
                       <Bar 
                         dataKey="consumed" 
                         stackId="a" 
-                        fill="#10B981" 
-                        name="Consumed" 
-                        radius={[3, 3, 0, 0]}
+                        strokeWidth={2}
+                        stroke="#10B981"
+                        fill="#10B981"
+                        name="Consumed"
                       />
-                    </BarChart>
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               )}

@@ -340,11 +340,11 @@ function EnvironmentWasteDash() {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              {tabInfo.keyMetrics.card1?.title}
-            </div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {tabInfo.keyMetrics.card1?.value} {tabInfo.keyMetrics.card1?.unit}
+            </div>
+            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+              {tabInfo.keyMetrics.card1?.title}
             </div>
           </div>
 
@@ -355,11 +355,11 @@ function EnvironmentWasteDash() {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              {tabInfo.keyMetrics.card2?.title}
-            </div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {tabInfo.keyMetrics.card2?.value}
+            </div>
+            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+              {tabInfo.keyMetrics.card2?.title}
             </div>
             {tabInfo.keyMetrics.card2?.subtitle && (
               <div style={{ fontSize: '9px', opacity: 0.8 }}>
@@ -375,11 +375,11 @@ function EnvironmentWasteDash() {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              {tabInfo.keyMetrics.card3?.title}
-            </div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {tabInfo.keyMetrics.card3?.value} {tabInfo.keyMetrics.card3?.unit}
+            </div>
+            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+              {tabInfo.keyMetrics.card3?.title}
             </div>
           </div>
         </div>

@@ -20,6 +20,7 @@ import HRDashboard from "./pages/HR/HRDashboard";
 import PowerDashboard from "./pages/Energy/PowerDashboard";
 import EnvironmentEnergyDash from "./pages/Envi/EnvironmentEnergyDash";
 import EnvironmentWasteDash from "./pages/Envi/EnvironmentWasteDash";
+import HELPDash from "./pages/CSR/HELPDash";
 
 function App() {
   return (
@@ -38,6 +39,9 @@ function App() {
               path="/economic/capital-provider"
               element={<EconomicCapitalProvider />}
             />
+            <Route path="/energy/power-generation" element={<Energy />} />
+            <Route path="/energy/dashboard" element={<PowerDashboard />} />
+
             <Route path="/environment/energy" element={<EnvironmentEnergy />} />
             <Route path="/environment/water" element={<EnvironmentWater />} />
             <Route path="/environment/waste" element={<EnvironmentWaste />} />
@@ -47,13 +51,16 @@ function App() {
             <Route path="/environment/energy-dash" element={<EnvironmentEnergyDash />} />
             <Route path="/environment/waste-dash" element={<EnvironmentWasteDash />} />
             
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/economics" element={<Economic />} />
-            <Route path="/social/help" element={<CSR />} />
+            <Route path="/social/helpdash" element={<HELPDash />} />
+            <Route path="/social/csr" element={<CSR />} />
+
             <Route path="/social/hr" element={<HR />} />
             <Route path="/social/hrdashboard" element={<HRDashboard />} />
-            <Route path="/energy/power-generation" element={<Energy />} />
-            <Route path="/energy/dashboard" element={<PowerDashboard />} />
+
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/economics" element={<Economic />} />
+            
+
           </Routes>
         </main>
       </div>
