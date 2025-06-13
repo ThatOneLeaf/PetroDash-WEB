@@ -22,6 +22,7 @@ import PowerDashboard from "./pages/Energy/PowerDashboard";
 import EnvironmentEnergyDash from "./pages/Envi/EnvironmentEnergyDash";
 import EnvironmentWasteDash from "./pages/Envi/EnvironmentWasteDash";
 import HELPDash from "./pages/CSR/HELPDash";
+import EnergyDashboard from "./pages/Energy/EnergyDashboard";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
             {/* CSV Routes */}
             <Route path="/energy/power-generation" element={<Energy />} />
             <Route path="/energy/dashboard" element={<PowerDashboard />} />
+            <Route path="/energy" element={<EnergyDashboard/>}/>
 
             {/* Environment Routes */}
             <Route path="/environment/energy" element={<EnvironmentEnergy />} />

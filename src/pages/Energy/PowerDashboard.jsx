@@ -18,18 +18,18 @@ import SideBar from "../../components/Sidebar";
 import { exportExcelData } from "../../services/directExport";
 
 // Import Icons
-import FlashOnIcon from "@mui/icons-material/FlashOn";
-import EnergySavingsLeafIcon from "@mui/icons-material/EnergySavingsLeaf";
-import HomeIcon from "@mui/icons-material/Home";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import ElectricCarIcon from "@mui/icons-material/ElectricCar";
+import MapIcon from "@mui/icons-material/Map";
+import LocalGasStationIcon from "@mui/icons-material/LocalGasStation";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import FactoryIcon from "@mui/icons-material/Factory";
-import ThermostatIcon from "@mui/icons-material/Thermostat";
-import WaterIcon from "@mui/icons-material/Water";
+import SmartphoneIcon from "@mui/icons-material/Smartphone";
+import RecyclingIcon from "@mui/icons-material/Recycling";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import WindPowerIcon from "@mui/icons-material/WindPower";
-import SolarPowerIcon from "@mui/icons-material/SolarPower";
-import BatteryChargingFullIcon from "@mui/icons-material/BatteryChargingFull";
-import TroubleshootIcon from "@mui/icons-material/Troubleshoot";
-import QueryStatsIcon from "@mui/icons-material/QueryStats";
-import TimelineIcon from "@mui/icons-material/Timeline";
+import ForestIcon from "@mui/icons-material/Forest";
 
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -75,16 +75,16 @@ function PowerDashboard() {
 
   // Dummy data for charts - replace with your real data
 
-  // Line chart data
-  const lineChartData = [
-    { date: "2025-06-01", power: 50 },
-    { date: "2025-06-02", power: 75 },
-    { date: "2025-06-03", power: 65 },
-    { date: "2025-06-04", power: 90 },
-    { date: "2025-06-05", power: 100 },
-    { date: "2025-06-06", power: 85 },
-    { date: "2025-06-07", power: 95 },
-  ];
+const data = [
+  { month: "January", DSPP: 2863740.00, M1GPP: 13875420.00, M2GPP: 8310740.00, NWPP1: 12719520.00, NWPP2: 3538090.00, SJSPP: 2504910.00, TSPP1: 5602480.00, TSPP2: 2331230.00 },
+  { month: "February", DSPP: 2706350.00, M1GPP: 12617340.00, M2GPP: 7498340.00, NWPP1: 11896840.00, NWPP2: 3407820.00, SJSPP: 2481960.00, TSPP1: 5344230.00, TSPP2: 2211910.00 },
+  { month: "March", DSPP: 3410900.00, M1GPP: 13917870.00, M2GPP: 8210550.00, NWPP1: 11263670.00, NWPP2: 3584230.00, SJSPP: 3062220.00, TSPP1: 6958750.00, TSPP2: 2853930.00 },
+  { month: "April", DSPP: 3829800.00, M1GPP: 13562100.00, M2GPP: 8031770.00, NWPP1: 6274100.00, NWPP2: 2616820.00, SJSPP: 3054940.00, TSPP1: 6262930.91, TSPP2: 2590440.00 },
+  { month: "May", DSPP: 1638360.00, M1GPP: 5459340.00, M2GPP: 3752140.00, NWPP1: 1172878.00, NWPP2: 542672.00, SJSPP: 1149860.00, TSPP1: 2800428.73, TSPP2: 1149790.00 },
+  { month: "June", DSPP: 0, M1GPP: 2500.00, M2GPP: 125000.00, NWPP1: 0, NWPP2: 0, SJSPP: 17010010000.00, TSPP1: 120000.00, TSPP2: 0 }
+];
+
+const plants = ["DSPP", "M1GPP", "M2GPP", "NWPP1", "NWPP2", "SJSPP", "TSPP1", "TSPP2"];
 
   // Pie chart data
   const pieChartData = [
@@ -113,18 +113,66 @@ function PowerDashboard() {
     { name: "Thermal", count: 3 },
   ];
   const kpisTab2 = [
-  { label: "Total Energy Generated", value: "217.06 GWh", icon: <FlashOnIcon color="primary" fontSize="large" /> },
-  { label: "CO2 Emission Reduction", value: "49,639.06 tons", icon: <EnergySavingsLeafIcon color="success" fontSize="large" /> },
-  { label: "Households Powered", value: "87,000", icon: <HomeIcon color="secondary" fontSize="large" /> },
-  { label: "Total Projects", value: "15", icon: <FactoryIcon color="action" fontSize="large" /> },
-  { label: "Avg. Power Output", value: "325 MWh", icon: <TimelineIcon color="info" fontSize="large" /> },
-  { label: "Thermal Plants", value: "3", icon: <ThermostatIcon color="error" fontSize="large" /> },
-  { label: "Hydro Plants", value: "3", icon: <WaterIcon color="primary" fontSize="large" /> },
-  { label: "Wind Plants", value: "4", icon: <WindPowerIcon color="info" fontSize="large" /> },
-  { label: "Solar Plants", value: "5", icon: <SolarPowerIcon color="warning" fontSize="large" /> },
-  { label: "Battery Storage", value: "2 Units", icon: <BatteryChargingFullIcon color="success" fontSize="large" /> },
-  { label: "Monitoring Sites", value: "12", icon: <TroubleshootIcon color="secondary" fontSize="large" /> },
-  { label: "KPIs Tracked", value: "25", icon: <QueryStatsIcon color="action" fontSize="large" /> },
+  {
+    label: "Gasoline Vehicles (1 yr)",
+    value: "87,000",
+    icon: <DirectionsCarIcon color="primary" fontSize="large" />,
+  },
+  {
+    label: "Electric Vehicles (1 yr)",
+    value: "25,000",
+    icon: <ElectricCarIcon color="success" fontSize="large" />,
+  },
+  {
+    label: "Miles Driven (Gas)",
+    value: "1.2M miles",
+    icon: <MapIcon color="secondary" fontSize="large" />,
+  },
+  {
+    label: "Gasoline Consumed",
+    value: "500,000 gal",
+    icon: <LocalGasStationIcon color="error" fontSize="large" />,
+  },
+  {
+    label: "Diesel Consumed",
+    value: "350,000 gal",
+    icon: <LocalShippingIcon color="warning" fontSize="large" />,
+  },
+  {
+    label: "Coal Plants (1 yr)",
+    value: "3 Plants",
+    icon: <FactoryIcon color="action" fontSize="large" />,
+  },
+  {
+    label: "Smartphones Charged",
+    value: "1.5B",
+    icon: <SmartphoneIcon color="info" fontSize="large" />,
+  },
+  {
+    label: "Waste Recycled (Tons)",
+    value: "9,000 tons",
+    icon: <RecyclingIcon color="success" fontSize="large" />,
+  },
+  {
+    label: "Trash Bags Recycled",
+    value: "180,000 bags",
+    icon: <DeleteIcon color="secondary" fontSize="large" />,
+  },
+  {
+    label: "Garbage Trucks Saved",
+    value: "150 trucks",
+    icon: <DeleteSweepIcon color="error" fontSize="large" />,
+  },
+  {
+    label: "Wind Turbines (1 yr)",
+    value: "120 units",
+    icon: <WindPowerIcon color="primary" fontSize="large" />,
+  },
+  {
+    label: "Tree Seedlings (10 yrs)",
+    value: "3M trees",
+    icon: <ForestIcon color="success" fontSize="large" />,
+  },
 ];
 
   const computation = [
@@ -154,7 +202,7 @@ function PowerDashboard() {
               startIcon={<FileUploadIcon />}
             />
           </Box>
-                    {/* Filters */}
+          {/* Filters */}
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
             <Filter
               label="Company"
@@ -292,24 +340,24 @@ function PowerDashboard() {
               {/* Line Chart */}
               <Box sx={{ flex: "1 1 60%", minWidth: 300, height: 300, backgroundColor: "#fff", padding: 2, borderRadius: 2, boxShadow: 1 }}>
                 <Typography variant="h6" mb={2}>
-                  Daily Power Generated (MWh)
+                  Monthly Energy Generation Trends by Power Plant
                 </Typography>
-                <ResponsiveContainer width="100%" height="85%">
-                  <LineChart data={lineChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="power" stroke="#8884d8" strokeWidth={3} activeDot={{ r: 8 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data}>
+                  <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey={plants} stroke="#8884d8" dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
               </Box>
 
               {/* Pie Chart */}
               <Box sx={{ flex: "1 1 35%", minWidth: 250, height: 300, backgroundColor: "#fff", padding: 2, borderRadius: 2, boxShadow: 1, textAlign: "center" }}>
                 <Typography variant="h6" mb={2}>
-                  Power Generation Sources
+                  Energy Generation Breakdown by Company
                 </Typography>
                 <ResponsiveContainer width="100%" height="85%">
                   <PieChart>
@@ -335,7 +383,7 @@ function PowerDashboard() {
               {/* Bar Chart 1 */}
               <Box sx={{ flex: "1 1 48%", minWidth: 300, height: 300, backgroundColor: "#fff", padding: 2, borderRadius: 2, boxShadow: 1 }}>
                 <Typography variant="h6" mb={2}>
-                  Monthly Power Generated (MWh)
+                  Monthly Distribution of Energy Generated by Company
                 </Typography>
                 <ResponsiveContainer width="100%" height="85%">
                   <BarChart data={barChartData1} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -352,7 +400,7 @@ function PowerDashboard() {
               {/* Bar Chart 2 */}
               <Box sx={{ flex: "1 1 48%", minWidth: 300, height: 300, backgroundColor: "#fff", padding: 2, borderRadius: 2, boxShadow: 1 }}>
                 <Typography variant="h6" mb={2}>
-                  Number of Projects by Source
+                  Number of Households Powered per Month by Company
                 </Typography>
                 <ResponsiveContainer width="100%" height="85%">
                   <BarChart data={barChartData2} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -429,7 +477,7 @@ function PowerDashboard() {
             }}
           >
             <Typography variant="h6" mb={2}>
-              Daily Power Generated (MWh)
+              Monthly Distribution of CO2 Avoidance by Company
             </Typography>
             <ResponsiveContainer width="100%" height="85%">
               <LineChart data={lineChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
