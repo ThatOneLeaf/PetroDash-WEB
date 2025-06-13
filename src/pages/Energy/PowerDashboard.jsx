@@ -17,11 +17,26 @@ import RepositoryHeader from "../../components/RepositoryHeader";
 import SideBar from "../../components/Sidebar";
 import { exportExcelData } from "../../services/directExport";
 
+// Import Icons
+import FlashOnIcon from "@mui/icons-material/FlashOn";
+import EnergySavingsLeafIcon from "@mui/icons-material/EnergySavingsLeaf";
+import HomeIcon from "@mui/icons-material/Home";
+import FactoryIcon from "@mui/icons-material/Factory";
+import ThermostatIcon from "@mui/icons-material/Thermostat";
+import WaterIcon from "@mui/icons-material/Water";
+import WindPowerIcon from "@mui/icons-material/WindPower";
+import SolarPowerIcon from "@mui/icons-material/SolarPower";
+import BatteryChargingFullIcon from "@mui/icons-material/BatteryChargingFull";
+import TroubleshootIcon from "@mui/icons-material/Troubleshoot";
+import QueryStatsIcon from "@mui/icons-material/QueryStats";
+import TimelineIcon from "@mui/icons-material/Timeline";
+
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell,
   BarChart, Bar,
 } from 'recharts';
+import MonthRangePicker from "../../components/Filter/MonthRangePicker";
 
 function PowerDashboard() {
   // State for filters, dates, page
@@ -29,8 +44,7 @@ function PowerDashboard() {
     company: '',
     powerPlant: '',
     generationSource: '',
-    province: '',
-    status: '',
+    province: ''
   });
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -46,7 +60,7 @@ function PowerDashboard() {
   const companyOptions = [];
   const powerPlantOptions = [];
   const generationSourceOptions = [];
-  const statusOptions = [];
+  const provinceOptions = [];
 
   // Dummy export fields and filtered data
   const exportFields = [];
@@ -98,6 +112,27 @@ function PowerDashboard() {
     { name: "Hydro", count: 3 },
     { name: "Thermal", count: 3 },
   ];
+  const kpisTab2 = [
+  { label: "Total Energy Generated", value: "217.06 GWh", icon: <FlashOnIcon color="primary" fontSize="large" /> },
+  { label: "CO2 Emission Reduction", value: "49,639.06 tons", icon: <EnergySavingsLeafIcon color="success" fontSize="large" /> },
+  { label: "Households Powered", value: "87,000", icon: <HomeIcon color="secondary" fontSize="large" /> },
+  { label: "Total Projects", value: "15", icon: <FactoryIcon color="action" fontSize="large" /> },
+  { label: "Avg. Power Output", value: "325 MWh", icon: <TimelineIcon color="info" fontSize="large" /> },
+  { label: "Thermal Plants", value: "3", icon: <ThermostatIcon color="error" fontSize="large" /> },
+  { label: "Hydro Plants", value: "3", icon: <WaterIcon color="primary" fontSize="large" /> },
+  { label: "Wind Plants", value: "4", icon: <WindPowerIcon color="info" fontSize="large" /> },
+  { label: "Solar Plants", value: "5", icon: <SolarPowerIcon color="warning" fontSize="large" /> },
+  { label: "Battery Storage", value: "2 Units", icon: <BatteryChargingFullIcon color="success" fontSize="large" /> },
+  { label: "Monitoring Sites", value: "12", icon: <TroubleshootIcon color="secondary" fontSize="large" /> },
+  { label: "KPIs Tracked", value: "25", icon: <QueryStatsIcon color="action" fontSize="large" /> },
+];
+
+  const computation = [
+    {source:"Geothermal", formula:"kg CO2 avoided = Energy Generated (kWh) * 0.607 kg CO2/kWh \nkg CO2 emitted = Energy Generated (kWh) * 0.128 kg CO2/kWh\nEmission Reduction = kg CO2 avoided - kg CO2 emitted"},
+    {source:"Wind (On shore)", formula:"Emission Reduction = Energy Generated (kWh) * 0.00460 kg CO2/kWh"},
+    {source:"Solar", formula:"Emission Reduction = Energy Generated (kWh) * 0.05800 kg CO2/kWh"}
+  ]
+  
 
   // Boolean to track filtering state
   const isFiltering = Object.values(filters).some(val => val) || startDate || endDate;
@@ -152,16 +187,16 @@ function PowerDashboard() {
               }}
             />
             <Filter
-              label="Status"
-              placeholder="Status"
-              options={[{ label: "All Status", value: "" }, ...statusOptions]}
-              value={filters.status}
+              label="Location"
+              placeholder="Location"
+              options={[{ label: "All Locations", value: "" }, ...provinceOptions]}
+              value={filters.province}
               onChange={(val) => {
                 setFilters((prev) => ({ ...prev, status: val }));
                 setPage(1);
               }}
             />
-            <DateRangePicker
+            <MonthRangePicker
               label="Date Range"
               startDate={startDate}
               endDate={endDate}
@@ -333,24 +368,117 @@ function PowerDashboard() {
             </Box>
           )}
 
-          {/* Tab Panel for Details: Two Vertical Bar Charts */}
-          {tabValue === 1 && (
+          {/* Tab 2 Content */}
+        {tabValue === 1 && (
+          <Box sx={{ mb: 4 }}>
+            {/* KPI Section */}
             <Box
               sx={{
                 display: "flex",
-                gap: 4,
                 flexWrap: "wrap",
+                gap: 3,
                 justifyContent: "space-between",
                 mb: 4,
               }}
             >
-              
-              
+              {kpisTab2.map(({ label, value, icon }, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    flex: "1 1 22%",
+                    minWidth: 220,
+                    backgroundColor: "#f5f7fa",
+                    borderRadius: 2,
+                    padding: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    boxShadow: 1,
+                  }}
+                >
+                  <Box>{icon}</Box>
+                  <Box>
+                    <Typography variant="body2" color="textSecondary">
+                      {label}
+                    </Typography>
+                    <Typography variant="h6" fontWeight="bold">
+                      {value}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
             </Box>
-          )}
+          <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 2,
+                mb: 4,
+              }}
+            >
+          {/* Line Chart */}
+          <Box
+            sx={{
+              flex: "1 1 60%",
+              minWidth: 300,
+              height: 300,
+              backgroundColor: "#fff",
+              padding: 2,
+              borderRadius: 2,
+              boxShadow: 1,
+            }}
+          >
+            <Typography variant="h6" mb={2}>
+              Daily Power Generated (MWh)
+            </Typography>
+            <ResponsiveContainer width="100%" height="85%">
+              <LineChart data={lineChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="power" stroke="#8884d8" strokeWidth={3} activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
 
-
-
+        {/* Table Section */}
+        <Box
+          sx={{
+            flex: "1 1 38%",
+            minWidth: 300,
+            backgroundColor: "#fff",
+            padding: 2,
+            borderRadius: 2,
+            boxShadow: 1,
+          }}
+        >
+          <Typography variant="h6" mb={2}>
+            Emission Reduction Computation
+          </Typography>
+            <Box sx={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "#f0f0f0" }}>
+                    <th style={{ padding: "12px", textAlign: "left" }}>Source</th>
+                    <th style={{ padding: "12px", textAlign: "left" }}>Formula</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {computation.map((item, index) => (
+                    <tr key={index}>
+                      <td style={{ padding: "10px", verticalAlign: "top" }}>{item.source}</td>
+                      <td style={{ padding: "10px", whiteSpace: "pre-line" }}>{item.formula}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Box>
+          </Box>
+        </Box>   
+      </Box>
+        )}
         </Container>
       </Box>
     </Box>
