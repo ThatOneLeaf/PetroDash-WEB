@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { 
   BarChart, 
   Bar,
@@ -25,20 +26,140 @@ function EnvironmentWasteDash() {
   const [activeTab, setActiveTab] = useState('hazardous_generated'); // 'hazardous_generated', 'hazardous_disposed', 'non_hazardous_generated'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
 
   // Filters - Common for all tabs
   const [companyId, setCompanyId] = useState('');
   const [quarter, setQuarter] = useState('');
   const [fromYear, setFromYear] = useState('');
   const [toYear, setToYear] = useState('');
+  const [wasteType, setWasteType] = useState(''); // Hazard Waste Filter 
+  const [metrics, setMetrics] = useState('');
 
-  // Mock data for companies and years
-  const [companies] = useState([
-    { id: 'PSC', name: 'PSC' },
-    { id: 'PWEI', name: 'PWEI' },
-    { id: 'PMC', name: 'PMC' }
-  ]);
-  const [availableYears] = useState([2018, 2019, 2020, 2021, 2022, 2023, 2024]);
+  // Active APIs
+  const [activeYears, setActiveYears] = useState([]);
+  const [activeWasteType, setActiveWasteType] = useState([]);
+  const [activeMetrics, setActiveMetrics] = useState([]);
+  const [activeUnits, setActiveUnits] = useState([]);
+
+  // State for API data
+  const [companies, setCompanies] = useState([]);
+
+  // Hazard Generated Waste-specific API data
+  const [hazGenYears, setHazGenYears] = useState([]);
+  const [hazGenWasteType, setHazGenWasteType] = useState([]);
+  const [hazGenUnits, setHazGenUnits] = useState([]);
+
+  // Hazard Disposed Waste-specific API data
+  const [hazDisYears, setHazDisYears] = useState([]);
+  const [hazDisWasteType, setHazDisWasteType] = useState([]);
+  const [hazDisUnits, setHazDisUnits] = useState([]);
+
+  // Hazard Disposed Waste-specific API data
+  const [nonHazYears, setNonHazYears] = useState([]);
+  const [nonHazMetrics, setNonHazMetrics] = useState([]);
+  const [nonHazUnits, setNonHazUnits] = useState([]);
+
+  useEffect(() => {
+    const fetchActiveData = () => {
+      switch (activeTab){
+        case 'hazardous_generated':
+          setActiveYears(hazGenYears || []);
+          setActiveWasteType(hazGenWasteType || []);
+          setActiveUnits(hazGenUnits || []);
+          break;
+        case 'hazardous_disposed':
+          setActiveYears(hazDisYears || []);
+          setActiveWasteType(hazDisWasteType || []);
+          setActiveUnits(hazDisUnits || []);
+          break;
+        case 'non_hazardous_generated':
+          setActiveYears(nonHazYears || []);
+          setActiveMetrics(nonHazMetrics || []);
+          setActiveUnits(nonHazUnits || []);
+          break;
+        default:
+          setActiveYears([]);
+          setActiveWasteType([]);
+          setActiveMetrics([]);
+          setActiveUnits([]);
+          break;
+      }
+      console.log('Active Years:', activeYears);
+      console.log('Active Waste Type:', activeWasteType);
+      console.log('Active Metrics:', activeMetrics);
+      console.log('Active Units:', activeUnits);
+    }
+
+    fetchActiveData();
+  });
+
+  // Fetch companies and available years on component mount
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [
+          companiesResponse, 
+          hazGenYearsResponse, 
+          hazGenWasteTypeResponse,
+          hazGenUnitsResponse,
+          hazDisYearsResponse, 
+          hazDisWasteTypeResponse,
+          hazDisUnitsResponse,
+          nonHazYearsResponse, 
+          nonHazUnitsResponse,
+          nonHazMetricsResponse,
+        ] = await Promise.all([
+          api.get('/reference/companies'),
+          api.get('/environment_dash/hazardous-waste-years'),
+          api.get('/environment_dash/hazardous-waste-type'),
+          api.get('/environment_dash/hazardous-waste-units'),
+          api.get('/environment_dash/hazardous-waste-dis-years'),
+          api.get('/environment_dash/hazardous-waste-dis-type'),
+          api.get('/environment_dash/hazardous-waste-dis-units'),
+          api.get('/environment_dash/non-hazardous-waste-years'),
+          api.get('/environment_dash/non-hazardous-waste-units'),
+          api.get('/environment_dash/non-hazardous-metrics'),
+        ]);
+
+        console.log('Companies fetched:', companiesResponse.data);
+
+        setCompanies(companiesResponse.data);
+
+        setHazGenYears(hazGenYearsResponse.data.data || []);
+        setHazGenWasteType(hazGenWasteTypeResponse.data.data || []);
+        setHazGenUnits(hazGenUnitsResponse.data.data || []);
+
+        setHazDisYears(hazDisYearsResponse.data.data || []);
+        setHazDisWasteType(hazDisWasteTypeResponse.data.data || []);
+        setHazDisUnits(hazDisUnitsResponse.data.data || []);
+
+        setNonHazYears(nonHazYearsResponse.data.data || []);
+        setNonHazMetrics(nonHazMetricsResponse.data.data || []);
+        setNonHazUnits(nonHazUnitsResponse.data.data || []);
+
+        setLastUpdated(new Date()); // Update the last updated time
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+        setCompanies([]);
+        
+        setHazGenYears([]);
+        setHazGenWasteType([]);
+        setHazGenUnits([]);
+
+        setHazDisYears([]);
+        setHazDisWasteType([]);
+        setHazDisUnits([]);
+
+        setNonHazYears([]);
+        setNonHazMetrics([]);
+        setNonHazUnits([]);
+      }
+    };
+    fetchInitialData();
+  }, []);
+
+  
 
   // Get tab display properties
   const getTabInfo = () => {
@@ -230,7 +351,7 @@ function EnvironmentWasteDash() {
               minWidth: '100px'
             }}
           >
-            <option value="">Filter</option>
+            <option value="">All Compaanies</option>
             {companies.map((company) => (
               <option key={company.id} value={company.id}>
                 {company.name}
@@ -253,12 +374,66 @@ function EnvironmentWasteDash() {
               minWidth: '100px'
             }}
           >
-            <option value="">Filter</option>
+            <option value="">All Quarter</option>
             <option value="Q1">Q1</option>
             <option value="Q2">Q2</option>
             <option value="Q3">Q3</option>
             <option value="Q4">Q4</option>
           </select>
+
+          
+
+          {activeTab === 'non_hazardous_generated' ? (
+            <>
+              {/* Waste Type Filter */}
+              <select 
+                value={metrics}
+                onChange={(e) => setMetrics(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '20px',
+                  backgroundColor: 'white',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  minWidth: '100px'
+                }}
+              >
+                <option value="">All Metrics</option>
+                {activeMetrics.map((metrics) => (
+                  <option key={metrics} value={metrics}>
+                    {metrics}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) :
+          <>
+            {/* Waste Type Filter */}
+            <select 
+              value={wasteType}
+              onChange={(e) => setWasteType(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '20px',
+                backgroundColor: 'white',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                minWidth: '100px'
+              }}
+            >
+              <option value="">All Waste Type</option>
+              {activeWasteType.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </>
+          }
 
           {/* Year Range Filter */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -276,11 +451,19 @@ function EnvironmentWasteDash() {
                 minWidth: '85px'
               }}
             >
-              <option value="">Filter</option>
-              {availableYears.map((year) => (
+              <option value="">From Year</option>
+              {activeYears.map((year) => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
+
+            <span style={{ 
+              color: '#64748b', 
+              fontSize: '12px', 
+              fontWeight: '500' 
+            }}>
+              to
+            </span>
 
             <select 
               value={toYear}
@@ -296,8 +479,8 @@ function EnvironmentWasteDash() {
                 minWidth: '85px'
               }}
             >
-              <option value="">Filter</option>
-              {availableYears
+              <option value="">To Year</option>
+              {activeYears
                 .filter(year => !fromYear || year >= parseInt(fromYear))
                 .map((year) => (
                   <option key={year} value={year}>{year}</option>

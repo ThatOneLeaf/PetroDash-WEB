@@ -60,12 +60,13 @@ const abbreviateHeader = (label) => {
 const Table = ({
   columns,
   rows, // ALL data, not pre-paginated
+  filteredData = [], // <-- add this prop for all filtered data
   page = 1,
   idKey,
   rowsPerPage = 10,
   onPageChange,
   initialSort = { key: null, direction: "asc" },
-  onSort, // Optional callback for external tracking
+  onSort,
   actions,
   onRowClick,
   emptyMessage = "No data available.",
@@ -176,28 +177,36 @@ const Table = ({
     );
   };
 
-  // Selection logic for checkboxes
-  const isAllSelected = paginatedData.length > 0 && paginatedData.every(row => selected.includes(row[idKey]));
-  const isIndeterminate = paginatedData.some(row => selected.includes(row[idKey])) && !isAllSelected;
+  // All IDs in filteredData (for select all)
+  const allFilteredIds = React.useMemo(
+    () => filteredData.map(row => row[idKey]),
+    [filteredData, idKey]
+  );
 
-  // Handler for selecting all rows on current page
+  // All IDs in paginatedData (for current page)
+  const paginatedIds = React.useMemo(
+    () => rows.map(row => row[idKey]),
+    [rows, idKey]
+  );
+
+  // Selection logic for checkboxes
+  const isAllSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selected.includes(id));
+  const isIndeterminate = selected.length > 0 && !isAllSelected;
+
+  // Handler for TableHead checkbox (select all filteredData)
   const handleSelectAll = (event) => {
-    let newSelected;
     if (event.target.checked) {
-      newSelected = [
-        ...selected,
-        ...paginatedData
-          .map(row => row[idKey])
-          .filter(id => !selected.includes(id))
-      ];
+      // If TableHead checkbox is checked, select all filteredData
+      setSelected(allFilteredIds);
+      if (onSelectionChange) onSelectionChange(allFilteredIds);
     } else {
-      newSelected = selected.filter(id => !paginatedData.some(row => row[idKey] === id));
+      // If unchecked, clear all selection
+      setSelected([]);
+      if (onSelectionChange) onSelectionChange([]);
     }
-    setSelected(newSelected);
-    if (onSelectionChange) onSelectionChange(newSelected);
   };
 
-  // Handler for selecting a single row
+  // Handler for TableBody checkbox (select single row in current page)
   const handleSelectRow = (id) => {
     let newSelected;
     if (selected.includes(id)) {

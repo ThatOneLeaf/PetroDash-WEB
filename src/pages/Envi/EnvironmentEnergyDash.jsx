@@ -73,14 +73,15 @@ function EnvironmentEnergyDash() {
   const [dieselQuarterlyBarColors, setDieselQuarterlyBarColors] = useState({});
 
   // Static key metrics - fetched once on mount and don't change with filters
-  const [staticElectricityMetrics, setStaticElectricityMetrics] = useState({
+  const [electricityMetrics, setElectricityMetrics] = useState({
     total_consumption: 0,
     unit_of_measurement: 'kWh',
     peak_year: null,
     peak_consumption: 0,
     average_consumption: 0
   });
-  const [staticDieselMetrics, setStaticDieselMetrics] = useState({
+
+  const [dieselMetrics, setDieselMetrics] = useState({
     total_diesel_consumption: 0,
     unit_of_measurement: 'Liters',
     average_annual_consumption: 0,
@@ -166,7 +167,7 @@ function EnvironmentEnergyDash() {
         barChartData: electricityBarData,
         companySourceData: electricitySourceData,
         stackedBarData: electricityQuarterData,
-        unit: staticElectricityMetrics.unit_of_measurement || 'kWh'
+        unit: electricityMetrics.unit_of_measurement || 'kWh' // CHANGED: removed "static"
       };
     } else {
       return {
@@ -177,7 +178,7 @@ function EnvironmentEnergyDash() {
         monthlyLineData: dieselMonthlyLineData, // Monthly line chart data
         quarterlyBarData: dieselQuarterlyBarData, // Quarterly stacked bar chart data
         stackedBarData: dieselChartData.stackedBarData,
-        unit: staticDieselMetrics.unit_of_measurement || 'Liters'
+        unit: dieselMetrics.unit_of_measurement || 'Liters' // CHANGED: removed "static"
       };
     }
   };
@@ -593,6 +594,189 @@ function EnvironmentEnergyDash() {
       colors: colorMap || {}
     };
   };
+
+  useEffect(() => {
+    const fetchElectricityKeyMetrics = async () => {
+      if (activeTab !== 'electricity') return;
+      if (companies.length === 0 || availableYears.length === 0 || consumptionSources.length === 0) return;
+
+      try {
+        setLoading(true);
+        
+        // Build parameters using URLSearchParams (same as other API calls)
+        const params = new URLSearchParams();
+        
+        // Company filter
+        if (companyId) {
+          params.append('company_id', companyId);
+        } else {
+          companies.forEach(company => {
+            params.append('company_id', company.id);
+          });
+        }
+        
+        // Consumption source filter
+        if (consumptionSource) {
+          params.append('consumption_source', consumptionSource);
+        } else {
+          consumptionSources.forEach(source => {
+            params.append('consumption_source', source);
+          });
+        }
+        
+        // Quarter filter
+        if (quarter) {
+          params.append('quarter', quarter);
+        } else {
+          ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
+            params.append('quarter', q);
+          });
+        }
+        
+        // Year filter
+        let yearRange = [];
+        if (fromYear && toYear) {
+          yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+        } else if (fromYear && !toYear) {
+          yearRange = availableYears.filter(year => year >= parseInt(fromYear));
+        } else if (!fromYear && toYear) {
+          yearRange = availableYears.filter(year => year <= parseInt(toYear));
+        } else {
+          yearRange = availableYears;
+        }
+        
+        yearRange.forEach(year => {
+          params.append('year', year);
+        });
+
+        console.log('Fetching electricity metrics with params:', params.toString());
+
+        const response = await api.get(`/environment_dash/electricity-key-metrics?${params.toString()}`);
+
+        console.log('Electricity metrics response:', response.data);
+        
+        setElectricityMetrics(response.data);
+        
+      } catch (error) {
+        console.error('Failed to fetch electricity key metrics:', error);
+        console.error('Error response:', error.response?.data);
+        // Set default values on error
+        setElectricityMetrics({
+          total_consumption: 0,
+          unit_of_measurement: 'kWh',
+          peak_year: null,
+          peak_consumption: 0,
+          average_consumption: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Fetch when filters change
+    fetchElectricityKeyMetrics();
+  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+
+  useEffect(() => {
+    const fetchDieselKeyMetrics = async () => {
+      if (activeTab !== 'diesel') return;
+      if (companies.length === 0 || dieselYears.length === 0 || 
+          companyProperties.length === 0 || propertyTypes.length === 0) return;
+
+      try {
+        setLoading(true);
+        
+        // Build parameters using URLSearchParams (same as other API calls)
+        const params = new URLSearchParams();
+        
+        // Company filter
+        if (companyId) {
+          params.append('company_id', companyId);
+        } else {
+          companies.forEach(company => {
+            params.append('company_id', company.id);
+          });
+        }
+        
+        // Property name filter
+        if (companyPropertyName) {
+          params.append('company_property_name', companyPropertyName);
+        } else {
+          companyProperties.forEach(property => {
+            params.append('company_property_name', property);
+          });
+        }
+        
+        // Property type filter
+        if (companyPropertyType) {
+          params.append('company_property_type', companyPropertyType);
+        } else {
+          propertyTypes.forEach(type => {
+            params.append('company_property_type', type);
+          });
+        }
+        
+        // Quarter filter
+        if (quarter) {
+          params.append('quarter', quarter);
+        } else {
+          ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
+            params.append('quarter', q);
+          });
+        }
+        
+        // Month filter
+        if (month) {
+          params.append('month', month);
+        } else {
+          monthOptions.forEach(monthName => {
+            params.append('month', monthName);
+          });
+        }
+        
+        // Year filter using diesel years
+        let yearRange = [];
+        if (fromYear && toYear) {
+          yearRange = dieselYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+        } else if (fromYear && !toYear) {
+          yearRange = dieselYears.filter(year => year >= parseInt(fromYear));
+        } else if (!fromYear && toYear) {
+          yearRange = dieselYears.filter(year => year <= parseInt(toYear));
+        } else {
+          yearRange = dieselYears;
+        }
+        
+        yearRange.forEach(year => {
+          params.append('year', year);
+        });
+
+        console.log('Fetching diesel metrics with params:', params.toString());
+
+        const response = await api.get(`/environment_dash/diesel-key-metrics?${params.toString()}`);
+
+        console.log('Diesel metrics response:', response.data);
+        
+        setDieselMetrics(response.data);
+        
+      } catch (error) {
+        console.error('Failed to fetch diesel key metrics:', error);
+        console.error('Error response:', error.response?.data);
+        // Set default values on error
+        setDieselMetrics({
+          total_diesel_consumption: 0,
+          unit_of_measurement: 'Liters',
+          average_annual_consumption: 0,
+          yearly_deviation: []
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Fetch when filters change
+    fetchDieselKeyMetrics();
+  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
+      companies, dieselYears, companyProperties, propertyTypes]);
 
   // Fetch companies and available years on component mount
   useEffect(() => {
@@ -1586,62 +1770,6 @@ function EnvironmentEnergyDash() {
   }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
       companies, dieselYears, companyProperties, propertyTypes]);
 
-  // Fetch static key metrics once on component mount (no filter dependencies)
-  useEffect(() => {
-    const fetchStaticKeyMetrics = async () => {
-      if (companies.length === 0 || availableYears.length === 0) return;
-
-      try {
-        setLoading(true);
-        
-        // Static parameters - all companies, all quarters, all years, all sources
-        const electricityParams = {
-          company_id: companies.map(company => company.id),
-          quarter: ['Q1', 'Q2', 'Q3', 'Q4'],
-          year: availableYears,
-          consumption_source: consumptionSources
-        };
-
-        const dieselParams = {
-          company_id: companies.map(company => company.id),
-          quarter: ['Q1', 'Q2', 'Q3', 'Q4'],
-          year: dieselYears.length > 0 ? dieselYears : availableYears
-        };
-
-        console.log('Fetching static electricity metrics with params:', electricityParams);
-        console.log('Fetching static diesel metrics with params:', dieselParams);
-
-        const [electricityResponse, dieselResponse] = await Promise.all([
-          api.get('/environment_dash/electricity-key-metrics', { 
-            params: electricityParams,
-            paramsSerializer: { indexes: null }
-          }),
-          api.get('/environment_dash/diesel-key-metrics', { 
-            params: dieselParams,
-            paramsSerializer: { indexes: null }
-          })
-        ]);
-
-        console.log('Static electricity metrics response:', electricityResponse.data);
-        console.log('Static diesel metrics response:', dieselResponse.data);
-        
-        setStaticElectricityMetrics(electricityResponse.data);
-        setStaticDieselMetrics(dieselResponse.data);
-        
-      } catch (error) {
-        console.error('Failed to fetch static key metrics:', error);
-        console.error('Error response:', error.response?.data);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Only fetch once when all initial data is loaded
-    if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0 && dieselYears.length > 0) {
-      fetchStaticKeyMetrics();
-    }
-  }, [companies, availableYears, consumptionSources, dieselYears]);
-
   // Clear all filters function
   const clearAllFilters = () => {
     setCompanyId('');
@@ -2099,7 +2227,7 @@ function EnvironmentEnergyDash() {
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-                  {staticElectricityMetrics.total_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                  {loading ? 'Loading...' : electricityMetrics.total_consumption.toLocaleString()} {electricityMetrics.unit_of_measurement}
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   YEAR-ON-YEAR CUMULATIVE ELECTRICITY CONSUMPTION
@@ -2114,13 +2242,13 @@ function EnvironmentEnergyDash() {
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-                  {staticElectricityMetrics.peak_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                  {loading ? 'Loading...' : electricityMetrics.peak_consumption.toLocaleString()} {electricityMetrics.unit_of_measurement}
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   YEAR WITH HIGHEST ELECTRICITY CONSUMPTION
                 </div>
                 <div style={{ fontSize: '9px', opacity: 0.8 }}>
-                  {staticElectricityMetrics.peak_year || ''}
+                  {electricityMetrics.peak_year || ''}
                 </div>
               </div>
 
@@ -2132,7 +2260,7 @@ function EnvironmentEnergyDash() {
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-                  {staticElectricityMetrics.average_consumption.toLocaleString()} {staticElectricityMetrics.unit_of_measurement}
+                  {loading ? 'Loading...' : electricityMetrics.average_consumption.toLocaleString()} {electricityMetrics.unit_of_measurement}
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   AVERAGE ANNUAL ELECTRICITY CONSUMPTION
@@ -2149,7 +2277,7 @@ function EnvironmentEnergyDash() {
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-                  {loading ? 'Loading...' : staticDieselMetrics.total_diesel_consumption.toLocaleString()} {staticDieselMetrics.unit_of_measurement}
+                  {loading ? 'Loading...' : dieselMetrics.total_diesel_consumption.toLocaleString()} {dieselMetrics.unit_of_measurement}
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   YEAR-ON-YEAR CUMULATIVE DIESEL CONSUMPTION
@@ -2164,7 +2292,7 @@ function EnvironmentEnergyDash() {
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-                  {loading ? 'Loading...' : staticDieselMetrics.average_annual_consumption.toLocaleString()} {staticDieselMetrics.unit_of_measurement}
+                  {loading ? 'Loading...' : dieselMetrics.average_annual_consumption.toLocaleString()} {dieselMetrics.unit_of_measurement}
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   AVERAGE ANNUAL DIESEL CONSUMPTION

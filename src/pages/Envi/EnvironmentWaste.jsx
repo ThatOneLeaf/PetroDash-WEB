@@ -654,6 +654,7 @@ function EnvironmentWaste() {
         <CustomTable
           columns={columns}
           rows={paginatedData}
+          filteredData={filteredData}
           idKey={idKey} // or "id", "recordId", etc. depending on the page
           onSelectionChange={(selectedRows) => setSelectedRowIds(selectedRows)}
           onSort={handleSort}
