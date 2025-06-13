@@ -16,7 +16,9 @@ import StatusChip from "../../components/StatusChip";
 
 import KPIIndicatorCard from "../../components/KPIIndicatorCard";
 
-function DemographicsDash({}) {
+import Sidebar from '../../components/Sidebar';
+
+function SafetyandHealthDash({}) {
   //INITIALIZE
 
   const [filters, setFilters] = useState({
@@ -151,5 +153,4 @@ function DemographicsDash({}) {
     </Box>
   );
 }
-
-export default DemographicsDash;
+export default SafetyandHealthDash;
