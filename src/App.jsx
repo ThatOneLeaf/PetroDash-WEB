@@ -30,6 +30,8 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Landing />} />
+
+            {/* Economic Routes */}
             <Route path="/economic" element={<Economic />} />
             <Route path="/economic/generated" element={<EconomicGenerated />} />
             <Route
@@ -40,9 +42,12 @@ function App() {
               path="/economic/capital-provider"
               element={<EconomicCapitalProvider />}
             />
+
+            {/* CSV Routes */}
             <Route path="/energy/power-generation" element={<Energy />} />
             <Route path="/energy/dashboard" element={<PowerDashboard />} />
 
+            {/* Environment Routes */}
             <Route path="/environment/energy" element={<EnvironmentEnergy />} />
             <Route path="/environment/water" element={<EnvironmentWater />} />
             <Route path="/environment/waste" element={<EnvironmentWaste />} />
@@ -52,17 +57,17 @@ function App() {
             <Route path="/environment/energy-dash" element={<EnvironmentEnergyDash />} />
             <Route path="/environment/waste-dash" element={<EnvironmentWasteDash />} />
             
-            <Route path="/social/helpdash" element={<HELPDash />} />
+            {/* HELP Routes */}
             <Route path="/social/csr" element={<CSR />} />
+            <Route path="/social/help-dash" element={<HELPDash />} />
 
+            {/* HR Routes */}
             <Route path="/social/hr" element={<HR />} />
             <Route path="/social/hremployabilitydash" element={<HREmployabilityDash />} />
             <Route path="/social/hrsafetyandhealthdash" element={<HRSafetyandHealthDash />} />
 
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
-            
-
           </Routes>
         </main>
       </div>

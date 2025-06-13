@@ -52,7 +52,6 @@ function AddRecordModalHelp({
     setLoading(true);
     try {
       await api.post('/help/activities-single', {
-        // Map to API/database fields as used in CSRActivity.jsx
         company_id: company,
         project_id: project,
         project_year: Number(year),
@@ -259,31 +258,6 @@ function AddRecordModalHelp({
                 }
               }}
             />
-            <TextField
-                label="Year"
-                type="text"
-                value={year}
-                onChange={e => {
-                  // Only allow numbers, max 4 digits
-                  const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
-                  setYear(val);
-                  if (yearError) setYearError('');
-                }}
-                fullWidth
-                required
-                placeholder="Year"
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 4 }}
-                error={!!yearError}
-                helperText={yearError || ''}
-                sx={{
-                  background: '#f7f9fb',
-                  borderRadius: 2,
-                  '& .MuiOutlinedInput-root': {
-                    '&:hover fieldset': { borderColor: '#2B8C37' },
-                    '&.Mui-focused fieldset': { borderColor: '#2B8C37' }
-                  }
-                }}
-              />
 
             {/* Submit Button */}
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>

@@ -19,7 +19,10 @@ const ViewHelpRecordModal = ({
   title,
   record,
   onClose,
-  onSave, // callback after save
+  onSave,
+  companyOptions = [],
+  programOptions = [],
+  projectOptions = {},
 }) => {
   // State for edit/view mode, record data, and loading
   const [isEditing, setIsEditing] = useState(false);
@@ -34,9 +37,10 @@ const ViewHelpRecordModal = ({
 
   // Fetch the record details from API when modal opens or record changes
   useEffect(() => {
-    if (!record?.projectId) return;
+    if (!record?.csrId) return;
     setLoading(true);
-    api.get(`help/activities-specific?projectId=${encodeURIComponent(record.projectId)}`)
+    console.log("hello", record.csrId)
+    api.get(`help/activities-specific?csrId=${encodeURIComponent(record.csrId)}`)
       .then(res => {
         setFetchedRecord(res.data);
         setEditedRecord(res.data);
@@ -55,8 +59,19 @@ const ViewHelpRecordModal = ({
 
   // Save changes to API
   const handleSave = async () => {
+    console.log("here handleSave")
     try {
-      await api.post('/activities-specific', editedRecord);
+      // Only send the required fields
+      const payload = {
+        csr_id: editedRecord.csrId,
+        project_year: Number(editedRecord.projectYear),
+        project_id: editedRecord.projectId,
+        csr_report: Number(editedRecord.csrReport),
+        project_expenses: Number(editedRecord.projectExpenses),
+      };
+      console.log(editedRecord.projectYear)
+      await api.post('/help/activities-update', payload);
+      console.log("passed await")
       if (onSave) onSave(editedRecord);
       setIsEditing(false);
       setFetchedRecord(editedRecord);
@@ -110,27 +125,52 @@ const ViewHelpRecordModal = ({
           fullWidth
           disabled={!isEditing || isReadOnly}
         />
-        <TextField
-          label="Company"
-          value={editedRecord.companyName || ''}
-          onChange={e => handleChange('companyName', e.target.value)}
-          fullWidth
-          disabled={!isEditing || isReadOnly}
-        />
-        <TextField
-          label="Program"
-          value={editedRecord.programName || ''}
-          onChange={e => handleChange('programName', e.target.value)}
-          fullWidth
-          disabled={!isEditing || isReadOnly}
-        />
-        <TextField
-          label="Project"
-          value={editedRecord.projectName || ''}
-          onChange={e => handleChange('projectName', e.target.value)}
-          fullWidth
-          disabled={!isEditing || isReadOnly}
-        />
+        {/* Company dropdown */}
+        {/* <FormControl fullWidth>
+          <InputLabel>Company</InputLabel>
+          <Select
+            value={editedRecord.companyId || ''}
+            onChange={e => handleChange('companyId', e.target.value)}
+            disabled={!isEditing}
+            label="Company"
+          >
+            {companyOptions.map(opt => (
+              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl> */}
+        {/* Program dropdown */}
+        <FormControl fullWidth>
+          <InputLabel>Program</InputLabel>
+          <Select
+            value={editedRecord.programName || ''}
+            onChange={e => {
+              handleChange('programName', e.target.value);
+              // Reset project if program changes
+              handleChange('projectId', '');
+            }}
+            disabled={!isEditing || isReadOnly}
+            label="Program"
+          >
+            {programOptions.map(opt => (
+              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {/* Project dropdown */}
+        <FormControl fullWidth>
+          <InputLabel>Project</InputLabel>
+          <Select
+            value={editedRecord.projectId || ''}
+            onChange={e => handleChange('projectId', e.target.value)}
+            disabled={!isEditing || isReadOnly || !editedRecord.programName}
+            label="Project"
+          >
+            {(projectOptions[editedRecord.programName] || []).map(opt => (
+              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <TextField
           label="Beneficiaries"
           type="number"
@@ -147,7 +187,7 @@ const ViewHelpRecordModal = ({
           fullWidth
           disabled={!isEditing || isReadOnly}
         />
-        <FormControl fullWidth>
+        {/* <FormControl fullWidth>
           <InputLabel>Status</InputLabel>
           <Select
             value={editedRecord.statusId || ''}
@@ -158,9 +198,8 @@ const ViewHelpRecordModal = ({
             <MenuItem value="APP">APPROVED</MenuItem>
             <MenuItem value="PEN">PENDING</MenuItem>
             <MenuItem value="REJ">REJECTED</MenuItem>
-            {/* Add more status options as needed */}
           </Select>
-        </FormControl>
+        </FormControl> */}
       </Box>
       {/* Action buttons */}
       <Box display="flex" justifyContent="space-between" mt={4}>

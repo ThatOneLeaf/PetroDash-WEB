@@ -48,7 +48,7 @@ function ImportModalHelp({ open, onClose, onImportSuccess }) {
     }
   };
 
-  const handleImportClick = async () => {
+  const handleSubmit = async () => {
     if (!selectedFile) return;
     setLoading(true);
     setError(null);
@@ -67,6 +67,8 @@ function ImportModalHelp({ open, onClose, onImportSuccess }) {
       setLoading(false);
     }
   };
+
+  
 
   // Reset file input and messages when modal closes
   React.useEffect(() => {

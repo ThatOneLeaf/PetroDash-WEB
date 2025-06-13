@@ -20,8 +20,7 @@ import ImportModalHelp from '../../components/help_components/ImportModalHelp';
 import Overlay from '../../components/modal'; 
 import api from '../../services/api';
 import ViewHelpRecordModal from '../../components/help_components/ViewHelpRecordModal'; 
-
-
+import exportData from '../../services/export';
 
 function CSR() {  
   const [data, setData] = useState([]);
@@ -79,6 +78,19 @@ function CSR() {
       setLoading(false);
     }
   }, []);
+
+  const handleExport = () => {
+    const exportColumns = [
+      { key: 'companyName', label: 'Company Name' },
+      { key: 'projectName', label: 'Project Name' },
+      { key: 'projectYear', label: 'Year' },
+      { key: 'csrReport', label: 'Report (in numbers)' },
+      { key: 'projectExpenses', label: 'Project Investment (₱)' },
+    ];
+    
+    const filename = `help_activity_as_of_${new Date().toISOString().split('T')[0]}`;
+    exportData(filteredData, filename, exportColumns);
+  };
 
   // Memoize filter options for efficiency
   const programOptions = useMemo(() => {
@@ -305,7 +317,7 @@ function CSR() {
                   backgroundColor: '#0f1a3c',
                 },
               }}
-              onClick={() => exportToExcel(filteredData)}
+              onClick={handleExport}
             >
               EXPORT DATA
             </Button>
@@ -455,13 +467,13 @@ function CSR() {
         {isAddModalOpen && (
           <Overlay onClose={() => setIsAddModalOpen(false)}>
             <AddRecordModalHelp
-              key={modalKey}
+              open={isAddModalOpen}
               onClose={() => setIsAddModalOpen(false)}
-              onAdd={() => {
-                // Only refresh data and close modal, do NOT expect any argument from onAdd
-                setIsAddModalOpen(false);
-                fetchCSRData();
-              }}
+              // onAdd={() => {
+              //   // Only refresh data and close modal, do NOT expect any argument from onAdd
+              //   setIsAddModalOpen(false);
+              //   fetchCSRData();
+              // }}
               yearOptions={modalYearOptions}
               companyOptions={modalCompanyOptions}
               programOptions={modalProgramOptions}
@@ -485,6 +497,9 @@ function CSR() {
             <ViewHelpRecordModal
               title="CSR Activity Details"
               record={selectedRecord}
+              companyOptions={modalCompanyOptions}
+              programOptions={modalProgramOptions}
+              projectOptions={modalProjectOptions}
               // updatePath={getUpdatePath(selectedRecord)}
               status={(data, error) => {
                 if (error) {
