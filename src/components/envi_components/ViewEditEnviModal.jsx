@@ -185,7 +185,7 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
     let newValue = value;
 
     // Convert to number if key is a numeric field
-    if (["consumption", "volume"].includes(key)) {
+    if (["consumption", "volume", "waste_generated", "waste_disposed", "waste"].includes(key)) {
       newValue = parseFloat(value);
       // Handle invalid number input (e.g., empty string becomes NaN)
       if (isNaN(newValue)) newValue = '';
@@ -199,6 +199,7 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
 
   const handleSave = async () => {
     console.log("Updated Data:", editedRecord);
+    console.log("Field names:", Object.keys(editedRecord));
 
     try {
       let response;
