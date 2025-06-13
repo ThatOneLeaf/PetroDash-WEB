@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   BarChart, 
   Bar,
@@ -36,7 +36,8 @@ import {
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import api from '../../services/api';
 import Sidebar from '../../components/Sidebar';
-import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // Color schemes for charts
 const COLORS = ['#182959', '#2B8C37', '#FF8042', '#FFBB28', '#8884D8', '#82CA9D', '#FFC658'];
@@ -167,8 +168,84 @@ function Economic() {
     }));
   };
 
-  const handleExportData = () => {
-    
+  // Refs for PDF export
+  const kpiRef = useRef();
+  const chart1Ref = useRef();
+  const chart2Ref = useRef();
+  const chart3Ref = useRef();
+  const chart4Ref = useRef();
+  const chart5Ref = useRef();
+
+  const handleExportData = async () => {
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let y = 20;
+
+      // Title and date on the same line
+      pdf.setFontSize(20);
+      pdf.text('Economic Dashboard Report', 15, y);
+      pdf.setFontSize(12);
+      pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 200, y, { align: 'right' });
+      y += 12;
+
+      // --- KPI Cards ---
+      const kpiCanvas = await html2canvas(kpiRef.current, { scale: 2 });
+      const kpiImg = kpiCanvas.toDataURL('image/png');
+      const kpiWidth = 180;
+      const kpiHeight = (kpiCanvas.height * kpiWidth) / kpiCanvas.width;
+      pdf.addImage(kpiImg, 'PNG', 15, y, kpiWidth, kpiHeight);
+      y += kpiHeight + 10;
+
+      // --- Chart 1: Economic Value Analysis ---
+      const chart1Canvas = await html2canvas(chart1Ref.current, { scale: 2 });
+      const chart1Width = 180;
+      const chart1Height = (chart1Canvas.height * chart1Width) / chart1Canvas.width;
+      pdf.addImage(chart1Canvas.toDataURL('image/png'), 'PNG', 15, y, chart1Width, chart1Height);
+      y += chart1Height + 10;
+
+      // --- Chart 2: Economic Value Generated and Retained ---
+      const chart2Canvas = await html2canvas(chart2Ref.current, { scale: 2 });
+      const chart2Width = 180;
+      const chart2Height = (chart2Canvas.height * chart2Width) / chart2Canvas.width;
+      pdf.addImage(chart2Canvas.toDataURL('image/png'), 'PNG', 15, y, chart2Width, chart2Height);
+      y += chart2Height + 10;
+
+      // --- Chart 3: Economic Value Generated Pie Chart ---
+      const chart3Canvas = await html2canvas(chart3Ref.current, { scale: 2 });
+      const chart3Width = 180;
+      const chart3Height = (chart3Canvas.height * chart3Width) / chart3Canvas.width;
+      pdf.addImage(chart3Canvas.toDataURL('image/png'), 'PNG', 15, y, chart3Width, chart3Height);
+      y += chart3Height + 10;
+
+      // --- Chart 4: Top 5 Companies - Economic Value Distribution (Bar Chart) ---
+      // Estimate chart height before rendering
+      const chart4Canvas = await html2canvas(chart4Ref.current, { scale: 2 });
+      const chart4Width = 180;
+      const chart4Height = (chart4Canvas.height * chart4Width) / chart4Canvas.width;
+      // If not enough space, add a new page
+      if (y + chart4Height + 20 > 297) {
+        pdf.addPage();
+        y = 20;
+      }
+      pdf.addImage(chart4Canvas.toDataURL('image/png'), 'PNG', 15, y, chart4Width, chart4Height);
+      y += chart4Height + 10;
+
+      // --- Chart 5: Economic Value Distribution Pie Chart ---
+      // If not enough space, add a new page
+      if (y + 60 > 297) {
+        pdf.addPage();
+        y = 20;
+      }
+      const chart5Canvas = await html2canvas(chart5Ref.current, { scale: 2 });
+      const chart5Width = 180;
+      const chart5Height = (chart5Canvas.height * chart5Width) / chart5Canvas.width;
+      pdf.addImage(chart5Canvas.toDataURL('image/png'), 'PNG', 15, y, chart5Width, chart5Height);
+      y += chart5Height + 10;
+
+      pdf.save('Economic_Dashboard_Report.pdf');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
   };
 
   // Prepare chart data
@@ -279,245 +356,203 @@ function Economic() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Company Filter</InputLabel>
-                <Select
-                  value={filters.companies}
-                  label="Company Filter"
-                  onChange={(e) => handleFilterChange('companies', e.target.value)}
-                  sx={{ bgcolor: 'white', minWidth: 120 }}
-                >
-                  <MenuItem value="">All Companies</MenuItem>
-                  {filterOptions.companies.map(company => (
-                    <MenuItem key={company.id} value={company.id}>{company.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Type Filter</InputLabel>
-                <Select
-                  value={filters.types}
-                  label="Type Filter"
-                  onChange={(e) => handleFilterChange('types', e.target.value)}
-                  sx={{ bgcolor: 'white', minWidth: 120 }}
-                >
-                  <MenuItem value="">All Types</MenuItem>
-                  {filterOptions.expenditureTypes.map(type => (
-                    <MenuItem key={type.id} value={type.id}>{type.description}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Order By</InputLabel>
-                <Select
-                  value={filters.orderBy}
-                  label="Order By"
-                  onChange={(e) => handleFilterChange('orderBy', e.target.value)}
-                  sx={{ bgcolor: 'white', minWidth: 120 }}
-                >
-                  <MenuItem value="year">Year</MenuItem>
-                  <MenuItem value="total_economic_value_generated">Value Generated</MenuItem>
-                  <MenuItem value="economic_value_retained">Value Retained</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
           </Grid>
 
           {/* Metrics Cards */}
-          <Grid container spacing={2} sx={{ mb: 1.5 }}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Card sx={{ borderRadius: 2, boxShadow: 2, height: 100 }}>
-                <CardContent sx={{ textAlign: 'center', py: 1.5 }}>
-                  <Typography variant="h4" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1.5rem' }}>
-                    {currentYearMetrics ? currentYearMetrics.totalGenerated.toLocaleString() : '0'}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
-                    Value Generated
-                  </Typography>
-                  {previousYearMetrics && (
-                    <Typography variant="caption" sx={{ color: '#2B8C37', fontSize: '0.65rem' }}>
-                      ▲{calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated)}% from last year
+          <div ref={kpiRef}>
+            <Grid container spacing={2} sx={{ mb: 1.5 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card sx={{ borderRadius: 2, boxShadow: 2, height: 100 }}>
+                  <CardContent sx={{ textAlign: 'center', py: 1.5 }}>
+                    <Typography variant="h4" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1.5rem' }}>
+                      {currentYearMetrics ? currentYearMetrics.totalGenerated.toLocaleString() : '0'}
                     </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#182959', height: 100 }}>
-                <CardContent sx={{ textAlign: 'center', py: 1.5 }}>
-                  <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.5rem' }}>
-                    {currentYearMetrics ? currentYearMetrics.totalDistributed.toLocaleString() : '0'}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'white', fontSize: '0.75rem' }}>
-                    Value Distributed
-                  </Typography>
-                  {previousYearMetrics && (
-                    <Typography variant="caption" sx={{ color: 'white', fontSize: '0.65rem' }}>
-                      ▲{calculateGrowth(currentYearMetrics?.totalDistributed, previousYearMetrics?.totalDistributed)}% from last year
+                    <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
+                      Value Generated
                     </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Card sx={{ borderRadius: 2, boxShadow: 2, height: 100 }}>
-                <CardContent sx={{ textAlign: 'center', py: 1.5 }}>
-                  <Typography variant="h4" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1.5rem' }}>
-                    {currentYearMetrics ? currentYearMetrics.valueRetained.toLocaleString() : '0'}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
-                    Value Retained
-                  </Typography>
-                  {previousYearMetrics && (
-                    <Typography variant="caption" sx={{ color: previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '#ff5722' : '#2B8C37', fontSize: '0.65rem' }}>
-                      {previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '▼' : '▲'}
-                      {Math.abs(calculateGrowth(currentYearMetrics?.valueRetained, previousYearMetrics?.valueRetained))}% from last year
+                    {previousYearMetrics && (
+                      <Typography variant="caption" sx={{ color: '#2B8C37', fontSize: '0.65rem' }}>
+                        ▲{calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated)}% from last year
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#182959', height: 100 }}>
+                  <CardContent sx={{ textAlign: 'center', py: 1.5 }}>
+                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.5rem' }}>
+                      {currentYearMetrics ? currentYearMetrics.totalDistributed.toLocaleString() : '0'}
                     </Typography>
-                  )}
-                </CardContent>
-              </Card>
+                    <Typography variant="body2" sx={{ color: 'white', fontSize: '0.75rem' }}>
+                      Value Distributed
+                    </Typography>
+                    {previousYearMetrics && (
+                      <Typography variant="caption" sx={{ color: 'white', fontSize: '0.65rem' }}>
+                        ▲{calculateGrowth(currentYearMetrics?.totalDistributed, previousYearMetrics?.totalDistributed)}% from last year
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card sx={{ borderRadius: 2, boxShadow: 2, height: 100 }}>
+                  <CardContent sx={{ textAlign: 'center', py: 1.5 }}>
+                    <Typography variant="h4" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1.5rem' }}>
+                      {currentYearMetrics ? currentYearMetrics.valueRetained.toLocaleString() : '0'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.75rem' }}>
+                      Value Retained
+                    </Typography>
+                    {previousYearMetrics && (
+                      <Typography variant="caption" sx={{ color: previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '#ff5722' : '#2B8C37', fontSize: '0.65rem' }}>
+                        {previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '▼' : '▲'}
+                        {Math.abs(calculateGrowth(currentYearMetrics?.valueRetained, previousYearMetrics?.valueRetained))}% from last year
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
             </Grid>
-          </Grid>
+          </div>
 
           {/* Charts Row 1 */}
           <Grid container spacing={2} sx={{ mb: 1.5 }}>
-            {/* First Chart with Tabs - Economic Value Summary/Retention */}
+            {/* First Chart with Tabs - Economic Value Analysis/Retention */}
             <Grid size={{ xs: 12, lg: 6 }}>
-              <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 2, height: 320 }}>
-                {/* Chart Tabs */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box sx={{ width: 4, height: 20, bgcolor: '#2B8C37', mr: 1 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                      Economic Value Analysis
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                    bgcolor: '#f5f5f5', 
-                    borderRadius: '8px', 
-                    p: 0.5,
-                    border: '1px solid #e0e0e0'
-                  }}>
-                    <Tabs 
-                      value={firstChartTab} 
-                      onChange={handleFirstChartTabChange}
-                      sx={{
-                        minHeight: 'auto',
-                        '& .MuiTabs-indicator': {
-                          backgroundColor: '#2B8C37',
-                          height: 3,
-                          borderRadius: '3px'
-                        },
-                        '& .MuiTabs-flexContainer': {
-                          gap: '4px'
-                        },
-                        '& .MuiTab-root': {
-                          textTransform: 'none',
-                          fontWeight: 'bold',
-                          fontSize: '0.875rem',
-                          color: '#666',
-                          minHeight: '36px',
-                          minWidth: '80px',
-                          padding: '8px 16px',
-                          borderRadius: '6px',
-                          transition: 'all 0.2s ease',
-                          backgroundColor: 'transparent',
-                          '&:hover': {
-                            backgroundColor: '#e8f5e8',
-                            color: '#2B8C37'
+              <div ref={chart1Ref}>
+                <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 2, height: 320 }}>
+                  {/* Chart Tabs */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ width: 4, height: 20, bgcolor: '#2B8C37', mr: 1 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        Economic Value Analysis
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      bgcolor: '#f5f5f5', 
+                      borderRadius: '8px', 
+                      p: 0.5,
+                      border: '1px solid #e0e0e0'
+                    }}>
+                      <Tabs 
+                        value={firstChartTab} 
+                        onChange={handleFirstChartTabChange}
+                        sx={{
+                          minHeight: 'auto',
+                          '& .MuiTabs-indicator': {
+                            backgroundColor: '#2B8C37',
+                            height: 3,
+                            borderRadius: '3px'
                           },
-                          '&.Mui-selected': {
-                            color: '#2B8C37',
-                            backgroundColor: 'white',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            fontWeight: 'bold'
+                          '& .MuiTabs-flexContainer': {
+                            gap: '4px'
+                          },
+                          '& .MuiTab-root': {
+                            textTransform: 'none',
+                            fontWeight: 'bold',
+                            fontSize: '0.875rem',
+                            color: '#666',
+                            minHeight: '36px',
+                            minWidth: '80px',
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s ease',
+                            backgroundColor: 'transparent',
+                            '&:hover': {
+                              backgroundColor: '#e8f5e8',
+                              color: '#2B8C37'
+                            },
+                            '&.Mui-selected': {
+                              color: '#2B8C37',
+                              backgroundColor: 'white',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                              fontWeight: 'bold'
+                            }
                           }
-                        }
-                      }}
-                    >
-                      <Tab label="Summary" />
-                      <Tab label="Retention Ratio" />
-                    </Tabs>
+                        }}
+                      >
+                        <Tab label="Summary" />
+                        <Tab label="Retention Ratio" />
+                      </Tabs>
+                    </Box>
                   </Box>
-                </Box>
 
-                {/* Chart Content */}
-                <ResponsiveContainer width="100%" height={260}>
-                  {firstChartTab === 0 ? (
-                    <ComposedChart data={flowData}>
+                  {/* Chart Content */}
+                  <ResponsiveContainer width="100%" height={260}>
+                    {firstChartTab === 0 ? (
+                      <ComposedChart data={flowData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" tick={{ fontSize: 9 }} />
+                        <YAxis tick={{ fontSize: 9 }} />
+                        <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Bar dataKey="economic_value_generated" fill="#182959" name="Value Generated" />
+                        <Bar dataKey="economic_value_distributed" fill="#2B8C37" name="Value Distributed" />
+                        <Bar dataKey="economic_value_retained" fill="#FF8042" name="Value Retained" />
+                      </ComposedChart>
+                    ) : (
+                      <AreaChart data={retentionData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" tick={{ fontSize: 9 }} />
+                        <YAxis 
+                          tick={{ fontSize: 9 }} 
+                          tickFormatter={(value) => `${value}%`}
+                          label={{ value: 'Retention Ratio (%)', angle: -90, position: 'insideLeft', style: { fontSize: '10px' } }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name, props) => {
+                            // Find the corresponding summary data to get actual value retained
+                            const yearData = summaryData.find(item => item.year === props.payload.year);
+                            const actualValue = yearData ? yearData.valueRetained : 0;
+                            return [
+                              `${value}%`, 
+                              'Retention Ratio',
+                              `Value Retained: ${actualValue.toLocaleString()}`
+                            ];
+                          }}
+                          labelFormatter={(label) => `Year: ${label}`}
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px'
+                          }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="retention_ratio" 
+                          stroke="#182959" 
+                          fill="#182959" 
+                          fillOpacity={0.3}
+                          strokeWidth={3}
+                        />
+                      </AreaChart>
+                    )}
+                  </ResponsiveContainer>
+                </Paper>
+              </div>
+            </Grid>
+            {/* Economic Value Generated and Retained Line Chart */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <div ref={chart2Ref}>
+                <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 2, height: 320 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.9rem' }}>
+                    Economic Value Generated and Retained
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={flowData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="year" tick={{ fontSize: 9 }} />
                       <YAxis tick={{ fontSize: 9 }} />
                       <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Bar dataKey="economic_value_generated" fill="#182959" name="Value Generated" />
-                      <Bar dataKey="economic_value_distributed" fill="#2B8C37" name="Value Distributed" />
-                      <Bar dataKey="economic_value_retained" fill="#FF8042" name="Value Retained" />
-                    </ComposedChart>
-                  ) : (
-                    <AreaChart data={retentionData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="year" tick={{ fontSize: 9 }} />
-                      <YAxis 
-                        tick={{ fontSize: 9 }} 
-                        tickFormatter={(value) => `${value}%`}
-                        label={{ value: 'Retention Ratio (%)', angle: -90, position: 'insideLeft', style: { fontSize: '10px' } }}
-                      />
-                      <Tooltip 
-                        formatter={(value, name, props) => {
-                          // Find the corresponding summary data to get actual value retained
-                          const yearData = summaryData.find(item => item.year === props.payload.year);
-                          const actualValue = yearData ? yearData.valueRetained : 0;
-                          return [
-                            `${value}%`, 
-                            'Retention Ratio',
-                            `Value Retained: ${actualValue.toLocaleString()}`
-                          ];
-                        }}
-                        labelFormatter={(label) => `Year: ${label}`}
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px'
-                        }}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="retention_ratio" 
-                        stroke="#182959" 
-                        fill="#182959" 
-                        fillOpacity={0.3}
-                        strokeWidth={3}
-                      />
-                    </AreaChart>
-                  )}
-                </ResponsiveContainer>
-              </Paper>
-            </Grid>
-
-            {/* Economic Value Generated and Retained Line Chart */}
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <Paper sx={{ p: 2, borderRadius: 2, boxShadow: 2, height: 320 }}>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.9rem' }}>
-                  Economic Value Generated and Retained
-                </Typography>
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={flowData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" tick={{ fontSize: 9 }} />
-                    <YAxis tick={{ fontSize: 9 }} />
-                    <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
-                    <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Line type="monotone" dataKey="economic_value_generated" stroke="#182959" strokeWidth={3} dot={{ r: 3 }} name="Value Generated" />
-                    <Line type="monotone" dataKey="economic_value_retained" stroke="#FF8042" strokeWidth={3} dot={{ r: 3 }} name="Value Retained" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Paper>
+                      <Line type="monotone" dataKey="economic_value_generated" stroke="#182959" strokeWidth={3} dot={{ r: 3 }} name="Value Generated" />
+                      <Line type="monotone" dataKey="economic_value_retained" stroke="#FF8042" strokeWidth={3} dot={{ r: 3 }} name="Value Retained" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </div>
             </Grid>
           </Grid>
 
@@ -525,180 +560,184 @@ function Economic() {
           <Grid container spacing={2} sx={{ mb: 1 }}>
             {/* Economic Value Generated Pie Chart */}
             <Grid size={{ xs: 12, lg: 4 }}>
-              <Paper sx={{ p: 1.5, borderRadius: 2, boxShadow: 2, height: 300 }}>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.85rem' }}>
-                  Economic Value Generated {Math.max(...generatedDetails.map(d => d.year)) || 'Current Year'}
-                </Typography>
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie
-                      data={generatedDetails
-                        .filter(item => item.year === Math.max(...generatedDetails.map(d => d.year)))
-                        .map(item => [
-                          { name: 'Electricity Sales', value: item.electricitySales },
-                          { name: 'Oil Revenues', value: item.oilRevenues },
-                          { name: 'Other Revenues', value: item.otherRevenues },
-                          { name: 'Interest Income', value: item.interestIncome },
-                          { name: 'Share in Net Income', value: item.shareInNetIncomeOfAssociate },
-                          { name: 'Miscellaneous Income', value: item.miscellaneousIncome }
-                        ].filter(entry => entry.value > 0))[0] || []}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name.split(' ')[0]}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {generatedDetails
-                        .filter(item => item.year === Math.max(...generatedDetails.map(d => d.year)))
-                        .map(item => [
-                          { name: 'Electricity Sales', value: item.electricitySales },
-                          { name: 'Oil Revenues', value: item.oilRevenues },
-                          { name: 'Other Revenues', value: item.otherRevenues },
-                          { name: 'Interest Income', value: item.interestIncome },
-                          { name: 'Share in Net Income', value: item.shareInNetIncomeOfAssociate },
-                          { name: 'Miscellaneous Income', value: item.miscellaneousIncome }
-                        ].filter(entry => entry.value > 0))[0]?.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        )) || []}
-                    </Pie>
-                    <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Paper>
+              <div ref={chart3Ref}>
+                <Paper sx={{ p: 1.5, borderRadius: 2, boxShadow: 2, height: 300 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.85rem' }}>
+                    Economic Value Generated {Math.max(...generatedDetails.map(d => d.year)) || 'Current Year'}
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={generatedDetails
+                          .filter(item => item.year === Math.max(...generatedDetails.map(d => d.year)))
+                          .map(item => [
+                            { name: 'Electricity Sales', value: item.electricitySales },
+                            { name: 'Oil Revenues', value: item.oilRevenues },
+                            { name: 'Other Revenues', value: item.otherRevenues },
+                            { name: 'Interest Income', value: item.interestIncome },
+                            { name: 'Share in Net Income', value: item.shareInNetIncomeOfAssociate },
+                            { name: 'Miscellaneous Income', value: item.miscellaneousIncome }
+                          ].filter(entry => entry.value > 0))[0] || []}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name.split(' ')[0]}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {generatedDetails
+                          .filter(item => item.year === Math.max(...generatedDetails.map(d => d.year)))
+                          .map(item => [
+                            { name: 'Electricity Sales', value: item.electricitySales },
+                            { name: 'Oil Revenues', value: item.oilRevenues },
+                            { name: 'Other Revenues', value: item.otherRevenues },
+                            { name: 'Interest Income', value: item.interestIncome },
+                            { name: 'Share in Net Income', value: item.shareInNetIncomeOfAssociate },
+                            { name: 'Miscellaneous Income', value: item.miscellaneousIncome }
+                          ].filter(entry => entry.value > 0))[0]?.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          )) || []}
+                      </Pie>
+                      <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </div>
             </Grid>
-
             {/* Economic Value Distributed by Companies Bar Chart */}
             <Grid size={{ xs: 12, lg: 4 }}>
-              <Paper sx={{ p: 1.5, borderRadius: 2, boxShadow: 2, height: 300 }}>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.85rem' }}>
-                  Top 5 Companies - Economic Value Distribution
-                </Typography>
-                <ResponsiveContainer width="100%" height={260}>
-                  {(() => {
-                    console.log('Processing company distribution data for vertical chart');
-                    console.log('Raw companyDistribution:', companyDistribution);
-                    
-                    let chartData = [];
-                    
-                    if (!companyDistribution || companyDistribution.length === 0) {
-                      console.log('No company distribution data available');
+              <div ref={chart4Ref}>
+                <Paper sx={{ p: 1.5, borderRadius: 2, boxShadow: 2, height: 300 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.85rem' }}>
+                    Top 5 Companies - Economic Value Distribution
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={260}>
+                    {(() => {
+                      console.log('Processing company distribution data for vertical chart');
+                      console.log('Raw companyDistribution:', companyDistribution);
+                      
+                      let chartData = [];
+                      
+                      if (!companyDistribution || companyDistribution.length === 0) {
+                        console.log('No company distribution data available');
+                        return (
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            height: '100%',
+                            color: '#666',
+                            fontSize: '14px'
+                          }}>
+                            No data available
+                          </div>
+                        );
+                      }
+                      
+                      // Process the actual data
+                      const years = companyDistribution.map(d => d.year).filter(year => year !== undefined);
+                      if (years.length === 0) {
+                        console.log('No valid years found');
+                        return <div>No valid years found</div>;
+                      }
+                      
+                      const maxYear = Math.max(...years);
+                      console.log('Using data from year:', maxYear);
+                      
+                      const filteredData = companyDistribution.filter(item => item.year === maxYear);
+                      console.log('Filtered data for max year:', filteredData);
+                      
+                      // Log the structure to see available fields
+                      if (filteredData.length > 0) {
+                        console.log('Available fields in data:', Object.keys(filteredData[0]));
+                      }
+                      
+                      if (filteredData.length === 0) {
+                        console.log('No data for max year');
+                        return <div>No data for selected year</div>;
+                      }
+                      
+                      // Sort by percentage descending and take top 5
+                      const sortedData = filteredData.sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
+                      chartData = sortedData.slice(0, 5);
+                      
+                      // Shorten company names for better display
+                      chartData = chartData.map(item => ({
+                        ...item,
+                        shortName: item.companyName.split(' ')[0] // Take just the first word
+                      }));
+                      
+                      console.log('Final chart data for vertical chart:', chartData);
+                      
                       return (
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          height: '100%',
-                          color: '#666',
-                          fontSize: '14px'
-                        }}>
-                          No data available
-                        </div>
+                        <BarChart 
+                          data={chartData}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="shortName" 
+                            tick={{ fontSize: 9 }}
+                            angle={-30}
+                            textAnchor="end"
+                            height={40}
+                            interval={0}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 8 }} 
+                            tickFormatter={(value) => `${value}%`}
+                            label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft', style: { fontSize: '10px' } }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${value.toFixed(1)}%`, 
+                              'Percentage of Total Distribution'
+                            ]}
+                            labelFormatter={(label) => {
+                              // Show full company name in tooltip
+                              const fullCompany = chartData.find(item => item.shortName === label);
+                              return `Company: ${fullCompany ? fullCompany.companyName : label}`;
+                            }}
+                          />
+                          <Bar 
+                            dataKey="percentage" 
+                            fill="#2B8C37" 
+                            name="Percentage"
+                          />
+                        </BarChart>
                       );
-                    }
-                    
-                    // Process the actual data
-                    const years = companyDistribution.map(d => d.year).filter(year => year !== undefined);
-                    if (years.length === 0) {
-                      console.log('No valid years found');
-                      return <div>No valid years found</div>;
-                    }
-                    
-                    const maxYear = Math.max(...years);
-                    console.log('Using data from year:', maxYear);
-                    
-                    const filteredData = companyDistribution.filter(item => item.year === maxYear);
-                    console.log('Filtered data for max year:', filteredData);
-                    
-                    // Log the structure to see available fields
-                    if (filteredData.length > 0) {
-                      console.log('Available fields in data:', Object.keys(filteredData[0]));
-                    }
-                    
-                    if (filteredData.length === 0) {
-                      console.log('No data for max year');
-                      return <div>No data for selected year</div>;
-                    }
-                    
-                    // Sort by percentage descending and take top 5
-                    const sortedData = filteredData.sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
-                    chartData = sortedData.slice(0, 5);
-                    
-                    // Shorten company names for better display
-                    chartData = chartData.map(item => ({
-                      ...item,
-                      shortName: item.companyName.split(' ')[0] // Take just the first word
-                    }));
-                    
-                    console.log('Final chart data for vertical chart:', chartData);
-                    
-                    return (
-                      <BarChart 
-                        data={chartData}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="shortName" 
-                          tick={{ fontSize: 9 }}
-                          angle={-30}
-                          textAnchor="end"
-                          height={40}
-                          interval={0}
-                        />
-                        <YAxis 
-                          tick={{ fontSize: 8 }} 
-                          tickFormatter={(value) => `${value}%`}
-                          label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft', style: { fontSize: '10px' } }}
-                        />
-                        <Tooltip 
-                          formatter={(value, name) => [
-                            `${value.toFixed(1)}%`, 
-                            'Percentage of Total Distribution'
-                          ]}
-                          labelFormatter={(label) => {
-                            // Show full company name in tooltip
-                            const fullCompany = chartData.find(item => item.shortName === label);
-                            return `Company: ${fullCompany ? fullCompany.companyName : label}`;
-                          }}
-                        />
-                        <Bar 
-                          dataKey="percentage" 
-                          fill="#2B8C37" 
-                          name="Percentage"
-                        />
-                      </BarChart>
-                    );
-                  })()}
-                </ResponsiveContainer>
-              </Paper>
+                    })()}
+                  </ResponsiveContainer>
+                </Paper>
+              </div>
             </Grid>
-
             {/* Economic Value Distribution Pie Chart */}
             <Grid size={{ xs: 12, lg: 4 }}>
-              <Paper sx={{ p: 1.5, borderRadius: 2, boxShadow: 2, height: 300 }}>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.85rem' }}>
-                  Economic Value Distribution {Math.max(...distributedDetails.map(d => d.year)) || 'Current Year'}
-                </Typography>
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie
-                      data={pieChartData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name.split(' ')[0]}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {pieChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={DISTRIBUTION_COLORS[entry.name] || COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Paper>
+              <div ref={chart5Ref}>
+                <Paper sx={{ p: 1.5, borderRadius: 2, boxShadow: 2, height: 300 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.85rem' }}>
+                    Economic Value Distribution {Math.max(...distributedDetails.map(d => d.year)) || 'Current Year'}
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={pieChartData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name.split(' ')[0]}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {pieChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={DISTRIBUTION_COLORS[entry.name] || COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Paper>
+              </div>
             </Grid>
           </Grid>
         </Box>
