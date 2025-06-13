@@ -25,9 +25,10 @@ function EnvironmentWaterDash() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
 
-  const [totalAbstracted, setTotalAbstracted] = useState(0);
-  const [totalDischarged, setTotalDischarged] = useState(0);
-  const [totalConsumed, setTotalConsumed] = useState(0);
+  // Updated state for filtered totals instead of cumulative totals
+  const [filteredTotalAbstracted, setFilteredTotalAbstracted] = useState(0);
+  const [filteredTotalDischarged, setFilteredTotalDischarged] = useState(0);
+  const [filteredTotalConsumed, setFilteredTotalConsumed] = useState(0);
 
   const [pieData, setPieData] = useState([]);
   const [companyId, setCompanyId] = useState('');
@@ -91,93 +92,136 @@ function EnvironmentWaterDash() {
     fetchInitialData();
   }, []);
 
+  // Updated useEffect to fetch filtered totals instead of cumulative totals
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const [abstractedRes, dischargedRes, consumedRes] = await Promise.all([
-        api.get('/environment_dash/abstraction'),
-        api.get('/environment_dash/discharge'),
-        api.get('/environment_dash/consumption')
-      ]);
-
-      console.log('Abstracted:', abstractedRes.data);
-      console.log('Discharged:', dischargedRes.data);
-      console.log('Consumed:', consumedRes.data);
-
-      setTotalAbstracted(abstractedRes.data?.total_volume ?? 0);
-      setTotalDischarged(dischargedRes.data?.total_volume ?? 0);
-      setTotalConsumed(consumedRes.data?.total_volume ?? 0);
-      setLastUpdated(new Date()); // Update the last updated time
-    } catch (error) {
-      console.error('Error fetching totals:', error);
-    }
-  };
-
-  fetchData();
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-        try {
-        // Build parameters - ALWAYS send values, never empty arrays
-        const params = {};
+    const fetchFilteredTotals = async () => {
+      try {
+        // Build parameters - same logic as chart data
+        const params = new URLSearchParams();
         
         // For company_id: if empty, pass all companies as individual parameters
         if (companyId) {
-            params.company_id = companyId;
+          params.append('company_id', companyId);
         } else {
-            // Send all companies from the fetched companies data
-            params.company_id = companies.map(company => company.id);
+          // Send all companies from the fetched companies data
+          companies.forEach(company => {
+            params.append('company_id', company.id);
+          });
         }
         
         // For quarter: if empty, pass all quarters  
         if (quarter) {
-            params.quarter = quarter;
+          params.append('quarter', quarter);
         } else {
-            // Send all quarters - FastAPI will receive this as a list
-            params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+          // Send all quarters
+          ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
+            params.append('quarter', q);
+          });
         }
         
         // For year range: handle both single years and ranges using available years
+        let yearRange = [];
         if (fromYear && toYear) {
           // Generate array of years from fromYear to toYear, filtered by available years
-          const yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
-          params.year = yearRange;
+          yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
         } else if (fromYear && !toYear) {
           // Only from year specified - use from year to latest available year
-          const yearRange = availableYears.filter(year => year >= parseInt(fromYear));
-          params.year = yearRange;
+          yearRange = availableYears.filter(year => year >= parseInt(fromYear));
         } else if (!fromYear && toYear) {
           // Only to year specified - use earliest available year to to year
-          const yearRange = availableYears.filter(year => year <= parseInt(toYear));
-          params.year = yearRange;
+          yearRange = availableYears.filter(year => year <= parseInt(toYear));
         } else {
           // No year filter - send all available years
-          params.year = availableYears;
+          yearRange = availableYears;
         }
         
-        console.log('Sending params to API:', params); // Debug log
+        // Add years to params
+        yearRange.forEach(year => {
+          params.append('year', year);
+        });
+
+        console.log('Fetching filtered totals with params:', params.toString());
+
+        const [abstractedRes, dischargedRes, consumedRes] = await Promise.all([
+          api.get(`/environment_dash/abstraction?${params.toString()}`),
+          api.get(`/environment_dash/discharge?${params.toString()}`),
+          api.get(`/environment_dash/consumption?${params.toString()}`)
+        ]);
+
+        console.log('Filtered Abstracted:', abstractedRes.data);
+        console.log('Filtered Discharged:', dischargedRes.data);
+        console.log('Filtered Consumed:', consumedRes.data);
+
+        setFilteredTotalAbstracted(abstractedRes.data?.total_volume ?? 0);
+        setFilteredTotalDischarged(dischargedRes.data?.total_volume ?? 0);
+        setFilteredTotalConsumed(consumedRes.data?.total_volume ?? 0);
+        setLastUpdated(new Date()); // Update the last updated time
+      } catch (error) {
+        console.error('Error fetching filtered totals:', error);
+        console.error('Error details:', error.response?.data);
+        // Set to 0 if error occurs
+        setFilteredTotalAbstracted(0);
+        setFilteredTotalDischarged(0);
+        setFilteredTotalConsumed(0);
+      }
+    };
+
+    // Only fetch data if companies and available years have been loaded
+    if (companies.length > 0 && availableYears.length > 0) {
+      fetchFilteredTotals();
+    }
+  }, [companyId, quarter, fromYear, toYear, companies, availableYears]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Build parameters using URLSearchParams
+        const params = new URLSearchParams();
+        
+        // For company_id: if empty, pass all companies as individual parameters
+        if (companyId) {
+          params.append('company_id', companyId);
+        } else {
+          // Send all companies from the fetched companies data
+          companies.forEach(company => {
+            params.append('company_id', company.id);
+          });
+        }
+        
+        // For quarter: if empty, pass all quarters  
+        if (quarter) {
+          params.append('quarter', quarter);
+        } else {
+          // Send all quarters
+          ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
+            params.append('quarter', q);
+          });
+        }
+        
+        // For year range: handle both single years and ranges using available years
+        let yearRange = [];
+        if (fromYear && toYear) {
+          yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+        } else if (fromYear && !toYear) {
+          yearRange = availableYears.filter(year => year >= parseInt(fromYear));
+        } else if (!fromYear && toYear) {
+          yearRange = availableYears.filter(year => year <= parseInt(toYear));
+        } else {
+          yearRange = availableYears;
+        }
+        
+        // Add years to params
+        yearRange.forEach(year => {
+          params.append('year', year);
+        });
+        
+        console.log('Sending params to API:', params.toString()); // Debug log
         
         // Fetch pie chart, line chart, and stacked bar data
         const [pieResponse, lineResponse, stackedBarResponse] = await Promise.all([
-          api.get('/environment_dash/pie-chart', { 
-              params,
-              paramsSerializer: {
-                indexes: null
-              }
-          }),
-          api.get('/environment_dash/line-chart', { 
-              params,
-              paramsSerializer: {
-                indexes: null
-              }
-          }),
-          api.get('/environment_dash/stacked-bar', { 
-              params,
-              paramsSerializer: {
-                indexes: null
-              }
-          })
+          api.get(`/environment_dash/pie-chart?${params.toString()}`),
+          api.get(`/environment_dash/line-chart?${params.toString()}`),
+          api.get(`/environment_dash/stacked-bar?${params.toString()}`)
         ]);
 
         console.log('Pie chart response:', pieResponse.data);
@@ -186,9 +230,9 @@ function EnvironmentWaterDash() {
         
         // Handle pie chart data
         const formattedPieData = pieResponse.data.data?.map((item, index) => ({
-            ...item,
-            value: Number(item.value) || 0,
-            color: item.color || COLORS[index % COLORS.length]
+          ...item,
+          value: Number(item.value) || 0,
+          color: item.color || COLORS[index % COLORS.length]
         })) || [];
 
         console.log('Formatted pie data:', formattedPieData);
@@ -229,21 +273,21 @@ function EnvironmentWaterDash() {
         
         setLastUpdated(new Date()); // Update the last updated time after successful data fetch
         
-        } catch (error) {
+      } catch (error) {
         console.error('Failed to fetch chart data:', error);
         console.error('Error response:', error.response?.data);
         setPieData([]);
         setLineChartData([]);
         setLineChartLabels([]);
         setStackedBarData([]);
-        }
+      }
     };
 
     // Only fetch data if companies and available years have been loaded
     if (companies.length > 0 && availableYears.length > 0) {
       fetchData();
     }
-  }, [companyId, quarter, fromYear, toYear, companies, availableYears]); // Updated dependencies
+  }, [companyId, quarter, fromYear, toYear, companies, availableYears]);
 
   // Clear all filters function
   const clearAllFilters = () => {
@@ -251,6 +295,41 @@ function EnvironmentWaterDash() {
     setQuarter('');
     setFromYear('');
     setToYear('');
+  };
+
+  // Function to get the display text for the date range
+  const getDateRangeText = () => {
+    if (fromYear && toYear) {
+      return `(${fromYear} to ${toYear})`;
+    } else if (fromYear && !toYear) {
+      return `(${fromYear} to ${availableYears.length > 0 ? Math.max(...availableYears) : 'PRESENT'})`;
+    } else if (!fromYear && toYear) {
+      return `(${availableYears.length > 0 ? Math.min(...availableYears) : '2018'} to ${toYear})`;
+    } else {
+      return `(${availableYears.length > 0 ? Math.min(...availableYears) : '2018'} to ${availableYears.length > 0 ? Math.max(...availableYears) : 'PRESENT'})`;
+    }
+  };
+
+  // Function to get filter description for metrics cards
+  const getFilterDescription = () => {
+    const filters = [];
+    
+    if (companyId) {
+      const selectedCompany = companies.find(c => c.id === companyId);
+      if (selectedCompany) {
+        filters.push(selectedCompany.name);
+      }
+    }
+    
+    if (quarter) {
+      filters.push(quarter);
+    }
+    
+    if (filters.length === 0) {
+      return "ALL DATA";
+    }
+    
+    return filters.join(" • ").toUpperCase();
   };
 
   // Custom tooltip for pie chart
@@ -508,7 +587,7 @@ function EnvironmentWaterDash() {
           )}
         </div>
 
-        {/* Key Metrics Cards - Compact */}
+        {/* Key Metrics Cards - Now showing filtered data */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: '1fr 1fr 1fr', 
@@ -524,13 +603,13 @@ function EnvironmentWaterDash() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-              {totalAbstracted.toLocaleString()} m³
+              {filteredTotalAbstracted.toLocaleString()} m³
             </div>
             <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              CUMULATIVE WATER ABSTRACTION
+              WATER ABSTRACTION
             </div>
             <div style={{ fontSize: '9px', opacity: 0.8 }}>
-              ({availableYears.length > 0 ? Math.min(...availableYears) : '2018'} to PRESENT)
+              {getFilterDescription()} {getDateRangeText()}
             </div>
           </div>
 
@@ -542,13 +621,13 @@ function EnvironmentWaterDash() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-              {totalDischarged.toLocaleString()} m³
+              {filteredTotalDischarged.toLocaleString()} m³
             </div>
             <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              CUMULATIVE WATER DISCHARGE
+              WATER DISCHARGE
             </div>
             <div style={{ fontSize: '9px', opacity: 0.8 }}>
-              ({availableYears.length > 0 ? Math.min(...availableYears) : '2018'} to PRESENT)
+              {getFilterDescription()} {getDateRangeText()}
             </div>
           </div>
 
@@ -560,13 +639,13 @@ function EnvironmentWaterDash() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
-              {totalConsumed.toLocaleString()} m³
+              {filteredTotalConsumed.toLocaleString()} m³
             </div>
             <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              CUMULATIVE WATER CONSUMPTION
+              WATER CONSUMPTION
             </div>
             <div style={{ fontSize: '9px', opacity: 0.8 }}>
-              ({availableYears.length > 0 ? Math.min(...availableYears) : '2018'} to PRESENT)
+              {getFilterDescription()} {getDateRangeText()}
             </div>
           </div>
         </div>
