@@ -21,6 +21,7 @@ import Overlay from '../../components/modal';
 import api from '../../services/api';
 import ViewHelpRecordModal from '../../components/help_components/ViewHelpRecordModal'; 
 import exportData from '../../services/export';
+import ImportFileModal from '../../components/ImportFileModal'
 
 function CSR() {  
   const [data, setData] = useState([]);
@@ -86,6 +87,7 @@ function CSR() {
       { key: 'projectYear', label: 'Year' },
       { key: 'csrReport', label: 'Report (in numbers)' },
       { key: 'projectExpenses', label: 'Project Investment (₱)' },
+      { key: 'projectRemarks', label: 'Remarks' }
     ];
     
     const filename = `help_activity_as_of_${new Date().toISOString().split('T')[0]}`;
@@ -235,6 +237,7 @@ function CSR() {
     { key: 'projectName', label: 'Project', width: 140, render: val => val },
     { key: 'csrReport', label: 'Beneficiaries', width: 120, align: 'right', render: val => val != null ? Number(val).toLocaleString() : '-' },
     { key: 'projectExpenses', label: 'Investments (₱)', width: 140, align: 'right', render: val => val != null ? `₱${Number(val).toLocaleString()}` : '-' },
+    { key: 'projectRemarks', label: 'Remarks', width: 140, render: val => val },
     { key: 'statusId', label: 'Status', width: 110, render: val => val },
     {
       key: 'actions',
@@ -250,6 +253,16 @@ function CSR() {
   ], [setSelectedRecord]);
 
 //const getUpdatePath = useCallback((record) => `${'/activities-update'}/${record.projectId}`, []); // <-- use variable
+
+  // Compute idKey for Table checkboxes (like EnvironmentEnergy)
+  const idKey = useMemo(() => {
+    if (filteredData.length > 0) {
+      if (filteredData[0].csrId !== undefined) return 'csrId';
+      // if (filteredData[0].projectId !== undefined) return 'projectId';
+      // add more fallbacks if needed
+    }
+    return 'id';
+  }, [filteredData]);
 
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -440,6 +453,7 @@ function CSR() {
         <Table
           columns={columns}
           rows={pagedData}
+          idKey={idKey}
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage={loading ? "Loading..." : error ? "Error loading data." : "No data available."}
@@ -469,11 +483,6 @@ function CSR() {
             <AddRecordModalHelp
               open={isAddModalOpen}
               onClose={() => setIsAddModalOpen(false)}
-              // onAdd={() => {
-              //   // Only refresh data and close modal, do NOT expect any argument from onAdd
-              //   setIsAddModalOpen(false);
-              //   fetchCSRData();
-              // }}
               yearOptions={modalYearOptions}
               companyOptions={modalCompanyOptions}
               programOptions={modalProgramOptions}
@@ -484,10 +493,16 @@ function CSR() {
         {/* Import Modal */}
         {isImportModalOpen && (
           <Overlay onClose={() => setIsImportModalOpen(false)}>
-            <ImportModalHelp
+            {/* <ImportModalHelp
               open={isImportModalOpen}
               onClose={() => setIsImportModalOpen(false)}
               onImportSuccess={fetchCSRData}
+            /> */}
+            <ImportFileModal
+              title="Social - H.E.L.P"
+              downloadPath="/help/help-activity-template"
+              uploadPath="help/help-activity-bulk"
+              onClose={() => setIsImportModalOpen(false)} // or any close handler
             />
           </Overlay>
         )}
@@ -496,7 +511,7 @@ function CSR() {
           <Overlay onClose={() => setSelectedRecord(null)}>
             <ViewHelpRecordModal
               title="CSR Activity Details"
-              record={selectedRecord}
+              record={{ ...selectedRecord, statusId: selectedRecord.statusId }}
               companyOptions={modalCompanyOptions}
               programOptions={modalProgramOptions}
               projectOptions={modalProjectOptions}

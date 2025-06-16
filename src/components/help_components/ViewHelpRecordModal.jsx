@@ -32,6 +32,7 @@ const ViewHelpRecordModal = ({
 
   // Readonly if status is approved
   const isReadOnly = fetchedRecord?.statusId === 'APP';
+  console.log("hello ", fetchedRecord)
   // Check if any changes were made
   const isUnchanged = JSON.stringify(fetchedRecord) === JSON.stringify(editedRecord);
 
@@ -39,7 +40,6 @@ const ViewHelpRecordModal = ({
   useEffect(() => {
     if (!record?.csrId) return;
     setLoading(true);
-    console.log("hello", record.csrId)
     api.get(`help/activities-specific?csrId=${encodeURIComponent(record.csrId)}`)
       .then(res => {
         setFetchedRecord(res.data);
@@ -51,6 +51,8 @@ const ViewHelpRecordModal = ({
       })
       .finally(() => setLoading(false));
   }, [record]);
+
+  console.log("hello ", setFetchedRecord)
 
   // Handle field changes in edit mode
   const handleChange = (key, value) => {
@@ -68,13 +70,14 @@ const ViewHelpRecordModal = ({
         project_id: editedRecord.projectId,
         csr_report: Number(editedRecord.csrReport),
         project_expenses: Number(editedRecord.projectExpenses),
+        status_id: editedRecord.statusId // include statusId in payload if needed by backend
       };
       console.log(editedRecord.projectYear)
       await api.post('/help/activities-update', payload);
       console.log("passed await")
-      if (onSave) onSave(editedRecord);
+      if (onSave) onSave({ ...editedRecord, statusId: editedRecord.statusId });
       setIsEditing(false);
-      setFetchedRecord(editedRecord);
+      setFetchedRecord({ ...editedRecord, statusId: editedRecord.statusId });
     } catch (error) {
       alert('Failed to save changes.');
     }

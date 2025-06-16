@@ -74,7 +74,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
       to: "/social",
       dropdown: [
         { label: "H.R.", to: "/social/hr" },
-        { label: "H.E.L.P", to: "/social/csr" },
+        { label: "H.E.L.P", to: "/social/help-dash" },
         { label: "ER1-94 Fund Allocations", to: "/social/er1-94" },
       ],
     },

@@ -60,7 +60,7 @@ function App() {
             <Route path="/environment/waste-dash" element={<EnvironmentWasteDash />} />
             
             {/* HELP Routes */}
-            <Route path="/social/csr" element={<CSR />} />
+            <Route path="/social/help" element={<CSR />} />
             <Route path="/social/help-dash" element={<HELPDash />} />
 
             {/* HR Routes */}
