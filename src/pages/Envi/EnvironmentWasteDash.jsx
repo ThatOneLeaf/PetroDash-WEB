@@ -68,6 +68,7 @@ function EnvironmentWasteDash() {
   const [lineChartColors, setLineChartColors] = useState([]);
   const [hazGenTypeBarData, setHazGenTypeBarData] = useState([]);
   const [hazGenQrtrBarData, setHazGenQrtrBarData] = useState([]);
+  const [quarterCompanyColors, setQuarterCompanyColors] = useState({});
 
   // 1. Fetch all data ONCE on mount
   useEffect(() => {
@@ -176,7 +177,7 @@ function EnvironmentWasteDash() {
         pieTypeData: hazGenTypePieData,
         lineChartData: hazGenLineData,
         barChartData: hazGenTypeBarData,
-        barChartQrtrData: hazGenTypeBarData,
+        barChartQrtrData: hazGenQrtrBarData,
         unit: unit
       };
     }
@@ -263,6 +264,50 @@ function EnvironmentWasteDash() {
 
     return wasteType;
   };
+
+  const transformQuarterBarChartData = (apiData) => {
+    if (!Array.isArray(apiData) || apiData.length === 0) {
+      return [];
+    }
+
+    // Group data by quarter, stack by waste_type
+    const groupedByQuarter = {};
+    const allWasteTypes = new Set();
+    const wasteTypeColorMap = {};
+
+    apiData.forEach(item => {
+      const quarter = item.quarter;
+      const wasteType = item.waste_type;
+      const value = item.total_generate;
+
+      allWasteTypes.add(wasteType);
+      wasteTypeColorMap[wasteType] = item.color;
+
+      if (!groupedByQuarter[quarter]) {
+        groupedByQuarter[quarter] = { quarter };
+      }
+      groupedByQuarter[quarter][wasteType] = value;
+    });
+
+    // Ensure all quarters and all waste types are present
+    const wasteTypes = Array.from(allWasteTypes);
+    const quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+    const chartData = quarterOrder.map(quarter => {
+      const data = groupedByQuarter[quarter] || { quarter };
+      wasteTypes.forEach(wt => {
+        if (!data[wt]) data[wt] = 0;
+      });
+      return data;
+    });
+
+    return {
+      chartData,
+      wasteTypes,
+      colors: wasteTypeColorMap
+    };
+  };
+
+  console.log("Quarter Bar Chart Data:", currentData.barChartQrtrData);
 
   useEffect(() => {
     const fetchHazGenTypePieChart = async () => {
@@ -396,11 +441,11 @@ function EnvironmentWasteDash() {
           paramsSerializer: { indexes: null }
         });
 
-        console.log('Hazard generated pie chart response:', response.data);
+        //console.log('Hazard generated pie chart response:', response.data);
         
         // Validate response data
         const responseData = response.data?.data || [];
-        console.log('Validated response data:', responseData);
+        //console.log('Validated response data:', responseData);
         
         // Make sure data has the correct structure
         const validatedData = responseData.map(item => ({
@@ -607,6 +652,81 @@ function EnvironmentWasteDash() {
     }
   }, [activeTab, companyId, quarter, fromYear, toYear, wasteType, unit, companies, activeYears, activeWasteType, activeUnits]);
 
+  useEffect(() => {
+    const fetchHazGenQuarterChart = async () => {
+      if (activeTab !== 'hazardous_generated') return;
+
+      try {
+        //console.log('Fetching hazard generated bar chart...');
+        
+        // Build parameters (same logic as other charts)
+        const params = {};
+        
+        if (companyId) {
+          params.company_id = companyId;
+        } else {
+          params.company_id = companies.map(company => company.id);
+        }
+
+        if (fromYear && toYear) {
+          const yearRange = activeYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
+          params.year = yearRange;
+        } else if (fromYear && !toYear) {
+          const yearRange = activeYears.filter(year => year >= parseInt(fromYear));
+          params.year = yearRange;
+        } else if (!fromYear && toYear) {
+          const yearRange = activeYears.filter(year => year <= parseInt(toYear));
+          params.year = yearRange;
+        } else {
+          params.year = activeYears;
+        }
+
+        if (quarter) {
+          params.quarter = quarter;
+        } else {
+          params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
+        }
+        
+        if (wasteType) {
+          params.waste_type = wasteType;
+        } else {
+          params.waste_type = activeWasteType;
+        }
+
+        if (unit) {
+          params.unit = unit;
+        } else {
+          params.unit = activeUnits;
+        }
+        
+        console.log('Sending params to haz gen quarterly chart API:', params);
+        
+        const response = await api.get('/environment_dash/hazard-waste-quarter-bar-chart', { 
+          params,
+          paramsSerializer: { indexes: null }
+        });
+
+        console.log('Haz gen quarterly chart response:', response.data);
+        
+        // Transform the data for stacked bar chart
+        const transformedData = transformQuarterBarChartData(response.data.data);
+        
+        setHazGenQrtrBarData(transformedData.chartData);
+        setQuarterCompanyColors(transformedData.colors);
+        
+      } catch (error) {
+        console.error('Failed to fetch haz gen quarterly chart:', error);
+        console.error('Error response:', error.response?.data);
+        setHazGenQrtrBarData([]);
+        setQuarterCompanyColors({});
+      }
+    };
+
+    // Only fetch data if companies and available years have been loaded
+    if (companies.length > 0 && activeYears.length > 0 && activeWasteType.length > 0) {
+      fetchHazGenQuarterChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, wasteType, unit, companies, activeYears, activeWasteType, activeUnits]);
 
   // Get tab display properties
   const getTabInfo = () => {
@@ -670,31 +790,91 @@ function EnvironmentWasteDash() {
   };
 
   const renderHazGenTypeTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    const data = payload[0];
-    // Extract property name from the formatted label (before the newline)
-    const propertyName = data.payload.label.split('\n')[0];
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      // Extract property name from the formatted label (before the newline)
+      const propertyName = data.payload.label.split('\n')[0];
+      return (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '8px 12px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          fontSize: '12px'
+        }}>
+          <p style={{ margin: 0, fontWeight: 'bold' }}>{propertyName}</p>
+          <p style={{ margin: 0, color: data.payload.color }}>
+            {data.value.toLocaleString()} L
+          </p>
+          <p style={{ margin: 0, fontSize: '10px' }}>
+            {data.payload.percentage}%
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderLineChartTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || payload.length === 0) return null;
+
     return (
-      <div style={{
-        backgroundColor: 'white',
-        padding: '8px 12px',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        fontSize: '12px'
-      }}>
-        <p style={{ margin: 0, fontWeight: 'bold' }}>{propertyName}</p>
-        <p style={{ margin: 0, color: data.payload.color }}>
-          {data.value.toLocaleString()} L
-        </p>
-        <p style={{ margin: 0, fontSize: '10px' }}>
-          {data.payload.percentage}%
-        </p>
+      <div
+        style={{
+          backgroundColor: 'white',
+          padding: '10px',
+          border: '1px solid #ccc',
+          borderRadius: '6px',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+          fontSize: '12px',
+        }}
+      >
+        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#1e293b' }}>
+          Year: {label}
+        </div>
+        {payload.map((entry, index) => (
+          <div key={index} style={{ marginBottom: '2px', color: '#1e293b' }}>
+            <span
+              style={{
+                display: 'inline-block',
+                width: '10px',
+                height: '10px',
+                backgroundColor: entry.color,
+                marginRight: '6px',
+                borderRadius: '2px',
+              }}
+            />
+            {entry.name}: {Number(entry.value).toLocaleString()} {currentData.unit}
+          </div>
+        ))}
       </div>
     );
-  }
-  return null;
-};
+  };
+
+  // Custom tooltip for stacked bar chart
+  const renderStackedBarTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '8px 12px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          fontSize: '12px'
+        }}>
+          <p style={{ margin: '0 0 4px 0', fontWeight: 'bold' }}>{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ margin: 0, color: entry.color }}>
+              {entry.dataKey.toUpperCase()}: {Number(entry.value).toLocaleString()} {currentData.unit}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   // Clear all filters function
   const clearAllFilters = () => {
@@ -1143,7 +1323,7 @@ function EnvironmentWasteDash() {
                   color: '#1e293b',
                   flexShrink: 0
                 }}>
-                  Distribution of Hazardous Generated by Company
+                  Total Hazardous Waste Generated by Company Combined
                 </h3>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -1250,50 +1430,61 @@ function EnvironmentWasteDash() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '15px',
-                minHeight: 0
+                minHeight: '300px',  // Ensure a visible minimum height
+                height: '100%'       // Allow the chart to scale with the container
               }}>
-                <div style={{ 
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0
-                }}>
-                  <h3 style={{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    marginBottom: '10px',
-                    color: '#1e293b',
-                    flexShrink: 0
-                  }}>
-                    Hazard Waste Generate by Waste Type
+
+                <div
+                  style={{
+                    backgroundColor: 'white',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                    minHeight: 0,
+                    height: '100%'
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      marginBottom: '10px',
+                      color: '#1e293b',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Hazard Waste Composition by Type
                   </h3>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                    {/* Show loading state */}
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
                     {loading ? (
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '200px',
-                        color: '#64748b',
-                        fontSize: '14px'
-                      }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          height: '250px',
+                          color: '#64748b',
+                          fontSize: '14px',
+                        }}
+                      >
                         Loading chart data...
                       </div>
-                    ) : (!currentData.pieTypeData || currentData.pieTypeData.length === 0) ? (
-                      // Show no data message
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '200px',
-                        color: '#64748b',
-                        fontSize: '14px',
-                        textAlign: 'center'
-                      }}>
+                    ) : !currentData.pieTypeData || currentData.pieTypeData.length === 0 ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          height: '250px',
+                          color: '#64748b',
+                          fontSize: '14px',
+                          textAlign: 'center',
+                        }}
+                      >
                         <div>
                           <div style={{ fontSize: '24px', marginBottom: '8px' }}>🥧</div>
                           <div>No property data available</div>
@@ -1303,17 +1494,16 @@ function EnvironmentWasteDash() {
                         </div>
                       </div>
                     ) : (
-                      // Show pie chart
                       <div style={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height={Math.max(250, currentData.pieTypeData.length * 30)}>
+                        <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={currentData.pieTypeData}
                               cx="50%"
-                              cy="40%"
+                              cy="50%" // ✅ Centered vertically
                               labelLine={false}
-                              outerRadius={100}
-                              innerRadius={35}
+                              outerRadius={100} // ✅ Slightly smaller radius to avoid clipping
+                              innerRadius={40}
                               fill="#8884d8"
                               dataKey="value"
                               paddingAngle={2}
@@ -1321,9 +1511,9 @@ function EnvironmentWasteDash() {
                               endAngle={450}
                             >
                               {currentData.pieTypeData.map((entry, index) => (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={entry.color || COLORS[index % COLORS.length]} 
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={entry.color || COLORS[index % COLORS.length]}
                                 />
                               ))}
                             </Pie>
@@ -1333,57 +1523,63 @@ function EnvironmentWasteDash() {
                       </div>
                     )}
 
-                    {/* Legend - only show if there's data */}
-                    {!loading && currentData.pieTypeData && currentData.pieTypeData.length > 0 && (
-                      <div style={{
+                    {/* Legend on the right */}
+                    <div
+                      style={{
                         display: 'flex',
+                        flexDirection: 'column',
                         justifyContent: 'center',
-                        flexWrap: 'wrap',
-                        gap: '8px',
-                        fontSize: '10px',
+                        paddingLeft: '16px',
+                        minWidth: '160px',
                         flexShrink: 0,
-                        marginTop: '8px'
-                      }}>
-                        {currentData.pieTypeData.map((entry, index) => {
-                          // Extract property name from formatted label (before newline)
-                          const propertyName = typeof entry.label === 'string'
+                        fontSize: '10px',
+                      }}
+                    >
+                      {currentData.pieTypeData.map((entry, index) => {
+                        const propertyName =
+                          typeof entry.label === 'string'
                             ? entry.label.split('\n')[0]
                             : entry.waste_type || entry.company_id || '';
-                          return (
+                        return (
+                          <div
+                            key={index}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              marginBottom: '4px',
+                            }}
+                          >
                             <div
-                              key={index}
-                              style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '4px'
-                              }}
-                            >
-                              <div style={{
+                              style={{
                                 width: '8px',
                                 height: '8px',
                                 backgroundColor: entry.color || COLORS[index % COLORS.length],
                                 borderRadius: '1px',
-                                flexShrink: 0
-                              }}></div>
-                              <span style={{ fontWeight: '500', fontSize: '9px' }}>
-                                {propertyName}: {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                                flexShrink: 0,
+                              }}
+                            ></div>
+                            <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                              {propertyName}: {(entry.value || 0).toLocaleString()}{' '}
+                              {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
                 <div style={{ 
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
+                  backgroundColor: 'white',
+                  padding: '12px',
+                  borderRadius: '8px',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: 0
+                  flex: 1,
+                  minHeight: 0,
+                  height: '100%'
                 }}>
                   <h3 style={{ 
                     fontSize: '13px', 
@@ -1400,7 +1596,7 @@ function EnvironmentWasteDash() {
                     ) : currentData.barChartData.length === 0 ? (
                       <div>No data available</div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={Math.max(300, currentData.barChartData.length * 40)}>
+                      <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={[...currentData.barChartData].sort((a, b) => b.total_generate - a.total_generate)} // Sort descending
                           layout="horizontal"
@@ -1437,7 +1633,6 @@ function EnvironmentWasteDash() {
                 </div>
               </div>
               
-
               <div style={{ 
                 display: 'flex',
                 flexDirection: 'column',
@@ -1445,14 +1640,15 @@ function EnvironmentWasteDash() {
                 minHeight: 0
               }}>
                 <div style={{ 
-                  flex: 1,
-                  backgroundColor: 'white', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
+                  backgroundColor: 'white',
+                  padding: '12px',
+                  borderRadius: '8px',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: 0
+                  flex: 1,
+                  minHeight: 0,
+                  height: '100%'
                 }}>
                   <h3 style={{ 
                     fontSize: '13px', 
@@ -1463,7 +1659,7 @@ function EnvironmentWasteDash() {
                   }}>
                     Hazardous Waste Generated in Year
                   </h3>
-                  <div style={{ flex: 1, minHeight: 0 }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
                     {loading ? (
                       <div style={{
                         display: 'flex',
@@ -1494,48 +1690,44 @@ function EnvironmentWasteDash() {
                         </div>
                       </div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={Math.max(300, currentData.lineChartData.length * 40)}>
-                        <LineChart data={currentData.lineChartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis 
-                            dataKey="year" 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 10, fill: '#64748b' }}
-                          />
-                          <YAxis 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 10, fill: '#64748b' }}
-                            tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-                          />
-                          <Tooltip 
-                            formatter={(value, name) => [
-                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                              name.toUpperCase()
-                            ]}
-                            labelStyle={{ color: '#1e293b', fontSize: '12px' }}
-                            contentStyle={{ fontSize: '12px' }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '10px' }} />
-                          
-                          {/* Dynamically render lines based on available companies */}
-                          {activeWasteType.map((wasteType, index) => (
-                            <Line
-                              key={wasteType}
-                              type="monotone"
-                              dataKey={wasteType}
-                              stroke={lineChartColors[wasteType] || COLORS[index % COLORS.length]}
-                              strokeWidth={2}
-                              dot={{ fill: lineChartColors[wasteType] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
-                              name={wasteType}
+                      <div style={{ flex: 1, minHeight: 0 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={currentData.lineChartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis 
+                              dataKey="year" 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 10, fill: '#64748b' }}
                             />
-                          ))}
-                        </LineChart>
-                      </ResponsiveContainer>
+                            <YAxis 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 10, fill: '#64748b' }}
+                              tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                            />
+                            <Tooltip content={renderLineChartTooltip}/>
+                            <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{fontSize: '9px', p:3}}/>
+                            
+                            {/* Dynamically render lines based on available companies */}
+                            {activeWasteType.map((wasteType, index) => (
+                              <Line
+                                key={wasteType}
+                                type="monotone"
+                                dataKey={wasteType}
+                                stroke={lineChartColors[wasteType] || COLORS[index % COLORS.length]}
+                                strokeWidth={2}
+                                dot={{ fill: lineChartColors[wasteType] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
+                                name={wasteTypeShortNames[wasteType] || wasteType}
+                              />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
                     )}
                   </div>
                 </div>
+
                 <div style={{ 
                   flex: 1,
                   backgroundColor: 'white', 
@@ -1553,44 +1745,77 @@ function EnvironmentWasteDash() {
                     color: '#1e293b',
                     flexShrink: 0
                   }}>
-                    Total Hazard Waste Generated by Waste Type ({unit})
+                    Total Hazardous Waste Generated per Quarter by Waste Type
                   </h3>
-                  <div style={{ flex: 1, minHeight: 0}}>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
                     {loading ? (
-                      <div>Loading...</div>
-                    ) : currentData.barChartData.length === 0 ? (
-                      <div>No data available</div>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : currentData.barChartQrtrData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                          <div>No quarterly data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
+                        </div>
+                      </div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={Math.max(300, currentData.barChartData.length * 40)}>
-                        <BarChart
-                          data={[...currentData.barChartData].sort((a, b) => b.total_generate - a.total_generate)} // Sort descending
-                          layout="horizontal"
-                          margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
-                        >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={currentData.barChartQrtrData || []}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                           <XAxis 
-                            type="category"
-                            dataKey="waste_type"
-                            tick={{ fontSize: 11, fill: '#64748b' }}
-                            tickFormatter={(wasteType) => wasteTypeShortNames[wasteType] || wasteType}
-                          />
-                          <YAxis 
-                            type="number"
+                            dataKey="quarter"
+                            axisLine={false}
+                            tickLine={false}
                             tick={{ fontSize: 10, fill: '#64748b' }}
                           />
-                          <Tooltip 
-                            formatter={(value) => `${Number(value).toLocaleString()} ${currentData.unit}`}
-                            labelFormatter={(label) => wasteTypeShortNames[label] || label}
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) {
+                                return `${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `${(value / 1000).toFixed(0)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
                           />
-                          <Bar 
-                            dataKey="total_generate" 
-                            fill="#3B82F6"
-                            label={{ position: 'top', fontSize: 10 }}
-                          >
-                            {currentData.barChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                            ))}
-                          </Bar>
+                          <Tooltip content={renderStackedBarTooltip} />
+                          <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '10px' }} />
+                          {/* Render bars for each waste type */}
+                          {Object.keys(currentData.barChartQrtrData[0])
+                            .filter(key => key !== 'quarter')
+                            .map((wasteType, index) => (
+                              <Bar
+                                key={wasteType}
+                                dataKey={wasteType}
+                                stackId="a"
+                                fill={currentData.colors && currentData.colors[wasteType] ? currentData.colors[wasteType] : COLORS[index % COLORS.length]}
+                                name={wasteTypeShortNames[wasteType] || wasteType}
+                              />
+                          ))}
                         </BarChart>
                       </ResponsiveContainer>
                     )}
