@@ -14,8 +14,7 @@ import EnvironmentWaterDash from "./pages/Envi/EnvironmentWaterDash";
 import CSR from "./pages/CSR/CSRActivity";
 import Energy from "./pages/Energy/Energy";
 import HR from "./pages/HR/HRMain";
-import HREmployabilityDash from "./pages/HR/HREmployabilityDash";
-import HRSafetyandHealthDash from "./pages/HR/HRSafetyandHealthDash";
+import HRDashboard from "./pages/HR/HRMainDash";
 import PowerDashboard from "./pages/Energy/PowerDashboard";
 import EnvironmentEnergyDash from "./pages/Envi/EnvironmentEnergyDash";
 import EnvironmentWasteDash from "./pages/Envi/EnvironmentWasteDash";
@@ -55,8 +54,7 @@ function App() {
 
             {/* HR Routes */}
             <Route path="/social/hr" element={<HR />} />
-            <Route path="/social/hremployabilitydash" element={<HREmployabilityDash />} />
-            <Route path="/social/hrsafetyandhealthdash" element={<HRSafetyandHealthDash />} />
+            <Route path="/social/hrdashboard" element={<HRDashboard />} />
 
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />
