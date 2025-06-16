@@ -143,6 +143,23 @@ function EnvironmentEnergy() {
     }
   };
 
+  // Helper function to refresh data based on selected tab
+  const refreshCurrentData = () => {
+    if (selected === 'Electricity') {
+      fetchElectricityData();
+    } else if (selected === 'Diesel') {
+      fetchDieselData();
+    }
+  };
+
+  // Handler for closing import modal with refresh
+  const handleImportModalClose = (shouldRefresh = false) => {
+    setIsImportModalOpen(false);
+    if (shouldRefresh) {
+      refreshCurrentData();
+    }
+  };
+
   const columns = useMemo(() => {
     if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') return [];
 
@@ -389,12 +406,8 @@ function EnvironmentEnergy() {
 
       alert(response.data.message);
 
-      if (selected === 'Electricity') {
-        fetchElectricityData();
-      }
-      if (selected === 'Diesel') {
-        fetchDieselData();
-      }
+      // Use the helper function to refresh data
+      refreshCurrentData();
 
       setIsModalOpen(false);
       setSelectedRowIds([]);
@@ -500,7 +513,7 @@ function EnvironmentEnergy() {
                     onClick={() => setIsModalOpen(true)}
                   >
                     Revise
-                </Button>
+                  </Button>
                 )}
               </>
             ) : (
@@ -766,20 +779,20 @@ function EnvironmentEnergy() {
         )}
         
         { isImportdModalOpen && (
-          <Overlay onClose={() => setIsImportModalOpen(false)}>
+          <Overlay onClose={() => handleImportModalClose(false)}>
             {selected === 'Electricity' ? (
                 <ImportFileModal
                   title="Energy - Electricity"
                   downloadPath="environment/create_template/envi_electric_consumption"
                   uploadPath="environment/bulk_upload_electric_consumption"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />
             ) : (
                 <ImportFileModal
                   title="Energy - Diesel"
                   downloadPath="environment/create_template/envi_diesel_consumption"
                   uploadPath="environment/bulk_upload_diesel_consumption"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />       
             )}
           </Overlay>
@@ -795,11 +808,7 @@ function EnvironmentEnergy() {
               updatePath={updatePath}
               status={(data) => {
                 if (!data){
-                  if (selected === 'Electricity') {
-                    fetchElectricityData(); // Refresh data after editing
-                  } else {
-                    fetchDieselData(); // Refresh data after editing
-                  }
+                  refreshCurrentData(); // Use helper function
                 };
                 setSelectedRecord(null);
               }}

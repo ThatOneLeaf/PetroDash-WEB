@@ -134,6 +134,25 @@ function EnvironmentWaste() {
     }
   };
 
+  // Helper function to refresh data based on selected tab
+  const refreshCurrentData = () => {
+    if (selected === 'Hazard Generated') {
+      fetchHazardGenData();
+    } else if (selected === 'Hazard Disposed') {
+      fetchHazardDisData();
+    } else if (selected === 'Non-Hazard Generated') {
+      fetchNonHazardsData();
+    }
+  };
+
+  // Handler for closing import modal with refresh
+  const handleImportModalClose = (shouldRefresh = false) => {
+    setIsImportModalOpen(false);
+    if (shouldRefresh) {
+      refreshCurrentData();
+    }
+  };
+
   const columns = useMemo(() => {
     if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') return [];
 
@@ -364,18 +383,8 @@ function EnvironmentWaste() {
 
       alert(response.data.message);
 
-      if (selected === 'Hazard Generated') {
-        setUpdatePath('/edit_hazard_waste_generated')
-        fetchHazardGenData();
-      }
-      if (selected === 'Hazard Disposed') {
-        setUpdatePath('/edit_hazard_waste_disposed')
-        fetchHazardDisData();
-      }
-      if (selected === 'Non-Hazard Generated') {
-        setUpdatePath('/edit_non_hazard_waste')
-        fetchNonHazardsData();
-      }
+      // Use the helper function to refresh data
+      refreshCurrentData();
 
       setIsModalOpen(false);
       setSelectedRowIds([]);
@@ -719,13 +728,13 @@ function EnvironmentWaste() {
         )}
 
         { isImportdModalOpen && (
-          <Overlay onClose={() => setIsImportModalOpen(false)}>
+          <Overlay onClose={() => handleImportModalClose(false)}>
             {selected === 'Hazard Generated' && (
                 <ImportFileModal
                   title="Waste - Hazard Generated"
                   downloadPath="environment/create_template/envi_hazard_waste_generated"
                   uploadPath="environment/bulk_upload_hazard_waste_generated"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />     
             )}
             {selected === 'Hazard Disposed' && (
@@ -733,7 +742,7 @@ function EnvironmentWaste() {
                   title="Waste - Hazard Disposed"
                   downloadPath="environment/create_template/envi_hazard_waste_disposed"
                   uploadPath="environment/bulk_upload_hazard_waste_disposed"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />
             )}
             {selected === 'Non-Hazard Generated' && (
@@ -741,7 +750,7 @@ function EnvironmentWaste() {
                   title="Waste - Non Hazard Generated"
                   downloadPath="environment/create_template/envi_non_hazard_waste"
                   uploadPath="environment/bulk_upload_non_hazard_waste"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />
             )}
         </Overlay>
@@ -757,13 +766,7 @@ function EnvironmentWaste() {
               updatePath={updatePath}
               status={(data) => {
                 if (!data){
-                  if (selected === 'Hazard Generated') {
-                    fetchHazardGenData(); // Refresh data after editing
-                  } else if (selected === 'Hazard Disposed'){
-                    fetchHazardDisData(); // Refresh data after editing
-                  } else {
-                    fetchNonHazardsData();
-                  }
+                  refreshCurrentData(); // Use helper function
                 };
                 setSelectedRecord(null);
               }}
