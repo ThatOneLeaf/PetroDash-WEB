@@ -348,7 +348,7 @@ function EnvironmentWater() {
         }
       } else {
         const confirm = window.confirm('Are you sure you want to approve this record?');
-          if (!confirmed) return;
+          if (!confirm) return;
       }
 
       const payload = {

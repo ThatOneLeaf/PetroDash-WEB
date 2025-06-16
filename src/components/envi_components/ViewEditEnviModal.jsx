@@ -248,12 +248,13 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
   }
 
   //statuses = ["URS","FRS","URH","FRH","APP"]
-  const handleStatusUpdate = async (action) => {
-    const newStatus = fetchNextStatus(action);
+  
+const handleStatusUpdate = async (action) => {
+  const newStatus = fetchNextStatus(action);
 
     if (newStatus) {
       setNextStatus(newStatus);
-      console.log("Updated status to:", nextStatus);
+      console.log("Updated status to:", newStatus); // Changed from nextStatus to newStatus
     } else {
       console.warn("No matching status transition found.");
     }
@@ -266,8 +267,9 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
         }
       } else {
         const confirm = window.confirm('Are you sure you want to approve this record?');
-          if (!confirmed) return;
+        if (!confirm) return; // Fixed: changed 'confirmed' to 'confirm'
       }
+      
       const payload = {
         record_id: record[recordIdKey]?.toString().trim(),
         new_status: newStatus.trim(),
