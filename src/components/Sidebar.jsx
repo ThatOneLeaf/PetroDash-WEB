@@ -191,13 +191,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
     // Social/HELP
     if (
       pathname.startsWith("/social/help") ||
-      pathname.startsWith("/social/helpdash") ||
       pathname.startsWith("/social/help-dash")
     ) {
-      return newMode === "dashboard" ? "/social/help-dash" : "/social/csr";
+      return newMode === "repository" ? "/social/help" : "/social/help-dash";
     }
-    if (pathname.startsWith("/social/csr")) {
-      return newMode === "dashboard" ? "/social/help-dash" : "/social/csr";
+    if (pathname.startsWith("/social/help")) {
+      return newMode === "dashboard" ? "/social/help-dash" : "/social/help";
     }
     // Add more department mappings as needed
 
