@@ -419,6 +419,8 @@ function EnvironmentWater() {
     .filter(Boolean)
     .every(row => allowedStatuses.includes(row.status));
 
+  const selectedRows = filteredData.filter(row => selectedRowIds.includes(row[idKey]));
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
@@ -486,7 +488,7 @@ function EnvironmentWater() {
               <>
                 <Button
                   variant="contained"
-                  onClick={() => exportToExcel(filteredData)}
+                  onClick={() => exportToExcel(selectedRows)} // Export only selected rows
                   startIcon={<FileUploadIcon />}
                   sx={{
                     backgroundColor: '#182959',
