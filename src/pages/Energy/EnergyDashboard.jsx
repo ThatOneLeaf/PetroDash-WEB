@@ -23,7 +23,8 @@ import {
   Typography,
   Button,
   Tabs,
-  Tab
+  Tab,
+  CircularProgress
 } from '@mui/material';
 
 function EnergyDashboard() {
@@ -143,6 +144,17 @@ function EnergyDashboard() {
       value: filteredData.reduce((sum, row) => sum + parseFloat(row.total_co2_avoidance || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' tons'
     }
   ];
+
+  if (loading) return (
+    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
+        <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
+          Loading Energy Dashboard...
+        </Typography>
+      </Box>
+    </Box>
+  );
 
   return (
     <Box sx={{ display: "flex" }}>

@@ -61,7 +61,7 @@ const abbreviateHeader = (label) => {
 const Table = ({
   columns,
   rows, // ALL data, not pre-paginated
-  filteredData = [], // <-- add this prop for all filtered data
+  filteredData = [], // <-- ensure default to []
   page = 1,
   idKey,
   rowsPerPage = 10,
@@ -179,16 +179,21 @@ const Table = ({
     );
   };
 
+  // Defensive: ensure columns and paginatedData are always arrays
+  const safeColumns = Array.isArray(columns) ? columns : [];
+  const safePaginatedData = Array.isArray(paginatedData) ? paginatedData : [];
+  const safeFilteredData = Array.isArray(filteredData) ? filteredData : [];
+
   // All IDs in filteredData (for select all)
   const allFilteredIds = React.useMemo(
-    () => filteredData.map(row => row[idKey]),
-    [filteredData, idKey]
+    () => safeFilteredData.map(row => row[idKey]),
+    [safeFilteredData, idKey]
   );
 
   // All IDs in paginatedData (for current page)
   const paginatedIds = React.useMemo(
-    () => rows.map(row => row[idKey]),
-    [rows, idKey]
+    () => safePaginatedData.map(row => row[idKey]),
+    [safePaginatedData, idKey]
   );
 
   // Selection logic for checkboxes
@@ -219,6 +224,9 @@ const Table = ({
     setSelected(newSelected);
     if (onSelectionChange) onSelectionChange(newSelected);
   };
+
+  // Before using data.map anywhere
+  const safeRows = Array.isArray(rows) ? rows : [];
 
   return (
     // Main container for table with horizontal scroll
@@ -287,7 +295,7 @@ const Table = ({
               )}
 
               {/* Render column headers */}
-              {columns.map((col) => {
+              {safeColumns.map((col) => {
                 const words = col.label.replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
                 const isAbbreviated = words.length > 2;
                 const headerContent = isAbbreviated
@@ -379,15 +387,15 @@ const Table = ({
           </TableHead>
           <TableBody>
             {/* Show empty message if no rows */}
-            {paginatedData.length === 0 ? (
+            {safePaginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (actions ? 1 : 0) + (selectable ? 1 : 0)} align="center" sx={{ py: 6, color: "#b0b0b0", textAlign: "center", whiteSpace: "normal", wordBreak: "normal", overflowWrap: "break-word" }}>
+                <TableCell colSpan={safeColumns.length + (actions ? 1 : 0) + (selectable ? 1 : 0)} align="center" sx={{ py: 6, color: "#b0b0b0", textAlign: "center", whiteSpace: "normal", wordBreak: "normal", overflowWrap: "break-word" }}>
                   {emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (
               // Render table rows (paginated data)
-              paginatedData.map((row, idx) => (
+              safePaginatedData.map((row, idx) => (
                 <TableRow
                   key={row[idKey] ?? `${row.year ?? ""}-${row.comp ?? ""}-${row.type ?? ""}-${idx}`}
                   hover
@@ -424,7 +432,7 @@ const Table = ({
                   )}
 
                   {/* Render each cell for the row */}
-                  {columns.map((col) => (
+                  {safeColumns.map((col) => (
                     <TableCell
                       key={col.key}
                       align="center"

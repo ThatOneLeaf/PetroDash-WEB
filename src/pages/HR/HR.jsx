@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, Box, IconButton } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
 
 import LaunchIcon from "@mui/icons-material/Launch";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -16,30 +18,6 @@ import StatusChip from "../../components/StatusChip";
 
 import ViewEmployeeModal from "../../components/hr_components/ViewEmployeeModal";
 import UpdateEmployeeModal from "../../components/hr_components/UpdateEmployeeModal";
-
-//add to others
-
-/*update modal
-const [isUpdateModal, setIsUpdateModal] = useState(false);
-const [row, setRow] = useState([]);
-
-import Overlay from "../../components/modal";
-const renderActions = (row) => (
-    <IconButton
-      size="small"
-      onClick={() => {
-        setIsUpdateModal(true);
-        setRow(row);
-      }}
-    >
-      <EditIcon />
-    </IconButton>
-  );
-
-function to show and hide overlay
-
-
-*/
 
 function Demographics({ onFilterChange }) {
   //INITIALIZE
@@ -246,8 +224,43 @@ function Demographics({ onFilterChange }) {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading)
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          bgcolor: "#f5f7fa",
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress
+            size={64}
+            thickness={5}
+            sx={{ color: "#182959" }}
+          />
+          <Typography
+            sx={{
+              mt: 2,
+              color: "#182959",
+              fontWeight: 700,
+              fontSize: 20,
+            }}
+          >
+            Loading HR Demographics...
+          </Typography>
+        </Box>
+      </Box>
+    );
+  if (error)
+    return (
+      <Box sx={{ display: "flex" }}>
+        <div>{error}</div>
+      </Box>
+    );
 
   return (
     <Box sx={{ display: "flex" }}>

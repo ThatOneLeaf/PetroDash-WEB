@@ -32,6 +32,7 @@ import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import ViewEditRecordModal from '../../components/envi_components/ViewEditEnviModal';
+import CircularProgress from '@mui/material/CircularProgress';
 
 function EnvironmentWaste() {
   const [data, setData] = useState([]);
@@ -395,7 +396,16 @@ function EnvironmentWaste() {
     }  
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
+        <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
+          Loading Waste Data...
+        </Typography>
+      </Box>
+    </Box>
+  );
   if (error) return <div>{error}</div>;
 
   const idKey = filteredData.length > 0

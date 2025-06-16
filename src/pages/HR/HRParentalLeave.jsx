@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, Box, IconButton } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
 
 import LaunchIcon from "@mui/icons-material/Launch";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -17,6 +19,7 @@ import StatusChip from "../../components/StatusChip";
 
 import ViewParentalLeaveModal from "../../components/hr_components/ViewParentalLeaveModal";
 import UpdateParentalLeaveModal from "../../components/hr_components/UpdateParentalLeaveModal";
+import Sidebar from "../../components/Sidebar";
 
 function ParentalLeave({ onFilterChange }) {
   //INITIALIZE
@@ -152,8 +155,43 @@ function ParentalLeave({ onFilterChange }) {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading)
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          bgcolor: "#f5f7fa",
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress
+            size={64}
+            thickness={5}
+            sx={{ color: "#182959" }}
+          />
+          <Typography
+            sx={{
+              mt: 2,
+              color: "#182959",
+              fontWeight: 700,
+              fontSize: 20,
+            }}
+          >
+            Loading Parental Leave Data...
+          </Typography>
+        </Box>
+      </Box>
+    );
+  if (error)
+    return (
+      <Box sx={{ display: "flex" }}>
+        <div>{error}</div>
+      </Box>
+    );
 
   return (
     <Box sx={{ display: "flex" }}>

@@ -31,7 +31,8 @@ import {
   IconButton,
   Paper,
   Tabs,
-  Tab
+  Tab,
+  CircularProgress
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import api from '../../services/api';
@@ -288,8 +289,13 @@ function Economic() {
     return (
       <Box sx={{ display: 'flex' }}>
         <Sidebar />
-        <Box sx={{ flexGrow: 1, p: 3 }}>
-          <Typography>Loading dashboard...</Typography>
+        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
+            <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
+              Loading Economic Dashboard...
+            </Typography>
+          </Box>
         </Box>
       </Box>
     );
@@ -298,9 +304,13 @@ function Economic() {
   if (error) {
     return (
       <Box sx={{ display: 'flex' }}>
-      <Sidebar />
-        <Box sx={{ flexGrow: 1, p: 3 }}>
-          <Typography color="error">{error}</Typography>
+        <Sidebar />
+        <Box sx={{ flexGrow: 1, p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography color="error" sx={{ fontWeight: 700, fontSize: 20 }}>
+              {error}
+            </Typography>
+          </Box>
         </Box>
       </Box>
     );
@@ -746,4 +756,4 @@ function Economic() {
   );
 }
 
-export default Economic; 
+export default Economic;

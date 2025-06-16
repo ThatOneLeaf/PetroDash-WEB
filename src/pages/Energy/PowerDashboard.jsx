@@ -9,6 +9,7 @@ import {
   Tabs,
   Tab,
 } from "@mui/material";
+import CircularProgress from '@mui/material/CircularProgress';
 
 import ButtonComp from "../../components/ButtonComp";
 import DateRangePicker from "../../components/Filter/DateRangePicker";
@@ -49,6 +50,8 @@ function PowerDashboard() {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // State for tab selection
   const [tabValue, setTabValue] = useState(0);
@@ -527,6 +530,17 @@ const plants = ["DSPP", "M1GPP", "M2GPP", "NWPP1", "NWPP2", "SJSPP", "TSPP1", "T
         </Box>   
       </Box>
         )}
+        {loading && (
+          <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
+              <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
+                Loading Power Dashboard...
+              </Typography>
+            </Box>
+          </Box>
+        )}
+        {error && <div>{error}</div>}
         </Container>
       </Box>
     </Box>
