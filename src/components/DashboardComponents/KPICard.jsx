@@ -18,7 +18,7 @@ function KPICard({
 
   return (
     <div
-      style={{
+        style={{
         backgroundColor: colorScheme.backgroundColor,
         color: colorScheme.textColor,
         padding: '15px',
@@ -26,8 +26,9 @@ function KPICard({
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
+        width: '100%', // ✅ ensure it stretches in parent
         ...style,
-      }}
+        }}
     >
       {hasIcon && (
         <div style={{ flexShrink: 0, color: colorScheme.iconColor }}>

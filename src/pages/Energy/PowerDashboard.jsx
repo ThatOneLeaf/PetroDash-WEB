@@ -19,8 +19,10 @@ import dayjs from "dayjs";
 import api from "../../services/api";
 import SingleSelectDropdown from "../../components/DashboardComponents/SingleSelectDropdown";
 import ClearButton from "../../components/DashboardComponents/ClearButton";
-import KPIIndicatorCard from "../../components/KPIIndicatorCard";
 import KPICard from "../../components/DashboardComponents/KPICard";
+import BarChartComponent from "../../components/charts/BarChartComponent";
+import LineChartComponent from "../../components/charts/LineChartComponent";
+import PieChartComponent from "../../components/charts/PieChartComponent";
 
 
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -67,36 +69,7 @@ const tabs = [
   { key: "avoidance", label: "CO2 Avoidance" },
 ];
 
-const GenerationTab = () => 
-<Box width="100%" p={2}>
-  {/* Row 1 */}
-  <Grid container spacing={2} sx={{ width: '100%' }} mb={2}>
-    <Grid item xs={6}>
-      <Paper elevation={3} sx={{ p: 2, width: '100%' }}>
-        <Typography>Row 1, Column 1</Typography>
-      </Paper>
-    </Grid>
-    <Grid item xs={6}>
-      <Paper elevation={3} sx={{ p: 2, width: '100%' }}>
-        <Typography>Row 1, Column 2</Typography>
-      </Paper>
-    </Grid>
-  </Grid>
 
-  {/* Row 2 */}
-  <Grid container spacing={2} sx={{ width: '100%' }}>
-    <Grid item xs={6}>
-      <Paper elevation={3} sx={{ p: 2, width: '100%' }}>
-        <Typography>Row 2, Column 1</Typography>
-      </Paper>
-    </Grid>
-    <Grid item xs={6}>
-      <Paper elevation={3} sx={{ p: 2, width: '100%' }}>
-        <Typography>Row 2, Column 2</Typography>
-      </Paper>
-    </Grid>
-  </Grid>
-</Box>
 const AvoidanceTab = () => <div>Diesel content</div>;
 
 function PowerDashboard() {
@@ -327,80 +300,80 @@ useEffect(() => {
         </Box>
 
         <Box sx={{ px: "15px", pt: 0, pb: 0, flexShrink: 0 }}>
-  <Stack
-    direction="row"
-    spacing={1}
-    alignItems="flex-start"
-    flexWrap="wrap" // Allow wrapping
-    sx={{
-      minHeight: 40,
-      rowGap: 1,
-      columnGap: 1,
-      '@media (max-width: 600px)': {
-        flexDirection: 'column',
-        alignItems: 'stretch',
-      },
-    }}
-  >
-    {/* Left-side filters */}
-    <MultiSelectWithChips
-      label="Companies"
-      options={companyOptions}
-      selectedValues={companyFilter}
-      onChange={setCompanyFilter}
-      placeholder="All Companies"
-    />
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="flex-start"
+          flexWrap="wrap" // Allow wrapping
+          sx={{
+            minHeight: 40,
+            rowGap: 1,
+            columnGap: 1,
+            '@media (max-width: 600px)': {
+              flexDirection: 'column',
+              alignItems: 'stretch',
+            },
+          }}
+        >
+          {/* Left-side filters */}
+          <MultiSelectWithChips
+            label="Companies"
+            options={companyOptions}
+            selectedValues={companyFilter}
+            onChange={setCompanyFilter}
+            placeholder="All Companies"
+          />
 
-    <MultiSelectWithChips
-      label="Power Plants"
-      options={powerPlantOptions}
-      selectedValues={powerPlantFilter}
-      onChange={setPowerPlantFilter}
-      placeholder="All Power Projects"
-    />
+          <MultiSelectWithChips
+            label="Power Plants"
+            options={powerPlantOptions}
+            selectedValues={powerPlantFilter}
+            onChange={setPowerPlantFilter}
+            placeholder="All Power Projects"
+          />
 
-    <MultiSelectWithChips
-      label="Generation Sources"
-      options={generationSourceOptions}
-      selectedValues={generationSourceFilter}
-      onChange={setGenerationSourceFilter}
-      placeholder="All Sources"
-    />
+          <MultiSelectWithChips
+            label="Generation Sources"
+            options={generationSourceOptions}
+            selectedValues={generationSourceFilter}
+            onChange={setGenerationSourceFilter}
+            placeholder="All Sources"
+          />
 
-    <MonthRangeSelect
-      label="All Time"
-      startDate={startDate}
-      endDate={endDate}
-      setStartDate={setStartDate}
-      setEndDate={setEndDate}
-    />
+          <MonthRangeSelect
+            label="All Time"
+            startDate={startDate}
+            endDate={endDate}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+          />
 
-    {showClearButton && (
-      <ClearButton onClick={clearAllFilters} />
-    )}
+          {showClearButton && (
+            <ClearButton onClick={clearAllFilters} />
+          )}
 
-    {/* Spacer */}
-    <Box sx={{ flexGrow: 1, minWidth: 10 }} />
+          {/* Spacer */}
+          <Box sx={{ flexGrow: 1, minWidth: 10 }} />
 
-    {/* Right-side dropdowns */}
-    <SingleSelectDropdown
-      label="Group By"
-      options={xOptions}
-      selectedValue={x}
-      onChange={setX}
-    />
+          {/* Right-side dropdowns */}
+          <SingleSelectDropdown
+            label="Group By"
+            options={xOptions}
+            selectedValue={x}
+            onChange={setX}
+          />
 
-    <SingleSelectDropdown
-      label="Time Interval"
-      options={yOptions}
-      selectedValue={y}
-      onChange={setY}
-    />
-  </Stack>
-</Box>
+          <SingleSelectDropdown
+            label="Time Interval"
+            options={yOptions}
+            selectedValue={y}
+            onChange={setY}
+          />
+        </Stack>
+      </Box>
 
 
-        <Box sx={{ px: "15px", pt: 2, pb: 2, flexShrink: 0 }}>
+        <Box sx={{ px: "15px", pt: 0, pb: 0, flexShrink: 0 }}>
           {/* Main KPI */}
           <Box
             sx={{
@@ -451,15 +424,69 @@ useEffect(() => {
               style={{ flex: 1 }}
             />
           </Box>
-
-          {/* Content */}
-          <Box sx={{ flex: 1, px: "15px", pt: "12px", overflowY: "auto" }}>
-            {activeTab === "generation" && <GenerationTab />}
-            {activeTab === "avoidance" && <AvoidanceTab />}
+          
           </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'nowrap',
+              px: "15px",
+              pt: 0,
+              pb: 0,
+              flexShrink: 0,
+            }}
+          >
+          {/* Content Charts */}
+          {activeTab === "generation" && (
+            <Box sx={{ width: '100%', height: '100%' }}>
+              {/* Row 1 */}
+              <Grid container spacing={2} sx={{ width: '100%', mx: 0 }} mb={2}>
+                <Grid item >
+                  <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <LineChartComponent
+                      title="Total Energy Generated Over Time"
+                      data={data?.line_graph?.total_energy_generated || []}
+                    />
+                  </Paper>
+                </Grid>
+                <Grid item >
+                  <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <PieChartComponent
+                      title="Total Energy Generated (Pie)"
+                      data={data?.pie_chart?.total_energy_generated || []}
+                    />
+                  </Paper>
+                </Grid>
+              </Grid>
+
+              {/* Row 2 */}
+              <Grid container spacing={2} sx={{ width: '100%', mx: 0 }}>
+                <Grid item >
+                  <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <BarChartComponent
+                      title="Total Energy Generated (Bar)"
+                      data={data?.bar_chart?.total_energy_generated || []}
+                    />
+                  </Paper>
+                </Grid>
+                <Grid item >
+                  <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <LineChartComponent
+                      title="Estimated Households Powered Over Time"
+                      data={housePowerData?.line_graph?.est_house_powered || []}
+                    />
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {activeTab === "avoidance" && <AvoidanceTab />}
+
         </Box>
+      </Box> 
       </Box>
-    </Box>
   );
 }
 
