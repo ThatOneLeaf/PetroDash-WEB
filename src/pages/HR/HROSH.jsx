@@ -18,6 +18,8 @@ import StatusChip from "../../components/StatusChip";
 
 import dayjs from "dayjs";
 
+import ViewUpdateOSHModal from "../../components/hr_components/ViewUpdateOSHModal"
+
 function OSH({ onFilterChange, shouldReload, setShouldReload }) {
   //INITIALIZE
 
@@ -26,6 +28,11 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [isUpdateModal, setIsUpdateModal] = useState(false);
+  const [row, setRow] = useState([]);
+
+  const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
 
   // DATA -- CHANGE PER PAGE
   const fetchOSHData = async () => {
@@ -85,8 +92,7 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
       size="small"
       onClick={(event) => {
         event.stopPropagation();
-        setIsUpdateModal(true);
-        setRow(row);
+        setSelectedRecord(row);
       }}
     >
       <LaunchIcon />
@@ -356,7 +362,7 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
             columns={columns}
             rows={paginatedData}
             actions={renderActions}
-            onRowClick={showView}
+            //onRowClick={showView}
             emptyMessage="No records found for the selected filters."
           />
         }
@@ -369,6 +375,34 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
             onChange={handlePageChange}
           />
         </Box>
+
+
+        {selectedRecord != null &&
+          (console.log("Selected Record:", selectedRecord),
+          (
+            <Overlay onClose={() => setSelectedRecord(null)}>
+              <ViewUpdateOSHModal
+                title={"HR Occupational Safety Health Details"}
+                record={selectedRecord}
+                status={(data) => {
+                  if (!data) {
+                    fetchOSHData();
+                  }
+                  setSelectedRecord(null);
+                }}
+                onClose={() => setSelectedRecord(null)}
+              />
+            </Overlay>
+          ))}
+
+        {isUpdateModal && (
+          <Overlay onClose={() => setIsUpdateModal(false)}>
+            <UpdateOSHModal
+              onClose={() => setIsUpdateModal(false)}
+              row={row}
+            />
+          </Overlay>
+        )}
       </Box>
     </Box>
   );
