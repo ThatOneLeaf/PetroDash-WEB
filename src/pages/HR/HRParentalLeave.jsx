@@ -17,11 +17,11 @@ import Pagination from "../../components/Pagination/pagination";
 import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
-import ViewParentalLeaveModal from "../../components/hr_components/ViewParentalLeaveModal";
-import UpdateParentalLeaveModal from "../../components/hr_components/UpdateParentalLeaveModal";
-import Sidebar from "../../components/Sidebar";
+import dayjs from "dayjs";
 
-function ParentalLeave({ onFilterChange }) {
+import ViewUpdateParentalLeaveModal from "../../components/hr_components/ViewUpdateParentalLeaveModal";
+
+function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
   //INITIALIZE
 
   const [data, setData] = useState([]);
@@ -31,8 +31,9 @@ function ParentalLeave({ onFilterChange }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isUpdateModal, setIsUpdateModal] = useState(false);
-  const [isViewModal, setIsViewModal] = useState(false);
   const [row, setRow] = useState([]);
+
+  const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
 
   // DATA -- CHANGE PER PAGE
   const fetchParentalData = async () => {
@@ -53,16 +54,27 @@ function ParentalLeave({ onFilterChange }) {
     fetchParentalData();
   }, []);
 
+  useEffect(() => {
+    if (shouldReload) {
+      fetchParentalData();
+      setShouldReload(false);
+    }
+  }, [shouldReload]);
+
   //TABLE -- CHANGE PER PAGE
 
   const columns = [
     { key: "company_name", label: "Company" },
     { key: "employee_id", label: "Employee ID" },
-    { key: "date", label: "Date Availed", render: (val) => val.split("T")[0] },
+    {
+      key: "date",
+      label: "Date Availed",
+      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
+    },
     {
       key: "end_date",
       label: "Date Ended",
-      render: (val) => val.split("T")[0],
+      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
     },
     { key: "type_of_leave", label: "Type Of Leave" },
     {
@@ -73,21 +85,10 @@ function ParentalLeave({ onFilterChange }) {
   ];
 
   const renderActions = (row) => (
-    <IconButton
-      size="small"
-      onClick={(event) => {
-        event.stopPropagation();
-        setIsUpdateModal(true);
-        setRow(row);
-      }}
-    >
+    <IconButton size="small" onClick={() => setSelectedRecord(row)}>
       <LaunchIcon />
     </IconButton>
   );
-
-  const showView = (row) => {
-    setIsViewModal(true), setRow(row);
-  };
 
   //FILTERS -- ITEMS --CHANGE PER PAGE
   const companyOptions = Array.from(
@@ -168,11 +169,7 @@ function ParentalLeave({ onFilterChange }) {
         }}
       >
         <Box sx={{ textAlign: "center" }}>
-          <CircularProgress
-            size={64}
-            thickness={5}
-            sx={{ color: "#182959" }}
-          />
+          <CircularProgress size={64} thickness={5} sx={{ color: "#182959" }} />
           <Typography
             sx={{
               mt: 2,
@@ -290,7 +287,6 @@ function ParentalLeave({ onFilterChange }) {
             columns={columns}
             rows={paginatedData}
             actions={renderActions}
-            onRowClick={showView}
             emptyMessage="No records found for the selected filters."
           />
         }
@@ -300,21 +296,28 @@ function ParentalLeave({ onFilterChange }) {
           <Pagination page={page} count={totalPages} onChange={setPage} />
         </Box>
 
+        {selectedRecord != null &&
+          (console.log("Selected Record:", selectedRecord),
+          (
+            <Overlay onClose={() => setSelectedRecord(null)}>
+              <ViewUpdateParentalLeaveModal
+                title={"HR Parental Leave Details"}
+                record={selectedRecord}
+                status={(data) => {
+                  if (!data) {
+                    fetchParentalData();
+                  }
+                  setSelectedRecord(null);
+                }}
+                onClose={() => setSelectedRecord(null)}
+              />
+            </Overlay>
+          ))}
+
         {isUpdateModal && (
           <Overlay onClose={() => setIsUpdateModal(false)}>
             <UpdateParentalLeaveModal
               onClose={() => setIsUpdateModal(false)}
-              row={row}
-            />
-          </Overlay>
-        )}
-
-        {isViewModal && (
-          <Overlay onClose={() => setIsViewModal(false)}>
-            <ViewParentalLeaveModal
-              onClose={() => {
-                setIsViewModal(false);
-              }}
               row={row}
             />
           </Overlay>

@@ -16,10 +16,9 @@ import Search from "../../components/Filter/Search";
 import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
-import ViewOSHModal from "../../components/hr_components/ViewOSHModal";
-import UpdateOSHModal from "../../components/hr_components/UpdateOSHModal";
+import dayjs from "dayjs";
 
-function OSH({ onFilterChange }) {
+function OSH({ onFilterChange, shouldReload, setShouldReload }) {
   //INITIALIZE
 
   const [data, setData] = useState([]);
@@ -27,10 +26,6 @@ function OSH({ onFilterChange }) {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [isUpdateModal, setIsUpdateModal] = useState(false);
-  const [isViewModal, setIsViewModal] = useState(false);
-  const [row, setRow] = useState([]);
 
   // DATA -- CHANGE PER PAGE
   const fetchOSHData = async () => {
@@ -53,6 +48,13 @@ function OSH({ onFilterChange }) {
     fetchOSHData();
   }, []);
 
+  useEffect(() => {
+    if (shouldReload) {
+      fetchOSHData();
+      setShouldReload(false);
+    }
+  }, [shouldReload]);
+
   //TABLE -- CHANGE PER PAGE
 
   const columns = [
@@ -66,7 +68,7 @@ function OSH({ onFilterChange }) {
     {
       key: "date",
       label: "Date",
-      render: (val) => val.split("T")[0],
+      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
     },
     { key: "incident_type", label: "Incident Type" },
     { key: "incident_title", label: "Incident Title" },
@@ -90,10 +92,6 @@ function OSH({ onFilterChange }) {
       <LaunchIcon />
     </IconButton>
   );
-
-  const showView = (row) => {
-    setIsViewModal(true), setRow(row);
-  };
 
   //FILTERS -- ITEMS --CHANGE PER PAGE
   const companyOptions = Array.from(
@@ -121,9 +119,9 @@ function OSH({ onFilterChange }) {
 
   //STATUS DONT CHANGE
   const statusOptions = [
-    { label: "Pending", value: "PND" },
-    { label: "Head Approved", value: "HAP" },
-    { label: "Site Approved", value: "SAP" },
+    { label: "Under Review (Site)", value: "URS" },
+    { label: "Under Review (Head)", value: "URH" },
+    { label: "Approved", value: "APP" },
     { label: "For Revision (Site)", value: "FRS" },
     { label: "For Revision (Head)", value: "FRH" },
   ];
@@ -371,23 +369,6 @@ function OSH({ onFilterChange }) {
             onChange={handlePageChange}
           />
         </Box>
-
-        {isUpdateModal && (
-          <Overlay onClose={() => setIsUpdateModal(false)}>
-            <UpdateOSHModal onClose={() => setIsUpdateModal(false)} row={row} />
-          </Overlay>
-        )}
-
-        {isViewModal && (
-          <Overlay onClose={() => setIsViewModal(false)}>
-            <ViewOSHModal
-              onClose={() => {
-                setIsViewModal(false);
-              }}
-              row={row}
-            />
-          </Overlay>
-        )}
       </Box>
     </Box>
   );

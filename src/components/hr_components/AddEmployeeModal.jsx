@@ -17,7 +17,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import api from "../../services/api";
 
-function AddEmployeeModal({ onClose }) {
+function AddEmployeeModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
     employeeId: "",
@@ -100,6 +100,7 @@ function AddEmployeeModal({ onClose }) {
       });
 
       console.log("success  ");
+      if (onSuccess) onSuccess();
       onClose();
 
       setFormData({

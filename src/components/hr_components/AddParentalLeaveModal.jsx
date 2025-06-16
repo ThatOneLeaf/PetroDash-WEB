@@ -18,7 +18,7 @@ import dayjs from "dayjs";
 
 import api from "../../services/api";
 
-function AddParentalLeaveModal({ onClose }) {
+function AddParentalLeaveModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     employeeId: "",
     dateAvailed: null,
@@ -78,7 +78,7 @@ function AddParentalLeaveModal({ onClose }) {
 
       await api.post("/hr/single_upload_parental_leave_record", {
         employee_id: formData.employeeId.toUpperCase(),
-        type_of_leave: formData.daysAvailed,
+        type_of_leave: formData.typeOfLeave,
         date: formData.dateAvailed
           ? dayjs(formData.dateAvailed).format("YYYY-MM-DD")
           : null,
@@ -86,6 +86,7 @@ function AddParentalLeaveModal({ onClose }) {
       });
 
       console.log("success  ");
+      if (onSuccess) onSuccess();
       onClose();
 
       setFormData({

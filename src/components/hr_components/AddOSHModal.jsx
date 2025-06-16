@@ -17,7 +17,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import api from "../../services/api";
 
-function AddOSHModal({ onClose }) {
+function AddOSHModal({ onClose, onSuccess }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -100,6 +100,7 @@ function AddOSHModal({ onClose }) {
       });
 
       console.log("success  ");
+      if (onSuccess) onSuccess();
       onClose();
 
       setFormData({
