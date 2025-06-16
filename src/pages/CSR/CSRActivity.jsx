@@ -22,7 +22,6 @@ import api from '../../services/api';
 import ViewHelpRecordModal from '../../components/help_components/ViewHelpRecordModal'; 
 import exportData from '../../services/export';
 import ImportFileModal from '../../components/ImportFileModal'
-import CircularProgress from '@mui/material/CircularProgress';
 
 function CSR() {  
   const [data, setData] = useState([]);
@@ -267,12 +266,7 @@ function CSR() {
 
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-      <Box sx={{ textAlign: 'center' }}>
-        <CircularProgress size={64} thickness={5} sx={{ color: '#1976d2' }} />
-        <Typography sx={{ mt: 2, color: '#1976d2', fontWeight: 700, fontSize: 20 }}>
-          Loading Social H.E.L.P. Data...
-        </Typography>
-      </Box>
+      <Typography variant="h6">Loading...</Typography>
     </Box>
   );
   if (error) return (
@@ -299,80 +293,253 @@ function CSR() {
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
-      <Container maxWidth={false} sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h4" gutterBottom>
-            Social H.E.L.P. Activities
+      <Container maxWidth={false} disableGutters sx={{ flexGrow: 1, padding: '2rem' }}>
+        {/* Title and Buttons */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '0.5rem',
+        }}>
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start'}}>
+            <Typography sx={{ 
+              fontSize: '0.75rem', 
+              fontWeight: 800,
+            }}>
+              REPOSITORY
+            </Typography>
+            <Typography sx={{ fontSize: '2.25rem', color: '#182959', fontWeight: 800}}>
+              Social - H.E.L.P
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: '0.5rem' }}>
+            {/* EXPORT DATA BUTTON */}
+            <Button
+              variant="contained"
+              startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+              onClick={handleExport}
+            >
+              EXPORT DATA
+            </Button>
+
+            {/* IMPORT DATA BUTTON */}
+            <Button
+              variant="contained"
+              // startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              IMPORT
+            </Button>
+
+            {/* SINGLE UPLOAD DATA BUTTON */}
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ 
+                backgroundColor: '#2B8C37',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#256d2f',
+                },
+              }}
+              onClick={() => {
+                setModalKey(k => k + 1);
+                setIsAddModalOpen(true);
+              }}
+            >
+              ADD RECORD
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Filter/Search Row */}
+        <Box sx={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <Search
+            onSearch={val => setSearch(val)}
+            suggestions={searchSuggestions}
+          />
+          <Filter
+            label="Year"
+            options={yearOptions}
+            value={filters.year}
+            onChange={val => setFilters(f => ({ ...f, year: val }))}
+            placeholder="Year"
+          />
+          <Filter
+            label="Company ID"
+            options={companyIdOptions}
+            value={filters.companyId}
+            onChange={val => setFilters(f => ({ ...f, companyId: val }))}
+            placeholder="Company ID"
+          />
+          <Filter
+            label="Approval Status"
+            options={statusIdOptions}
+            value={filters.statusId}
+            onChange={val => setFilters(f => ({ ...f, statusId: val }))}
+            placeholder="Approval Status"
+          />
+          <Filter
+            label="Program"
+            options={programOptions}
+            value={filters.program}
+            onChange={val => {
+              setFilters(f => ({
+                ...f,
+                program: val,
+                projectAbbr: ""
+              }));
+            }}
+            placeholder="Program"
+          />
+          <Filter
+            label="Project"
+            options={projectOptions}
+            value={filters.projectAbbr}
+            onChange={val => setFilters(f => ({ ...f, projectAbbr: val }))}
+            placeholder="Project"
+          />
+          {Object.values(filters).some(v => v !== null && v !== '') && (
+            <Button
+              variant="outline"
+              startIcon={<ClearIcon />}
+              sx={{ 
+                color: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+              }}
+              onClick={() => setFilters({
+                year: "",
+                companyId: "",
+                statusId: "",
+                program: "",
+                projectAbbr: ""
+              })}
+            >
+              Clear
+            </Button>
+          )}
+        </Box>
+
+        {/* Table */}
+        <Table
+          columns={columns}
+          rows={pagedData}
+          idKey={idKey}
+          onSort={handleSort}
+          sortConfig={sortConfig}
+          emptyMessage={loading ? "Loading..." : error ? "Error loading data." : "No data available."}
+          maxHeight="69vh"
+          minHeight="300px"
+        />
+
+        {/* Record Count and Pagination */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+          <Typography sx={{ fontSize: '1rem'}}>
+            Showing {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
           </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<FileUploadIcon />}
-            onClick={() => setIsImportModalOpen(true)}
-            sx={{ borderRadius: '999px', backgroundColor: '#1976d2' }}
-          >
-            Import Data
-          </Button>
-        </Box>
-        <Filter
-          filters={filters}
-          setFilters={setFilters}
-          search={search}
-          setSearch={setSearch}
-          yearOptions={yearOptions}
-          companyIdOptions={companyIdOptions}
-          programOptions={programOptions}
-          projectOptions={projectOptions}
-          statusIdOptions={statusIdOptions}
-          onAddFilter={() => setIsAddModalOpen(true)}
-          onExport={handleExport}
-          exportDisabled={filteredData.length === 0}
-        />
-        <Box sx={{ flex: 1, position: 'relative' }}>
-          <Table
-            data={Array.isArray(pagedData) ? pagedData : []}
-            columns={columns}
-            rowKey="projectId"
-            loading={loading}
-            onSort={handleSort}
-            sortConfig={sortConfig}
-            emptyText="No data found"
-          />
           <Pagination
-            count={totalPages}
             page={page}
-            onPageChange={(e, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={e => setRowsPerPage(parseInt(e.target.value, 10))}
-            sx={{ position: 'absolute', bottom: 16, right: 16 }}
+            count={totalPages}
+            onChange={setPage}
           />
+          <Typography sx={{ fontSize: '1rem'}}>
+            Showing {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
+            {Math.min(page * rowsPerPage, filteredData.length)} records
+          </Typography>
         </Box>
-        <AddRecordModalHelp
-          open={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onSuccess={fetchCSRData}
-          yearOptions={modalYearOptions}
-          companyOptions={modalCompanyOptions}
-          programOptions={modalProgramOptions}
-          projectOptions={modalProjectOptions}
-        />
-        <ImportModalHelp
-          open={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          onSuccess={fetchCSRData}
-        />
-        <Overlay
-          open={!!selectedRecord}
-          onClose={() => setSelectedRecord(null)}
-          maxWidth="md"
-          fullWidth
-        >
-          <ViewHelpRecordModal
-            record={selectedRecord}
-            onClose={() => setSelectedRecord(null)}
-            onSuccess={fetchCSRData}
-          />
-        </Overlay>
+
+        {/* Add Record Modal */}
+        {isAddModalOpen && (
+          <Overlay onClose={() => setIsAddModalOpen(false)}>
+            <AddRecordModalHelp
+              open={isAddModalOpen}
+              onClose={() => setIsAddModalOpen(false)}
+              yearOptions={modalYearOptions}
+              companyOptions={modalCompanyOptions}
+              programOptions={modalProgramOptions}
+              projectOptions={modalProjectOptions}
+            />
+          </Overlay>
+        )}
+        {/* Import Modal */}
+        {isImportModalOpen && (
+          <Overlay onClose={() => setIsImportModalOpen(false)}>
+            {/* <ImportModalHelp
+              open={isImportModalOpen}
+              onClose={() => setIsImportModalOpen(false)}
+              onImportSuccess={fetchCSRData}
+            /> */}
+            <ImportFileModal
+              title="Social - H.E.L.P"
+              downloadPath="/help/help-activity-template"
+              uploadPath="help/help-activity-bulk"
+              onClose={() => setIsImportModalOpen(false)} // or any close handler
+            />
+          </Overlay>
+        )}
+        {/* View/Edit Record Modal */}
+        {selectedRecord && (
+          <Overlay onClose={() => setSelectedRecord(null)}>
+            <ViewHelpRecordModal
+              title="CSR Activity Details"
+              record={{ ...selectedRecord, statusId: selectedRecord.statusId }}
+              companyOptions={modalCompanyOptions}
+              programOptions={modalProgramOptions}
+              projectOptions={modalProjectOptions}
+              // updatePath={getUpdatePath(selectedRecord)}
+              status={(data, error) => {
+                if (error) {
+                  // Debug message for update API error
+                  console.error('Error updating CSR activity:', error);
+                  if (error.response) {
+                    console.error('Update API Response Error:', {
+                      status: error.response.status,
+                      data: error.response.data,
+                      headers: error.response.headers,
+                    });
+                  } else if (error.request) {
+                    console.error('Update API No Response:', error.request);
+                  } else {
+                    console.error('Update API Setup Error:', error.message);
+                  }
+                }
+                if (!data) {
+                  fetchCSRData();
+                }
+                setSelectedRecord(null);
+              }}
+            />
+          </Overlay>
+        )}
       </Container>
     </Box>
   );
