@@ -4,9 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Economic from "./pages/Economic/Economic";
 import Landing from "./pages/Landing";
 import Sidebar from "./components/Sidebar";
-import EconomicGenerated from "./pages/Economic/EconomicGenerated";
-import EconomicExpenditures from "./pages/Economic/EconomicExpenditures";
-import EconomicCapitalProvider from "./pages/Economic/EconomicCapitalProvider";
+import EconomicRepository from "./pages/Economic/EconomicRepository";
 import EnvironmentEnergy from "./pages/Envi/EnvironmentEnergy";
 import EnvironmentWater from "./pages/Envi/EnvironmentWater";
 import EnvironmentWaste from "./pages/Envi/EnvironmentWaste";
@@ -16,8 +14,7 @@ import EnvironmentWaterDash from "./pages/Envi/EnvironmentWaterDash";
 import CSR from "./pages/CSR/CSRActivity";
 import Energy from "./pages/Energy/Energy";
 import HR from "./pages/HR/HRMain";
-import HREmployabilityDash from "./pages/HR/HREmployabilityDash";
-import HRSafetyandHealthDash from "./pages/HR/HRSafetyandHealthDash";
+import HRDashboard from "./pages/HR/HRMainDash";
 import PowerDashboard from "./pages/Energy/PowerDashboard";
 import EnvironmentEnergyDash from "./pages/Envi/EnvironmentEnergyDash";
 import EnvironmentWasteDash from "./pages/Envi/EnvironmentWasteDash";
@@ -34,15 +31,7 @@ function App() {
 
             {/* Economic Routes */}
             <Route path="/economic" element={<Economic />} />
-            <Route path="/economic/generated" element={<EconomicGenerated />} />
-            <Route
-              path="/economic/expenditures"
-              element={<EconomicExpenditures />}
-            />
-            <Route
-              path="/economic/capital-provider"
-              element={<EconomicCapitalProvider />}
-            />
+            <Route path="/economic/repository" element={<EconomicRepository />} />
 
             {/* CSV Routes */}
             <Route path="/energy/power-generation" element={<Energy />} />
@@ -65,8 +54,7 @@ function App() {
 
             {/* HR Routes */}
             <Route path="/social/hr" element={<HR />} />
-            <Route path="/social/hremployabilitydash" element={<HREmployabilityDash />} />
-            <Route path="/social/hrsafetyandhealthdash" element={<HRSafetyandHealthDash />} />
+            <Route path="/social/hrdashboard" element={<HRDashboard />} />
 
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/economics" element={<Economic />} />

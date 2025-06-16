@@ -16,7 +16,6 @@ import AddTrainingModal from "../../components/hr_components/AddTrainingModal";
 import AddParentalLeaveModal from "../../components/hr_components/AddParentalLeaveModal";
 import AddSafetyWorkDataModal from "../../components/hr_components/AddSafetyWorkDataModal";
 
-import ImportHRModal from "../../components/hr_components/ImportHRModal";
 import ImportFileModal from "../../components/ImportFileModal";
 
 import HREmployability from "./HR";
@@ -29,6 +28,7 @@ function HRMain() {
   const [selected, setSelected] = useState("Employability");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [shouldReload, setShouldReload] = useState(false);
 
   const [filteredExportData, setFilteredExportData] = useState(null);
 
@@ -51,7 +51,10 @@ function HRMain() {
           <>
             {isAddModalOpen && (
               <Overlay onClose={() => setIsAddModalOpen(false)}>
-                <AddEmployeeModal onClose={() => setIsAddModalOpen(false)} />
+                <AddEmployeeModal
+                  onClose={() => setIsAddModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
+                />
               </Overlay>
             )}
             {isImportModalOpen && (
@@ -74,6 +77,7 @@ function HRMain() {
               <Overlay onClose={() => setIsAddModalOpen(false)}>
                 <AddParentalLeaveModal
                   onClose={() => setIsAddModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
                 />
               </Overlay>
             )}
@@ -96,6 +100,7 @@ function HRMain() {
               <Overlay onClose={() => setIsAddModalOpen(false)}>
                 <AddSafetyWorkDataModal
                   onClose={() => setIsAddModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
                 />
               </Overlay>
             )}
@@ -116,7 +121,10 @@ function HRMain() {
           <>
             {isAddModalOpen && (
               <Overlay onClose={() => setIsAddModalOpen(false)}>
-                <AddTrainingModal onClose={() => setIsAddModalOpen(false)} />
+                <AddTrainingModal
+                  onClose={() => setIsAddModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
+                />
               </Overlay>
             )}
             {isImportModalOpen && (
@@ -137,7 +145,10 @@ function HRMain() {
           <>
             {isAddModalOpen && (
               <Overlay onClose={() => setIsAddModalOpen(false)}>
-                <AddOSHModal onClose={() => setIsAddModalOpen(false)} />
+                <AddOSHModal
+                  onClose={() => setIsAddModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
+                />
               </Overlay>
             )}
             {isImportModalOpen && (
@@ -163,6 +174,8 @@ function HRMain() {
     const commonProps = {
       openAddModal: () => setIsAddModalOpen(true),
       openImportModal: () => setIsImportModalOpen(true),
+      shouldReload,
+      setShouldReload,
     };
 
     switch (selected) {

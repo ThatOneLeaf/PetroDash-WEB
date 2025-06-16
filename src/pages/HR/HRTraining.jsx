@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, IconButton, Box, Typography } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
 
 import LaunchIcon from "@mui/icons-material/Launch";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -15,10 +16,11 @@ import Search from "../../components/Filter/Search";
 import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
-import ViewTrainingModal from "../../components/hr_components/ViewTrainingModal";
-import UpdateTrainingModal from "../../components/hr_components/UpdateTrainingModal";
+import dayjs from "dayjs";
 
-function Training({ onFilterChange }) {
+import ViewUpdateTrainingModal from "../../components/hr_components/ViewUpdateTrainingModal";
+
+function Training({ onFilterChange, shouldReload, setShouldReload }) {
   //INITIALIZE
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,8 +29,9 @@ function Training({ onFilterChange }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isUpdateModal, setIsUpdateModal] = useState(false);
-  const [isViewModal, setIsViewModal] = useState(false);
   const [row, setRow] = useState([]);
+
+  const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
 
   // DATA -- CHANGE PER PAGE
   const fetchTrainingData = async () => {
@@ -49,6 +52,13 @@ function Training({ onFilterChange }) {
     fetchTrainingData();
   }, []);
 
+  useEffect(() => {
+    if (shouldReload) {
+      fetchTrainingData();
+      setShouldReload(false);
+    }
+  }, [shouldReload]);
+
   //TABLE -- CHANGE PER PAGE
 
   const columns = [
@@ -57,7 +67,7 @@ function Training({ onFilterChange }) {
     {
       key: "date",
       label: "Date",
-      render: (val) => val.split("T")[0],
+      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
     },
     { key: "training_hours", label: "Training Hours" },
     { key: "number_of_participants", label: "Number of Participants" },
@@ -74,17 +84,12 @@ function Training({ onFilterChange }) {
       size="small"
       onClick={(event) => {
         event.stopPropagation();
-        setIsUpdateModal(true);
-        setRow(row);
+        setSelectedRecord(row);
       }}
     >
       <LaunchIcon />
     </IconButton>
   );
-
-  const showView = (row) => {
-    setIsViewModal(true), setRow(row);
-  };
 
   //FILTERS -- ITEMS --CHANGE PER PAGE
   const companyOptions = Array.from(
@@ -97,9 +102,9 @@ function Training({ onFilterChange }) {
 
   //STATUS DONT CHANGE
   const statusOptions = [
-    { label: "Pending", value: "PND" },
-    { label: "Head Approved", value: "HAP" },
-    { label: "Site Approved", value: "SAP" },
+    { label: "Under Review (Site)", value: "URS" },
+    { label: "Under Review (Head)", value: "URH" },
+    { label: "Approved", value: "APP" },
     { label: "For Revision (Site)", value: "FRS" },
     { label: "For Revision (Head)", value: "FRH" },
   ];
@@ -152,8 +157,43 @@ function Training({ onFilterChange }) {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading)
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          bgcolor: "#f5f7fa",
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress
+            size={64}
+            thickness={5}
+            sx={{ color: "#182959" }}
+          />
+          <Typography
+            sx={{
+              mt: 2,
+              color: "#182959",
+              fontWeight: 700,
+              fontSize: 20,
+            }}
+          >
+            Loading Training Data...
+          </Typography>
+        </Box>
+      </Box>
+    );
+  if (error)
+    return (
+      <Box sx={{ display: "flex" }}>
+        <div>{error}</div>
+      </Box>
+    );
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -251,7 +291,6 @@ function Training({ onFilterChange }) {
             columns={columns}
             rows={paginatedData}
             actions={renderActions}
-            onRowClick={showView}
             emptyMessage="No records found for the selected filters."
           />
         }
@@ -265,21 +304,28 @@ function Training({ onFilterChange }) {
           />
         </Box>
 
+        {selectedRecord != null &&
+          (console.log("Selected Record:", selectedRecord),
+          (
+            <Overlay onClose={() => setSelectedRecord(null)}>
+              <ViewUpdateTrainingModal
+                title={"HR Training Details"}
+                record={selectedRecord}
+                status={(data) => {
+                  if (!data) {
+                    fetchTrainingData();
+                  }
+                  setSelectedRecord(null);
+                }}
+                onClose={() => setSelectedRecord(null)}
+              />
+            </Overlay>
+          ))}
+
         {isUpdateModal && (
           <Overlay onClose={() => setIsUpdateModal(false)}>
             <UpdateTrainingModal
               onClose={() => setIsUpdateModal(false)}
-              row={row}
-            />
-          </Overlay>
-        )}
-
-        {isViewModal && (
-          <Overlay onClose={() => setIsViewModal(false)}>
-            <ViewTrainingModal
-              onClose={() => {
-                setIsViewModal(false);
-              }}
               row={row}
             />
           </Overlay>

@@ -31,6 +31,7 @@ import CustomTable from '../../components/Table/Table'; // Adjust path as needed
 import StatusChip from "../../components/StatusChip";
 import Pagination from '../../components/Pagination/pagination'; // Adjust path as needed
 import ViewEditRecordModal from '../../components/envi_components/ViewEditEnviModal';
+import CircularProgress from '@mui/material/CircularProgress';
 
 function EnvironmentEnergy() {
   const [data, setData] = useState([]);
@@ -140,6 +141,23 @@ function EnvironmentEnergy() {
       setError('Error fetching data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to refresh data based on selected tab
+  const refreshCurrentData = () => {
+    if (selected === 'Electricity') {
+      fetchElectricityData();
+    } else if (selected === 'Diesel') {
+      fetchDieselData();
+    }
+  };
+
+  // Handler for closing import modal with refresh
+  const handleImportModalClose = (shouldRefresh = false) => {
+    setIsImportModalOpen(false);
+    if (shouldRefresh) {
+      refreshCurrentData();
     }
   };
 
@@ -389,12 +407,8 @@ function EnvironmentEnergy() {
 
       alert(response.data.message);
 
-      if (selected === 'Electricity') {
-        fetchElectricityData();
-      }
-      if (selected === 'Diesel') {
-        fetchDieselData();
-      }
+      // Use the helper function to refresh data
+      refreshCurrentData();
 
       setIsModalOpen(false);
       setSelectedRowIds([]);
@@ -405,7 +419,16 @@ function EnvironmentEnergy() {
     }  
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
+        <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
+          Loading Energy Data...
+        </Typography>
+      </Box>
+    </Box>
+  );
   if (error) return <div>{error}</div>;
 
   const idKey = filteredData.length > 0
@@ -500,14 +523,14 @@ function EnvironmentEnergy() {
                     onClick={() => setIsModalOpen(true)}
                   >
                     Revise
-                </Button>
+                  </Button>
                 )}
               </>
             ) : (
               <>
                 <Button
                   variant="contained"
-                  onClick={() => exportToExcel(selectedRows)} // Export only selected rows
+                  onClick={() => selectedRowIds.length > 0 ? exportToExcel(selectedRows) : exportToExcel(filteredData)}
                   startIcon={<FileUploadIcon />}
                   sx={{
                     backgroundColor: '#182959',
@@ -766,20 +789,20 @@ function EnvironmentEnergy() {
         )}
         
         { isImportdModalOpen && (
-          <Overlay onClose={() => setIsImportModalOpen(false)}>
+          <Overlay onClose={() => handleImportModalClose(false)}>
             {selected === 'Electricity' ? (
                 <ImportFileModal
                   title="Energy - Electricity"
                   downloadPath="environment/create_template/envi_electric_consumption"
                   uploadPath="environment/bulk_upload_electric_consumption"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />
             ) : (
                 <ImportFileModal
                   title="Energy - Diesel"
                   downloadPath="environment/create_template/envi_diesel_consumption"
                   uploadPath="environment/bulk_upload_diesel_consumption"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />       
             )}
           </Overlay>
@@ -795,11 +818,7 @@ function EnvironmentEnergy() {
               updatePath={updatePath}
               status={(data) => {
                 if (!data){
-                  if (selected === 'Electricity') {
-                    fetchElectricityData(); // Refresh data after editing
-                  } else {
-                    fetchDieselData(); // Refresh data after editing
-                  }
+                  refreshCurrentData(); // Use helper function
                 };
                 setSelectedRecord(null);
               }}

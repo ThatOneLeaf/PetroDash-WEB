@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, Box, IconButton } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
 
 import LaunchIcon from "@mui/icons-material/Launch";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -14,34 +16,11 @@ import Pagination from "../../components/Pagination/pagination";
 import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
-import ViewEmployeeModal from "../../components/hr_components/ViewEmployeeModal";
-import UpdateEmployeeModal from "../../components/hr_components/UpdateEmployeeModal";
+import dayjs from "dayjs";
 
-//add to others
+import ViewUpdateEmployeeModal from "../../components/hr_components/ViewUpdateEmployeeModal";
 
-/*update modal
-const [isUpdateModal, setIsUpdateModal] = useState(false);
-const [row, setRow] = useState([]);
-
-import Overlay from "../../components/modal";
-const renderActions = (row) => (
-    <IconButton
-      size="small"
-      onClick={() => {
-        setIsUpdateModal(true);
-        setRow(row);
-      }}
-    >
-      <EditIcon />
-    </IconButton>
-  );
-
-function to show and hide overlay
-
-
-*/
-
-function Demographics({ onFilterChange }) {
+function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
   //INITIALIZE
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,9 +28,7 @@ function Demographics({ onFilterChange }) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [isUpdateModal, setIsUpdateModal] = useState(false);
-  const [isViewModal, setIsViewModal] = useState(false);
-  const [row, setRow] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
 
   // DATA -- CHANGE PER PAGE
   const fetchEmployabilityData = async () => {
@@ -71,6 +48,13 @@ function Demographics({ onFilterChange }) {
   useEffect(() => {
     fetchEmployabilityData();
   }, []);
+
+  useEffect(() => {
+    if (shouldReload) {
+      fetchEmployabilityData();
+      setShouldReload(false);
+    }
+  }, [shouldReload]);
 
   //TABLE -- CHANGE PER PAGE
 
@@ -115,12 +99,12 @@ function Demographics({ onFilterChange }) {
     {
       key: "start_date",
       label: "Start Date",
-      render: (val) => val.split("T")[0],
+      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
     },
     {
       key: "end_date",
       label: "End Date",
-      render: (val) => (val ? val.split("T")[0] : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
     },
     {
       key: "status_id",
@@ -130,21 +114,10 @@ function Demographics({ onFilterChange }) {
   ];
 
   const renderActions = (row) => (
-    <IconButton
-      size="small"
-      onClick={(event) => {
-        event.stopPropagation();
-        setIsUpdateModal(true);
-        setRow(row);
-      }}
-    >
+    <IconButton size="small" onClick={() => setSelectedRecord(row)}>
       <LaunchIcon />
     </IconButton>
   );
-
-  const showView = (row) => {
-    setIsViewModal(true), setRow(row);
-  };
 
   //FILTERS -- ITEMS --CHANGE PER PAGE
   const companyOptions = Array.from(
@@ -246,34 +219,43 @@ function Demographics({ onFilterChange }) {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading)
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          bgcolor: "#f5f7fa",
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress size={64} thickness={5} sx={{ color: "#182959" }} />
+          <Typography
+            sx={{
+              mt: 2,
+              color: "#182959",
+              fontWeight: 700,
+              fontSize: 20,
+            }}
+          >
+            Loading HR Demographics...
+          </Typography>
+        </Box>
+      </Box>
+    );
+  if (error)
+    return (
+      <Box sx={{ display: "flex" }}>
+        <div>{error}</div>
+      </Box>
+    );
 
   return (
     <Box sx={{ display: "flex" }}>
       <Box sx={{ flexGrow: 1, height: "100%", overflow: "auto" }}>
-        {/* 
-
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-            {buttonRoutes.map(({ label, value, path }) => (
-              <Button
-                key={value}
-                variant={selectedButton === value ? "contained" : "outlined"}
-                onClick={() => {
-                  setSelectedButton(value);
-                  navigate(path);
-                }}
-                style={{
-                  backgroundColor: selectedButton === value ? "#182959" : "",
-                  color: selectedButton === value ? "white" : "#182959",
-                  borderColor: "#182959",
-                }}
-              >
-                {label}
-              </Button>
-            ))}
-          </Box>*/}
-
         {/* Filters */}
 
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
@@ -385,7 +367,6 @@ function Demographics({ onFilterChange }) {
             columns={columns}
             rows={paginatedData}
             actions={renderActions}
-            onRowClick={showView}
             emptyMessage="No records found for the selected filters."
           />
         }
@@ -399,36 +380,23 @@ function Demographics({ onFilterChange }) {
           />
         </Box>
 
-        {isUpdateModal && (
-          <Overlay onClose={() => setIsUpdateModal(false)}>
-            <UpdateEmployeeModal
-              onClose={() => setIsUpdateModal(false)}
-              row={row}
-            />
-          </Overlay>
-        )}
-        {/* 
-        {isImportdModalOpen && (
-          <Overlay onClose={() => setIsImportModalOpen(false)}>
-            <ImportFileModal
-              title="Hr - Electricity"
-              downloadPath="environment/create_template/envi_electric_consumption"
-              uploadPath="environment/bulk_upload_electric_consumption"
-              onClose={() => setIsImportModalOpen(false)} // or any close handler
-            />
-          </Overlay>
-        )}*/}
-
-        {isViewModal && (
-          <Overlay onClose={() => setIsViewModal(false)}>
-            <ViewEmployeeModal
-              onClose={() => {
-                setIsViewModal(false);
-              }}
-              row={row}
-            />
-          </Overlay>
-        )}
+        {selectedRecord != null &&
+          (console.log("Selected Record:", selectedRecord),
+          (
+            <Overlay onClose={() => setSelectedRecord(null)}>
+              <ViewUpdateEmployeeModal
+                title={"HR Employability Details"}
+                record={selectedRecord}
+                status={(data) => {
+                  if (!data) {
+                    fetchEmployabilityData();
+                  }
+                  setSelectedRecord(null);
+                }}
+                onClose={() => setSelectedRecord(null)}
+              />
+            </Overlay>
+          ))}
       </Box>
     </Box>
   );

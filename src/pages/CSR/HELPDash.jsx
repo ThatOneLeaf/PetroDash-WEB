@@ -62,9 +62,9 @@ const kpiConfig = [
         bgColor: '#e3f0fc',
       },
       {
-        label: 'Project BEST',
+        label: 'Educational Mobile Devices',
         icon: <GroupsIcon sx={{ color: '#1976d2', fontSize: 40 }} />, // bigger icon
-        key: 'projectBest',
+        key: 'educationalMobileDevices',
         bgColor: '#e3f0fc',
       },
       {
@@ -100,7 +100,7 @@ function aggregateKPI(data) {
     // Education
     adoptedSchools: 0,
     collegeScholars: 0,
-    projectBest: 0,
+    educationalMobileDevices: 0,
     teachersTraining: 0,
     // Livelihood
     livelihoodParticipants: 0,
@@ -140,8 +140,13 @@ function aggregateKPI(data) {
     if (projectName.includes('scholar')) {
       result.collegeScholars += csrReport;
     }
-    if (projectName.includes('best')) {
-      result.projectBest += csrReport;
+    // Educational Mobile Devices: match "mobile device", "tablet", or "educational device"
+    if (
+      projectName.includes('mobile device') ||
+      projectName.includes('tablet') ||
+      projectName.includes('educational device')
+    ) {
+      result.educationalMobileDevices += csrReport;
     }
     if (projectName.includes('teacher')) {
       result.teachersTraining += csrReport;
@@ -192,15 +197,15 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
         minHeight: 0,
         padding: '18px 18px 14px 18px',
         display: 'flex',
-        flexDirection: 'row', // icon at the side
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'center',   
         height: '100%',
         textAlign: 'center',
       }}
     >
-      <Box sx={{ fontSize: 48, mr: 2 }}>{icon}</Box>
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+      <Box sx={{ fontSize: 48, mr: 0.5 /* reduced from 2 */ }}>{icon}</Box>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         {/*KPIS */}
         <Typography
           sx={{
@@ -263,8 +268,8 @@ export default function HELPDash() {
   const [filters, setFilters] = useState({
     year: '',
     company: '',
-    program: '',
-    project: ''
+    // program: '',
+    // project: ''
   });
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -299,18 +304,19 @@ export default function HELPDash() {
     ...new Set(data.map(d => d.programName).filter(Boolean))
   ].sort(), [data]);
   const projectOptions = useMemo(() => {
-    let filtered = data;
-    if (filters.program) filtered = filtered.filter(d => d.programName === filters.program);
-    return [...new Set(filtered.map(d => d.projectName).filter(Boolean))].sort();
-  }, [data, filters.program]);
+    // let filtered = data;
+    // if (filters.program) filtered = filtered.filter(d => d.programName === filters.program);
+    // return [...new Set(filtered.map(d => d.projectName).filter(Boolean))].sort();
+    return [];
+  }, [data /*, filters.program*/]);
 
   // Filtered data for KPIs
   const filteredData = useMemo(() => {
     return data.filter(row => {
       if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
       if (filters.company && row.companyName !== filters.company) return false;
-      if (filters.program && row.programName !== filters.program) return false;
-      if (filters.project && row.projectName !== filters.project) return false;
+      // if (filters.program && row.programName !== filters.program) return false;
+      // if (filters.project && row.projectName !== filters.project) return false;
       return true;
     });
   }, [data, filters]);
@@ -322,12 +328,12 @@ export default function HELPDash() {
     setFilters(f => ({
       ...f,
       [key]: value,
-      ...(key === 'program' ? { project: '' } : {}) // Reset project if program changes
+      // ...(key === 'program' ? { project: '' } : {}) // Reset project if program changes
     }));
   };
 
   // Clear all filters
-  const clearFilters = () => setFilters({ year: '', company: '', program: '', project: '' });
+  const clearFilters = () => setFilters({ year: '', company: '' /*, program: '', project: ''*/ });
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', background: '#f4f6fb' }}>
@@ -419,50 +425,10 @@ export default function HELPDash() {
             ))}
           </select>
 
-          {/* Program Filter */}
-          <select
-            value={filters.program}
-            onChange={e => handleFilter('program', e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e2e8f0',
-              borderRadius: '20px',
-              backgroundColor: 'white',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              minWidth: '100px'
-            }}
-          >
-            <option value="">All Programs</option>
-            {programOptions.map(p => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
+          {/* Program Filter - removed */}
+          {/* Project Filter - removed */}
 
-          {/* Project Filter */}
-          <select
-            value={filters.project}
-            onChange={e => handleFilter('project', e.target.value)}
-            disabled={!filters.program && projectOptions.length === 0}
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e2e8f0',
-              borderRadius: '20px',
-              backgroundColor: 'white',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              minWidth: '100px'
-            }}
-          >
-            <option value="">All Projects</option>
-            {projectOptions.map(p => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-
-          {(filters.year || filters.company || filters.program || filters.project) && (
+          {(filters.year || filters.company /*|| filters.program || filters.project*/) && (
             <button
               style={{
                 padding: '8px 12px',
@@ -515,6 +481,9 @@ export default function HELPDash() {
                   width: '100%',
                   margin: 0,
                   px: { xs: 0, sm: 1 },
+                  justifyContent: 'center', // Center all KPI boxes horizontally
+                  alignItems: 'center',     // Center all KPI boxes vertically
+                  textAlign: 'center',
                 }}
               >
                 {section.items.map(item => (
@@ -527,8 +496,8 @@ export default function HELPDash() {
                     key={item.key}
                     sx={{
                       display: 'flex',
-                      justifyContent: 'stretch',
-                      alignItems: 'stretch',
+                      justifyContent: 'center', // Center KPIBox in grid cell
+                      alignItems: 'center',     // Center KPIBox in grid cell
                       width: '100%',
                       flexGrow: 1,
                       flexBasis: 0,

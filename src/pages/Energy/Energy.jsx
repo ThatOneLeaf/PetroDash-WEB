@@ -9,6 +9,7 @@ import {
   IconButton,
   Typography
 } from "@mui/material";
+import CircularProgress from '@mui/material/CircularProgress';
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import AddEnergyGeneratedModal from "../../components/AddPowerGeneratedModal";
@@ -74,8 +75,12 @@ function Energy() {
 
 
   const [powerPlants, setPowerPlants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchEnergyData = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await api.get("/energy/energy_records_by_status");
       const result = response.data;
@@ -100,6 +105,9 @@ function Energy() {
       setData(formattedData);
     } catch (error) {
       console.error("Error fetching energy data:", error);
+      setError("Failed to load energy data.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -234,6 +242,18 @@ function Energy() {
     window.addEventListener('resize', calculateRowsPerPage);
     return () => window.removeEventListener('resize', calculateRowsPerPage);
   }, []);
+
+  if (loading) return (
+    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
+        <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
+          Loading Energy Data...
+        </Typography>
+      </Box>
+    </Box>
+  );
+  if (error) return <div>{error}</div>;
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -374,13 +394,23 @@ function Energy() {
             />
           )}
 
+
+
           {/* Pagination */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-            <Pagination
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+            {/* Row Count Display */}
+            <Typography sx={{ fontSize: '0.85rem'}}>
+              Showing {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
+            </Typography>
+            <Pagination 
               page={page}
               count={Math.ceil(filteredData.length / rowsPerPage)}
               onChange={handleChangePage}
             />
+            <Typography sx={{ fontSize: '0.85rem'}}>
+              Showing {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
+              {Math.min(page * rowsPerPage, filteredData.length)} records
+            </Typography>
           </Box>
         </Container>
 

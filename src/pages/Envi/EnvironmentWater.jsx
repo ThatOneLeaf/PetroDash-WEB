@@ -32,6 +32,7 @@ import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import ViewEditRecordModal from '../../components/envi_components/ViewEditEnviModal';
+import CircularProgress from '@mui/material/CircularProgress';
 
 function EnvironmentWater() {
   const [data, setData] = useState([]);
@@ -129,6 +130,25 @@ function EnvironmentWater() {
       setError('Error fetching data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to refresh data based on selected tab
+  const refreshCurrentData = () => {
+    if (selected === 'Abstraction') {
+      fetchAbstractionData();
+    } else if (selected === 'Discharged') {
+      fetchDischargedData();
+    } else if (selected === 'Consumption') {
+      fetchConsumptionData();
+    }
+  };
+
+  // Handler for closing import modal with refresh
+  const handleImportModalClose = (shouldRefresh = false) => {
+    setIsImportModalOpen(false);
+    if (shouldRefresh) {
+      refreshCurrentData();
     }
   };
 
@@ -366,15 +386,8 @@ function EnvironmentWater() {
 
       alert(response.data.message);
 
-      if (selected === 'Abstraction') {
-        fetchAbstractionData();
-      }
-      if (selected === 'Discharged') {
-        fetchDischargedData();
-      }
-      if (selected === 'Consumption') {
-        fetchConsumptionData();
-      }
+      // Use the helper function to refresh data
+      refreshCurrentData();
 
       setIsModalOpen(false);
       setSelectedRowIds([]);
@@ -385,7 +398,16 @@ function EnvironmentWater() {
     }  
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress size={64} thickness={5} sx={{ color: '#2B8C37' }} />
+        <Typography sx={{ mt: 2, color: '#2B8C37', fontWeight: 700, fontSize: 20 }}>
+          Loading Water Data...
+        </Typography>
+      </Box>
+    </Box>
+  );
   if (error) return <div>{error}</div>;
 
   const idKey = filteredData.length > 0
@@ -481,14 +503,14 @@ function EnvironmentWater() {
                     onClick={() => setIsModalOpen(true)}
                   >
                     Revise
-                </Button>
+                  </Button>
                 )}
               </>
             ) : (
               <>
                 <Button
                   variant="contained"
-                  onClick={() => exportToExcel(selectedRows)} // Export only selected rows
+                  onClick={() => selectedRowIds.length > 0 ? exportToExcel(selectedRows) : exportToExcel(filteredData)}
                   startIcon={<FileUploadIcon />}
                   sx={{
                     backgroundColor: '#182959',
@@ -727,13 +749,13 @@ function EnvironmentWater() {
         )}
 
         {isImportdModalOpen && (
-          <Overlay onClose={() => setIsImportModalOpen(false)}>
+          <Overlay onClose={() => handleImportModalClose(false)}>
             {selected === 'Abstraction' && (
                 <ImportFileModal
                   title="Water - Abstraction"
                   downloadPath="environment/create_template/envi_water_abstraction"
                   uploadPath="environment/bulk_upload_water_abstraction"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />     
             )}
             {selected === 'Discharged' && (
@@ -741,7 +763,7 @@ function EnvironmentWater() {
                   title="Water - Discharged"
                   downloadPath="environment/create_template/envi_water_discharge"
                   uploadPath="environment/bulk_upload_water_discharge"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />
             )}
             {selected === 'Consumption' && (
@@ -749,7 +771,7 @@ function EnvironmentWater() {
                   title="Water - Consumption"
                   downloadPath="environment/create_template/envi_water_consumption"
                   uploadPath="environment/bulk_upload_water_consumption"
-                  onClose={() => setIsImportModalOpen(false)} // or any close handler
+                  onClose={(shouldRefresh) => handleImportModalClose(shouldRefresh)}
                 />
             )}
           </Overlay>
@@ -765,13 +787,7 @@ function EnvironmentWater() {
               updatePath={updatePath}
               status={(data) => {
                 if (!data){
-                  if (selected === 'Abstraction') {
-                    fetchAbstractionData(); // Refresh data after editing
-                  } else if (selected === 'Discharged'){
-                    fetchDischargedData(); // Refresh data after editing
-                  } else {
-                    fetchConsumptionData();
-                  }
+                  refreshCurrentData(); // Use helper function
                 };
                 setSelectedRecord(null);
               }}

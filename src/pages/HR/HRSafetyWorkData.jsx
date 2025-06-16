@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, IconButton, Box, Typography } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
 
 import LaunchIcon from "@mui/icons-material/Launch";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -14,10 +15,11 @@ import Search from "../../components/Filter/Search";
 import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
-import ViewSafetyWorkDataModal from "../../components/hr_components/ViewSafetyWorkDataModal";
-import UpdateSafetyWorkDataModal from "../../components/hr_components/UpdateSafetyWorkDataModal";
+import dayjs from "dayjs";
 
-function SafetyWorkData({ onFilterChange }) {
+import ViewUpdateSafetyWorkDataModal from "../../components/hr_components/ViewUpdateSafetyWorkDataModal";
+
+function SafetyWorkData({ onFilterChange, shouldReload, setShouldReload }) {
   //INITIALIZE
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,9 +27,7 @@ function SafetyWorkData({ onFilterChange }) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [isUpdateModal, setIsUpdateModal] = useState(false);
-  const [isViewModal, setIsViewModal] = useState(false);
-  const [row, setRow] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
 
   // DATA -- CHANGE PER PAGE
   const fetchSafetyWorkData = async () => {
@@ -48,6 +48,13 @@ function SafetyWorkData({ onFilterChange }) {
     fetchSafetyWorkData();
   }, []);
 
+  useEffect(() => {
+    if (shouldReload) {
+      fetchSafetyWorkData();
+      setShouldReload(false);
+    }
+  }, [shouldReload]);
+
   //TABLE -- CHANGE PER PAGE
 
   const columns = [
@@ -56,7 +63,7 @@ function SafetyWorkData({ onFilterChange }) {
     {
       key: "date",
       label: "Date",
-      render: (val) => val.split("T")[0],
+      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
     },
     { key: "manpower", label: "Manpower" },
     { key: "manhours", label: "Manhours" },
@@ -72,17 +79,12 @@ function SafetyWorkData({ onFilterChange }) {
       size="small"
       onClick={(event) => {
         event.stopPropagation();
-        setIsUpdateModal(true);
-        setRow(row);
+        setSelectedRecord(row);
       }}
     >
       <LaunchIcon />
     </IconButton>
   );
-
-  const showView = (row) => {
-    setIsViewModal(true), setRow(row);
-  };
 
   //FILTERS -- ITEMS --CHANGE PER PAGE
   const companyOptions = Array.from(
@@ -95,9 +97,9 @@ function SafetyWorkData({ onFilterChange }) {
 
   //STATUS DONT CHANGE
   const statusOptions = [
-    { label: "Pending", value: "PND" },
-    { label: "Head Approved", value: "HAP" },
-    { label: "Site Approved", value: "SAP" },
+    { label: "Under Review (Site)", value: "URS" },
+    { label: "Under Review (Head)", value: "URH" },
+    { label: "Approved", value: "APP" },
     { label: "For Revision (Site)", value: "FRS" },
     { label: "For Revision (Head)", value: "FRH" },
   ];
@@ -150,34 +152,47 @@ function SafetyWorkData({ onFilterChange }) {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading)
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          bgcolor: "#f5f7fa",
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress
+            size={64}
+            thickness={5}
+            sx={{ color: "#182959" }}
+          />
+          <Typography
+            sx={{
+              mt: 2,
+              color: "#182959",
+              fontWeight: 700,
+              fontSize: 20,
+            }}
+          >
+            Loading Safety Work Data...
+          </Typography>
+        </Box>
+      </Box>
+    );
+  if (error)
+    return (
+      <Box sx={{ display: "flex" }}>
+        <div>{error}</div>
+      </Box>
+    );
 
   return (
     <Box sx={{ display: "flex" }}>
       <Box sx={{ flexGrow: 1, height: "100%", overflow: "auto" }}>
-        {/* 
-
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-            {buttonRoutes.map(({ label, value, path }) => (
-              <Button
-                key={value}
-                variant={selectedButton === value ? "contained" : "outlined"}
-                onClick={() => {
-                  setSelectedButton(value);
-                  navigate(path);
-                }}
-                style={{
-                  backgroundColor: selectedButton === value ? "#182959" : "",
-                  color: selectedButton === value ? "white" : "#182959",
-                  borderColor: "#182959",
-                }}
-              >
-                {label}
-              </Button>
-            ))}
-          </Box>*/}
-
         {/* Filters */}
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
           <Search onSearch={setSearchQuery} suggestions={suggestions} />
@@ -249,7 +264,6 @@ function SafetyWorkData({ onFilterChange }) {
             columns={columns}
             rows={paginatedData}
             actions={renderActions}
-            onRowClick={showView}
             emptyMessage="No records found for the selected filters."
           />
         }
@@ -263,25 +277,23 @@ function SafetyWorkData({ onFilterChange }) {
           />
         </Box>
 
-        {isUpdateModal && (
-          <Overlay onClose={() => setIsUpdateModal(false)}>
-            <UpdateSafetyWorkDataModal
-              onClose={() => setIsUpdateModal(false)}
-              row={row}
-            />
-          </Overlay>
-        )}
-
-        {isViewModal && (
-          <Overlay onClose={() => setIsViewModal(false)}>
-            <ViewSafetyWorkDataModal
-              onClose={() => {
-                setIsViewModal(false);
-              }}
-              row={row}
-            />
-          </Overlay>
-        )}
+        {selectedRecord != null &&
+          (console.log("Selected Record:", selectedRecord),
+          (
+            <Overlay onClose={() => setSelectedRecord(null)}>
+              <ViewUpdateSafetyWorkDataModal
+                title={"HR Safety Work Data Details"}
+                record={selectedRecord}
+                status={(data) => {
+                  if (!data) {
+                    fetchSafetyWorkData();
+                  }
+                  setSelectedRecord(null);
+                }}
+                onClose={() => setSelectedRecord(null)}
+              />
+            </Overlay>
+          ))}
       </Box>
     </Box>
   );

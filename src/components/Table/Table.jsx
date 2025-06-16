@@ -33,6 +33,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 // height: string or number, fixed height for the table container (optional)
 // maxHeight: string or number, maximum height for the table container (optional)
 // minHeight: string or number, minimum height for the table container (optional)
+// selectable: boolean, whether to show checkboxes for row selection (optional - defaults to true)
 
 // Improved abbreviation: skip stopwords, ignore symbols/parentheses, keep numbers, max 4 chars
 const STOPWORDS = ["of", "the", "and", "for", "to", "in", "on", "at", "by", "with", "from", "as", "an", "a"];
@@ -60,7 +61,7 @@ const abbreviateHeader = (label) => {
 const Table = ({
   columns,
   rows, // ALL data, not pre-paginated
-  filteredData = [], // <-- add this prop for all filtered data
+  filteredData = [], // <-- ensure default to []
   page = 1,
   idKey,
   rowsPerPage = 10,
@@ -74,6 +75,7 @@ const Table = ({
   maxHeight,
   minHeight,
   onSelectionChange,
+  selectable = true, // New prop with default value true
 }) => {
   // Internal sort state - always used for actual sorting
   const [sortConfig, setSortConfig] = React.useState(initialSort);
@@ -177,16 +179,21 @@ const Table = ({
     );
   };
 
+  // Defensive: ensure columns and paginatedData are always arrays
+  const safeColumns = Array.isArray(columns) ? columns : [];
+  const safePaginatedData = Array.isArray(paginatedData) ? paginatedData : [];
+  const safeFilteredData = Array.isArray(filteredData) ? filteredData : [];
+
   // All IDs in filteredData (for select all)
   const allFilteredIds = React.useMemo(
-    () => filteredData.map(row => row[idKey]),
-    [filteredData, idKey]
+    () => safeFilteredData.map(row => row[idKey]),
+    [safeFilteredData, idKey]
   );
 
   // All IDs in paginatedData (for current page)
   const paginatedIds = React.useMemo(
-    () => rows.map(row => row[idKey]),
-    [rows, idKey]
+    () => safePaginatedData.map(row => row[idKey]),
+    [safePaginatedData, idKey]
   );
 
   // Selection logic for checkboxes
@@ -217,6 +224,9 @@ const Table = ({
     setSelected(newSelected);
     if (onSelectionChange) onSelectionChange(newSelected);
   };
+
+  // Before using data.map anywhere
+  const safeRows = Array.isArray(rows) ? rows : [];
 
   return (
     // Main container for table with horizontal scroll
@@ -257,33 +267,35 @@ const Table = ({
                 },
               }}
             >
-              {/* Checkbox header cell */}
-              <TableCell
-                padding="checkbox"
-                sx={{
-                  background: "#182959",
-                  color: "#fff",
-                  borderBottom: "none",
-                  position: "sticky",
-                  left: 0,
-                  top: 0, // Make this sticky on top too!
-                  zIndex: 3, // Higher than body checkbox cell (which is 1)
-                  width: 48,
-                  textAlign: "center",
-                }}
-              >
-                <Checkbox
-                  color="primary"
-                  indeterminate={isIndeterminate}
-                  checked={isAllSelected}
-                  onChange={handleSelectAll}
-                  inputProps={{ "aria-label": "select all rows" }}
-                  sx={{ color: "#fff", '&.Mui-checked': { color: "#fff" }, ml: 0.5 }}
-                />
-              </TableCell>
+              {/* Checkbox header cell - only if selectable is true */}
+              {selectable && (
+                <TableCell
+                  padding="checkbox"
+                  sx={{
+                    background: "#182959",
+                    color: "#fff",
+                    borderBottom: "none",
+                    position: "sticky",
+                    left: 0,
+                    top: 0,
+                    zIndex: 3,
+                    width: 48,
+                    textAlign: "center",
+                  }}
+                >
+                  <Checkbox
+                    color="primary"
+                    indeterminate={isIndeterminate}
+                    checked={isAllSelected}
+                    onChange={handleSelectAll}
+                    inputProps={{ "aria-label": "select all rows" }}
+                    sx={{ color: "#fff", '&.Mui-checked': { color: "#fff" }, ml: 0.5 }}
+                  />
+                </TableCell>
+              )}
 
               {/* Render column headers */}
-              {columns.map((col) => {
+              {safeColumns.map((col) => {
                 const words = col.label.replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
                 const isAbbreviated = words.length > 2;
                 const headerContent = isAbbreviated
@@ -375,15 +387,15 @@ const Table = ({
           </TableHead>
           <TableBody>
             {/* Show empty message if no rows */}
-            {paginatedData.length === 0 ? (
+            {safePaginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (actions ? 1 : 0)} align="center" sx={{ py: 6, color: "#b0b0b0", textAlign: "center", whiteSpace: "normal", wordBreak: "normal", overflowWrap: "break-word" }}>
+                <TableCell colSpan={safeColumns.length + (actions ? 1 : 0) + (selectable ? 1 : 0)} align="center" sx={{ py: 6, color: "#b0b0b0", textAlign: "center", whiteSpace: "normal", wordBreak: "normal", overflowWrap: "break-word" }}>
                   {emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (
               // Render table rows (paginated data)
-              paginatedData.map((row, idx) => (
+              safePaginatedData.map((row, idx) => (
                 <TableRow
                   key={row[idKey] ?? `${row.year ?? ""}-${row.comp ?? ""}-${row.type ?? ""}-${idx}`}
                   hover
@@ -395,30 +407,32 @@ const Table = ({
                   onClick={() => {
                     if (onRowClick) onRowClick(row);
                   }}
-                  selected={selected.includes(row[idKey])}
+                  selected={selectable && selected.includes(row[idKey])}
                 >
-                  {/* Checkbox cell */}
-                  <TableCell
-                    padding="checkbox"
-                    sx={{
-                      left: 0,
-                      background: "#fff",
-                      zIndex: 1,
-                      width: 48,
-                      textAlign: "center",
-                    }}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <Checkbox
-                      color="primary"
-                      checked={selected.includes(row[idKey])}
-                      onChange={() => handleSelectRow(row[idKey])}
-                      inputProps={{ "aria-label": `select row ${row[idKey]}` }}
-                    />
-                  </TableCell>
+                  {/* Checkbox cell - only if selectable is true */}
+                  {selectable && (
+                    <TableCell
+                      padding="checkbox"
+                      sx={{
+                        left: 0,
+                        background: "#fff",
+                        zIndex: 1,
+                        width: 48,
+                        textAlign: "center",
+                      }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <Checkbox
+                        color="primary"
+                        checked={selected.includes(row[idKey])}
+                        onChange={() => handleSelectRow(row[idKey])}
+                        inputProps={{ "aria-label": `select row ${row[idKey]}` }}
+                      />
+                    </TableCell>
+                  )}
 
                   {/* Render each cell for the row */}
-                  {columns.map((col) => (
+                  {safeColumns.map((col) => (
                     <TableCell
                       key={col.key}
                       align="center"

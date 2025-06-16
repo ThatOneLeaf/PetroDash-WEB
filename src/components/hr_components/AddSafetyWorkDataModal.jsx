@@ -15,7 +15,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import api from "../../services/api";
 
-function AddSafetyWorkDataModal({ onClose }) {
+function AddSafetyWorkDataModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
     contractor: "",
@@ -61,6 +61,7 @@ function AddSafetyWorkDataModal({ onClose }) {
       });
 
       console.log("success  ");
+      if (onSuccess) onSuccess();
       onClose();
 
       setFormData({

@@ -8,7 +8,7 @@ import api from "../../services/api";
 
 import PageButtons from "../../components/hr_components/page_button";
 
-import HREmployability from "./HRDash";
+import HREmployability from "./HREmployabilityDash";
 import HRSafetyTraining from "./HRSafetyTrainingDash";
 
 import Overlay from "../../components/modal";
@@ -34,6 +34,10 @@ function HRMainDash() {
       default:
         return <div>Page Not Found</div>;
     }
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   //create api for export
@@ -81,10 +85,10 @@ function HRMainDash() {
                     backgroundColor: "#0f1a3c",
                   },
                 }}
-                startIcon={<FileUploadIcon />}
-                onClick={() => exportToExcel(filteredExportData)}
+        
+                onClick={handleRefresh}
               >
-                EXPORT DATA
+                REFRESH
               </Button>
             </div>
           </div>

@@ -15,7 +15,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import api from "../../services/api";
 
-function AddTrainingModal({ onClose }) {
+function AddTrainingModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
     trainingName: "",
@@ -61,6 +61,7 @@ function AddTrainingModal({ onClose }) {
       });
 
       console.log("success  ");
+      if (onSuccess) onSuccess();
       onClose();
 
       setFormData({
