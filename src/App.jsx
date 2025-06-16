@@ -4,9 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Economic from "./pages/Economic/Economic";
 import Landing from "./pages/Landing";
 import Sidebar from "./components/Sidebar";
-import EconomicGenerated from "./pages/Economic/EconomicGenerated";
-import EconomicExpenditures from "./pages/Economic/EconomicExpenditures";
-import EconomicCapitalProvider from "./pages/Economic/EconomicCapitalProvider";
+import EconomicRepository from "./pages/Economic/EconomicRepository";
 import EnvironmentEnergy from "./pages/Envi/EnvironmentEnergy";
 import EnvironmentWater from "./pages/Envi/EnvironmentWater";
 import EnvironmentWaste from "./pages/Envi/EnvironmentWaste";
@@ -34,15 +32,7 @@ function App() {
 
             {/* Economic Routes */}
             <Route path="/economic" element={<Economic />} />
-            <Route path="/economic/generated" element={<EconomicGenerated />} />
-            <Route
-              path="/economic/expenditures"
-              element={<EconomicExpenditures />}
-            />
-            <Route
-              path="/economic/capital-provider"
-              element={<EconomicCapitalProvider />}
-            />
+            <Route path="/economic/repository" element={<EconomicRepository />} />
 
             {/* CSV Routes */}
             <Route path="/energy/power-generation" element={<Energy />} />
