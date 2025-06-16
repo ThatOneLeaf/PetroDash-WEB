@@ -1,15 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import DashboardIcon from "../assets/Icons/dashboard.svg";
 
-// Import icons and logos with corrected paths
+// Import icons and logos
 import PetroDashLogo from "../assets/petrodashlogo.png";
 import PetroEnergyLogo from "../assets/PetroEnergy_Logo.png";
-import DashboardIcon from "../assets/Icons/dashboard.svg";
 import EnergyIcon from "../assets/Icons/energy.svg";
 import EconomicsIcon from "../assets/Icons/economics.svg";
 import EnvironmentIcon from "../assets/Icons/environment.svg";
@@ -19,84 +19,211 @@ import LogoutIcon from "../assets/Icons/logout.svg";
 import DropDownIcon from "../assets/Icons/drop-down.svg";
 
 function SideBar({ collapsed: collapsedProp = false }) {
-  // Sidebar expands on hover, collapses on mouse leave
   const [collapsed, setCollapsed] = useState(true);
   const [envOpen, setEnvOpen] = useState(false);
   const [socialOpen, setSocialOpen] = useState(false);
-  const [dashboardOpen, setDashboardOpen] = useState(false); // Dashboard dropdown
-  const [dashboardHover, setDashboardHover] = useState(false); // Hover state for arrow
+  const [energyOpen, setEnergyOpen] = useState(false);
+  const [mode, setMode] = useState(() => {
+    // Read from localStorage on initial mount
+    return localStorage.getItem("sidebarMode") || "dashboard";
+  });
 
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  useMediaQuery(theme.breakpoints.down("sm")); // isMobile not used
 
-  // Additional function for Dashboard click
-  const handleDashboardClick = () => {
-    // Add any extra logic here (analytics, refresh, etc.)
-    navigate("/dashboard");
-  };
-
-  // Add this function back:
-  const handleDropdownToggle = (dropdown) => {
-    if (dropdown === "env") {
-      setEnvOpen((open) => {
-        if (!open) setSocialOpen(false);
-        return !open;
-      });
-    } else if (dropdown === "social") {
-      setSocialOpen((open) => {
-        if (!open) setEnvOpen(false);
-        return !open;
-      });
-    }
-  };
-
-  // Navigation items
+  // Only show Overview tab in dashboard mode
   const navItems = [
-    { label: "Energy", icon: EnergyIcon, to: "/energy" },
+    ...(mode === "dashboard"
+      ? [{ label: "Overview", icon: AssessmentIcon, to: "/dashboard" }]
+      : []),
+    { 
+      label: "Energy", 
+      icon: EnergyIcon, 
+      to: "/energy", // default
+      dropdown: [
+        { label: "Energy KPIS", to: "/energy" },
+        { label: "Energy Dashboard", to: "/energy/dashboard" }
+      ],
+      repository: { label: "Energy", to: "/energy/power-generation" }
+    },
     { label: "Economic", icon: EconomicsIcon, to: "/economic" },
     {
       label: "Environment",
       icon: EnvironmentIcon,
       to: "/environment",
-      dropdown: [
-        { label: "Energy", to: "/environment/energy" },
-        { label: "Water", to: "/environment/water" },
-        { label: "Waste", to: "/environment/waste" },
-        { label: "Air", to: "/environment/air" },
-        { label: "C.A.R.E", to: "/environment/care" },
-      ],
     },
     {
       label: "Social",
       icon: SocialIcon,
       to: "/social",
       dropdown: [
-        { label: "H.R.", to: "/social/hr" },
-        { label: "H.E.L.P", to: "/social/help-dash" },
-        { label: "ER1-94 Fund Allocations", to: "/social/er1-94" },
+        // HR dropdown will be generated dynamically below
       ],
     },
   ];
 
-  // Helper to check if a nav item is selected
-  const isSelected = (item) => {
-    if (item.dropdown) {
-      return item.dropdown.some((sub) => location.pathname.startsWith(sub.to));
+  // Helper to get correct environment dropdown based on mode
+  const getEnvironmentDropdown = () => {
+    if (mode === "dashboard") {
+      return [
+        { label: "Energy", to: "/environment/energy-dash" },
+        { label: "Water", to: "/environment/water-dash" },
+        { label: "Waste", to: "/environment/waste-dash" },
+        { label: "Air", to: "/environment/air-dash" }, // If you have an air dashboard, else remove
+        { label: "C.A.R.E", to: "/environment/care-dash" }, // If you have a care dashboard, else remove
+      ];
+    } else {
+      return [
+        { label: "Energy", to: "/environment/energy" },
+        { label: "Water", to: "/environment/water" },
+        { label: "Waste", to: "/environment/waste" },
+        { label: "Air", to: "/environment/air" },
+        { label: "C.A.R.E", to: "/environment/care" },
+      ];
     }
-    return location.pathname.startsWith(item.to);
   };
 
-  // Helper to check if a dropdown subitem is selected
+  // Helper to get correct Social dropdown based on mode
+  const getSocialDropdown = () => {
+    if (mode === "dashboard") {
+      return [
+        { label: "H.R.", to: "/social/hrdashboard" }, // DASHBOARD mode
+        { label: "H.E.L.P", to: "/social/help-dash" },
+        { label: "ER1-94 Fund Allocations", to: "/social/er1-94" },
+      ];
+    } else {
+      return [
+        { label: "H.R.", to: "/social/hr" }, // REPOSITORY mode
+        { label: "H.E.L.P", to: "/social/help-dash" },
+        { label: "ER1-94 Fund Allocations", to: "/social/er1-94" },
+      ];
+    }
+  };
+
+  // Helper to get correct Energy dropdown based on mode
+  const getEnergyDropdown = () => {
+    if (mode === "dashboard") {
+      return [
+        { label: "Energy KPIS", to: "/energy" },
+        { label: "Energy Dashboard", to: "/energy/dashboard" }
+      ];
+    } else {
+      return [
+        { label: "Energy Repository", to: "/energy/power-generation" }
+      ];
+    }
+  };
+
+  const isSelected = (item) =>
+    item.label === "Environment"
+      ? getEnvironmentDropdown().some((sub) => location.pathname.startsWith(sub.to))
+      : item.label === "Social"
+        ? getSocialDropdown().some((sub) => location.pathname.startsWith(sub.to))
+        : item.label === "Energy"
+          ? getEnergyDropdown().some((sub) => location.pathname.startsWith(sub.to))
+          : item.dropdown
+            ? item.dropdown.some((sub) => location.pathname.startsWith(sub.to))
+            : location.pathname.startsWith(item.to);
+
   const isDropdownSelected = (sub) => location.pathname.startsWith(sub.to);
 
-  // Helper to determine if sidebar is expanded (not collapsed)
   const isExpanded = !collapsed;
+
+  function handleDropdownToggle(type) {
+    if (type === "env") setEnvOpen((open) => !open);
+    if (type === "social") setSocialOpen((open) => !open);
+    if (type === "energy") setEnergyOpen((open) => !open);
+  }
+
+  // Helper to navigate to correct route for Economics
+  const handleNav = (item) => {
+    if (item.label === "Economic") {
+      if (mode === "dashboard") {
+        navigate("/economic");
+      } else {
+        navigate("/economic/repository");
+      }
+    } else {
+      navigate(item.to);
+    }
+    setEnvOpen(false);
+    setSocialOpen(false);
+  };
+
+  // Helper: map current path to dashboard/repository equivalent
+  const getToggledPath = (pathname, newMode) => {
+    // Economics
+    if (pathname.startsWith("/economic")) {
+      return newMode === "dashboard" ? "/economic" : "/economic/repository";
+    }
+    // Energy
+    if (pathname === "/energy" || pathname === "/energy/dashboard") {
+      return newMode === "repository" ? "/energy/power-generation" : "/energy";
+    }
+    if (pathname === "/energy/power-generation") {
+      return newMode === "dashboard" ? "/energy" : "/energy/power-generation";
+    }
+    // Environment
+    if (pathname.startsWith("/environment/energy")) {
+      return newMode === "dashboard" ? "/environment/energy-dash" : "/environment/energy";
+    }
+    if (pathname.startsWith("/environment/water")) {
+      return newMode === "dashboard" ? "/environment/water-dash" : "/environment/water";
+    }
+    if (pathname.startsWith("/environment/waste")) {
+      return newMode === "dashboard" ? "/environment/waste-dash" : "/environment/waste";
+    }
+    if (pathname.startsWith("/environment/air")) {
+      return newMode === "dashboard" ? "/environment/air-dash" : "/environment/air";
+    }
+    if (pathname.startsWith("/environment/care")) {
+      return newMode === "dashboard" ? "/environment/care-dash" : "/environment/care";
+    }
+    // Social/HR
+    if (pathname.startsWith("/social/hrdashboard")) {
+      return newMode === "repository" ? "/social/hr" : "/social/hrdashboard";
+    }
+    if (pathname.startsWith("/social/hr")) {
+      return newMode === "dashboard" ? "/social/hrdashboard" : "/social/hr";
+    }
+    // Social/HELP
+    if (
+      pathname.startsWith("/social/help") ||
+      pathname.startsWith("/social/helpdash") ||
+      pathname.startsWith("/social/help-dash")
+    ) {
+      return newMode === "dashboard" ? "/social/help-dash" : "/social/csr";
+    }
+    if (pathname.startsWith("/social/csr")) {
+      return newMode === "dashboard" ? "/social/help-dash" : "/social/csr";
+    }
+    // Add more department mappings as needed
+
+    // Default: stay on current path
+    return pathname;
+  };
+
+  // Toggle mode and navigate to correct economics page if on economics
+  const handleToggleMode = () => {
+    const newMode = mode === "dashboard" ? "repository" : "dashboard";
+    setMode(newMode);
+
+    // Try to map current path to the toggled mode
+    const toggledPath = getToggledPath(location.pathname, newMode);
+    if (toggledPath !== location.pathname) {
+      navigate(toggledPath);
+    }
+  };
+
+  // Sync mode to localStorage whenever it changes
+  React.useEffect(() => {
+    localStorage.setItem("sidebarMode", mode);
+  }, [mode]);
 
   return (
     <>
-      {/* Backdrop for overlay effect when expanded */}
       {isExpanded && (
         <Box
           onClick={() => setCollapsed(true)}
@@ -132,18 +259,17 @@ function SideBar({ collapsed: collapsedProp = false }) {
           left: 0,
           overflowX: "hidden",
           zIndex: collapsed ? 100 : 1300,
-          // Animate overlay in/out
           pointerEvents: "auto",
         }}
         onMouseEnter={() => setCollapsed(false)}
         onMouseLeave={() => {
           setCollapsed(true);
-          setDashboardOpen(false); // Close dashboard dropdown on collapse
+          setEnvOpen(false);
+          setSocialOpen(false);
+          setEnergyOpen(false);
         }}
       >
-        {/* Top Section: Logos and Dashboard */}
         <Box>
-          {/* Logos */}
           <Box
             sx={{
               display: "flex",
@@ -189,320 +315,312 @@ function SideBar({ collapsed: collapsedProp = false }) {
                     transition: "opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1)",
                     opacity: collapsed ? 0 : 1,
                     transform: collapsed ? "scale(0.95)" : "scale(1)",
-                    // cursor removed here
                   }}
                 />
               )}
             </div>
           </Box>
-          {/* Dashboard Dropdown */}
+          {/* Dashboard/Repository Toggle Button or Icon */}
           <Box sx={{ px: collapsed ? 1 : 3, mb: 2, mt: 2, transition: "padding 0.3s" }}>
-            <Box
-              sx={{
-                position: "relative",
-                width: "100%",
-                height: 40,
-              }}
-              onMouseEnter={() => {
-                if (!collapsed && !isMobile) {
-                  clearTimeout(window.__dashboardDropdownTimeout);
-                  setDashboardHover(true);
-                  setDashboardOpen(true);
-                }
-              }}
-              onMouseLeave={() => {
-                if (!collapsed && !isMobile) {
-                  window.__dashboardDropdownTimeout = setTimeout(() => {
-                    setDashboardHover(false);
-                    setDashboardOpen(false);
-                  }, 180);
-                }
-              }}
-            >
+            {collapsed ? (
+              <img
+                src={DashboardIcon}
+                alt="Dashboard"
+                style={{
+                  width: 28,
+                  height: 28,
+                  display: "block",
+                  margin: "0 auto",
+                  cursor: "pointer",
+                  transition: "filter 0.2s",
+                  filter:
+                    mode === "dashboard"
+                      ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
+                      : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
+                }}
+                onClick={handleToggleMode}
+              />
+            ) : (
               <Button
                 fullWidth
                 variant="contained"
                 sx={{
-                  bgcolor: collapsed ? "transparent" : "#1a3365",
+                  bgcolor: mode === "dashboard" ? "#1a3365" : "#2B8C37",
                   color: "#fff",
                   borderRadius: 999,
                   height: 40,
-                  fontWeight: 600,
-                  fontSize: collapsed ? 0 : 16,
+                  fontWeight: 700,
+                  fontSize: 16,
                   minWidth: 0,
-                  borderLeft: location.pathname.startsWith("/dashboard") && !collapsed ? "6px solid #182959" : "6px solid transparent",
-                  boxShadow: collapsed ? "none" : undefined,
-                  "&:hover": { bgcolor: collapsed ? "transparent" : "#162a52" },
+                  boxShadow: "none",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  position: "relative",
-                  transition: "font-size 0.35s cubic-bezier(.4,0,.2,1), background 0.2s",
-                  p: 0,
-                  ...(collapsed && { justifyContent: "center", alignItems: "center" }),
-                  overflow: "visible",
+                  "&:hover": { bgcolor: mode === "dashboard" ? "#162a52" : "#23702b" },
+                  transition: "all 0.2s",
+                  mb: 1,
                 }}
-                onClick={() => {
-                  if (isMobile) {
-                    setDashboardOpen(true);
-                  } else if (!collapsed) {
-                    setDashboardOpen((open) => !open);
-                  } else {
-                    handleDashboardClick();
-                  }
-                }}
-                disableRipple
+                onClick={handleToggleMode}
               >
-                {collapsed ? (
-                  <img
-                    src={DashboardIcon}
-                    alt="Dashboard"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      display: "block",
-                      margin: "0 auto",
-                      filter:
-                        "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)",
-                    }}
-                  />
-                ) : (
-                  <>
-                    <span
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        textAlign: "center",
-                        transition: "transform 0.25s cubic-bezier(.4,0,.2,1)",
-                        transform: dashboardHover ? "translateX(-16px)" : "translateX(0)",
+                {mode === "dashboard" ? "Dashboard" : "Repository"}
+              </Button>
+            )}
+          </Box>
+          <Box
+            sx={{
+              bgcolor: "#fff",
+              transition: "background 0.2s",
+            }}
+          >
+            {navItems.map((item) =>
+              item.label === "Energy" ? (
+                mode === "dashboard" ? (
+                  // DASHBOARD MODE: Energy is a dropdown styled like Environment
+                  <React.Fragment key={item.label}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        px: collapsed ? 0 : 4,
+                        py: 1.5,
+                        gap: collapsed ? 0 : 2,
+                        cursor: "pointer",
+                        transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                        bgcolor:
+                          (energyOpen && !collapsed)
+                            ? "#2B8C37"
+                            : (isSelected(item) && !collapsed)
+                              ? "rgba(43,140,55,0.5)"
+                              : "transparent",
+                        borderRadius: (energyOpen && !collapsed) || (isSelected(item) && !collapsed) ? 0 : undefined,
+                        position: "relative",
+                        "&::before": isSelected(item) ? {
+                          content: '""',
+                          position: "absolute",
+                          left: 0,
+                          top: 4,
+                          bottom: 4,
+                          width: 6,
+                          background: "#000",
+                          borderTopRightRadius: 12,
+                          borderBottomRightRadius: 12,
+                          zIndex: 2,
+                        } : {},
+                        "&:hover": {
+                          bgcolor: "rgba(43,140,55,0.5)",
+                        },
+                        "&:hover span": {
+                          color: "#fff",
+                          fontWeight: 700,
+                        },
+                        "&:hover img": {
+                          filter:
+                            "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                        },
                       }}
-                    >
-                      DASHBOARD
-                    </span>
-                    <span
-                      style={{
-                        position: "absolute",
-                        right: 24,
-                        top: "50%",
-                        transform: dashboardHover
-                          ? `translateY(-50%) translateX(0) rotate(${dashboardOpen ? 180 : 0}deg)`
-                          : "translateY(-50%) translateX(16px) rotate(0deg)",
-                        opacity: dashboardHover ? 1 : 0,
-                        transition: "opacity 0.25s, transform 0.25s cubic-bezier(.4,0,.2,1)",
-                        pointerEvents: "none",
+                      onClick={() => {
+                        if (!collapsed) handleDropdownToggle("energy");
+                        else {
+                          navigate("/energy");
+                        }
                       }}
                     >
                       <img
-                        src={DropDownIcon}
-                        alt="Expand"
+                        src={item.icon}
+                        alt={item.label}
                         style={{
-                          width: 22,
-                          height: 22,
-                          transition: "filter 0.2s",
-                          filter: dashboardOpen
-                            ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                            : undefined,
+                          width: 28,
+                          height: 28,
+                          transition: "filter 0.2s, margin 0.3s",
+                          marginLeft: 0,
+                          marginRight: 0,
+                          filter:
+                            ((energyOpen && !collapsed) || (isSelected(item) && !collapsed))
+                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
                         }}
                       />
-                    </span>
-                  </>
-                )}
-              </Button>
-              {/* Dashboard Dropdown Menu (Desktop) */}
-              {!collapsed && !isMobile && (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    top: 44,
-                    zIndex: 200,
-                    bgcolor: "#fff",
-                    boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)",
-                    borderRadius: 2,
-                    border: "1px solid #e0e0e0",
-                    overflow: "hidden",
-                    opacity: dashboardOpen ? 1 : 0,
-                    pointerEvents: dashboardOpen ? "auto" : "none",
-                    transform: dashboardOpen ? "translateY(0)" : "translateY(-10px)",
-                    transition: "opacity 0.25s cubic-bezier(.4,0,.2,1), transform 0.25s cubic-bezier(.4,0,.2,1)",
-                  }}
-                  // --- Improved dropdown hover handling with timers ---
-                  onMouseEnter={() => {
-                    clearTimeout(window.__dashboardDropdownTimeout);
-                    setDashboardHover(true);
-                    setDashboardOpen(true);
-                  }}
-                  onMouseLeave={() => {
-                    window.__dashboardDropdownTimeout = setTimeout(() => {
-                      setDashboardHover(false);
-                      setDashboardOpen(false);
-                    }, 180);
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "stretch",
+                      {collapsed ? null : (
+                        <>
+                          <span
+                            style={{
+                              fontSize: 18,
+                              fontWeight: (energyOpen || (isSelected(item) && !collapsed)) ? 700 : 400,
+                              color: (energyOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365",
+                              transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
+                              opacity: 1,
+                              marginLeft: 4,
+                              whiteSpace: "nowrap",
+                              flex: 1,
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                          <img
+                            src={DropDownIcon}
+                            alt="Expand"
+                            style={{
+                              width: 22,
+                              height: 22,
+                              marginLeft: 2,
+                              transition: "transform 0.3s, filter 0.2s",
+                              transform: energyOpen ? "rotate(180deg)" : "rotate(0deg)",
+                              filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                            }}
+                          />
+                        </>
+                      )}
+                    </Box>
+                    {!collapsed && energyOpen && (
+                      <Box
+                        sx={{
+                          pl: 4,
+                          pr: 2,
+                          py: 1,
+                          bgcolor: "#fff",
+                          boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          gap: 1,
+                          mb: 1,
+                          borderRadius: 2,
+                          border: "1px solid #e0e0e0",
+                          position: "relative",
+                          zIndex: 101,
+                          transition: "all 0.3s cubic-bezier(.4,0,.2,1)",
+                        }}
+                      >
+                        {getEnergyDropdown().map((sub) => (
+                          <Link
+                            key={sub.label}
+                            to={sub.to}
+                            style={{
+                              textDecoration: "none",
+                              color: "#1a3365",
+                              width: "100%",
+                            }}
+                            onClick={() => setEnergyOpen(false)}
+                          >
+                            <Box
+                              sx={{
+                                py: 0.8,
+                                px: 1,
+                                borderRadius: 2,
+                                transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                                bgcolor: isDropdownSelected(sub) ? "#182959" : "transparent",
+                                color: isDropdownSelected(sub) ? "#fff" : "#1a3365",
+                                fontWeight: isDropdownSelected(sub) ? 700 : 400,
+                                borderLeft: isDropdownSelected(sub) ? "6px solid #182959" : "6px solid transparent",
+                                borderTopRightRadius: isDropdownSelected(sub) ? 12 : 0,
+                                borderBottomRightRadius: isDropdownSelected(sub) ? 12 : 0,
+                                "&:hover": {
+                                  bgcolor: "#182959",
+                                  color: "#fff",
+                                  fontWeight: 700,
+                                },
+                                fontSize: 16,
+                                letterSpacing: 0.2,
+                                textAlign: "left",
+                                width: "100%",
+                              }}
+                            >
+                              {sub.label}
+                            </Box>
+                          </Link>
+                        ))}
+                      </Box>
+                    )}
+                  </React.Fragment>
+                ) : (
+                  // REPOSITORY MODE: Energy is a normal tab
+                  <Link
+                    key={item.label}
+                    to={item.repository.to}
+                    style={{
+                      textDecoration: "none",
+                      color: "#1a3365",
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(item.repository.to);
+                      setEnergyOpen(false);
                     }}
                   >
-                    <Button
+                    <Box
                       sx={{
-                        justifyContent: "flex-start",
-                        color: location.pathname.startsWith("/dashboard") ? "#fff" : "#1a3365",
-                        bgcolor: location.pathname.startsWith("/dashboard") ? "#182959" : "transparent",
-                        fontWeight: location.pathname.startsWith("/dashboard") ? 700 : 400,
-                        fontSize: 16,
-                        px: 3,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        px: collapsed ? 0 : 4,
                         py: 1.5,
-                        borderRadius: 0,
-                        borderBottom: "1px solid #eee",
-                        textTransform: "none",
-                        transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                        gap: collapsed ? 0 : 2,
+                        cursor: "pointer",
+                        transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                        bgcolor: isSelected(item) && !collapsed
+                          ? "rgba(26,51,101,0.32)"
+                          : "transparent",
+                        position: "relative",
+                        "&::before": isSelected(item) ? {
+                          content: '""',
+                          position: "absolute",
+                          left: 0,
+                          top: 4,
+                          bottom: 4,
+                          width: 6,
+                          background: "#000",
+                          borderTopRightRadius: 12,
+                          borderBottomRightRadius: 12,
+                          zIndex: 2,
+                        } : {},
                         "&:hover": {
-                          bgcolor: "#182959",
+                          bgcolor: "rgba(26,51,101,0.32)",
+                        },
+                        "&:hover span": {
                           color: "#fff",
                           fontWeight: 700,
                         },
-                      }}
-                      onClick={() => {
-                        setDashboardOpen(false);
-                        handleDashboardClick();
-                      }}
-                    >
-                      Dashboard
-                    </Button>
-                    <Button
-                      sx={{
-                        justifyContent: "flex-start",
-                        color: location.pathname.startsWith("/repository") ? "#fff" : "#1a3365",
-                        bgcolor: location.pathname.startsWith("/repository") ? "#182959" : "transparent",
-                        fontWeight: location.pathname.startsWith("/repository") ? 700 : 400,
-                        fontSize: 16,
-                        px: 3,
-                        py: 1.5,
-                        borderRadius: 0,
-                        textTransform: "none",
-                        transition: "background 0.2s, color 0.2s, font-weight 0.2s",
-                        "&:hover": {
-                          bgcolor: "#182959",
-                          color: "#fff",
-                          fontWeight: 700,
+                        "&:hover img": {
+                          filter:
+                            "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
                         },
                       }}
-                      onClick={() => {
-                        setDashboardOpen(false);
-                        navigate("/repository");
-                      }}
                     >
-                      Repository
-                    </Button>
-                  </Box>
-                </Box>
-              )}
-              {/* Dashboard Dropdown Menu (Mobile) */}
-              {isMobile && (
-                <Dialog
-                  open={dashboardOpen}
-                  onClose={() => setDashboardOpen(false)}
-                  fullWidth
-                  PaperProps={{
-                    sx: {
-                      position: "fixed",
-                      bottom: 0,
-                      m: 0,
-                      borderRadius: "16px 16px 0 0",
-                      width: "100%",
-                      maxWidth: "100vw",
-                    },
-                  }}
-                  sx={{
-                    zIndex: 2000,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "stretch",
-                      p: 2,
-                      gap: 1,
-                      textAlign: "center", // Center text for all children
-                    }}
-                  >
-                    <Button
-                      sx={{
-                        justifyContent: "center", // Center button text
-                        color: location.pathname.startsWith("/dashboard") ? "#fff" : "#1a3365",
-                        bgcolor: location.pathname.startsWith("/dashboard") ? "#182959" : "transparent",
-                        fontWeight: location.pathname.startsWith("/dashboard") ? 700 : 400,
-                        fontSize: 18,
-                        px: 2,
-                        py: 1.5,
-                        borderRadius: 2,
-                        textTransform: "none",
-                        transition: "background 0.2s, color 0.2s, font-weight 0.2s",
-                        "&:hover": {
-                          bgcolor: "#182959",
-                          color: "#fff",
-                          fontWeight: 700,
-                        },
-                      }}
-                      onClick={() => {
-                        setDashboardOpen(false);
-                        handleDashboardClick();
-                      }}
-                    >
-                      Dashboard
-                    </Button>
-                    <Button
-                      sx={{
-                        justifyContent: "center", // Center button text
-                        color: location.pathname.startsWith("/repository") ? "#fff" : "#1a3365",
-                        bgcolor: location.pathname.startsWith("/repository") ? "#182959" : "transparent",
-                        fontWeight: location.pathname.startsWith("/repository") ? 700 : 400,
-                        fontSize: 18,
-                        px: 2,
-                        py: 1.5,
-                        borderRadius: 2,
-                        textTransform: "none",
-                        transition: "background 0.2s, color 0.2s, font-weight 0.2s",
-                        "&:hover": {
-                          bgcolor: "#182959",
-                          color: "#fff",
-                          fontWeight: 700,
-                        },
-                      }}
-                      onClick={() => {
-                        setDashboardOpen(false);
-                        navigate("/repository");
-                      }}
-                    >
-                      Repository
-                    </Button>
-                    <Button
-                      sx={{
-                        mt: 1,
-                        color: "#1a3365",
-                        fontWeight: 400,
-                        fontSize: 16,
-                        textTransform: "none",
-                        justifyContent: "center", // Center button text
-                      }}
-                      onClick={() => setDashboardOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </Box>
-                </Dialog>
-              )}
-            </Box>
-          </Box>
-          {/* Navigation Items */}
-          <Box>
-            {navItems.map((item) =>
-              item.label === "Environment" ? (
+                      <img
+                        src={item.icon}
+                        alt={item.label}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          transition: "filter 0.2s, margin 0.3s",
+                          marginLeft: 0,
+                          marginRight: 0,
+                          filter:
+                            (isSelected(item) && !collapsed)
+                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                              : "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)",
+                        }}
+                      />
+                      {collapsed ? null : (
+                        <span
+                          style={{
+                            fontSize: 18,
+                            fontWeight: (isSelected(item) && !collapsed) ? 700 : 400,
+                            color: (isSelected(item) && !collapsed) ? "#fff" : "#1a3365",
+                            transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
+                            opacity: 1,
+                            marginLeft: 4,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.repository.label}
+                        </span>
+                      )}
+                    </Box>
+                  </Link>
+                )
+              ) : item.label === "Environment" ? (
                 <React.Fragment key={item.label}>
                   <Box
                     sx={{
@@ -518,11 +636,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         (envOpen && !collapsed)
                           ? "#2B8C37"
                           : (isSelected(item) && !collapsed)
-                            ? "rgba(43,140,55,0.5)"
+                            ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
                             : "transparent",
                       borderRadius: (envOpen && !collapsed) || (isSelected(item) && !collapsed) ? 0 : undefined,
                       position: "relative",
-                      // Remove borderLeft, add indicator as ::before
                       "&::before": isSelected(item) ? {
                         content: '""',
                         position: "absolute",
@@ -536,11 +653,11 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         zIndex: 2,
                       } : {},
                       "&:hover": {
-                        bgcolor: "#2B8C37",
+                        bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
                       },
                       "&:hover span": {
-                        color: "#fff", // Make text white on hover
-                        fontWeight: 700, // Make text bold on hover
+                        color: "#fff",
+                        fontWeight: 700,
                       },
                       "&:hover img": {
                         filter:
@@ -563,7 +680,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         filter:
                           ((envOpen && !collapsed) || (isSelected(item) && !collapsed))
                             ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                            : undefined,
+                            : mode === "repository"
+                              ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
+                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
                       }}
                     />
                     {collapsed ? null : (
@@ -591,15 +710,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
                             marginLeft: 2,
                             transition: "transform 0.3s, filter 0.2s",
                             transform: envOpen ? "rotate(180deg)" : "rotate(0deg)",
-                            filter: envOpen
-                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                              : undefined,
+                            filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
                           }}
                         />
                       </>
                     )}
                   </Box>
-                  {/* Dropdown */}
                   {!collapsed && envOpen && (
                     <Box
                       sx={{
@@ -607,26 +723,26 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         pr: 2,
                         py: 1,
                         bgcolor: "#fff",
-                        boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)", // subtle shadow
+                        boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)",
                         display: "flex",
                         flexDirection: "column",
-                        alignItems: "flex-start", // added for left alignment
+                        alignItems: "flex-start",
                         gap: 1,
                         mb: 1,
-                        borderRadius: 2, // rounded corners
-                        border: "1px solid #e0e0e0", // subtle border
+                        borderRadius: 2,
+                        border: "1px solid #e0e0e0",
                         position: "relative",
                         zIndex: 101,
                       }}
                     >
-                      {item.dropdown.map((sub) => (
+                      {getEnvironmentDropdown().map((sub) => (
                         <Link
                           key={sub.label}
                           to={sub.to}
                           style={{
                             textDecoration: "none",
                             color: "#1a3365",
-                            width: "100%", // ensure full width for left alignment
+                            width: "100%",
                           }}
                           onClick={() => setEnvOpen(false)}
                         >
@@ -649,8 +765,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                               },
                               fontSize: 16,
                               letterSpacing: 0.2,
-                              textAlign: "left", // ensure text is left aligned
-                              width: "100%", // ensure full width for left alignment
+                              textAlign: "left",
+                              width: "100%",
                             }}
                           >
                             {sub.label}
@@ -676,11 +792,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         (socialOpen && !collapsed)
                           ? "#2B8C37"
                           : (isSelected(item) && !collapsed)
-                            ? "rgba(43,140,55,0.5)"
+                            ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
                             : "transparent",
                       borderRadius: (socialOpen && !collapsed) || (isSelected(item) && !collapsed) ? 0 : undefined,
                       position: "relative",
-                      // Remove borderLeft, add indicator as ::before
                       "&::before": isSelected(item) ? {
                         content: '""',
                         position: "absolute",
@@ -694,11 +809,11 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         zIndex: 2,
                       } : {},
                       "&:hover": {
-                        bgcolor: "#2B8C37",
+                        bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
                       },
                       "&:hover span": {
-                        color: "#fff", // Make text white on hover
-                        fontWeight: 700, // Make text bold on hover
+                        color: "#fff",
+                        fontWeight: 700,
                       },
                       "&:hover img": {
                         filter:
@@ -721,7 +836,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         filter:
                           ((socialOpen && !collapsed) || (isSelected(item) && !collapsed))
                             ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                            : undefined,
+                            : mode === "repository"
+                              ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
+                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
                       }}
                     />
                     {collapsed ? null : (
@@ -749,26 +866,23 @@ function SideBar({ collapsed: collapsedProp = false }) {
                             marginLeft: 2,
                             transition: "transform 0.3s, filter 0.2s",
                             transform: socialOpen ? "rotate(180deg)" : "rotate(0deg)",
-                            filter: socialOpen
-                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                              : undefined,
+                            filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
                           }}
                         />
                       </>
                     )}
                   </Box>
-                  {/* Dropdown */}
                   {!collapsed && socialOpen && (
                     <Box
                       sx={{
-                        pl: 4, // changed from pl: 7 to pl: 4 for left alignment
+                        pl: 4,
                         pr: 2,
                         py: 1,
                         bgcolor: "#fff",
                         boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)",
                         display: "flex",
                         flexDirection: "column",
-                        alignItems: "flex-start", // added for left alignment
+                        alignItems: "flex-start",
                         gap: 1,
                         mb: 1,
                         borderRadius: 2,
@@ -777,14 +891,14 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         zIndex: 101,
                       }}
                     >
-                      {item.dropdown.map((sub) => (
+                      {getSocialDropdown().map((sub) => (
                         <Link
                           key={sub.label}
                           to={sub.to}
                           style={{
                             textDecoration: "none",
                             color: "#1a3365",
-                            width: "100%", // ensure full width for left alignment
+                            width: "100%",
                           }}
                           onClick={() => setSocialOpen(false)}
                         >
@@ -807,8 +921,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                               },
                               fontSize: 16,
                               letterSpacing: 0.2,
-                              textAlign: "left", // ensure text is left aligned
-                              width: "100%", // ensure full width for left alignment
+                              textAlign: "left",
+                              width: "100%",
                             }}
                           >
                             {sub.label}
@@ -826,7 +940,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
                     textDecoration: "none",
                     color: "#1a3365",
                   }}
-                  onClick={() => { setEnvOpen(false); setSocialOpen(false); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNav(item);
+                  }}
                 >
                   <Box
                     sx={{
@@ -838,9 +955,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       gap: collapsed ? 0 : 2,
                       cursor: "pointer",
                       transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                      bgcolor: isSelected(item) && !collapsed ? "rgba(43,140,55,0.5)" : "transparent",
+                      bgcolor: isSelected(item) && !collapsed
+                        ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
+                        : "transparent",
                       position: "relative",
-                      // Remove borderLeft, add indicator as ::before
                       "&::before": isSelected(item) ? {
                         content: '""',
                         position: "absolute",
@@ -854,33 +972,52 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         zIndex: 2,
                       } : {},
                       "&:hover": {
-                        bgcolor: "#2B8C37",
+                        bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
                       },
                       "&:hover span": {
-                        color: "#fff", // Make text white on hover
-                        fontWeight: 700, // Make text bold on hover
+                        color: "#fff",
+                        fontWeight: 700,
                       },
-                      "&:hover img": {
+                      "&:hover img, &:hover .overview-icon": {
                         filter:
                           "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
                       },
                     }}
                   >
-                    <img
-                      src={item.icon}
-                      alt={item.label}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        transition: "filter 0.2s, margin 0.3s",
-                        marginLeft: 0,
-                        marginRight: 0,
-                        filter:
-                          (isSelected(item) && !collapsed)
-                            ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                            : undefined,
-                      }}
-                    />
+                    {/* Use AssessmentIcon for Overview, otherwise use img */}
+                    {item.label === "Overview" ? (
+                      <AssessmentIcon
+                        className="overview-icon"
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          color: (isSelected(item) && !collapsed)
+                            ? "#fff"
+                            : mode === "repository"
+                              ? "#1a3365"
+                              : "#2B8C37",
+                          transition: "color 0.2s",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={item.icon}
+                        alt={item.label}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          transition: "filter 0.2s, margin 0.3s",
+                          marginLeft: 0,
+                          marginRight: 0,
+                          filter:
+                            (isSelected(item) && !collapsed)
+                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                              : mode === "repository"
+                                ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
+                                : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
+                        }}
+                      />
+                    )}
                     {collapsed ? null : (
                       <span
                         style={{
@@ -902,7 +1039,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
             )}
           </Box>
         </Box>
-        {/* Bottom Section: Profile and Logout */}
         <Box sx={{ mb: 3 }}>
           <Box
             sx={{
@@ -922,7 +1058,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
               "&:hover img": {
                 filter:
                   "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
-                // #2B8C37 green for icons on hover
               },
             }}
           >
@@ -970,11 +1105,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
               "&:hover img": {
                 filter:
                   "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
-                // #2B8C37 green for icons on hover
               },
             }}
             onClick={() => {
-              // Add logout logic here if needed
               navigate("/");
             }}
           >

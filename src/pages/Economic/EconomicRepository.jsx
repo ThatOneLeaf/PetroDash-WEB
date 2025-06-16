@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Paper,
   Button,
@@ -6,6 +7,7 @@ import {
   Box,
   Typography,
   Tooltip,
+  CircularProgress
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
@@ -43,6 +45,8 @@ const sections = [
 
 export default function EconomicRepository() {
   const [selected, setSelected] = useState('generated');
+  const [sidebarMode, setSidebarMode] = useState("repository");
+  const navigate = useNavigate();
   
   // Common state
   const [loading, setLoading] = useState(true);
@@ -463,12 +467,27 @@ export default function EconomicRepository() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  useEffect(() => {
+    if (sidebarMode !== "repository") {
+      navigate("/economic");
+    }
+  }, [sidebarMode, navigate]);
+
+  if (loading) return (
+    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
+        <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
+          Loading Economic Data...
+        </Typography>
+      </Box>
+    </Box>
+  );
   if (error) return <div>{error}</div>;
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <Sidebar />
+      <Sidebar mode={sidebarMode} onModeChange={setSidebarMode} />
       <Box sx={{ flexGrow: 1, height: '100vh', overflow: 'auto' }}>
         <div style={{ padding: '2rem' }}>
           <div style={{
@@ -868,4 +887,4 @@ export default function EconomicRepository() {
       </Box>
     </Box>
   );
-} 
+}

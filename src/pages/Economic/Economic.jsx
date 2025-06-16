@@ -39,6 +39,7 @@ import api from '../../services/api';
 import Sidebar from '../../components/Sidebar';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useNavigate } from "react-router-dom";
 
 // Color schemes for charts
 const COLORS = ['#182959', '#2B8C37', '#FF8042', '#FFBB28', '#8884D8', '#82CA9D', '#FFC658'];
@@ -56,6 +57,15 @@ const DISTRIBUTION_COLORS = {
 };
 
 function Economic() {
+  const [sidebarMode, setSidebarMode] = useState("dashboard");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (sidebarMode !== "dashboard") {
+      navigate("/economic/repository");
+    }
+  }, [sidebarMode, navigate]);
+
   // State for data
   const [summaryData, setSummaryData] = useState([]);
   const [generatedDetails, setGeneratedDetails] = useState([]);
