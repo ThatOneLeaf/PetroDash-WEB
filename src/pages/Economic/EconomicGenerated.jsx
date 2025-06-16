@@ -274,6 +274,7 @@ function EconomicGenerated() {
             initialSort={{ key: 'year', direction: 'desc' }} // Default sort by year desc
             actions={renderActions}
             emptyMessage="No data available."
+            selectable={false}
           />
 
           {/* Pagination */}

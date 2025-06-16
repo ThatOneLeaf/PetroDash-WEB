@@ -292,6 +292,7 @@ function EconomicCapitalProvider() {
             initialSort={{ key: 'year', direction: 'desc' }} // Default sort by year desc
             actions={actions}
             emptyMessage="No data available."
+            selectable={false}
           />
 
           {/* Pagination */}
