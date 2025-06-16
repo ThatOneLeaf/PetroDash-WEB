@@ -488,7 +488,7 @@ function EnvironmentWater() {
               <>
                 <Button
                   variant="contained"
-                  onClick={() => exportToExcel(selectedRows)} // Export only selected rows
+                  onClick={() => selectedRowIds.length > 0 ? exportToExcel(selectedRows) : exportToExcel(filteredData)}
                   startIcon={<FileUploadIcon />}
                   sx={{
                     backgroundColor: '#182959',
