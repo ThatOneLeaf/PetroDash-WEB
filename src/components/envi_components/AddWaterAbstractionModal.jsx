@@ -232,8 +232,31 @@ function AddWaterDischargedModal({ onClose }) {
           <TextField
             placeholder="Water Volume"
             value={formData.volume}
-            onChange={handleChange('volume')}
-            type="number"
+            onChange={(event) => {
+              const value = event.target.value;
+              // Allow empty string for clearing the field
+              if (value === '') {
+                setFormData(prev => ({ ...prev, volume: '' }));
+                return;
+              }
+              
+              // Check if value contains only numbers and decimal point
+              const isValidInput = /^[0-9]*\.?[0-9]*$/.test(value);
+              
+              if (isValidInput) {
+                const numValue = parseFloat(value);
+                // Allow partial decimal input (like "0." or ".5") but prevent zero and negative
+                if (value.includes('.') && (value.endsWith('.') || numValue > 0)) {
+                  setFormData(prev => ({ ...prev, volume: value }));
+                } else if (!value.includes('.') && numValue > 0) {
+                  setFormData(prev => ({ ...prev, volume: value }));
+                }
+              }
+            }}
+            inputProps={{
+              inputMode: 'decimal',
+              pattern: '[0-9]*[.,]?[0-9]*'
+            }}
           />
 
           <FormControl sx={{ minWidth: 120 }}>

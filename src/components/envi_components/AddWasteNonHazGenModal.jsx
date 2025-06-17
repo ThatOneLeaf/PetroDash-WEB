@@ -138,6 +138,19 @@ function AddWasteNonHazGenModal({ onClose }) {
 
   const handleConfirmSubmit = async () => {
     console.log("Submitting form data:", formData);
+    
+    // Additional validation: Check if unit is "pieces" but value has decimals
+    const isPiecesUnit = formData.unit_of_measurement?.toLowerCase() === 'pieces';
+    const hasDecimal = formData.waste?.includes('.');
+    
+    if (isPiecesUnit && hasDecimal) {
+      const errorMsg = "Cannot submit decimal values when unit of measurement is 'pieces'. Please enter a whole number.";
+      setErrorMessage(errorMsg);
+      setShowConfirmModal(false);
+      setShowErrorModal(true);
+      return;
+    }
+    
     try {
       const payload = {
         company_id: formData.company_id?.trim(),
@@ -312,8 +325,47 @@ function AddWasteNonHazGenModal({ onClose }) {
            <TextField
             placeholder="Waste Generated"
             value={formData.waste}
-            onChange={handleChange('waste')}
-            type="number"
+            onChange={(event) => {
+              const value = event.target.value;
+              // Allow empty string for clearing the field
+              if (value === '') {
+                setFormData(prev => ({ ...prev, waste: '' }));
+                return;
+              }
+              
+              // Check if unit is "pieces" - if so, only allow whole numbers
+              const isPiecesUnit = formData.unit_of_measurement?.toLowerCase() === 'pieces';
+              
+              if (isPiecesUnit) {
+                // For pieces, only allow whole numbers (no decimals)
+                const isValidInput = /^[0-9]*$/.test(value);
+                
+                if (isValidInput) {
+                  const numValue = parseInt(value);
+                  // Prevent zero and negative values
+                  if (numValue > 0) {
+                    setFormData(prev => ({ ...prev, waste: value }));
+                  }
+                }
+              } else {
+                // For other units, allow decimals
+                const isValidInput = /^[0-9]*\.?[0-9]*$/.test(value);
+                
+                if (isValidInput) {
+                  const numValue = parseFloat(value);
+                  // Allow partial decimal input (like "0." or ".5") but prevent zero and negative
+                  if (value.includes('.') && (value.endsWith('.') || numValue > 0)) {
+                    setFormData(prev => ({ ...prev, waste: value }));
+                  } else if (!value.includes('.') && numValue > 0) {
+                    setFormData(prev => ({ ...prev, waste: value }));
+                  }
+                }
+              }
+            }}
+            inputProps={{
+              inputMode: formData.unit_of_measurement?.toLowerCase() === 'pieces' ? 'numeric' : 'decimal',
+              pattern: formData.unit_of_measurement?.toLowerCase() === 'pieces' ? '[0-9]*' : '[0-9]*[.,]?[0-9]*'
+            }}
           />
 
           <FormControl sx={{ minWidth: 120 }}>
