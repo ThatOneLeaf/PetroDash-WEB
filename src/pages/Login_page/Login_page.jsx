@@ -14,17 +14,39 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import loginImage from "../../assets/login_image.png";
+import { login } from "../../services/auth";
 
 const interFont = { fontFamily: "Inter, sans-serif" };
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await login(email, password);
+      navigate("/dashboard");
+    } catch (error) {
+      setError(error.message || "Login failed. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box
@@ -95,37 +117,51 @@ export default function LoginPage() {
             User Login
           </Typography>
 
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="someone@petroenergy.com.ph"
-            sx={{ mb: 2, ...interFont }}
-            InputProps={{
-              sx: { borderRadius: "8px", ...interFont },
-            }}
-          />
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Password"
-            type={showPassword ? "text" : "password"}
-            sx={{ mb: 1, ...interFont }}
-            InputProps={{
-              sx: { borderRadius: "8px", ...interFont },
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((show) => !show)}
-                    edge="end"
-                    size="small"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+          <form onSubmit={handleLogin}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="someone@petroenergy.com.ph"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              sx={{ mb: 2, ...interFont }}
+              InputProps={{
+                sx: { borderRadius: "8px", ...interFont },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              sx={{ mb: 1, ...interFont }}
+              InputProps={{
+                sx: { borderRadius: "8px", ...interFont },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((show) => !show)}
+                      edge="end"
+                      size="small"
+                      disabled={loading}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
 
           <FormControlLabel
             control={
@@ -160,25 +196,28 @@ export default function LoginPage() {
             </Link>
           </Box>
 
-          <Button
-            variant="contained"
-            fullWidth
-            onClick={() => navigate("/dashboard")}
-            sx={{
-              bgcolor: "#1e5b2e",
-              color: "#fff",
-              fontWeight: 700,
-              borderRadius: "24px",
-              fontSize: 18,
-              py: 1.2,
-              textTransform: "none",
-              boxShadow: "none",
-              ...interFont,
-              "&:hover": { bgcolor: "#176c3c" },
-            }}
-          >
-            LOGIN
-          </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={loading || !email || !password}
+              sx={{
+                bgcolor: "#1e5b2e",
+                color: "#fff",
+                fontWeight: 700,
+                borderRadius: "24px",
+                fontSize: 18,
+                py: 1.2,
+                textTransform: "none",
+                boxShadow: "none",
+                ...interFont,
+                "&:hover": { bgcolor: "#176c3c" },
+                "&:disabled": { bgcolor: "#ccc" },
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : "LOGIN"}
+            </Button>
+          </form>
         </Box>
       </Paper>
     </Box>
