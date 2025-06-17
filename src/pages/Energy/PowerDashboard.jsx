@@ -438,9 +438,9 @@ useEffect(() => {
             flexGrow: 1,
             display: 'flex',
             flexDirection: 'column',
-            px: 2,
+            px: 1,
             gap: 2,
-            overflowY: 'clip',
+            overflowY: 'inherit',
           }}
         >
           {/* Row 1: Line and Pie */}
@@ -458,6 +458,8 @@ useEffect(() => {
                 <LineChartComponent
                   title="Total Energy Generated Over Time"
                   data={data?.line_graph?.total_energy_generated || []}
+                  xAxisLabel=""
+                  yAxisLabel="Energy Generated (kWh)"
                 />
               </Paper>
             </Box>
@@ -487,6 +489,8 @@ useEffect(() => {
                 <BarChartComponent
                   title="Total Energy Generated (Bar)"
                   data={data?.bar_chart?.total_energy_generated || []}
+                  legendName="Total Energy Generated"
+                  unit="kWh"
                 />
               </Paper>
             </Box>
@@ -496,6 +500,8 @@ useEffect(() => {
                 <LineChartComponent
                   title="Estimated Households Powered Over Time"
                   data={housePowerData?.line_graph?.est_house_powered || []}
+                  xAxisLabel=""
+                  yAxisLabel="No. of Households"
                 />
               </Paper>
             </Box>
