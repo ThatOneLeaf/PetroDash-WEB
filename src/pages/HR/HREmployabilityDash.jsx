@@ -124,6 +124,8 @@ const COLORS = [
 function DemographicsDash({}) {
   //INITIALIZE
   const [attritionData, setAttritionData] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
+  
 
   const [filters, setFilters] = useState({
     company_name: "",
@@ -189,7 +191,6 @@ function DemographicsDash({}) {
       existing.Female = count;
     }
   });
-
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
       <Box
@@ -809,4 +810,5 @@ const cellStyle = {
   border: "1px solid #ddd",
   padding: "8px",
 };
+
 export default DemographicsDash;

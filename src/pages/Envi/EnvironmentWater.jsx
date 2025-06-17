@@ -48,6 +48,8 @@ function EnvironmentWater() {
   const [updatePath, setUpdatePath] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
+  const [modalType, setModalType] = useState(''); // 'approve' or 'revise'
+  const [showApproveSuccessModal, setShowApproveSuccessModal] = useState(false);
   const statuses = ["URS","FRS","URH","FRH","APP"];
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -417,6 +419,42 @@ function EnvironmentWater() {
     }  
   };
 
+  // Approve confirmation for bulk
+  const handleApproveConfirm = async () => {
+    setIsModalOpen(false);
+    const isSame = areSelectedStatusesSame();
+    let currentStatus = null;
+    if (isSame && selectedRowIds.length > 0) {
+      const firstRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
+      currentStatus = firstRow?.status || null;
+    } else {
+      alert("Selected rows have different statuses.");
+      return;
+    }
+    const newStatus = fetchNextStatus('approve', currentStatus);
+    if (!newStatus) {
+      alert('No matching status transition found.');
+      return;
+    }
+    try {
+      const payload = {
+        record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+      await api.post(
+        "/usable_apis/bulk_update_status",
+        payload
+      );
+      refreshCurrentData();
+      setSelectedRowIds([]);
+      setRemarks("");
+      setShowApproveSuccessModal(true);
+    } catch (error) {
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }
+  };
+
   if (loading) return (
     <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
       <Box sx={{ textAlign: 'center' }}>
@@ -502,7 +540,7 @@ function EnvironmentWater() {
                       backgroundColor: '#256d2f',
                     },
                   }}
-                  onClick={() => handleBulkStatusUpdate("approve")}
+                  onClick={() => { setModalType('approve'); setIsModalOpen(true); }}
                 >
                   Approve
                 </Button>
@@ -519,7 +557,7 @@ function EnvironmentWater() {
                         backgroundColor: '#0f1a3c',
                       },
                     }}
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => { setModalType('revise'); setIsModalOpen(true); }}
                   >
                     Revise
                   </Button>
@@ -814,7 +852,73 @@ function EnvironmentWater() {
             />
           </Overlay>
         )}
-        {isModalOpen && (
+        {isModalOpen && modalType === 'approve' && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <Paper
+              sx={{
+                p: 4,
+                width: "500px",
+                borderRadius: "16px",
+                bgcolor: "white",
+              }}
+            >
+              <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
+                Approval Confirmation
+              </Typography>
+              <Box sx={{
+                bgcolor: '#f5f5f5',
+                p: 2,
+                borderRadius: '8px',
+                width: '100%',
+                mb: 3
+              }}>
+                {selectedRows.map((row, idx) => (
+                  <Typography key={idx} sx={{ fontSize: '0.9rem', mb: 1 }}>
+                    <strong>ID:</strong> {getRecordID(row)} | <strong>Status:</strong> {row.status}
+                  </Typography>
+                ))}
+              </Box>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}>
+                <Button 
+                  sx={{ 
+                    color: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      color: '#0f1a3c',
+                    },
+                  }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant='contained'
+                  sx={{ 
+                    marginLeft: 1,
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={handleApproveConfirm}
+                >
+                  Confirm
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
+        )}
+        {isModalOpen && modalType === 'revise' && (
           <Overlay onClose={() => setIsModalOpen(false)}>
             <Paper
               sx={{
@@ -878,6 +982,81 @@ function EnvironmentWater() {
               </Box>
             </Paper>
           </Overlay>          
+        )}
+        {showApproveSuccessModal && (
+          <Overlay onClose={() => setShowApproveSuccessModal(false)}>
+            <Paper sx={{
+              p: 4,
+              width: '400px',
+              borderRadius: '16px',
+              bgcolor: 'white',
+              outline: 'none',
+              textAlign: 'center'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                mb: 3
+              }}>
+                <Box sx={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#2B8C37',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2
+                }}>
+                  <Typography sx={{ 
+                    color: 'white', 
+                    fontSize: '2rem',
+                    fontWeight: 'bold'
+                  }}>
+                    ✓
+                  </Typography>
+                </Box>
+                <Typography sx={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 800,
+                  color: '#182959',
+                  mb: 2
+                }}>
+                  Record(s) Approved Successfully!
+                </Typography>
+                <Typography sx={{ 
+                  fontSize: '1rem',
+                  color: '#666',
+                  mb: 3
+                }}>
+                  The selected record(s) have been successfully approved.
+                </Typography>
+              </Box>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mt: 3
+              }}>
+                <Button
+                  variant="contained"
+                  sx={{ 
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '10px 24px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={() => setShowApproveSuccessModal(false)}
+                >
+                  OK
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
         )}
       </Container>
     </Box>

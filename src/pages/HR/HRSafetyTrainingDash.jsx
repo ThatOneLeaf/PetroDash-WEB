@@ -25,6 +25,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Bar,
+  BarChart,
 } from "recharts";
 
 const manHours = [
@@ -55,6 +57,201 @@ const manpowerPerYear = [
   { year: 2024, manpower: 4000 },
 ];
 
+const incidentPerMonth = [
+  { incident_type: "Accident", month_name: "January", incident_count: 0 },
+  { incident_type: "Illness", month_name: "January", incident_count: 0 },
+  { incident_type: "Accident", month_name: "January", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "January", incident_count: 0 },
+  { incident_type: "Accident", month_name: "January", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "January", incident_count: 0 },
+  { incident_type: "Accident", month_name: "January", incident_count: 0 },
+  { incident_type: "Violation", month_name: "January", incident_count: 0 },
+  { incident_type: "Illness", month_name: "January", incident_count: 0 },
+  { incident_type: "Accident", month_name: "January", incident_count: 0 },
+  { incident_type: "Accident", month_name: "January", incident_count: 0 },
+  { incident_type: "Accident", month_name: "January", incident_count: 0 },
+  { incident_type: "Accident", month_name: "January", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "January", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "January", incident_count: 0 },
+  { incident_type: "Violation", month_name: "January", incident_count: 0 },
+  { incident_type: "Accident", month_name: "February", incident_count: 0 },
+  { incident_type: "Accident", month_name: "February", incident_count: 0 },
+  { incident_type: "Accident", month_name: "February", incident_count: 0 },
+  { incident_type: "Accident", month_name: "February", incident_count: 0 },
+  { incident_type: "Illness", month_name: "February", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "February", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "February", incident_count: 0 },
+  { incident_type: "Violation", month_name: "February", incident_count: 0 },
+  { incident_type: "Illness", month_name: "February", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "February", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "February", incident_count: 0 },
+  { incident_type: "Violation", month_name: "February", incident_count: 0 },
+  { incident_type: "Accident", month_name: "February", incident_count: 0 },
+  { incident_type: "Accident", month_name: "February", incident_count: 0 },
+  { incident_type: "Accident", month_name: "February", incident_count: 0 },
+  { incident_type: "Accident", month_name: "February", incident_count: 0 },
+  { incident_type: "Illness", month_name: "March", incident_count: 0 },
+  { incident_type: "Accident", month_name: "March", incident_count: 0 },
+  { incident_type: "Accident", month_name: "March", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "March", incident_count: 1 },
+  { incident_type: "Accident", month_name: "March", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "March", incident_count: 0 },
+  { incident_type: "Violation", month_name: "March", incident_count: 0 },
+  { incident_type: "Accident", month_name: "March", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "March", incident_count: 0 },
+  { incident_type: "Accident", month_name: "March", incident_count: 0 },
+  { incident_type: "Accident", month_name: "March", incident_count: 0 },
+  { incident_type: "Accident", month_name: "March", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "March", incident_count: 0 },
+  { incident_type: "Illness", month_name: "March", incident_count: 0 },
+  { incident_type: "Violation", month_name: "March", incident_count: 0 },
+  { incident_type: "Accident", month_name: "March", incident_count: 0 },
+  { incident_type: "Accident", month_name: "April", incident_count: 0 },
+  { incident_type: "Accident", month_name: "April", incident_count: 0 },
+  { incident_type: "Accident", month_name: "April", incident_count: 0 },
+  { incident_type: "Accident", month_name: "April", incident_count: 0 },
+  { incident_type: "Illness", month_name: "April", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "April", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "April", incident_count: 0 },
+  { incident_type: "Violation", month_name: "April", incident_count: 0 },
+  { incident_type: "Illness", month_name: "April", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "April", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "April", incident_count: 0 },
+  { incident_type: "Violation", month_name: "April", incident_count: 0 },
+  { incident_type: "Accident", month_name: "April", incident_count: 0 },
+  { incident_type: "Accident", month_name: "April", incident_count: 0 },
+  { incident_type: "Accident", month_name: "April", incident_count: 0 },
+  { incident_type: "Accident", month_name: "April", incident_count: 0 },
+  { incident_type: "Accident", month_name: "May", incident_count: 0 },
+  { incident_type: "Illness", month_name: "May", incident_count: 0 },
+  { incident_type: "Accident", month_name: "May", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "May", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "May", incident_count: 0 },
+  { incident_type: "Accident", month_name: "May", incident_count: 0 },
+  { incident_type: "Violation", month_name: "May", incident_count: 0 },
+  { incident_type: "Accident", month_name: "May", incident_count: 0 },
+  { incident_type: "Violation", month_name: "May", incident_count: 0 },
+  { incident_type: "Accident", month_name: "May", incident_count: 0 },
+  { incident_type: "Accident", month_name: "May", incident_count: 0 },
+  { incident_type: "Accident", month_name: "May", incident_count: 0 },
+  { incident_type: "Accident", month_name: "May", incident_count: 0 },
+  { incident_type: "Illness", month_name: "May", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "May", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "May", incident_count: 0 },
+  { incident_type: "Violation", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "June", incident_count: 0 },
+  { incident_type: "Illness", month_name: "June", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "June", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "June", incident_count: 0 },
+  { incident_type: "Illness", month_name: "June", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "June", incident_count: 0 },
+  { incident_type: "Violation", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "June", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "June", incident_count: 0 },
+  { incident_type: "Accident", month_name: "July", incident_count: 0 },
+  { incident_type: "Accident", month_name: "July", incident_count: 0 },
+  { incident_type: "Accident", month_name: "July", incident_count: 0 },
+  { incident_type: "Accident", month_name: "July", incident_count: 0 },
+  { incident_type: "Illness", month_name: "July", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "July", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "July", incident_count: 1 },
+  { incident_type: "Violation", month_name: "July", incident_count: 0 },
+  { incident_type: "Illness", month_name: "July", incident_count: 0 },
+  { incident_type: "Accident", month_name: "July", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "July", incident_count: 0 },
+  { incident_type: "Accident", month_name: "July", incident_count: 0 },
+  { incident_type: "Accident", month_name: "July", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "July", incident_count: 0 },
+  { incident_type: "Accident", month_name: "July", incident_count: 0 },
+  { incident_type: "Violation", month_name: "July", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "August", incident_count: 1 },
+  { incident_type: "Accident", month_name: "August", incident_count: 0 },
+  { incident_type: "Accident", month_name: "August", incident_count: 0 },
+  { incident_type: "Accident", month_name: "August", incident_count: 0 },
+  { incident_type: "Accident", month_name: "August", incident_count: 0 },
+  { incident_type: "Illness", month_name: "August", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "August", incident_count: 0 },
+  { incident_type: "Violation", month_name: "August", incident_count: 0 },
+  { incident_type: "Accident", month_name: "August", incident_count: 0 },
+  { incident_type: "Accident", month_name: "August", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "August", incident_count: 0 },
+  { incident_type: "Violation", month_name: "August", incident_count: 0 },
+  { incident_type: "Accident", month_name: "August", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "August", incident_count: 0 },
+  { incident_type: "Illness", month_name: "August", incident_count: 0 },
+  { incident_type: "Accident", month_name: "August", incident_count: 0 },
+  { incident_type: "Accident", month_name: "September", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "September", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "September", incident_count: 1 },
+  { incident_type: "Accident", month_name: "September", incident_count: 0 },
+  { incident_type: "Accident", month_name: "September", incident_count: 0 },
+  { incident_type: "Violation", month_name: "September", incident_count: 0 },
+  { incident_type: "Accident", month_name: "September", incident_count: 0 },
+  { incident_type: "Illness", month_name: "September", incident_count: 0 },
+  { incident_type: "Accident", month_name: "September", incident_count: 0 },
+  { incident_type: "Violation", month_name: "September", incident_count: 0 },
+  { incident_type: "Accident", month_name: "September", incident_count: 0 },
+  { incident_type: "Accident", month_name: "September", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "September", incident_count: 0 },
+  { incident_type: "Accident", month_name: "September", incident_count: 0 },
+  { incident_type: "Illness", month_name: "September", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "September", incident_count: 0 },
+  { incident_type: "Violation", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "October", incident_count: 0 },
+  { incident_type: "Illness", month_name: "October", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "October", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "October", incident_count: 0 },
+  { incident_type: "Illness", month_name: "October", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "October", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "October", incident_count: 0 },
+  { incident_type: "Violation", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "October", incident_count: 0 },
+  { incident_type: "Accident", month_name: "November", incident_count: 0 },
+  { incident_type: "Accident", month_name: "November", incident_count: 0 },
+  { incident_type: "Accident", month_name: "November", incident_count: 0 },
+  { incident_type: "Accident", month_name: "November", incident_count: 0 },
+  { incident_type: "Illness", month_name: "November", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "November", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "November", incident_count: 0 },
+  { incident_type: "Violation", month_name: "November", incident_count: 0 },
+  { incident_type: "Illness", month_name: "November", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "November", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "November", incident_count: 0 },
+  { incident_type: "Accident", month_name: "November", incident_count: 0 },
+  { incident_type: "Accident", month_name: "November", incident_count: 0 },
+  { incident_type: "Accident", month_name: "November", incident_count: 0 },
+  { incident_type: "Accident", month_name: "November", incident_count: 0 },
+  { incident_type: "Violation", month_name: "November", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "December", incident_count: 0 },
+  { incident_type: "Accident", month_name: "December", incident_count: 0 },
+  { incident_type: "Accident", month_name: "December", incident_count: 0 },
+  { incident_type: "Accident", month_name: "December", incident_count: 0 },
+  { incident_type: "Accident", month_name: "December", incident_count: 0 },
+  { incident_type: "Illness", month_name: "December", incident_count: 0 },
+  { incident_type: "Violation", month_name: "December", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "December", incident_count: 0 },
+  { incident_type: "Accident", month_name: "December", incident_count: 0 },
+  { incident_type: "Near Miss", month_name: "December", incident_count: 0 },
+  { incident_type: "Accident", month_name: "December", incident_count: 0 },
+  { incident_type: "Accident", month_name: "December", incident_count: 0 },
+  { incident_type: "Accident", month_name: "December", incident_count: 0 },
+  { incident_type: "Illness", month_name: "December", incident_count: 0 },
+  { incident_type: "Violation", month_name: "December", incident_count: 0 },
+  { incident_type: "Property Incident", month_name: "December", incident_count: 0 }
+];
+
 function HRSafetyTrainingDash({}) {
   //INITIALIZE
 
@@ -77,6 +274,7 @@ function HRSafetyTrainingDash({}) {
     return Object.values(filters).some((v) => v !== null && v !== "");
   }, [filters]);
 
+  
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
       <Box
@@ -178,18 +376,18 @@ function HRSafetyTrainingDash({}) {
         </Box>
         <Box sx={{ display: "flex", height: "120px", gap: 2, mb: 3 }}>
           <KPIIndicatorCard
-            value="1234"
-            label="TOTAL SAFETY MANHOURS"
+            value="535765"
+            label="Total Safety manhours"
             variant="outlined"
           />
           <KPIIndicatorCard
             value="1234"
-            label="TOTAL NUMBER OF ACCIDENTS"
+            label="Total manhours since last accident"
             variant="filled"
           />
           <KPIIndicatorCard
-            value="1234"
-            label="TOTAL TRAINING HOURS"
+            value="968"
+            label="Total Training hours"
             variant="outlined"
           />
         </Box>
@@ -206,12 +404,70 @@ function HRSafetyTrainingDash({}) {
           <Paper
             sx={{
               p: 2,
-              textAlign: "center",
-              bgcolor: "#e57373",
-              color: "#fff",
+              textAlign: "center"
             }}
           >
-            Section 1
+              <Typography variant="h6" sx={{ color: "#000000", mb: 1 }}>
+                Incidents Per Month
+              </Typography>
+              <Box sx={{ height: 350, bgcolor: "#fff", borderRadius: 2, p: 2 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={
+                      // Transform data for grouped bar chart
+                      (() => {
+                        // Get all months in order
+                        const months = [
+                          "January", "February", "March", "April", "May", "June",
+                          "July", "August", "September", "October", "November", "December"
+                        ];
+                        // Get all unique incident types
+                        const types = [...new Set(incidentPerMonth.map(i => i.incident_type))];
+                        // Build data: one object per month, each type as a key
+                        return months.map(month => {
+                          const row = { month };
+                          types.forEach(type => {
+                            row[type] = incidentPerMonth
+                              .filter(i => i.month_name === month && i.incident_type === type)
+                              .reduce((sum, i) => sum + i.incident_count, 0);
+                          });
+                          return row;
+                        });
+                      })()
+                    }
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" angle={-45} textAnchor="end" height={60} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    {/* Render a Bar for each incident type */}
+                    {Array.from(new Set(incidentPerMonth.map(i => i.incident_type))).map((type, idx) => (
+                      <Bar
+                        key={type}
+                        dataKey={type}
+                        stackId="a"
+                        fill={
+                          [
+                            "#1976d2", // blue
+                            "#e57373", // red
+                            "#ffb300", // orange
+                            "#388e3c", // green
+                            "#8e24aa", // purple
+                            "#fbc02d", // yellow
+                            "#0288d1", // light blue
+                            "#c62828", // dark red
+                            "#43a047", // light green
+                          ][idx % 9]
+                        }
+                        name={type}
+                        barSize={12}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
           </Paper>
           <Box
             sx={{

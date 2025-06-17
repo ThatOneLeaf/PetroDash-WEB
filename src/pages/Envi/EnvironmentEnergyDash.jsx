@@ -17,6 +17,8 @@ import {
   Cell
 } from 'recharts';
 import Sidebar from '../../components/Sidebar';
+import MultiSelectWithChips from "../../components/DashboardComponents/MultiSelectDropdown";
+import StyledSelect from "../../components/DashboardComponents/StyledSelect";
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B'];
 
@@ -27,16 +29,16 @@ function EnvironmentEnergyDash() {
   const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
 
   // Filters
-  const [companyId, setCompanyId] = useState('');
-  const [quarter, setQuarter] = useState('');
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState([]);
+  const [selectedQuarters, setSelectedQuarters] = useState([]);
   const [fromYear, setFromYear] = useState('');
   const [toYear, setToYear] = useState('');
-  const [consumptionSource, setConsumptionSource] = useState(''); // Electricity filter
+  const [selectedConsumptionSources, setSelectedConsumptionSources] = useState([]);
   
   // Diesel-specific filters
-  const [companyPropertyName, setCompanyPropertyName] = useState('');
-  const [companyPropertyType, setCompanyPropertyType] = useState('');
-  const [month, setMonth] = useState('');
+  const [selectedCompanyPropertyNames, setSelectedCompanyPropertyNames] = useState([]);
+  const [selectedCompanyPropertyTypes, setSelectedCompanyPropertyTypes] = useState([]);
+  const [selectedMonths, setSelectedMonths] = useState([]);
 
   // State for API data
   const [companies, setCompanies] = useState([]);
@@ -88,6 +90,49 @@ function EnvironmentEnergyDash() {
     yearly_deviation: []
   });
 
+  // Prepare options for MultiSelect components
+  const companyOptions = companies.map(company => ({
+    value: company.id,
+    label: company.name
+  }));
+
+  const quarterOptions = [
+    { value: 'Q1', label: 'Q1' },
+    { value: 'Q2', label: 'Q2' },
+    { value: 'Q3', label: 'Q3' },
+    { value: 'Q4', label: 'Q4' }
+  ];
+
+  const consumptionSourceOptions = consumptionSources.map(source => ({
+    value: source,
+    label: source
+  }));
+
+  const companyPropertyOptions = companyProperties.map(property => ({
+    value: property,
+    label: property
+  }));
+
+  const propertyTypeOptions = propertyTypes.map(type => ({
+    value: type,
+    label: type
+  }));
+
+  const monthOptions = [
+    { value: 'January', label: 'January' },
+    { value: 'February', label: 'February' },
+    { value: 'March', label: 'March' },
+    { value: 'April', label: 'April' },
+    { value: 'May', label: 'May' },
+    { value: 'June', label: 'June' },
+    { value: 'July', label: 'July' },
+    { value: 'August', label: 'August' },
+    { value: 'September', label: 'September' },
+    { value: 'October', label: 'October' },
+    { value: 'November', label: 'November' },
+    { value: 'December', label: 'December' }
+  ];
+
   // Mock chart data (to be replaced with API calls later)
   const electricityChartData = {
     lineChartData: [
@@ -138,12 +183,6 @@ function EnvironmentEnergyDash() {
       { quarter: 'Q4', psc: 380, pmc: 270 }
     ]
   };
-
-  // Month options for diesel filter
-  const monthOptions = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
 
   const formatDateTime = (date) => {
     const options = {
@@ -605,28 +644,34 @@ function EnvironmentEnergyDash() {
         
         // Build parameters using URLSearchParams (same as other API calls)
         const params = new URLSearchParams();
-        
+
         // Company filter
-        if (companyId) {
-          params.append('company_id', companyId);
+        if (selectedCompanyIds.length > 0) {
+          selectedCompanyIds.forEach(companyId => {
+            params.append('company_id', companyId);
+          });
         } else {
           companies.forEach(company => {
             params.append('company_id', company.id);
           });
         }
-        
+
         // Consumption source filter
-        if (consumptionSource) {
-          params.append('consumption_source', consumptionSource);
+        if (selectedConsumptionSources.length > 0) {
+          selectedConsumptionSources.forEach(source => {
+            params.append('consumption_source', source);
+          });
         } else {
           consumptionSources.forEach(source => {
             params.append('consumption_source', source);
           });
         }
-        
+
         // Quarter filter
-        if (quarter) {
-          params.append('quarter', quarter);
+        if (selectedQuarters.length > 0) {
+          selectedQuarters.forEach(quarter => {
+            params.append('quarter', quarter);
+          });
         } else {
           ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
             params.append('quarter', q);
@@ -675,7 +720,7 @@ function EnvironmentEnergyDash() {
 
     // Fetch when filters change
     fetchElectricityKeyMetrics();
-  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedConsumptionSources, companies, availableYears, consumptionSources]);
 
   useEffect(() => {
     const fetchDieselKeyMetrics = async () => {
@@ -688,48 +733,58 @@ function EnvironmentEnergyDash() {
         
         // Build parameters using URLSearchParams (same as other API calls)
         const params = new URLSearchParams();
-        
+
         // Company filter
-        if (companyId) {
-          params.append('company_id', companyId);
+        if (selectedCompanyIds.length > 0) {
+          selectedCompanyIds.forEach(companyId => {
+            params.append('company_id', companyId);
+          });
         } else {
           companies.forEach(company => {
             params.append('company_id', company.id);
           });
         }
-        
+
         // Property name filter
-        if (companyPropertyName) {
-          params.append('company_property_name', companyPropertyName);
+        if (selectedCompanyPropertyNames.length > 0) {
+          selectedCompanyPropertyNames.forEach(propertyName => {
+            params.append('company_property_name', propertyName);
+          });
         } else {
           companyProperties.forEach(property => {
             params.append('company_property_name', property);
           });
         }
-        
+
         // Property type filter
-        if (companyPropertyType) {
-          params.append('company_property_type', companyPropertyType);
+        if (selectedCompanyPropertyTypes.length > 0) {
+          selectedCompanyPropertyTypes.forEach(propertyType => {
+            params.append('company_property_type', propertyType);
+          });
         } else {
           propertyTypes.forEach(type => {
             params.append('company_property_type', type);
           });
         }
-        
+
         // Quarter filter
-        if (quarter) {
-          params.append('quarter', quarter);
+        if (selectedQuarters.length > 0) {
+          selectedQuarters.forEach(quarter => {
+            params.append('quarter', quarter);
+          });
         } else {
           ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
             params.append('quarter', q);
           });
         }
-        
+
         // Month filter
-        if (month) {
-          params.append('month', month);
+        if (selectedMonths.length > 0) {
+          selectedMonths.forEach(month => {
+            params.append('month', month);
+          });
         } else {
-          monthOptions.forEach(monthName => {
+          ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].forEach(monthName => {
             params.append('month', monthName);
           });
         }
@@ -775,8 +830,8 @@ function EnvironmentEnergyDash() {
 
     // Fetch when filters change
     fetchDieselKeyMetrics();
-  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
-      companies, dieselYears, companyProperties, propertyTypes]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedCompanyPropertyNames, selectedCompanyPropertyTypes, selectedMonths, 
+    companies, dieselYears, companyProperties, propertyTypes]);
 
   // Fetch companies and available years on component mount
   useEffect(() => {
@@ -836,28 +891,25 @@ function EnvironmentEnergyDash() {
         
         // Build parameters
         const params = {};
-        
-        // For company_id: if empty, pass all companies as individual parameters
-        if (companyId) {
-          params.company_id = companyId;
+
+        // Company filter
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
-          // Send all companies from the fetched companies data
           params.company_id = companies.map(company => company.id);
         }
-        
-        // For consumption_source: if empty, pass all sources
-        if (consumptionSource) {
-          params.consumption_source = consumptionSource;
+
+        // Consumption source filter
+        if (selectedConsumptionSources.length > 0) {
+          params.consumption_source = selectedConsumptionSources;
         } else {
-          // Send all consumption sources from the fetched sources data
           params.consumption_source = consumptionSources;
         }
-        
-        // For quarter: if empty, pass all quarters  
-        if (quarter) {
-          params.quarter = quarter;
+
+        // Quarter filter
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
-          // Send all quarters
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
         
@@ -921,7 +973,7 @@ function EnvironmentEnergyDash() {
     if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
       fetchElectricityPieChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedConsumptionSources, companies, availableYears, consumptionSources]);
 
   useEffect(() => {
     const fetchElectricityLineChart = async () => {
@@ -930,21 +982,24 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters (same logic as pie chart)
         const params = {};
-        
-        if (companyId) {
-          params.company_id = companyId;
+
+        // Company filter
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        if (consumptionSource) {
-          params.consumption_source = consumptionSource;
+
+        // Consumption source filter
+        if (selectedConsumptionSources.length > 0) {
+          params.consumption_source = selectedConsumptionSources;
         } else {
           params.consumption_source = consumptionSources;
         }
-        
-        if (quarter) {
-          params.quarter = quarter;
+
+        // Quarter filter
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
@@ -993,7 +1048,7 @@ function EnvironmentEnergyDash() {
     if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
       fetchElectricityLineChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedConsumptionSources, companies, availableYears, consumptionSources]);
 
   useEffect(() => {
     const fetchElectricityBarChart = async () => {
@@ -1004,21 +1059,24 @@ function EnvironmentEnergyDash() {
         
         // Build parameters (same logic as other charts)
         const params = {};
-        
-        if (companyId) {
-          params.company_id = companyId;
+
+        // Company filter
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        if (consumptionSource) {
-          params.consumption_source = consumptionSource;
+
+        // Consumption source filter
+        if (selectedConsumptionSources.length > 0) {
+          params.consumption_source = selectedConsumptionSources;
         } else {
           params.consumption_source = consumptionSources;
         }
-        
-        if (quarter) {
-          params.quarter = quarter;
+
+        // Quarter filter
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
@@ -1088,7 +1146,7 @@ function EnvironmentEnergyDash() {
     if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
       fetchElectricityBarChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedConsumptionSources, companies, availableYears, consumptionSources]);
 
   useEffect(() => {
     const fetchElectricitySourceChart = async () => {
@@ -1097,21 +1155,24 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters (same logic as other charts)
         const params = {};
-        
-        if (companyId) {
-          params.company_id = companyId;
+
+        // Company filter
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        if (consumptionSource) {
-          params.consumption_source = consumptionSource;
+
+        // Consumption source filter
+        if (selectedConsumptionSources.length > 0) {
+          params.consumption_source = selectedConsumptionSources;
         } else {
           params.consumption_source = consumptionSources;
         }
-        
-        if (quarter) {
-          params.quarter = quarter;
+
+        // Quarter filter
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
@@ -1158,7 +1219,7 @@ function EnvironmentEnergyDash() {
     if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
       fetchElectricitySourceChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedConsumptionSources, companies, availableYears, consumptionSources]);
 
   useEffect(() => {
     const fetchElectricityQuarterChart = async () => {
@@ -1167,21 +1228,24 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters (same logic as other charts)
         const params = {};
-        
-        if (companyId) {
-          params.company_id = companyId;
+
+        // Company filter
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        if (consumptionSource) {
-          params.consumption_source = consumptionSource;
+
+        // Consumption source filter
+        if (selectedConsumptionSources.length > 0) {
+          params.consumption_source = selectedConsumptionSources;
         } else {
           params.consumption_source = consumptionSources;
         }
-        
-        if (quarter) {
-          params.quarter = quarter;
+
+        // Quarter filter
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
@@ -1228,7 +1292,7 @@ function EnvironmentEnergyDash() {
     if (companies.length > 0 && availableYears.length > 0 && consumptionSources.length > 0) {
       fetchElectricityQuarterChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, consumptionSource, companies, availableYears, consumptionSources]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedConsumptionSources, companies, availableYears, consumptionSources]);
 
   useEffect(() => {
     const fetchDieselPieChart = async () => {
@@ -1237,41 +1301,40 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters for diesel API
         const params = {};
-        
+
         // Company filter
-        if (companyId) {
-          params.company_id = companyId;
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        // Property name filter (diesel-specific)
-        if (companyPropertyName) {
-          params.property_name = companyPropertyName;
+
+        // Property name filter
+        if (selectedCompanyPropertyNames.length > 0) {
+          params.property_name = selectedCompanyPropertyNames; // or company_property_name depending on API
         } else {
-          params.property_name = companyProperties;
+          params.property_name = companyProperties; // or company_property_name depending on API
         }
-        
-        // Property type filter (diesel-specific)
-        if (companyPropertyType) {
-          params.property_type = companyPropertyType;
+
+        // Property type filter
+        if (selectedCompanyPropertyTypes.length > 0) {
+          params.property_type = selectedCompanyPropertyTypes; // or company_property_type depending on API
         } else {
-          params.property_type = propertyTypes;
+          params.property_type = propertyTypes; // or company_property_type depending on API
         }
-        
+
         // Quarter filter
-        if (quarter) {
-          params.quarter = quarter;
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
-        
-        // Month filter (diesel-specific)
-        if (month) {
-          params.month = month;
+
+        // Month filter
+        if (selectedMonths.length > 0) {
+          params.month = selectedMonths;
         } else {
-          // If no specific month, use all months for quarterly data
-          params.month = monthOptions;
+          params.month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         }
         
         // Year filter using diesel years
@@ -1316,8 +1379,8 @@ function EnvironmentEnergyDash() {
         companyProperties.length > 0 && propertyTypes.length > 0) {
       fetchDieselPieChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
-      companies, dieselYears, companyProperties, propertyTypes]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedCompanyPropertyNames, selectedCompanyPropertyTypes, selectedMonths, 
+    companies, dieselYears, companyProperties, propertyTypes]);
 
   useEffect(() => {
     const fetchDieselPropertyPieChart = async () => {
@@ -1326,41 +1389,40 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters for diesel property API
         const params = {};
-        
+
         // Company filter
-        if (companyId) {
-          params.company_id = companyId;
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        // Property name filter (diesel-specific)
-        if (companyPropertyName) {
-          params.company_property_name = companyPropertyName;
+
+        // Property name filter - FIXED: use company_property_name consistently
+        if (selectedCompanyPropertyNames.length > 0) {
+          params.company_property_name = selectedCompanyPropertyNames;
         } else {
           params.company_property_name = companyProperties;
         }
-        
-        // Property type filter (diesel-specific)
-        if (companyPropertyType) {
-          params.company_property_type = companyPropertyType;
+
+        // Property type filter - FIXED: use company_property_type consistently
+        if (selectedCompanyPropertyTypes.length > 0) {
+          params.company_property_type = selectedCompanyPropertyTypes;
         } else {
           params.company_property_type = propertyTypes;
         }
-        
+
         // Quarter filter
-        if (quarter) {
-          params.quarter = quarter;
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
-        
-        // Month filter (diesel-specific)
-        if (month) {
-          params.month = month;
+
+        // Month filter
+        if (selectedMonths.length > 0) {
+          params.month = selectedMonths;
         } else {
-          // If no specific month, use all months
-          params.month = monthOptions;
+          params.month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         }
         
         // Year filter using diesel years
@@ -1405,8 +1467,8 @@ function EnvironmentEnergyDash() {
         companyProperties.length > 0 && propertyTypes.length > 0) {
       fetchDieselPropertyPieChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
-      companies, dieselYears, companyProperties, propertyTypes]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedCompanyPropertyNames, selectedCompanyPropertyTypes, selectedMonths, 
+    companies, dieselYears, companyProperties, propertyTypes]);
 
   useEffect(() => {
     const fetchDieselLineChart = async () => {
@@ -1415,41 +1477,40 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters for diesel line chart API
         const params = {};
-        
+
         // Company filter
-        if (companyId) {
-          params.company_id = companyId;
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        // Property name filter (diesel-specific)
-        if (companyPropertyName) {
-          params.property_name = companyPropertyName;
+
+        // Property name filter
+        if (selectedCompanyPropertyNames.length > 0) {
+          params.property_name = selectedCompanyPropertyNames; // or company_property_name depending on API
         } else {
-          params.property_name = companyProperties;
+          params.property_name = companyProperties; // or company_property_name depending on API
         }
-        
-        // Property type filter (diesel-specific)
-        if (companyPropertyType) {
-          params.property_type = companyPropertyType;
+
+        // Property type filter
+        if (selectedCompanyPropertyTypes.length > 0) {
+          params.property_type = selectedCompanyPropertyTypes; // or company_property_type depending on API
         } else {
-          params.property_type = propertyTypes;
+          params.property_type = propertyTypes; // or company_property_type depending on API
         }
-        
+
         // Quarter filter
-        if (quarter) {
-          params.quarter = quarter;
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
-        
-        // Month filter (diesel-specific)
-        if (month) {
-          params.month = month;
+
+        // Month filter
+        if (selectedMonths.length > 0) {
+          params.month = selectedMonths;
         } else {
-          // If no specific month, use all months
-          params.month = monthOptions;
+          params.month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         }
         
         // Year filter using diesel years
@@ -1496,8 +1557,8 @@ function EnvironmentEnergyDash() {
         companyProperties.length > 0 && propertyTypes.length > 0) {
       fetchDieselLineChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
-      companies, dieselYears, companyProperties, propertyTypes]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedCompanyPropertyNames, selectedCompanyPropertyTypes, selectedMonths, 
+    companies, dieselYears, companyProperties, propertyTypes]);
     
   useEffect(() => {
     const fetchDieselPropertyTypeChart = async () => {
@@ -1506,41 +1567,40 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters for diesel property type API
         const params = {};
-        
+
         // Company filter
-        if (companyId) {
-          params.company_id = companyId;
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        // Property name filter (diesel-specific)
-        if (companyPropertyName) {
-          params.property_name = companyPropertyName;
+
+        // Property name filter
+        if (selectedCompanyPropertyNames.length > 0) {
+          params.property_name = selectedCompanyPropertyNames; // or company_property_name depending on API
         } else {
-          params.property_name = companyProperties;
+          params.property_name = companyProperties; // or company_property_name depending on API
         }
-        
-        // Property type filter (diesel-specific)
-        if (companyPropertyType) {
-          params.property_type = companyPropertyType;
+
+        // Property type filter
+        if (selectedCompanyPropertyTypes.length > 0) {
+          params.property_type = selectedCompanyPropertyTypes; // or company_property_type depending on API
         } else {
-          params.property_type = propertyTypes;
+          params.property_type = propertyTypes; // or company_property_type depending on API
         }
-        
+
         // Quarter filter
-        if (quarter) {
-          params.quarter = quarter;
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
-        
-        // Month filter (diesel-specific)
-        if (month) {
-          params.month = month;
+
+        // Month filter
+        if (selectedMonths.length > 0) {
+          params.month = selectedMonths;
         } else {
-          // If no specific month, use all months
-          params.month = monthOptions;
+          params.month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         }
         
         // Year filter using diesel years
@@ -1585,8 +1645,8 @@ function EnvironmentEnergyDash() {
         companyProperties.length > 0 && propertyTypes.length > 0) {
       fetchDieselPropertyTypeChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
-      companies, dieselYears, companyProperties, propertyTypes]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedCompanyPropertyNames, selectedCompanyPropertyTypes, selectedMonths, 
+    companies, dieselYears, companyProperties, propertyTypes]);
 
   useEffect(() => {
     const fetchDieselMonthlyLineChart = async () => {
@@ -1595,41 +1655,40 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters for diesel monthly line chart API
         const params = {};
-        
+
         // Company filter
-        if (companyId) {
-          params.company_id = companyId;
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        // Property name filter (diesel-specific)
-        if (companyPropertyName) {
-          params.company_property_name = companyPropertyName;
+
+        // Property name filter - FIXED: use company_property_name consistently
+        if (selectedCompanyPropertyNames.length > 0) {
+          params.company_property_name = selectedCompanyPropertyNames;
         } else {
           params.company_property_name = companyProperties;
         }
-        
-        // Property type filter (diesel-specific)
-        if (companyPropertyType) {
-          params.company_property_type = companyPropertyType;
+
+        // Property type filter - FIXED: use company_property_type consistently
+        if (selectedCompanyPropertyTypes.length > 0) {
+          params.company_property_type = selectedCompanyPropertyTypes;
         } else {
           params.company_property_type = propertyTypes;
         }
-        
+
         // Quarter filter
-        if (quarter) {
-          params.quarter = quarter;
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
-        
-        // Month filter (diesel-specific)
-        if (month) {
-          params.month = month;
+
+        // Month filter
+        if (selectedMonths.length > 0) {
+          params.month = selectedMonths;
         } else {
-          // If no specific month, use all months
-          params.month = monthOptions;
+          params.month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         }
         
         // Year filter using diesel years
@@ -1676,8 +1735,8 @@ function EnvironmentEnergyDash() {
         companyProperties.length > 0 && propertyTypes.length > 0) {
       fetchDieselMonthlyLineChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
-      companies, dieselYears, companyProperties, propertyTypes]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedCompanyPropertyNames, selectedCompanyPropertyTypes, selectedMonths, 
+    companies, dieselYears, companyProperties, propertyTypes]);
 
   useEffect(() => {
     const fetchDieselQuarterlyBarChart = async () => {
@@ -1686,41 +1745,40 @@ function EnvironmentEnergyDash() {
       try {
         // Build parameters for diesel quarterly bar chart API
         const params = {};
-        
+
         // Company filter
-        if (companyId) {
-          params.company_id = companyId;
+        if (selectedCompanyIds.length > 0) {
+          params.company_id = selectedCompanyIds;
         } else {
           params.company_id = companies.map(company => company.id);
         }
-        
-        // Property name filter (diesel-specific)
-        if (companyPropertyName) {
-          params.company_property_name = companyPropertyName;
+
+        // Property name filter - FIXED: use company_property_name consistently
+        if (selectedCompanyPropertyNames.length > 0) {
+          params.company_property_name = selectedCompanyPropertyNames;
         } else {
           params.company_property_name = companyProperties;
         }
-        
-        // Property type filter (diesel-specific)
-        if (companyPropertyType) {
-          params.company_property_type = companyPropertyType;
+
+        // Property type filter - FIXED: use company_property_type consistently
+        if (selectedCompanyPropertyTypes.length > 0) {
+          params.company_property_type = selectedCompanyPropertyTypes;
         } else {
           params.company_property_type = propertyTypes;
         }
-        
+
         // Quarter filter
-        if (quarter) {
-          params.quarter = quarter;
+        if (selectedQuarters.length > 0) {
+          params.quarter = selectedQuarters;
         } else {
           params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
         }
-        
-        // Month filter (diesel-specific)
-        if (month) {
-          params.month = month;
+
+        // Month filter
+        if (selectedMonths.length > 0) {
+          params.month = selectedMonths;
         } else {
-          // If no specific month, use all months
-          params.month = monthOptions;
+          params.month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         }
         
         // Year filter using diesel years
@@ -1767,21 +1825,21 @@ function EnvironmentEnergyDash() {
         companyProperties.length > 0 && propertyTypes.length > 0) {
       fetchDieselQuarterlyBarChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, companyPropertyName, companyPropertyType, month, 
-      companies, dieselYears, companyProperties, propertyTypes]);
+  }, [activeTab, selectedCompanyIds, selectedQuarters, fromYear, toYear, selectedCompanyPropertyNames, selectedCompanyPropertyTypes, selectedMonths, 
+    companies, dieselYears, companyProperties, propertyTypes]);
 
   // Clear all filters function
   const clearAllFilters = () => {
-    setCompanyId('');
-    setQuarter('');
+    setSelectedCompanyIds([]);
+    setSelectedQuarters([]);
     setFromYear('');
     setToYear('');
-    setConsumptionSource('');
+    setSelectedConsumptionSources([]);
     
     // Clear diesel-specific filters
-    setCompanyPropertyName('');
-    setCompanyPropertyType('');
-    setMonth('');
+    setSelectedCompanyPropertyNames([]);
+    setSelectedCompanyPropertyTypes([]);
+    setSelectedMonths([]);
   };
 
   const renderDieselPropertyTooltip = ({ active, payload }) => {
@@ -1856,6 +1914,82 @@ function EnvironmentEnergyDash() {
       );
     }
     return null;
+  };
+
+  const getFilterDescription = () => {
+    const filters = [];
+    
+    if (selectedCompanyIds.length > 0) {
+      if (selectedCompanyIds.length === 1) {
+        const selectedCompany = companies.find(c => c.id === selectedCompanyIds[0]);
+        if (selectedCompany) {
+          filters.push(selectedCompany.name);
+        }
+      } else {
+        filters.push(`${selectedCompanyIds.length} COMPANIES`);
+      }
+    }
+    
+    if (selectedQuarters.length > 0) {
+      if (selectedQuarters.length === 1) {
+        filters.push(selectedQuarters[0]);
+      } else {
+        filters.push(`${selectedQuarters.length} QUARTERS`);
+      }
+    }
+    
+    // Add electricity-specific filters
+    if (activeTab === 'electricity' && selectedConsumptionSources.length > 0) {
+      if (selectedConsumptionSources.length === 1) {
+        filters.push(selectedConsumptionSources[0]);
+      } else {
+        filters.push(`${selectedConsumptionSources.length} SOURCES`);
+      }
+    }
+    
+    // Add diesel-specific filters
+    if (activeTab === 'diesel') {
+      if (selectedCompanyPropertyNames.length > 0) {
+        if (selectedCompanyPropertyNames.length === 1) {
+          filters.push(selectedCompanyPropertyNames[0]);
+        } else {
+          filters.push(`${selectedCompanyPropertyNames.length} PROPERTIES`);
+        }
+      }
+      
+      if (selectedCompanyPropertyTypes.length > 0) {
+        if (selectedCompanyPropertyTypes.length === 1) {
+          filters.push(selectedCompanyPropertyTypes[0]);
+        } else {
+          filters.push(`${selectedCompanyPropertyTypes.length} PROPERTY TYPES`);
+        }
+      }
+      
+      if (selectedMonths.length > 0) {
+        if (selectedMonths.length === 1) {
+          filters.push(selectedMonths[0]);
+        } else {
+          filters.push(`${selectedMonths.length} MONTHS`);
+        }
+      }
+    }
+    
+    // Add year filters
+    if (fromYear || toYear) {
+      if (fromYear && toYear) {
+        filters.push(`${fromYear}-${toYear}`);
+      } else if (fromYear) {
+        filters.push(`FROM ${fromYear}`);
+      } else if (toYear) {
+        filters.push(`TO ${toYear}`);
+      }
+    }
+    
+    if (filters.length === 0) {
+      return "ALL DATA";
+    }
+    
+    return filters.join(" • ").toUpperCase();
   };
 
   return (
@@ -1989,208 +2123,100 @@ function EnvironmentEnergyDash() {
           alignItems: 'center',
           flexShrink: 0
         }}>
-          {/* Company Filter */}
-          <select 
-            value={companyId}
-            onChange={(e) => setCompanyId(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e2e8f0',
-              borderRadius: '20px',
-              backgroundColor: 'white',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              minWidth: '100px'
-            }}
-          >
-            <option value="">All Companies</option>
-            {companies.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name}
-              </option>
-            ))}
-          </select>
+          {/* Company Multi-Select Filter */}
+          <MultiSelectWithChips
+            label="Companies"
+            options={companyOptions}
+            selectedValues={selectedCompanyIds}
+            onChange={setSelectedCompanyIds}
+            placeholder="All Companies"
+          />
 
-          {/* Source Filter - Only show for electricity tab */}
+          {/* Source Multi-Select Filter - Only show for electricity tab */}
           {activeTab === 'electricity' && (
-            <select 
-              value={consumptionSource}
-              onChange={(e) => setConsumptionSource(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '100px'
-              }}
-            >
-              <option value="">All Sources</option>
-              {consumptionSources.map((source, index) => (
-                <option key={index} value={source}>
-                  {source}
-                </option>
-              ))}
-            </select>
+            <MultiSelectWithChips
+              label="Sources"
+              options={consumptionSourceOptions}
+              selectedValues={selectedConsumptionSources}
+              onChange={setSelectedConsumptionSources}
+              placeholder="All Sources"
+            />
           )}
 
-          {/* Company Property Name Filter - Only show for diesel tab */}
+          {/* Company Property Name Multi-Select Filter - Only show for diesel tab */}
           {activeTab === 'diesel' && (
-            <select 
-              value={companyPropertyName}
-              onChange={(e) => setCompanyPropertyName(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '100px'
-              }}
-            >
-              <option value="">Company Properties</option>
-              {companyProperties.map((property, index) => (
-                <option key={index} value={property}>
-                  {property}
-                </option>
-              ))}
-            </select>
+            <MultiSelectWithChips
+              label="Properties"
+              options={companyPropertyOptions}
+              selectedValues={selectedCompanyPropertyNames}
+              onChange={setSelectedCompanyPropertyNames}
+              placeholder="Company Properties"
+            />
           )}
 
-          {/* Property Type Filter - Only show for diesel tab */}
+          {/* Property Type Multi-Select Filter - Only show for diesel tab */}
           {activeTab === 'diesel' && (
-            <select 
-              value={companyPropertyType}
-              onChange={(e) => setCompanyPropertyType(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '100px'
-              }}
-            >
-              <option value="">Property Types</option>
-              {propertyTypes.map((type, index) => (
-                <option key={index} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
+            <MultiSelectWithChips
+              label="Property Types"
+              options={propertyTypeOptions}
+              selectedValues={selectedCompanyPropertyTypes}
+              onChange={setSelectedCompanyPropertyTypes}
+              placeholder="Property Types"
+            />
           )}
 
-          {/* Month Filter - Only show for diesel tab */}
+          {/* Month Multi-Select Filter - Only show for diesel tab */}
           {activeTab === 'diesel' && (
-            <select 
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '100px'
-              }}
-            >
-              <option value="">All Months</option>
-              {monthOptions.map((monthName, index) => (
-                <option key={index} value={monthName}>
-                  {monthName}
-                </option>
-              ))}
-            </select>
+            <MultiSelectWithChips
+              label="Months"
+              options={monthOptions}
+              selectedValues={selectedMonths}
+              onChange={setSelectedMonths}
+              placeholder="All Months"
+            />
           )}
 
-          {/* Quarter Filter */}
-          <select 
-            value={quarter}
-            onChange={(e) => setQuarter(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e2e8f0',
-              borderRadius: '20px',
-              backgroundColor: 'white',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              minWidth: '100px'
-            }}
-          >
-            <option value="">All Quarters</option>
-            <option value="Q1">Q1</option>
-            <option value="Q2">Q2</option>
-            <option value="Q3">Q3</option>
-            <option value="Q4">Q4</option>
-          </select>
+          {/* Quarter Multi-Select Filter */}
+          <MultiSelectWithChips
+            label="Quarters"
+            options={quarterOptions}
+            selectedValues={selectedQuarters}
+            onChange={setSelectedQuarters}
+            placeholder="All Quarters"
+          />
 
-          {/* Year Range Filter */}
+          {/* Year Range Filter - Keep as single select */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <select 
+            <StyledSelect
               value={fromYear}
-              onChange={(e) => setFromYear(e.target.value)}
-              style={{
-                padding: '8px 10px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '85px'
-              }}
-            >
-              <option value="">From Year</option>
-              {(activeTab === 'diesel' ? dieselYears : availableYears).map((year) => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-
-            <span style={{ 
-              color: '#64748b', 
-              fontSize: '12px', 
-              fontWeight: '500' 
+              onChange={(value) => setFromYear(value)}
+              options={availableYears.map(year => ({ value: year, label: year.toString() }))}
+              placeholder="From Year"
+              style={{ minWidth: '85px', width: 'auto', maxWidth: '120px' }}
+            />
+            <span style={{
+              color: '#64748b',
+              fontSize: '12px',
+              fontWeight: '500'
             }}>
               to
             </span>
-
-            <select 
+            <StyledSelect
               value={toYear}
-              onChange={(e) => setToYear(e.target.value)}
-              style={{
-                padding: '8px 10px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '85px'
-              }}
-            >
-              <option value="">To Year</option>
-              {(activeTab === 'diesel' ? dieselYears : availableYears)
+              onChange={(value) => setToYear(value)}
+              options={availableYears
                 .filter(year => !fromYear || year >= parseInt(fromYear))
-                .map((year) => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-            </select>
+                .map(year => ({ value: year, label: year.toString() }))
+              }
+              placeholder="To Year"
+              style={{ minWidth: '85px', width: 'auto', maxWidth: '120px' }}
+            />
           </div>
 
           {/* Clear All Filters Button */}
-          {(companyId || quarter || fromYear || toYear || 
-            (activeTab === 'electricity' && consumptionSource) ||
-            (activeTab === 'diesel' && (companyPropertyName || companyPropertyType || month))) && (
+          {(selectedCompanyIds.length > 0 || selectedQuarters.length > 0 || fromYear || toYear || 
+            (activeTab === 'electricity' && selectedConsumptionSources.length > 0) ||
+            (activeTab === 'diesel' && (selectedCompanyPropertyNames.length > 0 || selectedCompanyPropertyTypes.length > 0 || selectedMonths.length > 0))) && (
             <button
               onClick={clearAllFilters}
               style={{
@@ -2232,6 +2258,9 @@ function EnvironmentEnergyDash() {
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   YEAR-ON-YEAR CUMULATIVE ELECTRICITY CONSUMPTION
                 </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
+                </div>
               </div>
 
               <div style={{
@@ -2250,6 +2279,9 @@ function EnvironmentEnergyDash() {
                 <div style={{ fontSize: '9px', opacity: 0.8 }}>
                   {electricityMetrics.peak_year || ''}
                 </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
+                </div>
               </div>
 
               <div style={{
@@ -2264,6 +2296,9 @@ function EnvironmentEnergyDash() {
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   AVERAGE ANNUAL ELECTRICITY CONSUMPTION
+                </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
                 </div>
               </div>
             </>
@@ -2282,6 +2317,9 @@ function EnvironmentEnergyDash() {
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   YEAR-ON-YEAR CUMULATIVE DIESEL CONSUMPTION
                 </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
+                </div>
               </div>
 
               <div style={{
@@ -2297,12 +2335,15 @@ function EnvironmentEnergyDash() {
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   AVERAGE ANNUAL DIESEL CONSUMPTION
                 </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
+                </div>
               </div>
             </>
           )}
         </div>
             
-                {/* Charts Section */}
+        {/* Charts Section */}
         <div style={{ 
           flex: 1,
           display: 'grid', 

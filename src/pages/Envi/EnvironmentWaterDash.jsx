@@ -17,13 +17,15 @@ import {
   Cell
 } from 'recharts';
 import Sidebar from '../../components/Sidebar';
+import MultiSelectWithChips from "../../components/DashboardComponents/MultiSelectDropdown";
+import StyledSelect from "../../components/DashboardComponents/StyledSelect";
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981'];
 
 function EnvironmentWaterDash() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   // Updated state for filtered totals instead of cumulative totals
   const [filteredTotalAbstracted, setFilteredTotalAbstracted] = useState(0);
@@ -31,11 +33,13 @@ function EnvironmentWaterDash() {
   const [filteredTotalConsumed, setFilteredTotalConsumed] = useState(0);
 
   const [pieData, setPieData] = useState([]);
-  const [companyId, setCompanyId] = useState('');
-  const [quarter, setQuarter] = useState('');
-  const [fromYear, setFromYear] = useState(''); // Changed from year to fromYear
-  const [toYear, setToYear] = useState(''); // Added toYear
-  const [unit, setUnit] = useState(''); // Optional, for units like cubic meters
+  
+  // Updated filter states to handle arrays for multi-select
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState([]); // Changed from companyId to array
+  const [selectedQuarters, setSelectedQuarters] = useState([]); // Changed from quarter to array
+  const [fromYear, setFromYear] = useState('');
+  const [toYear, setToYear] = useState('');
+  const [unit, setUnit] = useState('');
   
   // New state for companies and line chart data
   const [companies, setCompanies] = useState([]);
@@ -81,7 +85,7 @@ function EnvironmentWaterDash() {
         
         setCompanies(companiesResponse.data);
         setAvailableYears(yearsResponse.data.data || []);
-        setLastUpdated(new Date()); // Update the last updated time
+        setLastUpdated(new Date());
       } catch (error) {
         console.error('Error fetching initial data:', error);
         setCompanies([]);
@@ -92,28 +96,29 @@ function EnvironmentWaterDash() {
     fetchInitialData();
   }, []);
 
-  // Updated useEffect to fetch filtered totals instead of cumulative totals
+  // Updated useEffect to fetch filtered totals with multi-select support
   useEffect(() => {
     const fetchFilteredTotals = async () => {
       try {
-        // Build parameters - same logic as chart data
         const params = new URLSearchParams();
         
-        // For company_id: if empty, pass all companies as individual parameters
-        if (companyId) {
-          params.append('company_id', companyId);
+        // For company_ids: if array is empty, pass all companies
+        if (selectedCompanyIds.length > 0) {
+          selectedCompanyIds.forEach(companyId => {
+            params.append('company_id', companyId);
+          });
         } else {
-          // Send all companies from the fetched companies data
           companies.forEach(company => {
             params.append('company_id', company.id);
           });
         }
         
-        // For quarter: if empty, pass all quarters  
-        if (quarter) {
-          params.append('quarter', quarter);
+        // For quarters: if array is empty, pass all quarters  
+        if (selectedQuarters.length > 0) {
+          selectedQuarters.forEach(quarter => {
+            params.append('quarter', quarter);
+          });
         } else {
-          // Send all quarters
           ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
             params.append('quarter', q);
           });
@@ -122,20 +127,15 @@ function EnvironmentWaterDash() {
         // For year range: handle both single years and ranges using available years
         let yearRange = [];
         if (fromYear && toYear) {
-          // Generate array of years from fromYear to toYear, filtered by available years
           yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
         } else if (fromYear && !toYear) {
-          // Only from year specified - use from year to latest available year
           yearRange = availableYears.filter(year => year >= parseInt(fromYear));
         } else if (!fromYear && toYear) {
-          // Only to year specified - use earliest available year to to year
           yearRange = availableYears.filter(year => year <= parseInt(toYear));
         } else {
-          // No year filter - send all available years
           yearRange = availableYears;
         }
         
-        // Add years to params
         yearRange.forEach(year => {
           params.append('year', year);
         });
@@ -155,50 +155,50 @@ function EnvironmentWaterDash() {
         setFilteredTotalAbstracted(abstractedRes.data?.total_volume ?? 0);
         setFilteredTotalDischarged(dischargedRes.data?.total_volume ?? 0);
         setFilteredTotalConsumed(consumedRes.data?.total_volume ?? 0);
-        setLastUpdated(new Date()); // Update the last updated time
+        setLastUpdated(new Date());
       } catch (error) {
         console.error('Error fetching filtered totals:', error);
         console.error('Error details:', error.response?.data);
-        // Set to 0 if error occurs
         setFilteredTotalAbstracted(0);
         setFilteredTotalDischarged(0);
         setFilteredTotalConsumed(0);
       }
     };
 
-    // Only fetch data if companies and available years have been loaded
     if (companies.length > 0 && availableYears.length > 0) {
       fetchFilteredTotals();
     }
-  }, [companyId, quarter, fromYear, toYear, companies, availableYears]);
+  }, [selectedCompanyIds, selectedQuarters, fromYear, toYear, companies, availableYears]);
 
+  // Updated useEffect to fetch chart data with multi-select support
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Build parameters using URLSearchParams
         const params = new URLSearchParams();
         
-        // For company_id: if empty, pass all companies as individual parameters
-        if (companyId) {
-          params.append('company_id', companyId);
+        // For company_ids: if array is empty, pass all companies
+        if (selectedCompanyIds.length > 0) {
+          selectedCompanyIds.forEach(companyId => {
+            params.append('company_id', companyId);
+          });
         } else {
-          // Send all companies from the fetched companies data
           companies.forEach(company => {
             params.append('company_id', company.id);
           });
         }
         
-        // For quarter: if empty, pass all quarters  
-        if (quarter) {
-          params.append('quarter', quarter);
+        // For quarters: if array is empty, pass all quarters  
+        if (selectedQuarters.length > 0) {
+          selectedQuarters.forEach(quarter => {
+            params.append('quarter', quarter);
+          });
         } else {
-          // Send all quarters
           ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
             params.append('quarter', q);
           });
         }
         
-        // For year range: handle both single years and ranges using available years
+        // For year range
         let yearRange = [];
         if (fromYear && toYear) {
           yearRange = availableYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
@@ -210,14 +210,12 @@ function EnvironmentWaterDash() {
           yearRange = availableYears;
         }
         
-        // Add years to params
         yearRange.forEach(year => {
           params.append('year', year);
         });
         
-        console.log('Sending params to API:', params.toString()); // Debug log
+        console.log('Sending params to API:', params.toString());
         
-        // Fetch pie chart, line chart, and stacked bar data
         const [pieResponse, lineResponse, stackedBarResponse] = await Promise.all([
           api.get(`/environment_dash/pie-chart?${params.toString()}`),
           api.get(`/environment_dash/line-chart?${params.toString()}`),
@@ -271,7 +269,7 @@ function EnvironmentWaterDash() {
           setStackedBarData([]);
         }
         
-        setLastUpdated(new Date()); // Update the last updated time after successful data fetch
+        setLastUpdated(new Date());
         
       } catch (error) {
         console.error('Failed to fetch chart data:', error);
@@ -283,16 +281,15 @@ function EnvironmentWaterDash() {
       }
     };
 
-    // Only fetch data if companies and available years have been loaded
     if (companies.length > 0 && availableYears.length > 0) {
       fetchData();
     }
-  }, [companyId, quarter, fromYear, toYear, companies, availableYears]);
+  }, [selectedCompanyIds, selectedQuarters, fromYear, toYear, companies, availableYears]);
 
   // Clear all filters function
   const clearAllFilters = () => {
-    setCompanyId('');
-    setQuarter('');
+    setSelectedCompanyIds([]);
+    setSelectedQuarters([]);
     setFromYear('');
     setToYear('');
   };
@@ -310,19 +307,27 @@ function EnvironmentWaterDash() {
     }
   };
 
-  // Function to get filter description for metrics cards
+  // Updated function to get filter description for metrics cards
   const getFilterDescription = () => {
     const filters = [];
     
-    if (companyId) {
-      const selectedCompany = companies.find(c => c.id === companyId);
-      if (selectedCompany) {
-        filters.push(selectedCompany.name);
+    if (selectedCompanyIds.length > 0) {
+      if (selectedCompanyIds.length === 1) {
+        const selectedCompany = companies.find(c => c.id === selectedCompanyIds[0]);
+        if (selectedCompany) {
+          filters.push(selectedCompany.name);
+        }
+      } else {
+        filters.push(`${selectedCompanyIds.length} COMPANIES`);
       }
     }
     
-    if (quarter) {
-      filters.push(quarter);
+    if (selectedQuarters.length > 0) {
+      if (selectedQuarters.length === 1) {
+        filters.push(selectedQuarters[0]);
+      } else {
+        filters.push(`${selectedQuarters.length} QUARTERS`);
+      }
     }
     
     if (filters.length === 0) {
@@ -331,6 +336,19 @@ function EnvironmentWaterDash() {
     
     return filters.join(" • ").toUpperCase();
   };
+
+  // Prepare options for MultiSelect components
+  const companyOptions = companies.map(company => ({
+    value: company.id,
+    label: company.name
+  }));
+
+  const quarterOptions = [
+    { value: 'Q1', label: 'Q1' },
+    { value: 'Q2', label: 'Q2' },
+    { value: 'Q3', label: 'Q3' },
+    { value: 'Q4', label: 'Q4' }
+  ];
 
   // Custom tooltip for pie chart
   const renderCustomTooltip = ({ active, payload }) => {
@@ -383,11 +401,11 @@ function EnvironmentWaterDash() {
     <div style={{ 
       display: 'flex',
       flexDirection: 'row',
-      height: '100vh', // Fixed viewport height
+      height: '100vh',
       width: '100%',
       margin: 0,
       padding: 0,
-      overflow: 'hidden', // Prevent scrolling
+      overflow: 'hidden',
       backgroundColor: '#f8fafc'
     }}>
       <Sidebar />
@@ -395,9 +413,9 @@ function EnvironmentWaterDash() {
       {/* Main Content */}
       <div style={{ 
         flex: 1,
-        padding: '15px', // Reduced from 30px
+        padding: '15px',
         backgroundColor: '#ffffff',
-        overflow: 'hidden', // Prevent content overflow
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column'
       }}>
@@ -406,27 +424,26 @@ function EnvironmentWaterDash() {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          marginBottom: '15px', // Reduced from 30px
-          flexShrink: 0 // Prevent shrinking
+          marginBottom: '15px',
+          flexShrink: 0
         }}>
           <div>
             <div style={{ 
               color: '#64748b', 
-              fontSize: '12px', // Reduced from 14px
+              fontSize: '12px',
               fontWeight: '500',
-              marginBottom: '3px' // Reduced from 5px
+              marginBottom: '3px'
             }}>
               DASHBOARD
             </div>
             <h1 style={{ 
-              fontSize: '24px', // Reduced from 32px
+              fontSize: '24px',
               fontWeight: 'bold', 
               color: '#1e293b',
               margin: 0 
             }}>
               Environment - Water
             </h1>
-            {/* Add "As of now" timestamp */}
             <div style={{ 
               color: '#64748b', 
               fontSize: '10px',
@@ -436,7 +453,6 @@ function EnvironmentWaterDash() {
                The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
             </div>
           </div>
-          {/* Add Refresh Button */}
           <button 
             onClick={handleRefresh}
             style={{
@@ -460,115 +476,63 @@ function EnvironmentWaterDash() {
           </button>
         </div>
 
-        {/* Filters - Compact */}
+        {/* Filters - Updated with MultiSelect */}
         <div style={{ 
           display: 'flex', 
-          gap: '10px', // Reduced from 15px
-          marginBottom: '15px', // Reduced from 20px
+          gap: '10px',
+          marginBottom: '15px',
           flexWrap: 'wrap',
           alignItems: 'center',
           flexShrink: 0
         }}>
-          {/* Company Filter */}
-          <select 
-            value={companyId}
-            onChange={(e) => setCompanyId(e.target.value)}
-            style={{
-              padding: '8px 12px', // Reduced padding
-              border: '2px solid #e2e8f0',
-              borderRadius: '20px', // Reduced border radius
-              backgroundColor: 'white',
-              fontSize: '12px', // Reduced from 14px
-              fontWeight: '500',
-              cursor: 'pointer',
-              minWidth: '100px' // Reduced from 120px
-            }}
-          >
-            <option value="">All Companies</option>
-            {companies.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name}
-              </option>
-            ))}
-          </select>
+          {/* Company Multi-Select Filter */}
+          <MultiSelectWithChips
+            label="Companies"
+            options={companyOptions}
+            selectedValues={selectedCompanyIds}
+            onChange={setSelectedCompanyIds}
+            placeholder="All Companies"
+          />
 
-          {/* Quarter Filter */}
-          <select 
-            value={quarter}
-            onChange={(e) => setQuarter(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e2e8f0',
-              borderRadius: '20px',
-              backgroundColor: 'white',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              minWidth: '100px'
-            }}
-          >
-            <option value="">All Quarters</option>
-            <option value="Q1">Q1</option>
-            <option value="Q2">Q2</option>
-            <option value="Q3">Q3</option>
-            <option value="Q4">Q4</option>
-          </select>
+          {/* Quarter Multi-Select Filter */}
+          <MultiSelectWithChips
+            label="Quarters"
+            options={quarterOptions}
+            selectedValues={selectedQuarters}
+            onChange={setSelectedQuarters}
+            placeholder="All Quarters"
+          />
 
-          {/* Year Range Filter - Now using dynamic years from API */}
+          {/* Year Range Filter - Keep as single select for now */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <select 
+            <StyledSelect
               value={fromYear}
-              onChange={(e) => setFromYear(e.target.value)}
-              style={{
-                padding: '8px 10px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '85px'
-              }}
-            >
-              <option value="">From Year</option>
-              {availableYears.map((year) => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-
-            <span style={{ 
-              color: '#64748b', 
-              fontSize: '12px', 
-              fontWeight: '500' 
+              onChange={(value) => setFromYear(value)}
+              options={availableYears.map(year => ({ value: year, label: year.toString() }))}
+              placeholder="From Year"
+              style={{ minWidth: '85px', width: 'auto', maxWidth: '120px' }}
+            />
+            <span style={{
+              color: '#64748b',
+              fontSize: '12px',
+              fontWeight: '500'
             }}>
               to
             </span>
-
-            <select 
+            <StyledSelect
               value={toYear}
-              onChange={(e) => setToYear(e.target.value)}
-              style={{
-                padding: '8px 10px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '85px'
-              }}
-            >
-              <option value="">To Year</option>
-              {availableYears
+              onChange={(value) => setToYear(value)}
+              options={availableYears
                 .filter(year => !fromYear || year >= parseInt(fromYear))
-                .map((year) => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-            </select>
+                .map(year => ({ value: year, label: year.toString() }))
+              }
+              placeholder="To Year"
+              style={{ minWidth: '85px', width: 'auto', maxWidth: '120px' }}
+            />
           </div>
 
           {/* Clear All Filters Button */}
-          {(companyId || quarter || fromYear || toYear) && (
+          {(selectedCompanyIds.length > 0 || selectedQuarters.length > 0 || fromYear || toYear) && (
             <button
               onClick={clearAllFilters}
               style={{
@@ -591,15 +555,15 @@ function EnvironmentWaterDash() {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: '1fr 1fr 1fr', 
-          gap: '12px', // Reduced from 20px
-          marginBottom: '15px', // Reduced from 30px
+          gap: '12px',
+          marginBottom: '15px',
           flexShrink: 0
         }}>
           <div style={{
             backgroundColor: '#3B82F6',
             color: 'white',
-            padding: '15px', // Reduced from 25px
-            borderRadius: '8px', // Reduced from 12px
+            padding: '15px',
+            borderRadius: '8px',
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
@@ -652,11 +616,11 @@ function EnvironmentWaterDash() {
 
         {/* Charts Section - New Layout: Pie chart in first column, Line and Bar charts stacked in second column */}
         <div style={{ 
-          flex: 1, // Take remaining space
+          flex: 1,
           display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', // Two equal columns
+          gridTemplateColumns: '1fr 1fr',
           gap: '15px',
-          minHeight: 0 // Allow grid items to shrink
+          minHeight: 0
         }}>
           {/* Pie Chart - Takes full height of first column */}
           <div style={{ 
@@ -710,8 +674,8 @@ function EnvironmentWaterDash() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        outerRadius={250} // Increased from 80 to 110 for larger circle
-                        innerRadius={100} // Increased proportionally from 35 to 45
+                        outerRadius={250}
+                        innerRadius={100}
                         fill="#8884d8"
                         dataKey="value"
                         paddingAngle={2}

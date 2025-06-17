@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Economic from "./pages/Economic/Economic";
 import Landing from "./pages/Landing";
+import LoginPage from "./pages/Login_page/Login_page";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
 import EconomicRepository from "./pages/Economic/EconomicRepository";
 import EnvironmentEnergy from "./pages/Envi/EnvironmentEnergy";
@@ -28,10 +30,11 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<LoginPage />} />
 
-            {/* Economic Routes */}
-            <Route path="/economic" element={<Economic />} />
-            <Route path="/economic/repository" element={<EconomicRepository />} />
+            {/* Protected Routes */}
+            <Route path="/economic" element={<ProtectedRoute><Economic /></ProtectedRoute>} />
+            <Route path="/economic/repository" element={<ProtectedRoute><EconomicRepository /></ProtectedRoute>} />
 
             {/* CSV Routes */}
             <Route path="/energy/power-generation" element={<Energy />} />
@@ -57,7 +60,6 @@ function App() {
             <Route path="/social/hrdashboard" element={<HRDashboard />} />
 
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/economics" element={<Economic />} />
           </Routes>
         </main>
       </div>
