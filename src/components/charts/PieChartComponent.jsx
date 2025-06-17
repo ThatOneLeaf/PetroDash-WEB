@@ -17,13 +17,17 @@ const PieChartComponent = ({ title, data }) => (
           cx="50%"
           cy="50%"
           outerRadius={130}
-          label
+          label={({ payload }) => `${payload.percent.toFixed(1)}%`} // 👈 use percent from data
         >
           {data.map((_, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value) => value.toLocaleString()} />
+        <Tooltip
+          formatter={(value, name, props) =>
+            [`${value.toLocaleString()} (${props.payload.percent.toFixed(1)}%)`, name]
+          }
+        />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
