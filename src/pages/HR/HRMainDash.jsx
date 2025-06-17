@@ -43,6 +43,101 @@ function HRMainDash() {
   //create api for export
   const exportToExcel = async () => {};
 
+  //   return (
+  //   <Box sx={{ 
+  //     display: 'flex',
+  //     flexDirection: 'row',
+  //     height: '100vh',
+  //     width: '100%',
+  //     margin: 0,
+  //     padding: 0,
+  //     overflow: 'hidden',
+  //     backgroundColor: '#f8fafc' }}>
+  //     <Sidebar />
+  //     <Box sx={{ 
+  //       flex: 1,
+  //       padding: '15px',
+  //       backgroundColor: '#ffffff',
+  //       overflow: 'hidden',
+  //       display: 'flex',
+  //       flexDirection: 'column' }}>
+  //       <Box sx={{ p: 4 }}>
+  //         {/* Common title only */}
+  //         <div
+  //           style={{
+  //             display: "flex",
+  //             justifyContent: "space-between",
+  //             alignItems: "center",
+  //             marginBottom: "1rem",
+  //           }}
+  //         >
+  //           <div>
+  //             <h1
+  //               style={{
+  //                 color: '#64748b', 
+  //                 fontSize: '12px',
+  //                 fontWeight: '500',
+  //                 marginBottom: '3px'
+  //               }}
+  //             >
+  //               DASHBOARD
+  //             </h1>
+  //             <h1 style={{  
+  //               fontSize: '24px',
+  //               fontWeight: 'bold', 
+  //               color: '#1e293b',
+  //               margin: 0 }}>
+  //               Social - Human Resources
+  //             </h1>
+  //             <h1 style={{
+  //               color: '#64748b', 
+  //               fontSize: '10px',
+  //               fontWeight: '400',
+  //               marginTop: '4px'
+  //             }}>
+  //               The data presented in this dashboard is accurate as of: 
+  //             </h1>
+  //           </div>
+
+  //           <div style={{ display: "flex", gap: "0.5rem" }}>
+  //             <Button
+  //               variant="contained"
+  //               sx={{
+  //                 backgroundColor: '#3B82F6',
+  //                 color: 'white',
+  //                 border: 'none',
+  //                 padding: '8px 16px',
+  //                 borderRadius: '8px',
+  //                 display: 'flex',
+  //                 alignItems: 'center',
+  //                 gap: '8px',
+  //                 cursor: 'pointer',
+  //                 fontSize: '12px',
+  //                 fontWeight: '500',
+  //                 transition: 'background-color 0.2s ease'
+  //               }}
+        
+  //               onClick={handleRefresh}
+  //             >
+  //               🔄 REFRESH
+  //             </Button>
+  //           </div>
+  //         </div>
+
+  //         {/* Common navigation buttons */}
+  //         <PageButtons
+  //           pages={pages}
+  //           selected={selected}
+  //           setSelected={setSelected}
+  //         />
+
+  //         {/* Page-specific content with controls inside */}
+  //         <Box mt={0}>{renderPage()}</Box>
+  //       </Box>
+  //     </Box>
+  //   </Box>
+  // );
+
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
