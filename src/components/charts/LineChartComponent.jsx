@@ -46,7 +46,7 @@ const LineChartComponent = ({
           <Label value={xAxisLabel} offset={-20} position="insideBottom" />
         </XAxis>
 
-        <YAxis tickFormatter={(value) => formatYAxis(value, unit)}>
+        <YAxis tickFormatter={(value) => formatYAxis(value)}>
           <Label
             value={yAxisLabel}
             angle={-90}

@@ -296,34 +296,34 @@ function EnergyDashboard() {
                 {(housePowerData?.totals?.est_house_powered || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </Typography>
             </Box>
-{Object.entries(equivalenceData).map(([eqKey, eq]) => (
-  <Box
-    key={eqKey}
-    sx={{
-      flex: "1 1 30%",
-      backgroundColor: "#f5f7fa",
-      padding: "1.5rem",
-      borderRadius: 2,
-      boxShadow: 1,
-      minWidth: 200,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-start"
-    }}
-  >
-    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-      {iconMap[eqKey] || <InfoOutlined fontSize="large" />}
-      <Tooltip title={eq.equivalence_label} arrow>
-        <Typography variant="subtitle1" fontWeight="bold" sx={{ ml: 1 }}>
-          {eq.metric}
-        </Typography>
-      </Tooltip>
-    </Box>
-    <Typography variant="h6" fontWeight="bold" sx={{ alignSelf: "center" }}>
-      {formatValue(eq.co2_equivalent)}
-    </Typography>
-  </Box>
-))}
+            {Object.entries(equivalenceData).map(([eqKey, eq]) => (
+              <Box
+                key={eqKey}
+                sx={{
+                  flex: "1 1 30%",
+                  backgroundColor: "#f5f7fa",
+                  padding: "1.5rem",
+                  borderRadius: 2,
+                  boxShadow: 1,
+                  minWidth: 200,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start"
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  {iconMap[eqKey] || <InfoOutlined fontSize="large" />}
+                  <Tooltip title={eq.equivalence_label} arrow>
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ ml: 1 }}>
+                      {eq.metric}
+                    </Typography>
+                  </Tooltip>
+                </Box>
+                <Typography variant="h6" fontWeight="bold" sx={{ alignSelf: "center" }}>
+                  {formatValue(eq.co2_equivalent)}
+                </Typography>
+              </Box>
+            ))}
 
           </Box>
 

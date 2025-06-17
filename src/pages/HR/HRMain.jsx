@@ -37,7 +37,7 @@ function HRMain() {
     "Parental Leave",
     "Safety Work Data",
     "Training",
-    "OSH",
+    "Occupational Safety Health",
   ];
 
   const handleFilteredDataFromChild = (data) => {
@@ -62,7 +62,7 @@ function HRMain() {
                 <ImportFileModal
                   title="HR - Employability"
                   downloadPath="hr/template-employability"
-                  //uploadPath=
+                  uploadPath="hr/bulk_upload_employability"
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -86,7 +86,7 @@ function HRMain() {
                 <ImportFileModal
                   title="HR - Parental Leave"
                   downloadPath="hr/template-parental-leave"
-                  //uploadPath=
+                  uploadPath="hr/bulk_upload_parental_leave"
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -109,7 +109,7 @@ function HRMain() {
                 <ImportFileModal
                   title="HR - Safety Work Data"
                   downloadPath="hr/template-safety-workdata"
-                  //uploadPath=
+                  uploadPath="hr/bulk_upload_safety_workdata"
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -132,7 +132,7 @@ function HRMain() {
                 <ImportFileModal
                   title="HR - Training"
                   downloadPath="hr/template-training"
-                  //uploadPath=
+                  uploadPath="hr/bulk_upload_training"
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -140,7 +140,7 @@ function HRMain() {
           </>
         );
 
-      case "OSH":
+      case "Occupational Safety Health":
         return (
           <>
             {isAddModalOpen && (
@@ -154,9 +154,9 @@ function HRMain() {
             {isImportModalOpen && (
               <Overlay onClose={() => setIsImportModalOpen(false)}>
                 <ImportFileModal
-                  title="HR - OSH"
+                  title="HR - Occupational Safety Health"
                   downloadPath="hr/template-osh"
-                  //uploadPath=
+                  uploadPath="hr/bulk_occupational_safety_health"
                   onClose={() => setIsImportModalOpen(false)}
                 />
               </Overlay>
@@ -207,7 +207,7 @@ function HRMain() {
             onFilterChange={handleFilteredDataFromChild}
           />
         );
-      case "OSH":
+      case "Occupational Safety Health":
         return (
           <HROSH
             {...commonProps}
