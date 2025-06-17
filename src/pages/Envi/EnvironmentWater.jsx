@@ -288,10 +288,29 @@ function EnvironmentWater() {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
   
+      // Generate timestamp
+      const now = new Date();
+      const timestamp = now.toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\..+/, '')
+        .replace('T', '_');
+  
+      // Generate filename based on selected water type
+      let filename;
+      if (selected === 'Abstraction') {
+        filename = `Environment_Water_Abstraction_${timestamp}.xlsx`;
+      } else if (selected === 'Discharged') {
+        filename = `Environment_Water_Discharged_${timestamp}.xlsx`;
+      } else if (selected === 'Consumption') {
+        filename = `Environment_Water_Consumption_${timestamp}.xlsx`;
+      } else {
+        filename = `Environment_Water_Data_${timestamp}.xlsx`; // fallback
+      }
+  
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'exported_water_data.xlsx';
+      a.download = filename;
       a.click();
   
       // Clean up

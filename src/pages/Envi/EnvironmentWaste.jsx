@@ -286,16 +286,47 @@ function EnvironmentWaste() {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
   
+      // Generate timestamp
+      const now = new Date();
+      const timestamp = now.toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\..+/, '')
+        .replace('T', '_');
+  
+      // Generate filename based on selected waste type
+      let filename;
+      if (selected === 'Hazard Generated') {
+        filename = `Environment_Hazard_Generated_${timestamp}.xlsx`;
+      } else if (selected === 'Hazard Disposed') {
+        filename = `Environment_Hazard_Disposed_${timestamp}.xlsx`;
+      } else if (selected === 'Non-Hazard Generated') {
+        filename = `Environment_Non_Hazard_Generated_${timestamp}.xlsx`;
+      } else {
+        filename = `Environment_Waste_Data_${timestamp}.xlsx`; // fallback
+      }
+  
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'exported_waste_data.xlsx';
+      a.download = filename;
       a.click();
   
       // Clean up
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      // Debugging notes for API error
       console.error('Failed to export Excel:', error);
+      if (error.response) {
+        console.error('API Response Error:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+      } else if (error.request) {
+        console.error('API No Response:', error.request);
+      } else {
+        console.error('API Setup Error:', error.message);
+      }
     }
   };
 

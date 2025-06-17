@@ -7,8 +7,8 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AA00FF', '#FF4081'
 
 const PieChartComponent = ({ title, data }) => (
   <>
-    <h3>{title}</h3>
-    <ResponsiveContainer width="100%" height={400}>
+    <h3 style={{ fontSize: '14px', marginBottom: '10px' }}>{title}</h3>
+    <ResponsiveContainer width="100%" height="95%">
       <PieChart>
         <Pie
           data={data}
@@ -16,14 +16,18 @@ const PieChartComponent = ({ title, data }) => (
           nameKey="name"
           cx="50%"
           cy="50%"
-          outerRadius={130}
-          label
+          outerRadius="70%"
+          label={({ payload }) => `${payload.percent.toFixed(1)}%`} // 👈 use percent from data
         >
           {data.map((_, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value) => value.toLocaleString()} />
+        <Tooltip
+          formatter={(value, name, props) =>
+            [`${value.toLocaleString()} (${props.payload.percent.toFixed(1)}%)`, name]
+          }
+        />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
