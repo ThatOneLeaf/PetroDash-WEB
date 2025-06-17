@@ -25,6 +25,7 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editedRecord, setEditedRecord] = useState(record || {});
+  const [modalType, setModalType] = useState(''); // 'approve' or 'revise'
   const statuses = ["URS","FRS","URH","FRH","APP"];
   const [nextStatus, setNextStatus] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -45,6 +46,8 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
   const [hazGenUnitOptions, setHazGenUnitOptions] = useState([]);
   const [hazDisUnitOptions, setHazDisUnitOptions] = useState([]);
   const [nonHazUnitOptions, setNonHazUnitOptions] = useState([]);
+
+  const [showApproveSuccessModal, setShowApproveSuccessModal] = useState(false);
 
   if (!record) return null;
 
@@ -289,6 +292,29 @@ const handleStatusUpdate = async (action) => {
       console.error("Error updating record status:", error);
       alert(error?.response?.data?.detail || "Update Status Failed.");
     }
+  };
+
+  const handleApproveConfirm = async () => {
+    setIsModalOpen(false);
+    const newStatus = fetchNextStatus('approve');
+    try {
+      const payload = {
+        record_id: record[recordIdKey]?.toString().trim(),
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+      const response = await api.post(
+        "/usable_apis/update_status",
+        payload
+      );
+      setShowApproveSuccessModal(true);
+    } catch (error) {
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }
+  };
+  const handleApproveSuccessClose = () => {
+    setShowApproveSuccessModal(false);
+    status(false);
   };
 
   const isRecordUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
@@ -599,7 +625,7 @@ const handleStatusUpdate = async (action) => {
                     backgroundColor: '#256d2f',
                   },
                 }}
-                onClick={() => handleStatusUpdate("approve")}
+                onClick={() => { setModalType('approve'); setIsModalOpen(true); }}
               >
                 Approve
               </Button>
@@ -617,7 +643,7 @@ const handleStatusUpdate = async (action) => {
                       backgroundColor: '#0f1a3c',
                     },
                   }}
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => openModal('revise')}
                 >
                   Revise
                 </Button>
@@ -625,7 +651,7 @@ const handleStatusUpdate = async (action) => {
             </Box>
           </Box>
         )}
-        {isModalOpen && (
+        {isModalOpen && modalType === 'revise' && (
           <Overlay onClose={() => setIsModalOpen(false)}>
             <Paper
               sx={{
@@ -689,7 +715,148 @@ const handleStatusUpdate = async (action) => {
               </Box>
             </Paper>
           </Overlay>          
+        )}  
+        {isModalOpen && modalType === 'approve' && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <Paper
+              sx={{
+                p: 4,
+                width: "500px",
+                borderRadius: "16px",
+                bgcolor: "white",
+              }}
+            >
+              <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
+                Approval Confirmation
+              </Typography>
+              <Box sx={{
+                bgcolor: '#f5f5f5',
+                p: 2,
+                borderRadius: '8px',
+                width: '100%',
+                mb: 3
+              }}>
+                {Object.entries(record).map(([key, value]) => (
+                  <Typography key={key} sx={{ fontSize: '0.9rem', mb: 1 }}>
+                    <strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {String(value)}
+                  </Typography>
+                ))}
+              </Box>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}>
+                <Button 
+                  sx={{ 
+                    color: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      color: '#0f1a3c',
+                    },
+                  }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant='contained'
+                  sx={{ 
+                    marginLeft: 1,
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={handleApproveConfirm}
+                >
+                  Confirm
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
         )}      
+        {showApproveSuccessModal && (
+          <Overlay onClose={handleApproveSuccessClose}>
+            <Paper sx={{
+              p: 4,
+              width: '400px',
+              borderRadius: '16px',
+              bgcolor: 'white',
+              outline: 'none',
+              textAlign: 'center'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                mb: 3
+              }}>
+                <Box sx={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#2B8C37',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2
+                }}>
+                  <Typography sx={{ 
+                    color: 'white', 
+                    fontSize: '2rem',
+                    fontWeight: 'bold'
+                  }}>
+                    ✓
+                  </Typography>
+                </Box>
+                <Typography sx={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 800,
+                  color: '#182959',
+                  mb: 2
+                }}>
+                  Record Approved Successfully!
+                </Typography>
+                <Typography sx={{ 
+                  fontSize: '1rem',
+                  color: '#666',
+                  mb: 3
+                }}>
+                  The record has been successfully approved.
+                </Typography>
+              </Box>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mt: 3
+              }}>
+                <Button
+                  variant="contained"
+                  sx={{ 
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '10px 24px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={handleApproveSuccessClose}
+                >
+                  OK
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
+        )}
     </Paper>
   );
 };
