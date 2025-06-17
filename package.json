@@ -26,6 +26,7 @@
     "dayjs": "^1.11.13",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.15.0",
+    "html-to-image": "^1.11.13",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.513.0",
