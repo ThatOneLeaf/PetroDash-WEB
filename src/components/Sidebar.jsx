@@ -96,7 +96,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
     } else {
       return [
         { label: "H.R.", to: "/social/hr" }, // REPOSITORY mode
-        { label: "H.E.L.P", to: "/social/help-dash" },
+        { label: "H.E.L.P", to: "/social/help" },
         { label: "ER1-94 Fund Allocations", to: "/social/er1-94" },
       ];
     }

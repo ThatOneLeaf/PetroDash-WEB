@@ -20,9 +20,6 @@ const ViewHelpRecordModal = ({
   record,
   onClose,
   onSave,
-  companyOptions = [],
-  programOptions = [],
-  projectOptions = {},
 }) => {
   // State for edit/view mode, record data, and loading
   const [isEditing, setIsEditing] = useState(false);
@@ -30,9 +27,13 @@ const ViewHelpRecordModal = ({
   const [editedRecord, setEditedRecord] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Program and project options state
+  const [programOptions, setProgramOptions] = useState([]);
+  const [projectOptions, setProjectOptions] = useState({}); // { [programId]: [{label, value}] }
+
   // Readonly if status is approved
-  const isReadOnly = fetchedRecord?.statusId === 'APP';
-  console.log("hello ", fetchedRecord)
+  const isReadOnly = (fetchedRecord?.statusId || '').toUpperCase() === 'APPROVED';
+  console.log(isReadOnly)
   // Check if any changes were made
   const isUnchanged = JSON.stringify(fetchedRecord) === JSON.stringify(editedRecord);
 
@@ -52,7 +53,45 @@ const ViewHelpRecordModal = ({
       .finally(() => setLoading(false));
   }, [record]);
 
-  console.log("hello ", setFetchedRecord)
+  // Fetch program options on mount
+  useEffect(() => {
+    api.get('/help/programs')
+      .then(res => {
+        setProgramOptions(
+          [{ label: "Select Program", value: "" }]
+            .concat((res.data || []).map(p => ({
+              label: p.programName,
+              value: p.programId
+            })))
+        );
+      })
+      .catch(() => setProgramOptions([{ label: "Select Program", value: "" }]));
+  }, []);
+
+  // Fetch project options when program changes
+  useEffect(() => {
+    const programId = editedRecord?.programId;
+    if (!programId) return;
+    // Only fetch if not already loaded
+    if (projectOptions[programId]) return;
+    api.get('/help/projects', { params: { program_id: programId } })
+      .then(res => {
+        setProjectOptions(prev => ({
+          ...prev,
+          [programId]: [{ label: "Select Project", value: "" }]
+            .concat((res.data || []).map(p => ({
+              label: p.projectName,
+              value: p.projectId
+            })))
+        }));
+      })
+      .catch(() => {
+        setProjectOptions(prev => ({
+          ...prev,
+          [programId]: [{ label: "Select Project", value: "" }]
+        }));
+      });
+  }, [editedRecord?.programId]);
 
   // Handle field changes in edit mode
   const handleChange = (key, value) => {
@@ -61,7 +100,6 @@ const ViewHelpRecordModal = ({
 
   // Save changes to API
   const handleSave = async () => {
-    console.log("here handleSave")
     try {
       // Only send the required fields
       const payload = {
@@ -70,14 +108,13 @@ const ViewHelpRecordModal = ({
         project_id: editedRecord.projectId,
         csr_report: Number(editedRecord.csrReport),
         project_expenses: Number(editedRecord.projectExpenses),
-        status_id: editedRecord.statusId // include statusId in payload if needed by backend
+        project_remarks: editedRecord.projectRemarks
       };
-      console.log(editedRecord.projectYear)
       await api.post('/help/activities-update', payload);
-      console.log("passed await")
       if (onSave) onSave({ ...editedRecord, statusId: editedRecord.statusId });
       setIsEditing(false);
       setFetchedRecord({ ...editedRecord, statusId: editedRecord.statusId });
+      alert("Successfully updated.")
     } catch (error) {
       alert('Failed to save changes.');
     }
@@ -95,7 +132,7 @@ const ViewHelpRecordModal = ({
   // No data found state
   if (!fetchedRecord) {
     return (
-      <Paper sx={{ p: 4, width: 600, borderRadius: 2 }}>
+      <Paper sx={{ p: 4, width: 600, borderRadius: 2, mb: 4 }}>
         <Typography>No data found for this record.</Typography>
       </Paper>
     );
@@ -105,7 +142,7 @@ const ViewHelpRecordModal = ({
   return (
     <Paper sx={{ p: 4, width: 600, borderRadius: 2 }}>
       {/* Modal header */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 1 }}>
         <Typography sx={{ fontSize: '0.85rem', fontWeight: 800 }}>
           {isEditing ? 'EDIT RECORD' : 'VIEW RECORD'}
         </Typography>
@@ -115,7 +152,7 @@ const ViewHelpRecordModal = ({
       </Box>
       {/* Show warning if record is approved */}
       {isReadOnly && (
-        <Typography variant="caption" color="error" sx={{ mb: 2 }}>
+        <Typography variant="caption" color="error">
           This record has been approved and cannot be edited.
         </Typography>
       )}
@@ -128,33 +165,18 @@ const ViewHelpRecordModal = ({
           fullWidth
           disabled={!isEditing || isReadOnly}
         />
-        {/* Company dropdown */}
-        {/* <FormControl fullWidth>
-          <InputLabel>Company</InputLabel>
-          <Select
-            value={editedRecord.companyId || ''}
-            onChange={e => handleChange('companyId', e.target.value)}
-            disabled={!isEditing}
-            label="Company"
-          >
-            {companyOptions.map(opt => (
-              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-            ))}
-          </Select>
-        </FormControl> */}
-        {/* Program dropdown */}
+        {console.log(editedRecord)}
         <FormControl fullWidth>
           <InputLabel>Program</InputLabel>
-          <Select
-            value={editedRecord.programName || ''}
-            onChange={e => {
-              handleChange('programName', e.target.value);
-              // Reset project if program changes
-              handleChange('projectId', '');
-            }}
-            disabled={!isEditing || isReadOnly}
-            label="Program"
-          >
+            <Select
+              value={editedRecord.programId || ''}
+              onChange={e => {
+                handleChange('programId', e.target.value);
+                handleChange('projectId', '');
+              }}
+              disabled={!isEditing || isReadOnly}
+              label="Program"
+            >
             {programOptions.map(opt => (
               <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
             ))}
@@ -163,13 +185,13 @@ const ViewHelpRecordModal = ({
         {/* Project dropdown */}
         <FormControl fullWidth>
           <InputLabel>Project</InputLabel>
-          <Select
-            value={editedRecord.projectId || ''}
-            onChange={e => handleChange('projectId', e.target.value)}
-            disabled={!isEditing || isReadOnly || !editedRecord.programName}
-            label="Project"
-          >
-            {(projectOptions[editedRecord.programName] || []).map(opt => (
+            <Select
+              value={editedRecord.projectId || ''}
+              onChange={e => handleChange('projectId', e.target.value)}
+              disabled={!isEditing || isReadOnly || !editedRecord.programId}
+              label="Project"
+            >
+            {(projectOptions[editedRecord.programId] || [{ label: "Select Project", value: "" }]).map(opt => (
               <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
             ))}
           </Select>
@@ -190,20 +212,21 @@ const ViewHelpRecordModal = ({
           fullWidth
           disabled={!isEditing || isReadOnly}
         />
-        {/* <FormControl fullWidth>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={editedRecord.statusId || ''}
-            onChange={e => handleChange('statusId', e.target.value)}
-            disabled={!isEditing || isReadOnly}
-            label="Status"
-          >
-            <MenuItem value="APP">APPROVED</MenuItem>
-            <MenuItem value="PEN">PENDING</MenuItem>
-            <MenuItem value="REJ">REJECTED</MenuItem>
-          </Select>
-        </FormControl> */}
+        <TextField
+          label="Status"
+          value={editedRecord.statusId || ''}
+          fullWidth
+          disabled
+        />
       </Box>
+      <TextField
+          label="Project Remarks"
+          value={editedRecord.projectRemarks || ''}
+          onChange={e => handleChange('projectRemarks', e.target.value)}
+          fullWidth
+          disabled={!isEditing || isReadOnly}
+          sx={{ mt: 2 }}
+        />
       {/* Action buttons */}
       <Box display="flex" justifyContent="space-between" mt={4}>
         <Button
@@ -224,19 +247,6 @@ const ViewHelpRecordModal = ({
           disabled={isReadOnly}
         >
           {isEditing ? 'Save' : 'Edit'}
-        </Button>
-        <Button
-          variant="contained"
-          color="success"
-          onClick={() => {
-            if (isEditing && !isUnchanged) {
-              const confirmClose = window.confirm('You have unsaved changes. Close anyway?');
-              if (!confirmClose) return;
-            }
-            onClose();
-          }}
-        >
-          Close
         </Button>
       </Box>
     </Paper>

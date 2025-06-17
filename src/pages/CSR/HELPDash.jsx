@@ -13,6 +13,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import WorkIcon from '@mui/icons-material/Work';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api';
+import Filter from '../../components/Filter/Filter'
 
 const kpiConfig = [
   // Health

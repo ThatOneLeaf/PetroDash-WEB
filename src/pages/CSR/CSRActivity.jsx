@@ -29,6 +29,7 @@ function CSR() {
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [modalKey, setModalKey] = useState(0);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
@@ -41,8 +42,14 @@ function CSR() {
     key: 'projectYear',
     direction: 'desc'
   });
-  const [filters, setFilters] = useState({ year: "", companyId: "", statusId: "", program: "", projectAbbr: "" });
+  const [filters, setFilters] = useState({ year: "", companyId: "", statusId: "", programId: "", programName: "", projectAbbr: "" });
   const [search, setSearch] = useState('');
+  const [programOptions, setProgramOptions] = useState([
+    { label: "All Programs", value: "" }
+  ]);
+  const [projectOptions, setProjectOptions] = useState([
+    { label: "All Projects", value: "" }
+  ]);
 
   useEffect(() => {
     fetchCSRData();
@@ -204,23 +211,64 @@ function CSR() {
     }  
   };
 
-  // Memoize filter options for efficiency
-  const programOptions = useMemo(() => {
-    const programSet = new Set(data.map(d => d.programName).filter(Boolean));
-    return [
-      { label: "All Programs", value: "" },
-      ...Array.from(programSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }))
-    ];
-  }, [data]);
+  // Fetch program options from API
+  useEffect(() => {
+    const fetchProgramOptions = async () => {
+      try {
+        const response = await api.get('/help/programs');
+        if (Array.isArray(response.data)) {
+          const options = [
+            { label: "All Programs", value: "" },
+            ...response.data.map(p => ({
+              label: p.programName,
+              value: p.programId
+            }))
+          ];
+          setProgramOptions(options);
+        }
+      } catch (err) {
+        setProgramOptions([{ label: "All Programs", value: "" }]);
+      }
+    };
+    fetchProgramOptions();
+  }, []);
 
-  const projectOptions = useMemo(() => {
-    const filteredProjects = data.filter(d => !filters.program || d.programName === filters.program);
-    const projectSet = new Set(filteredProjects.map(d => d.projectName).filter(Boolean));
-    return [
-      { label: "All Projects", value: "" },
-      ...Array.from(projectSet).sort((a, b) => String(a).localeCompare(String(b))).map(name => ({ label: name, value: name }))
-    ];
-  }, [data, filters.program]);
+  // Fetch project options from API, filtered by selected programId
+  useEffect(() => {
+    const fetchProjectOptions = async () => {
+      try {
+        let url = '/help/projects';
+        if (filters.programId) {
+          url += `?program_id=${encodeURIComponent(filters.programId)}`;
+        }
+        const response = await api.get(url);
+        if (Array.isArray(response.data)) {
+          const options = [
+            { label: "All Projects", value: "" },
+            ...response.data.map(p => ({
+              label: p.projectName,
+              value: p.projectName // Use projectName for filtering
+            }))
+          ];
+          setProjectOptions(options);
+        }
+      } catch (err) {
+        setProjectOptions([{ label: "All Projects", value: "" }]);
+      }
+    };
+    fetchProjectOptions();
+  }, [filters.programId]);
+
+  const refreshPage2 = () => {
+    // Reset filters and fetch data
+    setFilters({ year: "", companyId: "", statusId: "", programId: "", programName: "", projectAbbr: "" });
+    fetchCSRData();
+  };
+
+  const handleSearch = (val) => {
+    setSearch(val);
+    // Optional: add debounce or throttle here for performance
+  };
 
   const yearOptions = useMemo(() => [
     { label: "All Years", value: "" },
@@ -253,7 +301,7 @@ function CSR() {
       if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
       if (filters.companyId && String(row.companyId) !== String(filters.companyId)) return false;
       if (filters.statusId && String(row.statusId) !== String(filters.statusId)) return false;
-      if (filters.program && row.programName !== filters.program) return false;
+      if (filters.programId && filters.programName && row.programName !== filters.programName) return false;
       if (filters.projectAbbr && row.projectName !== filters.projectAbbr) return false;
       return true;
     })
@@ -292,32 +340,6 @@ function CSR() {
     setPage(1);
     // eslint-disable-next-line
   }, [filters, search, rowsPerPage]);
-
-  // Modal options for AddRecordModalHelp
-  const modalYearOptions = useMemo(() => yearOptions.slice(1), [yearOptions]);
-  const modalCompanyOptions = useMemo(() => companyIdOptions.slice(1), [companyIdOptions]);
-  const modalProgramOptions = useMemo(() => {
-    const programSetModal = new Set(data.map(d => d.programName).filter(Boolean));
-    return Array.from(programSetModal)
-      .sort((a, b) => String(a).localeCompare(String(b)))
-      .map(name => ({ label: name, value: name }));
-  }, [data]);
-  const modalProjectOptions = useMemo(() => {
-    const result = {};
-    data.forEach(d => {
-      if (d.programName && d.projectName && d.projectId) {
-        if (!result[d.programName]) result[d.programName] = [];
-        if (!result[d.programName].some(opt => opt.value === d.projectId)) {
-          result[d.programName].push({
-            label: d.projectName,
-            value: d.projectId,
-            projectId: d.projectId
-          });
-        }
-      }
-    });
-    return result;
-  }, [data]);
 
   // Disable body scroll when any modal is open
   useEffect(() => {
@@ -362,14 +384,10 @@ function CSR() {
     }
   ], [setSelectedRecord]);
 
-//const getUpdatePath = useCallback((record) => `${'/activities-update'}/${record.projectId}`, []); // <-- use variable
-
-  // Compute idKey for Table checkboxes (like EnvironmentEnergy)
+  // Compute idKey for Table checkboxes
   const idKey = useMemo(() => {
     if (filteredData.length > 0) {
       if (filteredData[0].csrId !== undefined) return 'csrId';
-      // if (filteredData[0].projectId !== undefined) return 'projectId';
-      // add more fallbacks if needed
     }
     return 'id';
   }, [filteredData]);
@@ -458,7 +476,7 @@ function CSR() {
                 >
                   Approve
                 </Button>
-                {(selectedRowIds.length > 0 && !isForRevision) && (
+                {/* {(selectedRowIds.length > 0 && !isForRevision) && (
                   <Button 
                     variant='contained'
                     sx={{ 
@@ -475,7 +493,7 @@ function CSR() {
                   >
                     Revise
                   </Button>
-                )}
+                )} */}
               </>
             ) : (
               <>
@@ -564,13 +582,24 @@ function CSR() {
           <Filter
             label="Program"
             options={programOptions}
-            value={filters.program}
+            value={filters.programId}
             onChange={val => {
+              const selectedOption = programOptions.find(opt => opt.value === val);
               setFilters(f => ({
                 ...f,
-                program: val,
-                projectAbbr: ""
+                programId: val,
+                programName: selectedOption ? selectedOption.label : "",
+                projectAbbr: "" // Reset project filter when program changes
               }));
+              // Fix: When switching to "All Programs", reset project options to all projects
+              if (!val) {
+                setProjectOptions([{ label: "All Projects", value: "" }, ...data
+                  .map(d => d.projectName)
+                  .filter(Boolean)
+                  .filter((v, i, arr) => arr.indexOf(v) === i)
+                  .map(name => ({ label: name, value: name }))
+                ]);
+              }
             }}
             placeholder="Program"
           />
@@ -581,7 +610,13 @@ function CSR() {
             onChange={val => setFilters(f => ({ ...f, projectAbbr: val }))}
             placeholder="Project"
           />
-          {Object.values(filters).some(v => v !== null && v !== '') && (
+          {(
+            filters.year !== "" ||
+            filters.companyId !== "" ||
+            filters.statusId !== "" ||
+            filters.programId !== "" ||
+            filters.projectAbbr !== ""
+          ) && (
             <Button
               variant="outline"
               startIcon={<ClearIcon />}
@@ -596,7 +631,8 @@ function CSR() {
                 year: "",
                 companyId: "",
                 statusId: "",
-                program: "",
+                programId: "",
+                programName: "",
                 projectAbbr: ""
               })}
             >
@@ -640,10 +676,6 @@ function CSR() {
             <AddRecordModalHelp
               open={isAddModalOpen}
               onClose={() => setIsAddModalOpen(false)}
-              yearOptions={modalYearOptions}
-              companyOptions={modalCompanyOptions}
-              programOptions={modalProgramOptions}
-              projectOptions={modalProjectOptions}
             />
           </Overlay>
           )
@@ -651,16 +683,11 @@ function CSR() {
         {/* Import Modal */}
         {isImportModalOpen && (
           <Overlay onClose={() => setIsImportModalOpen(false)}>
-            {/* <ImportModalHelp
-              open={isImportModalOpen}
-              onClose={() => setIsImportModalOpen(false)}
-              onImportSuccess={fetchCSRData}
-            /> */}
             <ImportFileModal
               title="Social - H.E.L.P"
               downloadPath="/help/help-activity-template"
               uploadPath="help/help-activity-bulk"
-              onClose={() => setIsImportModalOpen(false)} // or any close handler
+              onClose={() => setIsImportModalOpen(false)}
             />
           </Overlay>
         )}
@@ -669,11 +696,8 @@ function CSR() {
           <Overlay onClose={() => setSelectedRecord(null)}>
             <ViewHelpRecordModal
               title="CSR Activity Details"
+              onClose={() => setIsViewModalOpen(false)}
               record={{ ...selectedRecord, statusId: selectedRecord.statusId }}
-              companyOptions={modalCompanyOptions}
-              programOptions={modalProgramOptions}
-              projectOptions={modalProjectOptions}
-              // updatePath={getUpdatePath(selectedRecord)}
               status={(data, error) => {
                 if (error) {
                   // Debug message for update API error
@@ -698,6 +722,8 @@ function CSR() {
             />
           </Overlay>
         )}
+
+        {/* revise modal */}
       </Container>
     </Box>
   );

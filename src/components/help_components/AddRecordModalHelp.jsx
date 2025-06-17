@@ -13,12 +13,7 @@ import api from '../../services/api';
 
 function AddRecordModalHelp({
   open,
-  onClose,
-  onAdd,
-  programOptions = [],
-  projectOptions = {},
-  yearOptions = [],
-  companyOptions = [],
+  onClose
 }) {
   const [year, setYear] = useState('');
   const [company, setCompany] = useState('');
@@ -29,6 +24,9 @@ function AddRecordModalHelp({
   const [projectRemarks, setProjectRemarks] = useState('');
   const [loading, setLoading] = useState(false);
   const [yearError, setYearError] = useState('');
+  const [companyOptions, setCompanyOptions] = useState([]);
+  const [programOptions, setProgramOptions] = useState([]);
+  const [projectOptions, setProjectOptions] = useState([]);
 
   useEffect(() => {
     if (open) {
@@ -41,6 +39,57 @@ function AddRecordModalHelp({
     };
   }, [open]);
 
+  // Fetch company options
+  useEffect(() => {
+    if (!open) return;
+    api.get('/reference/companies')
+      .then(res => {
+        setCompanyOptions(
+          [{ label: "Select Company", value: "" }]
+            .concat((res.data || []).map(c => ({
+              label: c.name,
+              value: c.id
+            })))
+        );
+      })
+      .catch(() => setCompanyOptions([{ label: "Select Company", value: "" }]));
+  }, [open]);
+
+  // Fetch program options
+  useEffect(() => {
+    if (!open) return;
+    api.get('/help/programs')
+      .then(res => {
+        setProgramOptions(
+          [{ label: "Select Program", value: "" }]
+            .concat((res.data || []).map(p => ({
+              label: p.programName,
+              value: p.programId
+            })))
+        );
+      })
+      .catch(() => setProgramOptions([{ label: "Select Program", value: "" }]));
+  }, [open]);
+
+  // Fetch project options based on selected program
+  useEffect(() => {
+    if (!open || !program) {
+      setProjectOptions([{ label: "Select Project", value: "" }]);
+      return;
+    }
+    api.get('/help/projects', { params: { program_id: program } })
+      .then(res => {
+        setProjectOptions(
+          [{ label: "Select Project", value: "" }]
+            .concat((res.data || []).map(p => ({
+              label: p.projectName,
+              value: p.projectId
+            })))
+        );
+      })
+      .catch(() => setProjectOptions([{ label: "Select Project", value: "" }]));
+  }, [open, program]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Validate year: must be 4 digits and reasonable (e.g., 1900-2099)
@@ -52,7 +101,15 @@ function AddRecordModalHelp({
     }
     setLoading(true);
 
-    console.log(projectRemarks)
+    console.log(
+        company,
+        project,
+        Number(year),
+        Number(beneficiaries),
+        Number(amountInvested),
+        projectRemarks,
+    )
+
     try {
       await api.post('/help/activities-single', {
         company_id: company,
@@ -221,7 +278,7 @@ function AddRecordModalHelp({
                   }
                 }}
               >
-                {(projectOptions[program] || []).map(opt => (
+                {projectOptions.map(opt => (
                   <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
               </TextField>
