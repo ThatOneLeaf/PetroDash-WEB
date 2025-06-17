@@ -34,7 +34,7 @@ function EnvironmentWasteDash() {
   const [fromYear, setFromYear] = useState('');
   const [toYear, setToYear] = useState('');
   const [wasteType, setWasteType] = useState(''); // Hazard Waste Filter 
-  const [metrics, setMetrics] = useState('');
+  const [metricsType, setMetrics] = useState('');
   const [unit, setUnit] = useState('Kilogram'); // Default Selection
 
   // Active APIs
@@ -74,6 +74,50 @@ function EnvironmentWasteDash() {
     chartData: [],
     companies: [],
     colors: {}
+  });
+  const [nonHazMetricsBarData, setNonHazMetricsBarData] = useState({
+    chartData: [],
+    companies: [],
+    metrics: [],
+    metricsLegend: [],
+    units: [],
+    grandTotal: 0
+  });
+  const [nonHazMetricsLineData, setNonHazMetricsLineData] = useState({
+    chartData: [],
+    transformedData: [],
+    companies: [],
+    metrics: [],
+    years: [],
+    units: [],
+    legend: [],
+    yearSummary: [],
+    grandTotal: 0
+  });
+  const [nonHazMetricsHeatmapData, setNonHazMetricsHeatmapData] = useState({
+    data: [],
+    companies: [],
+    metrics: [],
+    years: [],
+    units: [],
+    companyTotals: [],
+    yearTotals: [],
+    scale: { min_waste: 0, max_waste: 0 },
+    gridDimensions: { width: 0, height: 0 },
+    grandTotal: 0
+  });
+  const [nonHazQuarterBarData, setNonHazQuarterBarData] = useState({
+    chartData: [],
+    companies: [],
+    metrics: [],
+    quarters: [],
+    years: [],
+    units: [],
+    metricsLegend: [],
+    companySummary: [],
+    quarterSummary: [],
+    quarterYearLabels: [],
+    grandTotal: 0
   });
   // 1. Fetch all data ONCE on mount
   useEffect(() => {
@@ -132,18 +176,18 @@ function EnvironmentWasteDash() {
       case 'hazardous_generated':
         setActiveYears(hazGenYears || []);
         setActiveWasteType(hazGenWasteType || []);
-        setActiveMetrics([]);
+        setActiveMetrics(nonHazMetrics || []);
         setActiveUnits(hazGenUnits || []);
         break;
       case 'hazardous_disposed':
         setActiveYears(hazDisYears || []);
         setActiveWasteType(hazDisWasteType || []);
-        setActiveMetrics([]);
+        setActiveMetrics(nonHazMetrics || []);
         setActiveUnits(hazDisUnits || []);
         break;
       case 'non_hazardous_generated':
         setActiveYears(nonHazYears || []);
-        setActiveWasteType([]);
+        setActiveWasteType(hazGenWasteType || []);
         setActiveMetrics(nonHazMetrics || []);
         setActiveUnits(nonHazUnits || []);
         break;
@@ -194,6 +238,11 @@ function EnvironmentWasteDash() {
         barChartYearData: hazDisYearBarData.chartData || [],
         colors: hazDisYearBarData.colors || {},
         companies: hazDisYearBarData.companies || [],
+        unit: unit
+      };
+    } else {
+      return {
+        pieData: hazGenPieData,
         unit: unit
       };
     }
@@ -416,6 +465,96 @@ function EnvironmentWasteDash() {
     };
   };
 
+  const transformNonHazLineChartData = (apiData, years) => {
+    if (!Array.isArray(apiData) || apiData.length === 0) {
+      return [];
+    }
+
+    // Create chart data where each year is a point, and each company-metric combination is a line
+    const transformedData = years.map(year => {
+      const yearData = { year };
+      
+      // Add data for each company-metric combination
+      apiData.forEach(line => {
+        const lineKey = `${line.company_id}_${line.metrics}`;
+        const dataPoint = line.data_points.find(point => point.year === year);
+        yearData[lineKey] = dataPoint ? dataPoint.total_waste : 0;
+      });
+      
+      return yearData;
+    });
+
+    return transformedData;
+  };
+
+  const getHeatmapColor = (intensity) => {
+    if (intensity === 0) return '#f8f9fa'; // Very light gray for zero values
+    
+    // Color scale similar to the image: light green to dark blue
+    // Using a gradient from light yellow-green to dark blue
+    const colors = [
+      '#f7fcf0', // Very light green (0)
+      '#e0f3db', // Light green (0.1)
+      '#ccebc5', // Light green (0.2)
+      '#a8ddb5', // Green (0.3)
+      '#7bccc4', // Green-blue (0.4)
+      '#4eb3d3', // Light blue (0.5)
+      '#2b8cbe', // Blue (0.6)
+      '#0868ac', // Dark blue (0.7)
+      '#084081', // Darker blue (0.8)
+      '#08306b'  // Darkest blue (1.0)
+    ];
+    
+    const index = Math.min(Math.floor(intensity * colors.length), colors.length - 1);
+    return colors[index];
+  };
+
+  const transformNonHazQuarterChartData = (apiData, metricsLegend) => {
+    if (!Array.isArray(apiData) || apiData.length === 0) {
+      return [];
+    }
+
+    // Group data by quarter, aggregating across all years
+    const quarterGroups = {
+      'Q1': { quarter: 'Q1', total_waste: 0 },
+      'Q2': { quarter: 'Q2', total_waste: 0 },
+      'Q3': { quarter: 'Q3', total_waste: 0 },
+      'Q4': { quarter: 'Q4', total_waste: 0 }
+    };
+
+    // Initialize metrics for each quarter
+    metricsLegend.forEach(metric => {
+      Object.keys(quarterGroups).forEach(quarter => {
+        quarterGroups[quarter][metric.metrics] = 0;
+      });
+    });
+
+    // Aggregate data by quarter across all years
+    apiData.forEach(quarterData => {
+      const quarter = quarterData.quarter;
+      if (quarterGroups[quarter]) {
+        quarterGroups[quarter].total_waste += quarterData.total_waste;
+        
+        // Aggregate each metric
+        quarterData.metrics_data.forEach(metricData => {
+          quarterGroups[quarter][metricData.metrics] += metricData.total_waste;
+        });
+      }
+    });
+
+    // Convert to array and round values
+    return Object.values(quarterGroups).map(quarterData => {
+      const rounded = { ...quarterData };
+      rounded.total_waste = Math.round(rounded.total_waste * 100) / 100;
+      
+      metricsLegend.forEach(metric => {
+        rounded[metric.metrics] = Math.round(rounded[metric.metrics] * 100) / 100;
+      });
+      
+      return rounded;
+    });
+  };
+
   const fetchParams = () => {
     try {
       // Build parameters (same logic as pie chart)
@@ -446,18 +585,28 @@ function EnvironmentWasteDash() {
         params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
       }
       
-      if (wasteType) {
-        params.waste_type = wasteType;
-      } else {
-        params.waste_type = activeWasteType;
+      if (activeTab !== 'non_hazardous_generated'){
+        if (wasteType) {
+          params.waste_type = wasteType;
+        } else {
+          params.waste_type = activeWasteType;
+        }
       }
 
-      if (unit) {
-        params.unit = unit;
+      if (metricsType) {
+        params.metrics = metricsType;
       } else {
-        params.unit = activeUnits;
+        params.metrics = activeMetrics;
       }
 
+      if (activeTab !== 'non_hazardous_generated'){
+        if (unit) {
+          params.unit = unit;
+        } else {
+          params.unit = activeUnits;
+        }
+      }
+      
       return params;
 
     } catch (error) {
@@ -479,7 +628,7 @@ function EnvironmentWasteDash() {
         } else if (activeTab === 'hazardous_disposed') {
           path = 'hazard-waste-dis-key-metrics';
         } else {
-          path = 'non-hazard-waste-key-metrics';
+          path = 'non-haz-waste-key-metrics';
         }
 
         const response = await api.get(`/environment_dash/${path}?${params.toString()}`);
@@ -544,30 +693,28 @@ function EnvironmentWasteDash() {
     if (companies.length > 0 && activeYears.length > 0 && activeWasteType.length > 0) {
       fetchHazGenTypePieChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, wasteType, unit, companies, activeYears, activeWasteType, activeUnits]);
+  }, [activeTab, companyId, quarter, fromYear, toYear, wasteType, metricsType, unit, companies, activeYears, activeWasteType, activeUnits]);
   
   useEffect(() => {
     const fetchHazGenPieChart = async () => {
-      if (activeTab === 'non_hazardous_generated') return;
-
       try {
         // Build parameters (same logic as pie chart)
         const params = fetchParams();
 
-        params.unit = unit; // always send the selected unit as a string
-        
-        //console.log(`Sending params to ${activeTab} pie chart API:`, params);
+        params.unit_of_measurement = unit; // always send the selected unit as a string
 
+        console.log('PARAMS:', params)
         let path = '';
         if (activeTab === 'hazardous_generated'){ path = 'hazard-waste-perc-pie-chart'
-        } else {path = 'hazard-waste-dis-perc-pie-chart'}
+        } else if (activeTab === 'hazardous_disposed'){path = 'hazard-waste-dis-perc-pie-chart'
+        } else {path = 'non-hazard-waste-perc-pie-chart' }
 
         const response = await api.get(`/environment_dash/${path}`, { 
           params,
           paramsSerializer: { indexes: null }
         });
 
-        console.log(`${activeTab} response: ${response.data}`);
+        console.log(`${activeTab} response:`, response.data); // Preferred
         
         // Validate response data
         const responseData = response.data?.data || [];
@@ -578,7 +725,9 @@ function EnvironmentWasteDash() {
           label: item.company_id || 'Unknown',
           value: activeTab === 'hazardous_generated' 
             ? (item.total_generate != null ? Number(item.total_generate) : 0)
-            : (item.total_disposed != null ? Number(item.total_disposed) : 0),
+            : activeTab === 'hazardous_disposed' 
+            ? (item.total_disposed != null ? Number(item.total_disposed) : 0)
+            : (item.total_waste != null ? Number(item.total_waste) : 0),
           percentage: Number(item.percentage) || 0,
           color: item.color || COLORS[0]
         }));
@@ -599,10 +748,10 @@ function EnvironmentWasteDash() {
     };
 
     // Only fetch data if companies and available years have been loaded
-    if (companies.length > 0 && activeYears.length > 0 && activeWasteType.length > 0) {
+    if (companies.length > 0 && activeYears.length > 0 && activeWasteType.length > 0 && activeMetrics.length > 0) {
       fetchHazGenPieChart();
     }
-  }, [activeTab, companyId, quarter, fromYear, toYear, wasteType, unit, companies, activeYears, activeWasteType, activeUnits]);
+  }, [activeTab, companyId, quarter, fromYear, toYear, wasteType, metricsType, unit, companies, activeYears, activeWasteType, activeMetrics, activeUnits]);
 
 
   useEffect(() => {
@@ -788,6 +937,231 @@ function EnvironmentWasteDash() {
     }
   }, [activeTab, companyId, quarter, fromYear, toYear, wasteType, unit, companies, activeYears, activeWasteType, activeUnits]);
 
+  useEffect(() => {
+    const fetchNonHazMetricsBarChart = async () => {
+      if (activeTab !== 'non_hazardous_generated') return;
+
+      try {
+        const params = fetchParams();
+        params.unit_of_measurement = unit;
+        const response = await api.get('/environment_dash/non-hazard-waste-metrics-bar-chart', { 
+          params,
+          paramsSerializer: { indexes: null }
+        });
+
+        setNonHazMetricsBarData({
+          chartData: response.data.data || [],
+          companies: response.data.companies || [],
+          metrics: response.data.metrics || [],
+          metricsLegend: response.data.metrics_legend || [],
+          units: response.data.units || [],
+          grandTotal:  Number(response.data.grand_total) || 0
+        });
+
+      } catch (error) {
+        setNonHazMetricsBarData({
+          chartData: [],
+          companies: [],
+          metrics: [],
+          metricsLegend: [],
+          units: [],
+          grandTotal: 0
+        });
+      } 
+    };
+
+    if (companies.length > 0 && activeYears.length > 0 && activeMetrics.length > 0) {
+      fetchNonHazMetricsBarChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, metricsType, unit, companies, activeYears, activeMetrics, activeUnits]);
+
+  useEffect(() => {
+    const fetchNonHazMetricsLineChart = async () => {
+      if (activeTab !== 'non_hazardous_generated') return;
+
+      try {
+        setLoading(true);
+        
+        // Build parameters using the same logic as other charts
+        const params = fetchParams();
+        params.unit_of_measurement = unit;
+        console.log('Sending params to non-hazard waste metrics line chart API:', params);
+        
+        const response = await api.get('/environment_dash/non-hazard-waste-metrics-line-chart', { 
+          params,
+          paramsSerializer: { indexes: null }
+        });
+
+        console.log('Non-hazard waste metrics line chart response:', response.data);
+        
+        // Transform the data for Recharts
+        const transformedChartData = transformNonHazLineChartData(
+          response.data.data || [], 
+          response.data.years || []
+        );
+        
+        // Set the data from API response
+        setNonHazMetricsLineData({
+          chartData: response.data.data || [],
+          transformedData: transformedChartData,
+          companies: response.data.companies || [],
+          metrics: response.data.metrics || [],
+          years: response.data.years || [],
+          units: response.data.units || [],
+          legend: response.data.legend || [],
+          yearSummary: response.data.year_summary || [],
+          grandTotal: response.data.grand_total || 0
+        });
+        
+      } catch (error) {
+        console.error('Failed to fetch non-hazard waste metrics line chart:', error);
+        console.error('Error response:', error.response?.data);
+        setNonHazMetricsLineData({
+          chartData: [],
+          transformedData: [],
+          companies: [],
+          metrics: [],
+          years: [],
+          units: [],
+          legend: [],
+          yearSummary: [],
+          grandTotal: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch data if required data is available
+    if (companies.length > 0 && activeYears.length > 0 && activeMetrics.length > 0) {
+      fetchNonHazMetricsLineChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, metricsType, unit, companies, activeYears, activeMetrics, activeUnits]);
+
+  useEffect(() => {
+    const fetchNonHazMetricsHeatmap = async () => {
+      if (activeTab !== 'non_hazardous_generated') return;
+
+      try {
+        setLoading(true);
+        
+        // Build parameters using the same logic as other charts
+        const params = fetchParams();
+        params.unit_of_measurement = unit;
+        console.log('Sending params to non-hazard waste metrics heatmap API:', params);
+        
+        const response = await api.get('/environment_dash/non-hazard-waste-metrics-heatmap', { 
+          params,
+          paramsSerializer: { indexes: null }
+        });
+
+        console.log('Non-hazard waste metrics heatmap response:', response.data);
+        
+        // Set the data from API response
+        setNonHazMetricsHeatmapData({
+          data: response.data.data || [],
+          companies: response.data.companies || [],
+          metrics: response.data.metrics || [],
+          years: response.data.years || [],
+          units: response.data.units || [],
+          companyTotals: response.data.company_totals || [],
+          yearTotals: response.data.year_totals || [],
+          scale: response.data.scale || { min_waste: 0, max_waste: 0 },
+          gridDimensions: response.data.grid_dimensions || { width: 0, height: 0 },
+          grandTotal: response.data.grand_total || 0
+          // Remove selectedMetric line
+        });
+        
+      } catch (error) {
+        console.error('Failed to fetch non-hazard waste metrics heatmap:', error);
+        console.error('Error response:', error.response?.data);
+        setNonHazMetricsHeatmapData({
+          data: [],
+          companies: [],
+          metrics: [],
+          years: [],
+          units: [],
+          companyTotals: [],
+          yearTotals: [],
+          scale: { min_waste: 0, max_waste: 0 },
+          gridDimensions: { width: 0, height: 0 },
+          grandTotal: 0
+          // Remove selectedMetric: '' line
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch data if required data is available
+    if (companies.length > 0 && activeYears.length > 0 && activeMetrics.length > 0) {
+      fetchNonHazMetricsHeatmap();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, metricsType, unit, companies, activeYears, activeMetrics, activeUnits]);
+
+  useEffect(() => {
+    const fetchNonHazQuarterBarChart = async () => {
+      if (activeTab !== 'non_hazardous_generated') return;
+
+      try {
+        setLoading(true);
+        
+        // Build parameters using the same logic as other charts
+        const params = fetchParams();
+        params.unit_of_measurement = unit;
+        
+        console.log('Sending params to non-hazard waste quarter bar chart API:', params);
+        
+        const response = await api.get('/environment_dash/non-hazard-waste-quarter-bar-chart', { 
+          params,
+          paramsSerializer: { indexes: null }
+        });
+
+        console.log('Non-hazard waste quarter bar chart response:', response.data);
+        
+        // Set the data from API response
+        setNonHazQuarterBarData({
+          chartData: response.data.data || [],
+          companies: response.data.companies || [],
+          metrics: response.data.metrics || [],
+          quarters: response.data.quarters || [],
+          years: response.data.years || [],
+          units: response.data.units || [],
+          metricsLegend: response.data.metrics_legend || [],
+          companySummary: response.data.company_summary || [],
+          quarterSummary: response.data.quarter_summary || [],
+          quarterYearLabels: response.data.quarter_year_labels || [],
+          grandTotal: response.data.grand_total || 0
+        });
+        
+      } catch (error) {
+        console.error('Failed to fetch non-hazard waste quarter bar chart:', error);
+        console.error('Error response:', error.response?.data);
+        setNonHazQuarterBarData({
+          chartData: [],
+          companies: [],
+          metrics: [],
+          quarters: [],
+          years: [],
+          units: [],
+          metricsLegend: [],
+          companySummary: [],
+          quarterSummary: [],
+          quarterYearLabels: [],
+          grandTotal: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch data if required data is available
+    if (companies.length > 0 && activeYears.length > 0 && activeMetrics.length > 0) {
+      fetchNonHazQuarterBarChart();
+    }
+  }, [activeTab, companyId, quarter, fromYear, toYear, metricsType, unit, companies, activeYears, activeMetrics, activeUnits]);
+
+
   // Custom tooltip for pie chart
   const renderCustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -874,6 +1248,264 @@ function EnvironmentWasteDash() {
     return null;
   };
 
+  const renderMetricsBarTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '8px 12px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          fontSize: '12px'
+        }}>
+          <p style={{ margin: '0 0 4px 0', fontWeight: 'bold' }}>{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ margin: 0, color: entry.color }}>
+              {entry.name}: {Number(entry.value).toLocaleString()} {entry.payload.unit_of_measurement || unit}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderNonHazLineTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || payload.length === 0) return null;
+
+    return (
+      <div
+        style={{
+          backgroundColor: 'white',
+          padding: '10px',
+          border: '1px solid #ccc',
+          borderRadius: '6px',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+          fontSize: '12px',
+          maxHeight: '200px',
+          overflowY: 'auto'
+        }}
+      >
+        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#1e293b' }}>
+          Year: {label}
+        </div>
+        {payload
+          .filter(entry => entry.value > 0) // Only show non-zero values
+          .sort((a, b) => b.value - a.value) // Sort by value descending
+          .map((entry, index) => {
+            // Parse the line key to get company and metric
+            const [company, ...metricParts] = entry.dataKey.split('_');
+            const metric = metricParts.join('_');
+            
+            return (
+              <div key={index} style={{ marginBottom: '2px', color: '#1e293b' }}>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '10px',
+                    height: '10px',
+                    backgroundColor: entry.color,
+                    marginRight: '6px',
+                    borderRadius: '2px',
+                  }}
+                />
+                {company} - {metric}: {Number(entry.value).toLocaleString()} {unit}
+              </div>
+            );
+          })}
+      </div>
+    );
+  };
+
+  const renderQuarterBarTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      // Calculate total for this quarter
+      const total = payload.reduce((sum, entry) => sum + (entry.value || 0), 0);
+      
+      return (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '8px 12px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          fontSize: '12px',
+          maxWidth: '200px'
+        }}>
+          <p style={{ margin: '0 0 4px 0', fontWeight: 'bold' }}>{label}</p>
+          {payload
+            .filter(entry => entry.value > 0) // Only show non-zero values
+            .sort((a, b) => b.value - a.value) // Sort by value descending
+            .map((entry, index) => (
+              <p key={index} style={{ margin: 0, color: entry.color }}>
+                {entry.name}: {Number(entry.value).toLocaleString()} {unit}
+              </p>
+            ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const HeatmapChart = ({ data, companies, years, metrics, scale, unit }) => {
+    const [hoveredCell, setHoveredCell] = useState(null);
+    
+    // Create a matrix structure: metrics as rows, years as columns
+    const createHeatmapMatrix = () => {
+      const matrix = [];
+      
+      metrics.forEach(metric => {
+        const metricData = data.find(d => d.metrics === metric);
+        if (!metricData) return;
+        
+        const row = {
+          metric: metric,
+          cells: []
+        };
+        
+        years.forEach(year => {
+          // Sum all companies for this metric-year combination
+          const totalForYear = metricData.heatmap_cells
+            .filter(cell => cell.year === year)
+            .reduce((sum, cell) => sum + cell.total_waste, 0);
+          
+          // Calculate intensity based on the total across all metrics and years
+          const intensity = scale.max_waste > 0 ? totalForYear / scale.max_waste : 0;
+          
+          row.cells.push({
+            year: year,
+            metric: metric,
+            value: totalForYear,
+            intensity: intensity
+          });
+        });
+        
+        matrix.push(row);
+      });
+      
+      return matrix;
+    };
+
+    const matrix = createHeatmapMatrix();
+    
+    // Responsive cell sizing based on container
+    const cellWidth = Math.min(45, Math.max(30, 280 / years.length));
+    const cellHeight = Math.min(35, Math.max(25, 200 / metrics.length));
+    const leftMargin = 90;
+    const topMargin = 20; // Reduced since no top labels
+    const bottomMargin = 25; // Space for bottom year labels
+    const heatmapWidth = years.length * cellWidth + leftMargin + 10;
+    const heatmapHeight = metrics.length * cellHeight + topMargin + bottomMargin;
+
+    return (
+      <div style={{ position: 'relative', minWidth: 0, minHeight: 0 }}>
+        <svg width="100%" height="100%" viewBox={`0 0 ${heatmapWidth} ${heatmapHeight}`} style={{ fontFamily: 'inherit' }}>
+          {/* Year labels (X-axis) - Bottom */}
+          {years.map((year, xIndex) => (
+            <text
+              key={`year-${year}`}
+              x={leftMargin + xIndex * cellWidth + cellWidth / 2}
+              y={topMargin + metrics.length * cellHeight + 15}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#64748b"
+              fontWeight="600"
+            >
+              {year}
+            </text>
+          ))}
+
+          {/* Metric labels (Y-axis) */}
+          {metrics.map((metric, yIndex) => (
+            <text
+              key={`metric-${metric}`}
+              x={leftMargin - 8}
+              y={topMargin + yIndex * cellHeight + cellHeight / 2}
+              textAnchor="end"
+              fontSize="9"
+              fill="#64748b"
+              fontWeight="600"
+              dominantBaseline="middle"
+            >
+              {metric}
+            </text>
+          ))}
+
+          {/* Heatmap cells */}
+          {matrix.map((row, yIndex) => 
+            row.cells.map((cell, xIndex) => {
+              const x = leftMargin + xIndex * cellWidth;
+              const y = topMargin + yIndex * cellHeight;
+              const color = getHeatmapColor(cell.intensity);
+              
+              return (
+                <g key={`cell-${yIndex}-${xIndex}`}>
+                  <rect
+                    x={x}
+                    y={y}
+                    width={cellWidth - 1}
+                    height={cellHeight - 1}
+                    fill={color}
+                    stroke="#ffffff"
+                    strokeWidth="1"
+                    style={{ cursor: 'pointer' }}
+                    onMouseEnter={() => setHoveredCell({
+                      ...cell,
+                      x: x + cellWidth / 2,
+                      y: y + cellHeight / 2
+                    })}
+                    onMouseLeave={() => setHoveredCell(null)}
+                  />
+                  {/* Value text inside cell (only if cell is large enough) */}
+                  {cellWidth > 35 && cellHeight > 25 && (
+                    <text
+                      x={x + cellWidth / 2}
+                      y={y + cellHeight / 2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize="8"
+                      fill={cell.intensity > 0.4 ? 'white' : '#1e293b'}
+                      fontWeight="600"
+                    >
+                      {cell.value === 0 ? '0' : cell.value >= 1000 ? `${(cell.value/1000).toFixed(1)}K` : cell.value.toFixed(1)}
+                    </text>
+                  )}
+                </g>
+              );
+            })
+          )}
+        </svg>
+
+        {/* Tooltip */}
+        {hoveredCell && (
+          <div
+            style={{
+              position: 'absolute',
+              left: Math.min(hoveredCell.x + 10, heatmapWidth - 150),
+              top: hoveredCell.y - 10,
+              backgroundColor: 'white',
+              padding: '6px 10px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              fontSize: '11px',
+              zIndex: 1000,
+              pointerEvents: 'none'
+            }}
+          >
+            <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
+              {hoveredCell.metric} - {hoveredCell.year}
+            </div>
+            <div style={{ color: '#3B82F6' }}>
+              {hoveredCell.value.toLocaleString()} {unit}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Clear all filters function
   const clearAllFilters = () => {
     setCompanyId('');
@@ -906,7 +1538,7 @@ function EnvironmentWasteDash() {
         value = keyMetrics?.combined?.total_disposed;
         break;
       case 'non_hazardous_generated':
-        value = keyMetrics?.combined?.total_generated; // likely correct field
+        value = keyMetrics?.combined?.total_waste; // likely correct field
         break;
       default:
         value = 0;
@@ -931,7 +1563,7 @@ function EnvironmentWasteDash() {
         value = keyMetrics.combined.most_generated_waste_type?.total_disposed;
         break;
       case 'non_hazardous_generated':
-        value = keyMetrics.combined.most_generated_waste_type?.total_generated;
+        value = keyMetrics.combined.most_generated_metrics?.total_waste;
         break;
       default:
         value = 0;
@@ -941,6 +1573,15 @@ function EnvironmentWasteDash() {
     if (typeof value !== 'number' || isNaN(value)) return '--';
     return value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   };
+
+  // Transform nonHazMetricsBarData.chartData for unique companies and metrics as keys
+  const metricsBarChartData = nonHazMetricsBarData.chartData.map(company => {
+    const row = { company_id: company.company_id };
+    (company.metrics_data || []).forEach(metric => {
+      row[metric.metrics] = metric.total_waste;
+    });
+    return row;
+  });
 
   return (
     <div style={{ 
@@ -1138,7 +1779,7 @@ function EnvironmentWasteDash() {
             <>
               {/*Metrics Filter */}
               <select 
-                value={metrics}
+                value={metricsType}
                 onChange={(e) => setMetrics(e.target.value)}
                 style={{
                   padding: '8px 12px',
@@ -1186,7 +1827,7 @@ function EnvironmentWasteDash() {
           </>
           }
 
-          {activeTab === 'hazardous_generated' && (
+          {activeTab !== 'hazardous_disposed' && (
             <>
               {/* Quarter Filter */}
               <select 
@@ -1304,7 +1945,7 @@ function EnvironmentWasteDash() {
               {yearOnYearCumulative() ?? '--'} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
             </div>
             <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              YEAR-ON-YEAR CUMULATIVE HAZARDOUS WASTE {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'}
+              YEAR-ON-YEAR CUMULATIVE {activeTab === 'non_hazardous_generated' ? 'NON HAZARDOUS' : 'HAZARDOUS'} WASTE {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'}
             </div>
           </div>
 
@@ -1316,16 +1957,19 @@ function EnvironmentWasteDash() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              MOST {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'} WASTE TYPE
+              MOST {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'} {activeTab === 'non_hazardous_generated' ? 'METRIC' : 'WASTE TYPE'}
             </div>
             <div style={{ fontSize: '25px', fontWeight: 'bold', marginBottom: '3px' }}>
-              {keyMetrics?.combined?.most_generated_waste_type?.waste_type ?? '--'}
+              {keyMetrics?.combined?.most_generated_waste_type?.waste_type 
+              ? keyMetrics?.combined?.most_generated_waste_type?.waste_type 
+              : keyMetrics?.combined?.most_disposed_waste_type?.waste_type 
+              ? keyMetrics?.combined?.most_disposed_waste_type?.waste_type 
+              : keyMetrics?.combined?.most_generated_metrics.metrics}
             </div>
             <div style={{ fontSize: '9px', opacity: 0.8 }}>
               {keyMetrics?.combined?.most_generated_waste_type?.total_generated
                 ? `TOTAL: ${mostWasteType()}`
-                : `TOTAL: ${mostWasteType()}`}
-                {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+                : `TOTAL: ${mostWasteType()}`} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
             </div>
           </div>
 
@@ -1340,7 +1984,7 @@ function EnvironmentWasteDash() {
               {keyMetrics?.combined?.average_per_year.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) ?? '--'} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
             </div>
             <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
-              AVERAGE {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'} PER YEAR
+              AVERAGE ANNUAL {activeTab === 'non_hazardous_generated' ? 'NON HAZARDOUS' : 'HAZARDOUS'} WASTE {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'}
             </div>
           </div>
         </div>
@@ -1372,7 +2016,7 @@ function EnvironmentWasteDash() {
                   color: '#1e293b',
                   flexShrink: 0
                 }}>
-                  Total Hazardous Waste Generated by Company Combined ({unit})
+                  Distribution of Hazardous Waste Generated by Company ({unit})
                 </h3>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -1974,7 +2618,7 @@ function EnvironmentWasteDash() {
                   color: '#1e293b',
                   flexShrink: 0
                 }}>
-                  Total Hazardous Waste Disposed by Company Combined ({unit})
+                  Distribution of Hazardous Waste Disposed by Company ({unit})
                 </h3>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -2558,88 +3202,543 @@ function EnvironmentWasteDash() {
                   </div>
                 </div>
               </div>
-                    
-              
             </>
           )}
 
           {activeTab === 'non_hazardous_generated' && (
             <>
-              {/* Top Row - 2 charts */}
-              <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '10px', color: '#1e293b', flexShrink: 0 }}>
-                  Distribution of Non-Hazardous Waste Generated by Company
+              <div style={{ 
+                backgroundColor: 'white', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0
+              }}>
+                <h3 style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#1e293b',
+                  flexShrink: 0
+                }}>
+                  Distribution of Non Hazardous Waste Generated by Company ({unit})
                 </h3>
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={[]} cx="50%" cy="50%" outerRadius={80} innerRadius={40} fill="#8884d8" dataKey="value" />
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  {/* Show loading state */}
+                  {loading ? (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '200px',
+                      color: '#64748b',
+                      fontSize: '14px'
+                    }}>
+                      Loading chart data...
+                    </div>
+                  ) : currentData.pieData.length === 0 ? (
+                    // Show no data message
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '200px',
+                      color: '#64748b',
+                      fontSize: '14px',
+                      textAlign: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                        <div>No data available</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Try adjusting your filters
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Show pie chart
+                    <div style={{ flex: 1, minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={currentData.pieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={200}
+                            innerRadius={70}
+                            fill="#8884d8"
+                            dataKey="value"
+                            paddingAngle={2}
+                            startAngle={90}
+                            endAngle={450}
+                          >
+                            {currentData.pieData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.color || COLORS[index % COLORS.length]} 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip content={renderCustomTooltip} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Legend - only show if there's data */}
+                  {!loading && currentData.pieData.length > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      fontSize: '10px',
+                      flexShrink: 0,
+                      marginTop: '8px'
+                    }}>
+                      {currentData.pieData.map((entry, index) => (
+                        <div
+                          key={index}
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '4px'
+                          }}
+                        >
+                          <div style={{
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: entry.color || COLORS[index % COLORS.length],
+                            borderRadius: '1px',
+                            flexShrink: 0
+                          }}></div>
+                          <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                            {entry.label}: {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '10px', color: '#1e293b', flexShrink: 0 }}>
-                  Non-Hazardous Waste by Year and Metric (Kilograms)
-                </h3>
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={[]}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis tick={{ fontSize: 10, fill: '#64748b' }} />
-                      <YAxis tick={{ fontSize: 10, fill: '#64748b' }} />
-                      <Tooltip />
-                      <Legend />
-                    </AreaChart>
-                  </ResponsiveContainer>
+              <div style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                minHeight: 0
+              }}>
+                <div style={{ 
+                  backgroundColor: 'white',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0
+                }}>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    color: '#1e293b',
+                    margin: '0 0 10px 0',
+                    flexShrink: 0
+                  }}>
+                    Non-Hazardous Waste by Year and Metric ({unit})
+                  </h3>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading heatmap data...
+                      </div>
+                    ) : nonHazMetricsHeatmapData.data.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔥</div>
+                          <div>No heatmap data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
+                        {/* Main Heatmap */}
+                        <div style={{ flex: 1 }}>
+                          <HeatmapChart
+                            data={nonHazMetricsHeatmapData.data}
+                            companies={nonHazMetricsHeatmapData.companies}
+                            years={nonHazMetricsHeatmapData.years}
+                            metrics={nonHazMetricsHeatmapData.metrics}
+                            scale={nonHazMetricsHeatmapData.scale}
+                            unit={unit}
+                          />
+                        </div>
+                        
+                        {/* Color Scale Legend (Vertical on Right) */}
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          minWidth: '60px'
+                        }}>
+                          <div style={{ fontSize: '10px', marginBottom: '8px', fontWeight: '600' }}>
+                            {nonHazMetricsHeatmapData.scale.max_waste.toLocaleString()}
+                          </div>
+                          <div style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '2px'
+                          }}>
+                            {[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0].map(intensity => (
+                              <div
+                                key={intensity}
+                                style={{
+                                  width: '20px',
+                                  height: '15px',
+                                  backgroundColor: getHeatmapColor(intensity)
+                                }}
+                              />
+                            ))}
+                          </div>
+                          <div style={{ fontSize: '10px', marginTop: '8px', fontWeight: '600' }}>
+                            0
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* New Metrics Bar Chart */}
+                <div style={{ 
+                  backgroundColor: 'white',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  minHeight: 0,
+                  height: '100%'
+                }}>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Total Non-Hazardous Waste by Company per Metrics ({unit})
+                  </h3>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : nonHazMetricsBarData.chartData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                          <div>No metrics data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={metricsBarChartData}
+                          margin={{ top: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="company_id"
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) {
+                                return `${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `${(value / 1000).toFixed(0)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip content={renderMetricsBarTooltip} />
+                          {/* Dynamically render bars for each metric */}
+                          {nonHazMetricsBarData.metricsLegend.map((metric, index) => (
+                            <Bar
+                              key={metric.metrics}
+                              dataKey={metric.metrics}
+                              stackId="a"
+                              fill={metric.color}
+                              name={metric.metrics}
+                            />
+                          ))}
+                          <Legend 
+                            layout="vertical" 
+                            align="right" 
+                            verticalAlign="middle"
+                            wrapperStyle={{ fontSize: '10px', marginLeft: 5}}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Bottom Row - 2 charts */}
-              <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '10px', color: '#1e293b', flexShrink: 0 }}>
-                  Total Non-Hazardous Waste by Metrics per Company (Unit: Kilograms)
-                </h3>
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[]} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} />
-                      <YAxis type="category" dataKey="company" tick={{ fontSize: 10, fill: '#64748b' }} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="food" stackId="a" fill="#F59E0B" />
-                      <Bar dataKey="residual" stackId="a" fill="#EF4444" />
-                      <Bar dataKey="compostable" stackId="a" fill="#84CC16" />
-                      <Bar dataKey="petBottles" stackId="a" fill="#06B6D4" />
-                      <Bar dataKey="scrapMetal" stackId="a" fill="#8B5CF6" />
-                    </BarChart>
-                  </ResponsiveContainer>
+              <div style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                minHeight: 0
+              }}>
+                <div style={{ 
+                  backgroundColor: 'white',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  minHeight: 0,
+                  height: '100%'
+                }}>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Total Non-Hazardous Waste by Metrics Over Time ({unit})
+                  </h3>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : nonHazMetricsLineData.transformedData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+                          <div>No metrics timeline data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={nonHazMetricsLineData.transformedData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="year" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) {
+                                return `${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `${(value / 1000).toFixed(0)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip content={renderNonHazLineTooltip} />
+                          <Legend 
+                            layout="vertical" 
+                            align="right" 
+                            verticalAlign="middle" 
+                            wrapperStyle={{ fontSize: '9px', paddingLeft: '10px' }}
+                          />
+                          
+                          {/* Dynamically render lines for each company-metric combination */}
+                          {nonHazMetricsLineData.legend.map((legendItem, index) => {
+                            const lineKey = `${legendItem.company_id}_${legendItem.metrics}`;
+                            return (
+                              <Line
+                                key={lineKey}
+                                type="monotone"
+                                dataKey={lineKey}
+                                stroke={legendItem.color}
+                                strokeWidth={2}
+                                dot={{ fill: legendItem.color, strokeWidth: 2, r: 3 }}
+                                name={`${legendItem.company_id} - ${legendItem.metrics}`}
+                                connectNulls={false}
+                              />
+                            );
+                          })}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ backgroundColor: 'white', padding: '12px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '10px', color: '#1e293b', flexShrink: 0 }}>
-                  PWEI - Non-Hazardous Waste by Quarter - 2024
-                </h3>
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[]}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="quarter" tick={{ fontSize: 10, fill: '#64748b' }} />
-                      <YAxis tick={{ fontSize: 10, fill: '#64748b' }} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="food" fill="#F59E0B" name="Food" />
-                      <Bar dataKey="residual" fill="#06B6D4" name="Residual" />
-                      <Bar dataKey="scrapTires" fill="#EC4899" name="Scrap Tires" />
-                      <Bar dataKey="compostable" fill="#84CC16" name="Compostable" />
-                      <Bar dataKey="petBottles" fill="#10B981" name="PET Bottles" />
-                      <Bar dataKey="scrapMetal" fill="#64748b" name="Scrap Metal" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div style={{ 
+                  backgroundColor: 'white',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  minHeight: 0,
+                  height: '100%'
+                }}>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0
+                  }}>
+                    Non-Hazardous Waste by Quarter ({unit})
+                  </h3>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : nonHazQuarterBarData.chartData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                          <div>No quarterly data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={transformNonHazQuarterChartData(nonHazQuarterBarData.chartData, nonHazQuarterBarData.metricsLegend)}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="quarter"
+                            tick={{ fontSize: 11, fill: '#64748b' }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) {
+                                return `${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `${(value / 1000).toFixed(0)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip content={renderQuarterBarTooltip} />
+                          <Legend 
+                            layout="vertical" 
+                            align="right" 
+                            verticalAlign="middle"
+                            wrapperStyle={{ fontSize: '9px', paddingBottom: '10px' }}
+                          />
+                          
+                          {/* Render stacked bars for each metric */}
+                          {nonHazQuarterBarData.metricsLegend.map((metric, index) => (
+                            <Bar
+                              key={metric.metrics}
+                              dataKey={metric.metrics}
+                              stackId="quarter"
+                              fill={metric.color}
+                              name={metric.metrics}
+                            />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
                 </div>
               </div>
             </>
