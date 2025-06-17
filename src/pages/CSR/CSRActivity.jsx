@@ -29,11 +29,13 @@ function CSR() {
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [modalKey, setModalKey] = useState(0);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
+  const [remarks, setRemarks] = useState('');
+  const statuses = ["URS","FRS","URH","FRH","APP"];
 
   const [sortConfig, setSortConfig] = useState({
     key: 'projectYear',
@@ -45,6 +47,14 @@ function CSR() {
   useEffect(() => {
     fetchCSRData();
   }, []);
+
+  const refreshPage = () => {
+    fetchCSRData();
+  };
+
+  const toggleAddModal = () => {
+    setIsAddModalOpen(!isAddModalOpen)
+  }
 
   const fetchCSRData = useCallback(async () => {
     try {
@@ -92,6 +102,106 @@ function CSR() {
     
     const filename = `help_activity_as_of_${new Date().toISOString().split('T')[0]}`;
     exportData(filteredData, filename, exportColumns);
+  };
+
+  const areSelectedStatusesSame = () => {
+    if (!selectedRowIds.length) return false;
+    const selectedStatuses = selectedRowIds
+      .map(id => filteredData.find(row => row[idKey] === id))
+      .filter(Boolean)
+      .map(row => row.statusId);
+    
+    return selectedStatuses.every(status => status === selectedStatuses[0]);
+  };
+
+  const fetchNextStatus = (action, currentStatus) => {
+    // console.log("here at fectnextstatus: current status: ", currentStatus)
+    let newStatus = '';
+    if (action === 'approve') {
+      switch (currentStatus){
+        case 'For Revision (Site)':
+          newStatus = statuses[0]; // "URS"
+          break;
+        case 'Under Review (Site)':
+        case 'For Revision (Head)':
+          newStatus = statuses[2]; // "URH"
+          break;
+        case 'Under Review (Head)':
+          newStatus = statuses[4]; // "APP"
+          break;
+      }
+    } else if (action === 'revise') {
+      switch (currentStatus) {
+        case 'Under review (site)':
+          newStatus = statuses[1]; // "FRS"
+          break;
+        case 'Under review (head level)':
+          newStatus = statuses[3]; // "FRH"
+          break;
+      }
+    }
+    return newStatus;
+  }
+
+  //statuses = ["URS","FRS","URH","FRH","APP"]
+  const handleBulkStatusUpdate = async (action) => {
+    //Check if the selected row ids status are the same
+    const isSame = areSelectedStatusesSame();
+    let currentStatus = null;
+    if (isSame && selectedRowIds.length > 0) {
+      // Get the status from the first selected row
+      const firstRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
+      currentStatus = firstRow?.statusId || null;
+      } else {
+      alert("Selected rows have different statuses.");
+      return; // Optionally stop if not the same
+    }
+
+    const newStatus = fetchNextStatus(action, currentStatus);
+
+    if (newStatus) {
+      console.log("Updated status to:", newStatus);
+    } else {
+      console.warn("No matching status transition found.");
+    }
+
+    try {
+      if (action === 'revise') {
+        if (!remarks){
+          alert('Remarks is required for the status update')
+          return;
+        }
+      } else {
+        const confirm = window.confirm('Are you sure you want to approve this record?');
+          if (!confirm) return;
+      }
+
+      console.log('new status: ', newStatus)
+      const payload = {
+        record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+
+      console.log(payload)
+
+      const response = await api.post(
+        "/usable_apis/bulk_update_status",
+        payload
+      );
+
+      alert(response.data.message);
+
+      // Use the helper function to refresh data
+      refreshPage();
+
+      // setIsModalOpen(false);
+      setSelectedRowIds([]);
+      setRemarks("");
+    } catch (error) {
+      console.error("Error updating record status:", error);
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }  
   };
 
   // Memoize filter options for efficiency
@@ -290,6 +400,20 @@ function CSR() {
     </Box>
   );
 
+  const isApprove = selectedRowIds
+    .map(id => filteredData.find(row => row[idKey] === id))
+    .filter(Boolean)
+    .every(row => row.status === 'Approved');
+
+  const allowedStatuses = ['For Revision (Site)', 'For Revision (Head)'];
+  const isForRevision = selectedRowIds
+    .map(id => filteredData.find(row => row[idKey] === id))
+    .filter(Boolean)
+    .every(row => allowedStatuses.includes(row.status));
+
+  // Filter only selected rows for export
+  const selectedRows = filteredData.filter(row => selectedRowIds.includes(row[idKey]));
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
@@ -316,65 +440,97 @@ function CSR() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
-            {/* EXPORT DATA BUTTON */}
-            <Button
-              variant="contained"
-              startIcon={<FileUploadIcon />}
-              sx={{
-                backgroundColor: '#182959',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: '#0f1a3c',
-                },
-              }}
-              onClick={handleExport}
-            >
-              EXPORT DATA
-            </Button>
-
-            {/* IMPORT DATA BUTTON */}
-            <Button
-              variant="contained"
-              // startIcon={<FileUploadIcon />}
-              sx={{
-                backgroundColor: '#182959',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: '#0f1a3c',
-                },
-              }}
-              onClick={() => setIsImportModalOpen(true)}
-            >
-              IMPORT
-            </Button>
-
-            {/* SINGLE UPLOAD DATA BUTTON */}
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              sx={{ 
-                backgroundColor: '#2B8C37',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: '#256d2f',
-                },
-              }}
-              onClick={() => {
-                setModalKey(k => k + 1);
-                setIsAddModalOpen(true);
-              }}
-            >
-              ADD RECORD
-            </Button>
+            {selectedRowIds.length > 0 && !isApprove ? (
+              <>
+                <Button 
+                  variant='contained'
+                  sx={{ 
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={() => handleBulkStatusUpdate("approve")}
+                >
+                  Approve
+                </Button>
+                {(selectedRowIds.length > 0 && !isForRevision) && (
+                  <Button 
+                    variant='contained'
+                    sx={{ 
+                      backgroundColor: '#182959',
+                      borderRadius: '999px',
+                      padding: '9px 18px',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      '&:hover': {
+                        backgroundColor: '#0f1a3c',
+                      },
+                    }}
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    Revise
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  onClick={handleExport}
+                  startIcon={<FileUploadIcon />}
+                  sx={{
+                    backgroundColor: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#0f1a3c',
+                    },
+                  }}
+                >
+                  EXPORT DATA
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={{ 
+                    backgroundColor: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#0f1a3c',
+                    },
+                  }}
+                  onClick={() => setIsImportModalOpen(true)}
+                >
+                  IMPORT
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  sx={{ 
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={toggleAddModal}
+                >
+                  ADD RECORD
+                </Button>
+              </>
+            )}
           </Box>
         </Box>
 
@@ -454,6 +610,7 @@ function CSR() {
           columns={columns}
           rows={pagedData}
           idKey={idKey}
+          onSelectionChange={(selectedRows) => setSelectedRowIds(selectedRows)}
           onSort={handleSort}
           sortConfig={sortConfig}
           emptyMessage={loading ? "Loading..." : error ? "Error loading data." : "No data available."}
@@ -489,7 +646,8 @@ function CSR() {
               projectOptions={modalProjectOptions}
             />
           </Overlay>
-        )}
+          )
+        }
         {/* Import Modal */}
         {isImportModalOpen && (
           <Overlay onClose={() => setIsImportModalOpen(false)}>

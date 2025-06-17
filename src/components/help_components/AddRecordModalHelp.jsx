@@ -26,6 +26,7 @@ function AddRecordModalHelp({
   const [project, setProject] = useState('');
   const [beneficiaries, setBeneficiaries] = useState('');
   const [amountInvested, setAmountInvested] = useState('');
+  const [projectRemarks, setProjectRemarks] = useState('');
   const [loading, setLoading] = useState(false);
   const [yearError, setYearError] = useState('');
 
@@ -50,6 +51,8 @@ function AddRecordModalHelp({
       setYearError('');
     }
     setLoading(true);
+
+    console.log(projectRemarks)
     try {
       await api.post('/help/activities-single', {
         company_id: company,
@@ -57,8 +60,12 @@ function AddRecordModalHelp({
         project_year: Number(year),
         csr_report: Number(beneficiaries),
         project_expenses: Number(amountInvested),
+        project_remarks: projectRemarks,
       });
-      if (onAdd) onAdd();
+
+      alert("Upload successful")
+
+      // if (onAdd) onAdd();
       onClose();
       setYear('');
       setCompany('');
@@ -68,7 +75,7 @@ function AddRecordModalHelp({
       setAmountInvested('');
       setYearError('');
     } catch (err) {
-      // handle error (show message, etc.)
+      alert("Add record failed: ", err)
     } finally {
       setLoading(false);
     }
@@ -214,7 +221,6 @@ function AddRecordModalHelp({
                   }
                 }}
               >
-                {console.log("hello ", project)}
                 {(projectOptions[program] || []).map(opt => (
                   <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
@@ -250,6 +256,26 @@ function AddRecordModalHelp({
               inputProps={{ inputMode: 'decimal', pattern: '[0-9.]*' }}
               placeholder="Amount Invested"
               sx={{
+                background: '#f7f9fb',
+                borderRadius: 2,
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: '#2B8C37' },
+                  '&.Mui-focused fieldset': { borderColor: '#2B8C37' }
+                }
+              }}
+            />
+
+            {/* Row 5: Project Remarks */}
+            <TextField
+              label="Project Remarks"
+              type="text"
+              value={projectRemarks}
+              onChange={e => setProjectRemarks(e.target.value)}
+              fullWidth
+              required
+              placeholder="Project Remarks"
+              sx={{
+                height: '50px',
                 background: '#f7f9fb',
                 borderRadius: 2,
                 '& .MuiOutlinedInput-root': {
