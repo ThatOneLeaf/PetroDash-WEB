@@ -48,6 +48,7 @@ function EnvironmentWaste() {
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
+  const [showStatusErrorModal, setShowStatusErrorModal] = useState(false);
   const statuses = ["URS","FRS","URH","FRH","APP"];
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -376,8 +377,8 @@ function EnvironmentWaste() {
       // Get the status from the first selected row
       const firstRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
       currentStatus = firstRow?.status || null;
-      } else {
-      alert("Selected rows have different statuses.");
+    } else {
+      setShowStatusErrorModal(true);
       return; // Optionally stop if not the same
     }
 
@@ -439,7 +440,7 @@ function EnvironmentWaste() {
       const firstRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
       currentStatus = firstRow?.status || null;
     } else {
-      alert("Selected rows have different statuses.");
+      setShowStatusErrorModal(true);
       return;
     }
     const newStatus = fetchNextStatus('approve', currentStatus);
@@ -1057,6 +1058,44 @@ function EnvironmentWaste() {
                   OK
                 </Button>
               </Box>
+            </Paper>
+          </Overlay>
+        )}
+        {showStatusErrorModal && (
+          <Overlay onClose={() => setShowStatusErrorModal(false)}>
+            <Paper
+              sx={{
+                p: 4,
+                width: "400px",
+                borderRadius: "16px",
+                bgcolor: "white",
+                outline: "none",
+                textAlign: "center"
+              }}
+            >
+              <Typography sx={{ fontSize: '1.5rem', color: '#b91c1c', fontWeight: 800, mb: 2 }}>
+                Error
+              </Typography>
+              <Typography sx={{ fontSize: '1rem', color: '#333', mb: 3 }}>
+                Selected rows have different statuses. Please select rows with the same status to proceed.
+              </Typography>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: '#b91c1c',
+                  borderRadius: '999px',
+                  padding: '10px 24px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: '#991b1b',
+                  },
+                }}
+                onClick={() => setShowStatusErrorModal(false)}
+              >
+                OK
+              </Button>
             </Paper>
           </Overlay>
         )}
