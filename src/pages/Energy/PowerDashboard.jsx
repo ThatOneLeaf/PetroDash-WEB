@@ -4,10 +4,19 @@ import {
   Stack,
   Typography,
   Grid,
-  Paper
+  Paper,
+    Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button
 } from "@mui/material";
 
 import CircularProgress from '@mui/material/CircularProgress';
+
+import ZoomModal from "../../components/DashboardComponents/ZoomModal";
 
 import SideBar from "../../components/Sidebar";
 import DashboardHeader from "../../components/DashboardComponents/DashboardHeader";
@@ -39,6 +48,8 @@ import LocalMallIcon from '@mui/icons-material/LocalMall';
 import WindPowerIcon from '@mui/icons-material/WindPower';
 import ForestIcon from '@mui/icons-material/Forest';
 
+
+
 // Utils
 const formatDateTime = (date) => format(date, "PPPpp");
 
@@ -69,12 +80,67 @@ const tabs = [
   { key: "generation", label: "Power Generation" },
   { key: "avoidance", label: "CO2 Avoidance" },
 ];
+  const iconMap = {
+  EQ_1: DirectionsCarIcon ,
+  EQ_2: ElectricCarIcon ,
+  EQ_3: MapIcon ,
+  EQ_4: LocalGasStationIcon ,
+  EQ_5: LocalShippingIcon ,
+  EQ_6: FactoryIcon ,
+  EQ_7: SmartphoneIcon ,
+  EQ_8: RecyclingIcon ,
+  EQ_9: DeleteIcon ,
+  EQ_10:LocalMallIcon ,
+  EQ_11:WindPowerIcon ,
+  EQ_12:ForestIcon ,
+};
 
+const colorSchemes = {
+  'greenhouse gas emissions': {
+    backgroundColor: '#8E44AD', // Purple (red-violet)
+    textColor: '#FFFFFF',
+    iconColor: '#FFFFFF',
+  },
+  'CO2 emissions': {
+    backgroundColor: '#D35400', // Burnt orange (red-orange)
+    textColor: '#FFFFFF',
+    iconColor: '#FFFFFF',
+  },
+  'greenhouse gas emissions avoided': {
+    backgroundColor: '#16A085', // Teal (blue-green)
+    textColor: '#FFFFFF',
+    iconColor: '#FFFFFF',
+  },
+  'carbon sequestered': {
+    backgroundColor: '#27AE60', // Green (yellow-greenish)
+    textColor: '#FFFFFF',
+    iconColor: '#FFFFFF',
+  },
+  default: {
+    backgroundColor: '#7F8C8D', // Muted cyan-gray (neutral fallback)
+    textColor: '#FFFFFF',
+    iconColor: '#FFFFFF',
+  },
+};
 
-const AvoidanceTab = () => <div>Diesel content</div>;
 
 function PowerDashboard() {
   const lastUpdated = new Date();
+
+  const [zoomModal, setZoomModal] = useState({
+    open: false,
+    title: '',
+    fileName: '',
+    content: null,
+  });
+
+  const openZoomModal = (title, fileName, content) => {
+    setZoomModal({ open: true, title, fileName, content });
+  };
+
+
+
+
 
   const [activeTab, setActiveTab] = useState("generation");
   const [data, setData] = useState({});
@@ -432,93 +498,296 @@ useEffect(() => {
             }}
           >
           {/* Content Charts */}
-      {activeTab === "generation" && (
-        <Box
-          sx={{
-            flexGrow: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            px: 1,
-            gap: 2,
-            overflowY: 'inherit',
-          }}
-        >
-          {/* Row 1: Line and Pie */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexGrow: 1,
-              minHeight: 0,
-              gap: 2,
-              flexWrap: 'wrap',
-            }}
-          >
-            <Box sx={{ flex: 2, minHeight: 0, height: '40vh' }}>
-              <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+{activeTab === "generation" && (
+  <Box
+    sx={{
+      flexGrow: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      px: 1,
+      gap: 2,
+      overflowY: 'inherit',
+    }}
+  >
+    {/* Row 1: Line and Pie */}
+    <Box
+      sx={{
+        display: 'flex',
+        flexGrow: 1,
+        minHeight: 0,
+        gap: 2,
+        flexWrap: 'wrap',
+      }}
+    >
+      {/* Line Chart */}
+      <Box sx={{ flex: 2, minHeight: 0, height: '40vh' }}>
+        <Paper elevation={3} sx={{ p: 2, height: '100%', position: 'relative' }}>
+          <LineChartComponent
+            title="Total Energy Generated Over Time"
+            data={data?.line_graph?.total_energy_generated || []}
+            xAxisLabel=""
+            yAxisLabel="Energy Generated (kWh)"
+          />
+          <Button
+            size="small"
+            variant="outlined"
+            sx={{ position: 'absolute', top: 8, right: 8 }}
+            onClick={() =>
+              openZoomModal(
+                "Zoomed In: Total Energy Generated Over Time",
+                "total_energy_generated_chart",
                 <LineChartComponent
                   title="Total Energy Generated Over Time"
                   data={data?.line_graph?.total_energy_generated || []}
                   xAxisLabel=""
                   yAxisLabel="Energy Generated (kWh)"
                 />
-              </Paper>
-            </Box>
+              )
+            }
+          >
+            Zoom
+          </Button>
+        </Paper>
+      </Box>
 
-            <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
-              <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+      {/* Pie Chart */}
+      <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
+        <Paper elevation={3} sx={{ p: 2, height: '100%', position: 'relative' }}>
+          <PieChartComponent
+            title="Total Energy Generated (Pie)"
+            data={data?.pie_chart?.total_energy_generated || []}
+          />
+          <Button
+            size="small"
+            variant="outlined"
+            sx={{ position: 'absolute', top: 8, right: 8 }}
+            onClick={() =>
+              openZoomModal(
+                "Zoomed In: Total Energy Generated (Pie)",
+                "total_energy_generated_pie",
                 <PieChartComponent
                   title="Total Energy Generated (Pie)"
                   data={data?.pie_chart?.total_energy_generated || []}
                 />
-              </Paper>
-            </Box>
-          </Box>
-
-          {/* Row 2: Bar and Households */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexGrow: 1,
-              minHeight: 0,
-              gap: 2,
-              flexWrap: 'wrap',
-            }}
+              )
+            }
           >
-            <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
-              <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+            Zoom
+          </Button>
+        </Paper>
+      </Box>
+    </Box>
+
+    {/* Row 2: Bar and Households */}
+    <Box
+      sx={{
+        display: 'flex',
+        flexGrow: 1,
+        minHeight: 0,
+        gap: 2,
+        flexWrap: 'wrap',
+      }}
+    >
+      {/* Bar Chart */}
+      <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
+        <Paper elevation={3} sx={{ p: 2, height: '100%', position: 'relative' }}>
+          <BarChartComponent
+            title="Total Energy Generated (Bar)"
+            data={data?.bar_chart?.total_energy_generated || []}
+            legendName="Total Energy Generated"
+            unit="kWh"
+          />
+          <Button
+            size="small"
+            variant="outlined"
+            sx={{ position: 'absolute', top: 8, right: 8 }}
+            onClick={() =>
+              openZoomModal(
+                "Zoomed In: Total Energy Generated (Bar)",
+                "total_energy_generated_bar",
                 <BarChartComponent
                   title="Total Energy Generated (Bar)"
                   data={data?.bar_chart?.total_energy_generated || []}
                   legendName="Total Energy Generated"
                   unit="kWh"
                 />
-              </Paper>
-            </Box>
+              )
+            }
+          >
+            Zoom
+          </Button>
+        </Paper>
+      </Box>
 
-            <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
-              <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+      {/* Household Line Chart */}
+      <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
+        <Paper elevation={3} sx={{ p: 2, height: '100%', position: 'relative' }}>
+          <LineChartComponent
+            title="Estimated Households Powered Over Time"
+            data={housePowerData?.line_graph?.est_house_powered || []}
+            xAxisLabel=""
+            yAxisLabel="No. of Households"
+          />
+          <Button
+            size="small"
+            variant="outlined"
+            sx={{ position: 'absolute', top: 8, right: 8 }}
+            onClick={() =>
+              openZoomModal(
+                "Zoomed In: Households Powered Over Time",
+                "households_powered_over_time",
                 <LineChartComponent
                   title="Estimated Households Powered Over Time"
                   data={housePowerData?.line_graph?.est_house_powered || []}
                   xAxisLabel=""
                   yAxisLabel="No. of Households"
                 />
-              </Paper>
-            </Box>
-          </Box>
+              )
+            }
+          >
+            Zoom
+          </Button>
+        </Paper>
+      </Box>
+    </Box>
+<ZoomModal
+    open={zoomModal.open}
+    onClose={() => setZoomModal({ ...zoomModal, open: false })}
+    title={zoomModal.title}
+    downloadFileName={zoomModal.fileName}
+    enableDownload
+  >
+    {zoomModal.content}
+  </ZoomModal>
+  </Box>
+  
+)}
+
+{activeTab === "avoidance" && (
+  <Box
+    sx={{
+      flexGrow: 1,
+      display: 'flex',
+      flexDirection: 'row',
+      px: 1,
+      gap: 2,
+      overflowY: 'inherit',
+    }}
+  >
+    {/* Column 1 */}
+    <Box sx={{ flex: '0 0 45%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Paper elevation={3} sx={{ p: 2, height: 250, position: 'relative' }}>
+        <LineChartComponent
+          title="Monthly CO2 Avoidance Trends by Power Plant"
+          data={data?.line_graph?.total_co2_avoidance || []}
+          xAxisLabel=""
+          yAxisLabel="tons CO2"
+          unit="tons CO2"
+        />
+        <Button
+          size="small"
+          variant="outlined"
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+          onClick={() =>
+            openZoomModal(
+              "Zoomed In: Monthly CO2 Avoidance Trends by Power Plant",
+              "co2_avoidance_trends_chart",
+              <LineChartComponent
+                title="Monthly CO2 Avoidance Trends by Power Plant"
+                data={data?.line_graph?.total_co2_avoidance || []}
+                xAxisLabel=""
+                yAxisLabel="tons CO2"
+                unit="tons CO2"
+              />
+            )
+          }
+        >
+          Zoom
+        </Button>
+      </Paper>
+
+      <Paper elevation={3} sx={{ p: 2, flex: 1, height: 150 }}>
+        <TableContainer component={Box} sx={{ maxHeight: 150 }}>
+          <Table size="small" aria-label="summary table">
+            <TableHead>
+              <TableRow>
+                <TableCell><strong>Label</strong></TableCell>
+                <TableCell><strong>Value</strong></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...Array(3)].map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>{data?.summaryTable?.[index]?.label || `Label ${index + 1}`}</TableCell>
+                  <TableCell>{data?.summaryTable?.[index]?.value || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
+
+    {/* Column 2 */}
+    <Box sx={{ flex: '0 0 55%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Paper elevation={3} sx={{ p: 1, height: '100%', position: 'relative' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          {Object.entries(equivalenceData).map(([eqKey, eq], index) => {
+            const category = (eq.metric || '').toLowerCase();
+            const scheme = colorSchemes[eq.equivalence_category] || colorSchemes.default;
+
+            return (
+              <Box
+                key={eqKey}
+                sx={{
+                  flex: '1 0 calc(33.333% - 12px)',
+                  minWidth: '200px',
+                  height: '90px',
+                }}
+              >
+                <KPICard
+                  loading={false}
+                  value={`${(eq.co2_equivalent || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+                  unit=""
+                  title={eq.metric || `Metric ${index + 1}`}
+                  icon={iconMap[eqKey]}
+                  colorScheme={scheme}
+                  style={{
+                    height: '100%',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                  }}
+                />
+              </Box>
+            );
+          })}
         </Box>
-      )}
+      </Paper>
+    </Box>
+
+    {/* Shared Zoom Modal */}
+<ZoomModal
+    open={zoomModal.open}
+    onClose={() => setZoomModal({ ...zoomModal, open: false })}
+    title={zoomModal.title}
+    downloadFileName={zoomModal.fileName}
+    enableDownload
+  >
+    {zoomModal.content}
+  </ZoomModal>
+  </Box>
+)}
 
 
 
-
-
-
-
-
-
-
-          {activeTab === "avoidance" && <AvoidanceTab />}
 
         </Box>
       </Box> 

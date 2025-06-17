@@ -1,62 +1,55 @@
-import React from 'react';
-
-function KPICard({ 
-  loading, 
-  value, 
-  unit, 
-  title,  
-  label, 
-  icon: IconComponent, 
+function KPICard({
+  loading,
+  value,
+  unit,
+  title,
+  label,
+  icon: IconComponent,
   style = {},
   colorScheme = {
-    backgroundColor: '#10B981', // default green
+    backgroundColor: '#10B981',
     textColor: 'white',
     iconColor: 'white',
-  }
+  },
 }) {
   const hasIcon = Boolean(IconComponent);
 
   return (
     <div
-        style={{
+      style={{
         backgroundColor: colorScheme.backgroundColor,
         color: colorScheme.textColor,
-        padding: '15px',
+        padding: '1em', // relative padding
         borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        width: '100%', // ✅ ensure it stretches in parent
+        gap: '0.5em',
+        fontSize: '1.2vw', // 👈 scalable base font size, depends on box
+        width: '100%',
         ...style,
-        }}
+      }}
     >
       {hasIcon && (
         <div style={{ flexShrink: 0, color: colorScheme.iconColor }}>
           <IconComponent />
         </div>
       )}
-      <div
-        style={{
-          textAlign: hasIcon ? 'left' : 'center',
-          flex: 1,
-        }}
-      >
-        <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>
+      <div style={{ flex: 1, textAlign: hasIcon ? 'left' : 'center' }}>
+        <div style={{ fontSize: '1em', fontWeight: 'bold', marginBottom: '0.2em' }}>
           {loading ? 'Loading...' : `${value.toLocaleString()} ${unit}`}
         </div>
-        <div style={{ fontSize: '14px', opacity: 0.9, fontWeight:'bold',marginBottom: '4px' }}>
-            {title.toUpperCase()}
+        <div style={{ fontSize: '0.6em', fontWeight: 'bold', marginBottom: '0.2em', opacity: 0.9 }}>
+          {title.toUpperCase()}
         </div>
         {label && (
-            <div style={{ fontSize: '10px', opacity: 0.9 }}>
-                {label}
-            </div> 
+          <div style={{ fontSize: '0.1em', opacity: 0.8 }}>
+            {label}
+          </div>
         )}
-        
-
       </div>
     </div>
   );
 }
+
 
 export default KPICard;
