@@ -319,6 +319,12 @@ const handleStatusUpdate = async (action) => {
 
   const isRecordUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
 
+  // Helper to open modal for approve or revise
+  const openModal = (type) => {
+    setModalType(type);
+    setIsModalOpen(true);
+  };
+
   return (
     <Paper sx={{
         p: 4,
@@ -708,7 +714,7 @@ const handleStatusUpdate = async (action) => {
                       backgroundColor: '#256d2f',
                     },
                   }}
-                  onClick={() => handleStatusUpdate("revise")}
+                  onClick={() => { setIsModalOpen(false); handleStatusUpdate("revise"); }}
                 >
                   Confirm
                 </Button>
