@@ -6,6 +6,7 @@ import {
   Grid,
   Paper
 } from "@mui/material";
+
 import CircularProgress from '@mui/material/CircularProgress';
 
 import SideBar from "../../components/Sidebar";
@@ -253,12 +254,7 @@ useEffect(() => {
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "row",
-        height: "100vh",
-        width: "100%",
-        overflow: "hidden",
-        bgcolor: "#f8fafc",
+        display: "flex"
       }}
     >
       <SideBar />
@@ -267,9 +263,10 @@ useEffect(() => {
           flex: 1,
           p: 0,
           bgcolor: "#ffffff",
-          overflow: "hidden",
           display: "flex",
           flexDirection: "column",
+          pb:1,
+          height: "100vh", overflow: "auto"
         }}
       >
         {/* Header */}
@@ -280,7 +277,6 @@ useEffect(() => {
             alignItems: "flex-start",
             px: "15px",
             pt: "15px",
-            pb: 0,
             flexShrink: 0,
           }}
         >
@@ -372,60 +368,58 @@ useEffect(() => {
         </Stack>
       </Box>
 
-
-        <Box sx={{ px: "15px", pt: 0, pb: 0, flexShrink: 0 }}>
-          {/* Main KPI */}
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 2,
-              flexWrap: 'nowrap',
-              px: "15px",
-              pt: 0,
-              pb: 0,
-              flexShrink: 0,
+      <Box sx={{ px: "10px", pt: 0, pb: 0, flexShrink: 0 }}>
+        {/* Main KPI */}
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'nowrap',
+            px: "15px",
+            pt: 1,
+            pb: 1,
+            flexShrink: 0,
+          }}
+        >
+          <KPICard
+            loading={false}
+            value={`${(data?.totals?.total_energy_generated || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+            unit="kWh"
+            title="Total Energy Generated"
+            colorScheme={{
+              backgroundColor: '#1E40AF', // dark blue
+              textColor: '#FFFFFF',       // white text
+              iconColor: '#FFFFFF',       // white icon
             }}
-          >
-            <KPICard
-              loading={false}
-              value={`${(data?.totals?.total_energy_generated || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-              unit="kWh"
-              title="Total Energy Generated"
-              colorScheme={{
-                backgroundColor: '#1E40AF', // dark blue
-                textColor: '#FFFFFF',       // white text
-                iconColor: '#FFFFFF',       // white icon
-              }}
-              style={{ flex: 1 }}
-            />
-            <KPICard
-              loading={false}
-              value={`${(data?.totals?.total_co2_avoidance || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-              unit="tons CO2"
-              title="Total CO₂ Avoided"
-              colorScheme={{
-                backgroundColor: '#1E40AF', // dark blue
-                textColor: '#FFFFFF',       // white text
-                iconColor: '#FFFFFF',       // white icon
-              }}
-              style={{ flex: 1 }}
-            />
-            <KPICard
-              loading={false}
-              value={`${(housePowerData?.totals?.est_house_powered || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-              unit="kWh"
-              title="Estimated Households Powered"
-              colorScheme={{
-                backgroundColor: '#1E40AF', // dark blue
-                textColor: '#FFFFFF',       // white text
-                iconColor: '#FFFFFF',       // white icon
-              }}
+            style={{ flex: 1 }}
+          />
+          <KPICard
+            loading={false}
+            value={`${(data?.totals?.total_co2_avoidance || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+            unit="tons CO2"
+            title="Total CO₂ Avoided"
+            colorScheme={{
+              backgroundColor: '#1E40AF', // dark blue
+              textColor: '#FFFFFF',       // white text
+              iconColor: '#FFFFFF',       // white icon
+            }}
+            style={{ flex: 1 }}
+          />
+          <KPICard
+            loading={false}
+            value={`${(housePowerData?.totals?.est_house_powered || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+            unit=""
+            title="Estimated No. of Households Powered"
+            colorScheme={{
+              backgroundColor: '#1E40AF', // dark blue
+              textColor: '#FFFFFF',       // white text
+              iconColor: '#FFFFFF',       // white icon
+            }}
 
-              style={{ flex: 1 }}
-            />
-          </Box>
-          
-          </Box>
+            style={{ flex: 1 }}
+          />
+        </Box>          
+        </Box>
           <Box
             sx={{
               display: 'flex',
@@ -438,49 +432,85 @@ useEffect(() => {
             }}
           >
           {/* Content Charts */}
-          {activeTab === "generation" && (
-            <Box sx={{ width: '100%', height: '100%' }}>
-              {/* Row 1 */}
-              <Grid container spacing={2} sx={{ width: '100%', mx: 0 }} mb={2}>
-                <Grid item >
-                  <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <LineChartComponent
-                      title="Total Energy Generated Over Time"
-                      data={data?.line_graph?.total_energy_generated || []}
-                    />
-                  </Paper>
-                </Grid>
-                <Grid item >
-                  <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <PieChartComponent
-                      title="Total Energy Generated (Pie)"
-                      data={data?.pie_chart?.total_energy_generated || []}
-                    />
-                  </Paper>
-                </Grid>
-              </Grid>
-
-              {/* Row 2 */}
-              <Grid container spacing={2} sx={{ width: '100%', mx: 0 }}>
-                <Grid item >
-                  <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <BarChartComponent
-                      title="Total Energy Generated (Bar)"
-                      data={data?.bar_chart?.total_energy_generated || []}
-                    />
-                  </Paper>
-                </Grid>
-                <Grid item >
-                  <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <LineChartComponent
-                      title="Estimated Households Powered Over Time"
-                      data={housePowerData?.line_graph?.est_house_powered || []}
-                    />
-                  </Paper>
-                </Grid>
-              </Grid>
+      {activeTab === "generation" && (
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            px: 2,
+            gap: 2,
+            overflowY: 'clip',
+          }}
+        >
+          {/* Row 1: Line and Pie */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexGrow: 1,
+              minHeight: 0,
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Box sx={{ flex: 2, minHeight: 0, height: '40vh' }}>
+              <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+                <LineChartComponent
+                  title="Total Energy Generated Over Time"
+                  data={data?.line_graph?.total_energy_generated || []}
+                />
+              </Paper>
             </Box>
-          )}
+
+            <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
+              <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+                <PieChartComponent
+                  title="Total Energy Generated (Pie)"
+                  data={data?.pie_chart?.total_energy_generated || []}
+                />
+              </Paper>
+            </Box>
+          </Box>
+
+          {/* Row 2: Bar and Households */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexGrow: 1,
+              minHeight: 0,
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
+              <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+                <BarChartComponent
+                  title="Total Energy Generated (Bar)"
+                  data={data?.bar_chart?.total_energy_generated || []}
+                />
+              </Paper>
+            </Box>
+
+            <Box sx={{ flex: 1, minHeight: 0, height: '40vh' }}>
+              <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+                <LineChartComponent
+                  title="Estimated Households Powered Over Time"
+                  data={housePowerData?.line_graph?.est_house_powered || []}
+                />
+              </Paper>
+            </Box>
+          </Box>
+        </Box>
+      )}
+
+
+
+
+
+
+
+
+
 
           {activeTab === "avoidance" && <AvoidanceTab />}
 
