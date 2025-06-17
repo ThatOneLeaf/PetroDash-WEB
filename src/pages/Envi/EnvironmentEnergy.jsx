@@ -297,10 +297,22 @@ function EnvironmentEnergy() {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
   
+      // Generate timestamp
+      const now = new Date();
+      const timestamp = now.toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\..+/, '')
+        .replace('T', '_');
+  
+      // Generate filename based on selected type
+      const filename = selected === 'Electricity' 
+        ? `Environment_Electricity_Consumption_${timestamp}.xlsx`
+        : `Environment_Diesel_Consumption_${timestamp}.xlsx`;
+  
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'exported_energy_data.xlsx';
+      a.download = filename;
       a.click();
   
       // Clean up
