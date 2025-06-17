@@ -1916,6 +1916,82 @@ function EnvironmentEnergyDash() {
     return null;
   };
 
+  const getFilterDescription = () => {
+    const filters = [];
+    
+    if (selectedCompanyIds.length > 0) {
+      if (selectedCompanyIds.length === 1) {
+        const selectedCompany = companies.find(c => c.id === selectedCompanyIds[0]);
+        if (selectedCompany) {
+          filters.push(selectedCompany.name);
+        }
+      } else {
+        filters.push(`${selectedCompanyIds.length} COMPANIES`);
+      }
+    }
+    
+    if (selectedQuarters.length > 0) {
+      if (selectedQuarters.length === 1) {
+        filters.push(selectedQuarters[0]);
+      } else {
+        filters.push(`${selectedQuarters.length} QUARTERS`);
+      }
+    }
+    
+    // Add electricity-specific filters
+    if (activeTab === 'electricity' && selectedConsumptionSources.length > 0) {
+      if (selectedConsumptionSources.length === 1) {
+        filters.push(selectedConsumptionSources[0]);
+      } else {
+        filters.push(`${selectedConsumptionSources.length} SOURCES`);
+      }
+    }
+    
+    // Add diesel-specific filters
+    if (activeTab === 'diesel') {
+      if (selectedCompanyPropertyNames.length > 0) {
+        if (selectedCompanyPropertyNames.length === 1) {
+          filters.push(selectedCompanyPropertyNames[0]);
+        } else {
+          filters.push(`${selectedCompanyPropertyNames.length} PROPERTIES`);
+        }
+      }
+      
+      if (selectedCompanyPropertyTypes.length > 0) {
+        if (selectedCompanyPropertyTypes.length === 1) {
+          filters.push(selectedCompanyPropertyTypes[0]);
+        } else {
+          filters.push(`${selectedCompanyPropertyTypes.length} PROPERTY TYPES`);
+        }
+      }
+      
+      if (selectedMonths.length > 0) {
+        if (selectedMonths.length === 1) {
+          filters.push(selectedMonths[0]);
+        } else {
+          filters.push(`${selectedMonths.length} MONTHS`);
+        }
+      }
+    }
+    
+    // Add year filters
+    if (fromYear || toYear) {
+      if (fromYear && toYear) {
+        filters.push(`${fromYear}-${toYear}`);
+      } else if (fromYear) {
+        filters.push(`FROM ${fromYear}`);
+      } else if (toYear) {
+        filters.push(`TO ${toYear}`);
+      }
+    }
+    
+    if (filters.length === 0) {
+      return "ALL DATA";
+    }
+    
+    return filters.join(" • ").toUpperCase();
+  };
+
   return (
     <div style={{ 
       display: 'flex',
@@ -2182,6 +2258,9 @@ function EnvironmentEnergyDash() {
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   YEAR-ON-YEAR CUMULATIVE ELECTRICITY CONSUMPTION
                 </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
+                </div>
               </div>
 
               <div style={{
@@ -2200,6 +2279,9 @@ function EnvironmentEnergyDash() {
                 <div style={{ fontSize: '9px', opacity: 0.8 }}>
                   {electricityMetrics.peak_year || ''}
                 </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
+                </div>
               </div>
 
               <div style={{
@@ -2214,6 +2296,9 @@ function EnvironmentEnergyDash() {
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   AVERAGE ANNUAL ELECTRICITY CONSUMPTION
+                </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
                 </div>
               </div>
             </>
@@ -2232,6 +2317,9 @@ function EnvironmentEnergyDash() {
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   YEAR-ON-YEAR CUMULATIVE DIESEL CONSUMPTION
                 </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
+                </div>
               </div>
 
               <div style={{
@@ -2247,12 +2335,15 @@ function EnvironmentEnergyDash() {
                 <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
                   AVERAGE ANNUAL DIESEL CONSUMPTION
                 </div>
+                <div style={{ fontSize: '8px', opacity: 0.8, fontWeight: '600' }}>
+                  {getFilterDescription()}
+                </div>
               </div>
             </>
           )}
         </div>
             
-                {/* Charts Section */}
+        {/* Charts Section */}
         <div style={{ 
           flex: 1,
           display: 'grid', 
