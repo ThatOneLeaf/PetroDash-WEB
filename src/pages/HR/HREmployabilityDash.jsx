@@ -109,8 +109,7 @@ const leaveTypes = [
 // Dashboard values
 const totalEmployees = attritionData[attritionData.length - 1].total_employees;
 const avgTenure = 5.68;
-const attritionRate =
-  attritionData[attritionData.length - 1].attrition_rate_percent;
+const attritionRate = attritionData[attritionData.length - 1].attrition_rate_percent;
 
 const COLORS = [
   "#3B82F6",
@@ -157,22 +156,22 @@ function DemographicsDash({}) {
     return Object.values(filters).some((v) => v !== null && v !== "");
   }, [filters]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await api.get("/hr/attrition_rate");
-        console.log("Attrition Rate Data:", response.data);
-        setAttritionData(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error("Fetch Error:", err);
-        setError("Failed to load attrition rate data");
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const response = await api.get("/hr/attrition_rate");
+  //       console.log("Attrition Rate Data:", response.data);
+  //       setAttritionData(response.data);
+  //       setLoading(false);
+  //     } catch (err) {
+  //       console.error("Fetch Error:", err);
+  //       setError("Failed to load attrition rate data");
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchData();
-  }, []);
+  //   fetchData();
+  // }, []);
 
   const transformed = [];
 
@@ -301,11 +300,11 @@ function DemographicsDash({}) {
             label="AVERAGE TENURE RATE"
             variant="filled"
           />
-          <KPIIndicatorCard
+          {/* <KPIIndicatorCard
             value={attritionRate} // get overall or latest year???
             label="ATTRITION RATE"
             variant="outlined"
-          />
+          /> */}
         </Box>
         <Modal open={openModal} onClose={handleClose}>
           <Box
@@ -427,7 +426,7 @@ function DemographicsDash({}) {
               </ResponsiveContainer>
             )}
 
-            {activeChart === "attrtitionRatePerYearChart" && (
+            {/* {activeChart === "attrtitionRatePerYearChart" && (
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={attritionData}
@@ -455,7 +454,7 @@ function DemographicsDash({}) {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            )}
+            )} */}
 
             {activeChart === "genderDistributionChart" && (
               <ResponsiveContainer width="100%" height={300}>
@@ -675,7 +674,7 @@ function DemographicsDash({}) {
               })
             }
           >
-            <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
+            {/* <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
               Attrition Rate Per Year
             </Typography>
             <Box sx={{ height: 250 }}>
@@ -722,7 +721,7 @@ function DemographicsDash({}) {
                 chartText: "Gender Distribution by Position",
               })
             }
-          >
+          > */}
             <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
               Gender Distribution by Position
             </Typography>

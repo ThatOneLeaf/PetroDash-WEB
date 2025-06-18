@@ -42,6 +42,11 @@ function App() {
             <Route path="/environment/waste" element={<ProtectedRoute><EnvironmentWaste /></ProtectedRoute>} />
             <Route path="/environment/water-dash" element={<ProtectedRoute><EnvironmentWaterDash /></ProtectedRoute>} />
             <Route path="/environment/energy-dash" element={<ProtectedRoute><EnvironmentEnergyDash /></ProtectedRoute>} />
+            <Route path="/environment/waste-dash" element={<ProtectedRoute><EnvironmentWasteDash /></ProtectedRoute>} />
+
+            {/* Protected Routes */}
+            <Route path="/economic" element={<ProtectedRoute requiredRoles={["R02", "R03"]}><Economic /></ProtectedRoute>} />
+            <Route path="/economic/repository" element={<ProtectedRoute requiredRoles={["R03"]}><EconomicRepository /></ProtectedRoute>} />
 
             {/* CSV Routes */}
             <Route path="/energy/power-generation" element={<Energy />} />
@@ -51,7 +56,6 @@ function App() {
             {/* Environment Routes */}
             <Route path="/environment/air" element={<EnvironmentAir />} />
             <Route path="/environment/care" element={<EnvironmentCare />} />
-            <Route path="/environment/energy-dash" element={<EnvironmentEnergyDash />} />
             <Route path="/environment/waste-dash" element={<EnvironmentWasteDash />} />
             
             {/* HELP Routes */}
@@ -62,7 +66,7 @@ function App() {
             <Route path="/social/hr" element={<HR />} />
             <Route path="/social/hrdashboard" element={<HRDashboard />} />
 
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>
