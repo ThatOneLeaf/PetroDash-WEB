@@ -224,16 +224,72 @@ function EnergyDashboard() {
     }
   ];
 
-  if (loading) return (
-    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
-      <Box sx={{ textAlign: 'center' }}>
-        <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
-        <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
-          Loading Energy Dashboard...
-        </Typography>
+<Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0, maxHeight: '50%' }}>
+  {/* Stacked Bar Chart */}
+  <Box sx={{ flex: 1, minHeight: 0, height: '100%' }}>
+    <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
+      <Box sx={{ width: '100%', height: '100%' }}>
+        <StackedBarChartComponent
+          title="sample"
+          data={data?.stacked_bar || []}
+          legendName="Total Energy Generated"
+          unit="kWh"
+        />
       </Box>
-    </Box>
-  );
+      <Button
+        size="small"
+        sx={{ position: 'absolute', top: 8, right: 8 }}
+        onClick={() =>
+          openZoomModal(
+            "Zoomed In: Total Energy Generated (Bar)",
+            "total_energy_generated_bar",
+            <BarChartComponent
+              title="Total Energy Generated (Bar)"
+              data={data?.bar_chart?.total_energy_generated || []}
+              legendName="Total Energy Generated"
+              unit="kWh"
+            />
+          )
+        }
+      >
+        🔍
+      </Button>
+    </Paper>
+  </Box>
+
+  {/* Line Chart - Households Powered */}
+  <Box sx={{ flex: 1, minHeight: 0, height: '100%' }}>
+    <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
+      <Box sx={{ width: '100%', height: '100%' }}>
+        <LineChartComponent
+          title="Estimated Households Powered Over Time"
+          data={housePowerData?.line_graph?.est_house_powered || []}
+          yAxisLabel="No. of Households"
+        />
+      </Box>
+      <Button
+        size="small"
+        sx={{ position: 'absolute', top: 8, right: 8 }}
+        onClick={() =>
+          openZoomModal(
+            "Zoomed In: Households Powered Over Time",
+            "households_powered_over_time",
+            <LineChartComponent
+              title="Estimated Households Powered Over Time"
+              data={housePowerData?.line_graph?.est_house_powered || []}
+              yAxisLabel="No. of Households"
+            />
+          )
+        }
+      >
+        🔍
+      </Button>
+    </Paper>
+  </Box>
+</Box>
+
+
+
 
   return (
     <Box sx={{ display: "flex" }}>

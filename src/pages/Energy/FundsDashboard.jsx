@@ -144,7 +144,7 @@ function roundUpToNiceNumber(num) {
 
 
 
-function PowerDashboard() {
+function FundsDashboard() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
 
@@ -1054,4 +1054,4 @@ return (
 
 }
 
-export default PowerDashboard;
+export default FundsDashboard;
