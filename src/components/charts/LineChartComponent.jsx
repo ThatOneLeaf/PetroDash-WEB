@@ -58,21 +58,23 @@ const LineChartComponent = ({
         </YAxis>
 
 
-          <Tooltip
-            formatter={(value, name) => [
-              `${value.toLocaleString()}${unit ? ` ${unit}` : ''}`,
-              legendMap[name] || name
-            ]}
-          />
+        <Tooltip
+          formatter={(value, name) => [
+            `${value.toLocaleString()}${unit ? ` ${unit}` : ''}`,
+            legendMap[name] || name
+          ]}
+          contentStyle={{
+            zIndex: 9999,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+          }}
+          wrapperStyle={{
+            zIndex: 9999,
+            pointerEvents: 'auto',
+          }}
+        />
 
-          <Legend
-            verticalAlign="bottom"
-            height={2}
-            wrapperStyle={{
-              marginTop: 20, // optional fine-tuning
-              textAlign: 'center',
-            }}
-          />
 
           {data.map((source, idx) => (
             <Line
