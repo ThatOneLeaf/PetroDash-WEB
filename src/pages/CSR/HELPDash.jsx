@@ -162,6 +162,24 @@ function aggregateKPI(data) {
   return result;
 }
 
+// Helper to aggregate investments per program
+function aggregateInvestments(data) {
+  // Assume each row has: investmentAmount, projectName, programName
+  const result = {
+    health: 0,
+    education: 0,
+    livelihood: 0,
+  };
+  data.forEach(row => {
+    const program = String(row.programName || '').toLowerCase();
+    const amount = Number(row.investmentAmount) || 0;
+    if (program.includes('health')) result.health += amount;
+    else if (program.includes('education')) result.education += amount;
+    else if (program.includes('livelihood')) result.livelihood += amount;
+  });
+  return result;
+}
+
 function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
   // Wrap label if more than 3 words
   const words = label.split(' ');
@@ -221,7 +239,7 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
         >
           {value?.toLocaleString?.() ?? value}
         </Typography>
-        {/* KPIs LABELS */}
+        {/* KPIS LABELS */}
         <Typography
           sx={{
             fontSize: 15, 
@@ -324,6 +342,8 @@ export default function HELPDash() {
   }, [data, filters]);
 
   const kpi = useMemo(() => aggregateKPI(filteredData), [filteredData]);
+  // For Investments tab: aggregate investments per program
+  const investments = useMemo(() => aggregateInvestments(data), [data]);
 
   // Handle filter change
   const handleFilter = (key, value) => {
@@ -568,25 +588,248 @@ export default function HELPDash() {
           </>
         )}
 
-        {/* Investments Tab Placeholder */}
+        {/* Investments Tab Layout */}
         {activeTab === 'Investments' && (
-          <Box sx={{
-            width: '100%',
-            minHeight: '400px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#fff',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-            mt: 4,
-            fontSize: 22,
-            color: '#64748b',
-            fontWeight: 700,
-            textAlign: 'center'
-          }}>
-            Investments dashboard coming soon.
-          </Box>
+          <>
+            {/* Filters Row (reuse HELP filters for now) */}
+            <Box
+              sx={{
+                display: 'flex',
+                gap: '10px',
+                mb: 3,
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {/* Year Filter */}
+              <select
+                value={filters.year}
+                onChange={e => handleFilter('year', e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '20px',
+                  backgroundColor: 'white',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  minWidth: '100px'
+                }}
+              >
+                <option value="">All Years</option>
+                {yearOptions.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+
+              {/* Company Filter */}
+              <select
+                value={filters.company}
+                onChange={e => handleFilter('company', e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '20px',
+                  backgroundColor: 'white',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  minWidth: '100px'
+                }}
+              >
+                <option value="">All Companies</option>
+                {companyOptions.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+
+              {(filters.year || filters.company) && (
+                <button
+                  style={{
+                    padding: '8px 12px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                  onClick={clearFilters}
+                >
+                  Clear Filters
+                </button>
+              )}
+            </Box>
+
+            {/* KPI Row - wide, 3 columns */}
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    background: '#182959',
+                    color: 'white',
+                    border: '2px solid #182959',
+                    borderRadius: '14px',
+                    px: 3,
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    boxShadow: 'none',
+                    width: '100%',
+                    maxWidth: 340,
+                  }}
+                >
+                  {/* Number above label */}
+                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
+                    {investments.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>
+                    Health
+                  </div>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    background: '#182959',
+                    color: 'white',
+                    border: '2px solid #182959',
+                    borderRadius: '14px',
+                    px: 3,
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    boxShadow: 'none',
+                    width: '100%',
+                    maxWidth: 340,
+                  }}
+                >
+                  {/* Number above label */}
+                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
+                    {investments.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>
+                    Education
+                  </div>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    background: '#182959',
+                    color: 'white',
+                    border: '2px solid #182959',
+                    borderRadius: '14px',
+                    px: 3,
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    boxShadow: 'none',
+                    width: '100%',
+                    maxWidth: 340,
+                  }}
+                >
+                  {/* Number above label */}
+                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
+                    {investments.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>
+                    Livelihood
+                  </div>
+                </Paper>
+              </Grid>
+            </Grid>
+
+            {/* Graph Containers Layout - taller */}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
+                gridTemplateRows: { xs: 'auto auto auto', md: '1fr 1fr' },
+                gap: 2,
+                width: '100%',
+                alignItems: 'stretch'
+              }}
+            >
+              {/* Large Chart Container (Investments per Projects) */}
+              <Paper
+                elevation={0}
+                sx={{
+                  gridColumn: { xs: '1', md: '1' },
+                  gridRow: { xs: '1', md: '1 / span 2' },
+                  minHeight: { xs: 320, md: 500 },
+                  background: '#fff',
+                  borderRadius: '14px',
+                  border: '1.5px solid #e2e8f0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1 }}>
+                  Investments per Projects
+                </Typography>
+                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
+              </Paper>
+              {/* Top Right Chart Container */}
+              <Paper
+                elevation={0}
+                sx={{
+                  gridColumn: { xs: '1', md: '2' },
+                  gridRow: { xs: '2', md: '1' },
+                  minHeight: { xs: 150, md: 240 },
+                  background: '#fff',
+                  borderRadius: '14px',
+                  border: '1.5px solid #e2e8f0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 1 }}>
+                  Chart 2
+                </Typography>
+                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
+              </Paper>
+              {/* Bottom Right Chart Container */}
+              <Paper
+                elevation={0}
+                sx={{
+                  gridColumn: { xs: '1', md: '2' },
+                  gridRow: { xs: '3', md: '2' },
+                  minHeight: { xs: 150, md: 240 },
+                  background: '#fff',
+                  borderRadius: '14px',
+                  border: '1.5px solid #e2e8f0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 1 }}>
+                  Chart 3
+                </Typography>
+                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
+              </Paper>
+            </Box>
+          </>
         )}
       </Box>
     </Box>
