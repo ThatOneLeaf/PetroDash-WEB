@@ -79,20 +79,22 @@ function EnvironmentWaterDash() {
           api.get('/reference/companies'),
           api.get('/environment_dash/water-years')
         ]);
-
+  
         console.log('Companies fetched:', companiesResponse.data);
         console.log('Available years fetched:', yearsResponse.data);
         
         setCompanies(companiesResponse.data);
         setAvailableYears(yearsResponse.data.data || []);
         setLastUpdated(new Date());
+        setError(null); // Clear any previous errors
       } catch (error) {
         console.error('Error fetching initial data:', error);
         setCompanies([]);
         setAvailableYears([]);
+        setError('Not accessible. Only authorized people can access this.');
       }
     };
-
+  
     fetchInitialData();
   }, []);
 
@@ -396,6 +398,39 @@ function EnvironmentWaterDash() {
     }
     return null;
   };
+
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex',
+        flexDirection: 'row',
+        height: '100vh',
+        width: '100%',
+        margin: 0,
+        padding: 0,
+        overflow: 'hidden',
+        backgroundColor: '#f8fafc'
+      }}>
+        <Sidebar />
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#ffffff'
+        }}>
+          <div style={{
+            color: '#ef4444',
+            fontSize: '18px',
+            fontWeight: '600',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        </div>
+      </div>
+    );
+   }
 
   return (
     <div style={{ 

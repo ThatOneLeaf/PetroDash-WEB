@@ -838,8 +838,8 @@ function EnvironmentEnergyDash() {
     const fetchInitialData = async () => {
       try {
         const [
-          companiesResponse, 
-          yearsResponse, 
+          companiesResponse,
+          yearsResponse,
           sourcesResponse,
           companyPropertiesResponse,
           propertyTypesResponse,
@@ -852,7 +852,7 @@ function EnvironmentEnergyDash() {
           api.get('/environment_dash/diesel-cp-type'),
           api.get('/environment_dash/diesel-years')
         ]);
-
+   
         console.log('Companies fetched:', companiesResponse.data);
         console.log('Available years fetched:', yearsResponse.data);
         console.log('Consumption sources fetched:', sourcesResponse.data);
@@ -866,7 +866,8 @@ function EnvironmentEnergyDash() {
         setCompanyProperties(companyPropertiesResponse.data.data || []);
         setPropertyTypes(propertyTypesResponse.data.data || []);
         setDieselYears(dieselYearsResponse.data.data || []);
-        setLastUpdated(new Date()); // Update the last updated time
+        setLastUpdated(new Date());
+        setError(null); // Clear any previous errors
       } catch (error) {
         console.error('Error fetching initial data:', error);
         setCompanies([]);
@@ -875,11 +876,12 @@ function EnvironmentEnergyDash() {
         setCompanyProperties([]);
         setPropertyTypes([]);
         setDieselYears([]);
+        setError('Not accessible. Only authorized people can access this.');
       }
     };
-
+   
     fetchInitialData();
-  }, []);
+   }, []);
 
   // Fetch electricity pie chart data when filters change
   useEffect(() => {
@@ -1991,6 +1993,39 @@ function EnvironmentEnergyDash() {
     
     return filters.join(" • ").toUpperCase();
   };
+
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex',
+        flexDirection: 'row',
+        height: '100vh',
+        width: '100%',
+        margin: 0,
+        padding: 0,
+        overflow: 'hidden',
+        backgroundColor: '#f8fafc'
+      }}>
+        <Sidebar />
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#ffffff'
+        }}>
+          <div style={{
+            color: '#ef4444',
+            fontSize: '18px',
+            fontWeight: '600',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        </div>
+      </div>
+    );
+   }
 
   return (
     <div style={{ 
