@@ -22,6 +22,7 @@ import api from '../../services/api';
 import ViewHelpRecordModal from '../../components/help_components/ViewHelpRecordModal'; 
 import exportData from '../../services/export';
 import ImportFileModal from '../../components/ImportFileModal'
+import StatusChip from '../../components/StatusChip';
 
 function CSR() {  
   const [data, setData] = useState([]);
@@ -370,7 +371,12 @@ function CSR() {
     { key: 'csrReport', label: 'Beneficiaries', width: 120, align: 'right', render: val => val != null ? Number(val).toLocaleString() : '-' },
     { key: 'projectExpenses', label: 'Investments (₱)', width: 140, align: 'right', render: val => val != null ? `₱${Number(val).toLocaleString()}` : '-' },
     { key: 'projectRemarks', label: 'Remarks', width: 140, render: val => val },
-    { key: 'statusId', label: 'Status', width: 110, render: val => val },
+    { 
+      key: 'statusId', 
+      label: 'Status', 
+      width: 110, 
+      render: val => <StatusChip status={val} /> // <-- Use StatusChip here
+    },
     {
       key: 'actions',
       label: 'Actions',
