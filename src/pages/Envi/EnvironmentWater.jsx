@@ -51,6 +51,7 @@ function EnvironmentWater() {
   const [modalType, setModalType] = useState(''); // 'approve' or 'revise'
   const [showApproveSuccessModal, setShowApproveSuccessModal] = useState(false);
   const [showStatusErrorModal, setShowStatusErrorModal] = useState(false);
+  const [showBulkReviseModal, setShowBulkReviseModal] = useState(false);
   const statuses = ["URS","FRS","URH","FRH","APP"];
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -406,7 +407,7 @@ function EnvironmentWater() {
         payload
       );
 
-      alert(response.data.message);
+      //alert(response.data.message);
 
       // Use the helper function to refresh data
       refreshCurrentData();
@@ -414,6 +415,10 @@ function EnvironmentWater() {
       setIsModalOpen(false);
       setSelectedRowIds([]);
       setRemarks("");
+      // Show bulk revise modal if action is revise
+      if (action === 'revise') {
+        setShowBulkReviseModal(true);
+      }
     } catch (error) {
       console.error("Error updating record status:", error);
       alert(error?.response?.data?.detail || "Update Status Failed.");
@@ -1094,6 +1099,81 @@ function EnvironmentWater() {
               >
                 OK
               </Button>
+            </Paper>
+          </Overlay>
+        )}
+        {showBulkReviseModal && (
+          <Overlay onClose={() => setShowBulkReviseModal(false)}>
+            <Paper sx={{
+              p: 4,
+              width: '400px',
+              borderRadius: '16px',
+              bgcolor: 'white',
+              outline: 'none',
+              textAlign: 'center'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                mb: 3
+              }}>
+                <Box sx={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#182959',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2
+                }}>
+                  <Typography sx={{ 
+                    color: 'white', 
+                    fontSize: '2rem',
+                    fontWeight: 'bold'
+                  }}>
+                    ✓
+                  </Typography>
+                </Box>
+                <Typography sx={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 800,
+                  color: '#182959',
+                  mb: 2
+                }}>
+                  Revision Requested!
+                </Typography>
+                <Typography sx={{ 
+                  fontSize: '1rem',
+                  color: '#666',
+                  mb: 3
+                }}>
+                  The selected record(s) have been sent for revision.
+                </Typography>
+              </Box>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mt: 3
+              }}>
+                <Button
+                  variant="contained"
+                  sx={{ 
+                    backgroundColor: '#182959',
+                    borderRadius: '999px',
+                    padding: '10px 24px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#0f1a3c',
+                    },
+                  }}
+                  onClick={() => setShowBulkReviseModal(false)}
+                >
+                  OK
+                </Button>
+              </Box>
             </Paper>
           </Overlay>
         )}
