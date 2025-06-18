@@ -186,39 +186,89 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
 
   const handleChange = (key, value) => {
     let newValue = value;
-
+  
     // Convert to number if key is a numeric field
     if (["consumption", "volume", "waste_generated", "waste_disposed", "waste"].includes(key)) {
-      newValue = parseFloat(value);
-      // Handle invalid number input (e.g., empty string becomes NaN)
-      if (isNaN(newValue)) newValue = '';
+      // Allow empty string
+      if (value === '') {
+        newValue = '';
+      } else {
+        // Remove any non-numeric characters except decimal point and allow temporary states
+        const cleanedValue = value.toString().replace(/[^0-9.]/g, '');
+        
+        // Handle multiple decimal points - keep only the first one
+        const parts = cleanedValue.split('.');
+        if (parts.length > 2) {
+          newValue = parts[0] + '.' + parts.slice(1).join('');
+        } else {
+          newValue = cleanedValue;
+        }
+        
+        // Allow temporary invalid states (like just "." or "0.") while typing
+        // but prevent clearly invalid final values
+        if (newValue && newValue !== '.' && newValue !== '0' && newValue !== '0.') {
+          const numericValue = parseFloat(newValue);
+          // Only reject if it's a complete number that's <= 0
+          if (!isNaN(numericValue) && numericValue <= 0 && !newValue.endsWith('.')) {
+            return; // Don't update if it's a complete non-positive number
+          }
+        } else if (newValue === '0' || (newValue.startsWith('0') && !newValue.includes('.'))) {
+          // Prevent entering just "0" or numbers starting with 0 (except decimals like "0.5")
+          return;
+        }
+      }
     }
-
+  
     setEditedRecord(prev => ({
-        ...prev,
-        [key]: newValue
-      }));
-    };
+      ...prev,
+      [key]: newValue
+    }));
+  };
 
   const handleSave = async () => {
-    console.log("Updated Data:", editedRecord);
-    console.log("Field names:", Object.keys(editedRecord));
-
+    console.log("Updated Data before processing:", editedRecord);
+    
+    // Create a copy of editedRecord and convert string numbers to actual numbers
+    const processedRecord = { ...editedRecord };
+    
+    // Convert numeric fields from strings to numbers before sending to API
+    ["consumption", "volume", "waste_generated", "waste_disposed", "waste"].forEach(key => {
+      if (processedRecord[key] !== undefined && processedRecord[key] !== '') {
+        const numericValue = parseFloat(processedRecord[key]);
+        if (!isNaN(numericValue) && numericValue > 0) {
+          processedRecord[key] = numericValue;
+        } else if (processedRecord[key] === '') {
+          // Handle empty strings - you might want to set to null or remove the field
+          // depending on your backend requirements
+          processedRecord[key] = null; // or delete processedRecord[key];
+        }
+      }
+    });
+  
+    console.log("Processed Data for API:", processedRecord);
+    console.log("Field names:", Object.keys(processedRecord));
+  
     try {
       let response;
       if (!source) {
         // For CSR, use PATCH
-        response = await api.patch(updatePath, editedRecord);
+        response = await api.patch(updatePath, processedRecord);
       } else {
         // For EnvironmentEnergy, use POST
-        response = await api.post(`${source}${updatePath}`, editedRecord);
+        response = await api.post(`${source}${updatePath}`, processedRecord);
       }
+      
       alert(response.data.message || "Record saved successfully.");
       setIsEditing(false);
-
+      
+      // Close the modal and trigger data refresh
+      status(false); // This will trigger data refresh in parent component
+      onClose(); // This will close the modal
+  
     } catch (error) {
       const errorMessage = error.response?.data?.detail || error.message || "Unknown error occurred";
       alert(`Failed to save record: ${errorMessage}`);
+      console.error("Save error:", error.response?.data); // Added for debugging
     } 
   };
 
