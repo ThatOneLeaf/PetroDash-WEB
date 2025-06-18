@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Box, Typography, CircularProgress } from "@mui/material";
+import { Paper, Box, Typography, CircularProgress, IconButton, Tooltip as MuiTooltip } from "@mui/material";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
 import api from "../../../services/api";
 
 /**
@@ -13,6 +15,7 @@ const InvestmentPerProgram = ({ year: yearProp, companyId }) => {
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState(yearProp || null);
   const [availableYears, setAvailableYears] = useState([]);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   // Fetch available years for default selection
   useEffect(() => {
@@ -49,63 +52,110 @@ const InvestmentPerProgram = ({ year: yearProp, companyId }) => {
       .finally(() => setLoading(false));
   }, [year, companyId, yearProp]);
 
+  // Chart rendering logic as a function for reuse
+  const renderChart = (
+    <ResponsiveContainer width="100%" height={350}>
+      <BarChart
+        data={data}
+        margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
+      >
+        <XAxis
+          dataKey="programName"
+          type="category"
+          interval={0}
+          tick={{ fontSize: 13 }}
+          label={{
+            value: "Program Name",
+            position: "insideBottom",
+            offset: -5
+          }}
+        />
+        <YAxis
+          type="number"
+          tickFormatter={(value) => `₱${value.toLocaleString()}`}
+        />
+        <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
+        <Legend />
+        <Bar dataKey="projectExpenses" name="Investment Per Program" fill="#1976d2" />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+
   return (
-    <Paper sx={{ p: 3, borderRadius: 2, width: "100%", minHeight: 400 }}>
-      <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          Investments Per Project
-        </Typography>
-        {/* Year filter dropdown */}
-        {/* {availableYears.length > 0 && (
-          <select
-            value={year || ""}
-            onChange={e => setYear(Number(e.target.value))}
-            style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ccc" }}
-          >
-            {availableYears.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        )} */}
-      </Box>
-      {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
-          <CircularProgress />
+    <>
+      <Paper sx={{ p: 3, borderRadius: 2, width: "100%", minHeight: 400 }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Investments Per Project
+          </Typography>
+          <MuiTooltip title="Zoom In">
+            <IconButton onClick={() => setZoomOpen(true)} size="small">
+              <ZoomInIcon />
+            </IconButton>
+          </MuiTooltip>
+          {/* Year filter dropdown */}
+          {/* {availableYears.length > 0 && (
+            <select
+              value={year || ""}
+              onChange={e => setYear(Number(e.target.value))}
+              style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ccc" }}
+            >
+              {availableYears.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          )} */}
         </Box>
-      ) : (
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart
-            data={data}
-            margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
-          >
-            <XAxis
-              dataKey="programName"
-              type="category"
-              interval={0}
-              tick={{ fontSize: 13 }}
-              label={{
-                value: "Program Name",
-                position: "insideBottom",
-                offset: -5
-              }}
-            />
-            <YAxis
-              type="number"
-              tickFormatter={(value) => `₱${value.toLocaleString()}`}
-              // label={{ value: "Investment (₱)", angle: -90, position: "insideLeft", offset: 0 }}
-            />
-            <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
-            <Legend />
-            <Bar dataKey="projectExpenses" name="Investment Per Program" fill="#1976d2" />
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-      {!loading && data.length === 0 && (
-        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
-          No data available for the selected filters.
-        </Typography>
-      )}
-    </Paper>
+        {loading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          renderChart
+        )}
+        {!loading && data.length === 0 && (
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
+            No data available for the selected filters.
+          </Typography>
+        )}
+      </Paper>
+      <ZoomModal
+        open={zoomOpen}
+        onClose={() => setZoomOpen(false)}
+        title="Investments Per Project"
+        height={600}
+        enableDownload
+        downloadFileName="investments-per-program"
+      >
+        <Box sx={{ width: 900, height: 500, minWidth: 300 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
+            >
+              <XAxis
+                dataKey="programName"
+                type="category"
+                interval={0}
+                tick={{ fontSize: 15 }}
+                label={{
+                  value: "Program Name",
+                  position: "insideBottom",
+                  offset: -5
+                }}
+              />
+              <YAxis
+                type="number"
+                tickFormatter={(value) => `₱${value.toLocaleString()}`}
+              />
+              <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
+              <Legend />
+              <Bar dataKey="projectExpenses" name="Investment Per Program" fill="#1976d2" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      </ZoomModal>
+    </>
   );
 };
 

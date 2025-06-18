@@ -14,6 +14,9 @@ import WorkIcon from '@mui/icons-material/Work';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api';
 import Filter from '../../components/Filter/Filter'
+import InvestmentPerProjectChart from '../CSR/Charts/InvestmentPerProject'
+import InvestmentPerProgramChart from '../CSR/Charts/InvestmentPerProgram'
+import InvestmentPerCompanyChart from '../CSR/Charts/InvestmentPerCompany'
 
 const kpiConfig = [
   // Health
@@ -781,10 +784,11 @@ export default function HELPDash() {
                   justifyContent: 'center'
                 }}
               >
-                <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1 }}>
+                <InvestmentPerProjectChart />
+                {/* <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1 }}>
                   Investments per Projects
                 </Typography>
-                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
+                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box> */}
               </Paper>
               {/* Top Right Chart Container */}
               <Paper
@@ -792,7 +796,7 @@ export default function HELPDash() {
                 sx={{
                   gridColumn: { xs: '1', md: '2' },
                   gridRow: { xs: '2', md: '1' },
-                  minHeight: { xs: 150, md: 240 },
+                  maxHeight: '100%',
                   background: '#fff',
                   borderRadius: '14px',
                   border: '1.5px solid #e2e8f0',
@@ -802,9 +806,7 @@ export default function HELPDash() {
                   justifyContent: 'center'
                 }}
               >
-                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 1 }}>
-                  Chart 2
-                </Typography>
+                <InvestmentPerProgramChart />
                 <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
               </Paper>
               {/* Bottom Right Chart Container */}
@@ -823,10 +825,7 @@ export default function HELPDash() {
                   justifyContent: 'center'
                 }}
               >
-                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 1 }}>
-                  Chart 3
-                </Typography>
-                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
+                <InvestmentPerCompanyChart />
               </Paper>
             </Box>
           </>
