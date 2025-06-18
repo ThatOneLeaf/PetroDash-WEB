@@ -32,9 +32,16 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<LoginPage />} />
 
-            {/* Protected Routes */}
+            {/* Protected Routes Economics */}
             <Route path="/economic" element={<ProtectedRoute><Economic /></ProtectedRoute>} />
             <Route path="/economic/repository" element={<ProtectedRoute><EconomicRepository /></ProtectedRoute>} />
+            
+            {/* Protected Routes Environment */}
+            <Route path="/environment/energy" element={<ProtectedRoute><EnvironmentEnergy /></ProtectedRoute>} />
+            <Route path="/environment/water" element={<ProtectedRoute><EnvironmentWater /></ProtectedRoute>} />
+            <Route path="/environment/waste" element={<ProtectedRoute><EnvironmentWaste /></ProtectedRoute>} />
+            <Route path="/environment/water-dash" element={<ProtectedRoute><EnvironmentWaterDash /></ProtectedRoute>} />
+            <Route path="/environment/energy-dash" element={<ProtectedRoute><EnvironmentEnergyDash /></ProtectedRoute>} />
 
             {/* CSV Routes */}
             <Route path="/energy/power-generation" element={<Energy />} />
@@ -42,12 +49,8 @@ function App() {
             <Route path="/energy" element={<EnergyDashboard/>}/>
 
             {/* Environment Routes */}
-            <Route path="/environment/energy" element={<EnvironmentEnergy />} />
-            <Route path="/environment/water" element={<EnvironmentWater />} />
-            <Route path="/environment/waste" element={<EnvironmentWaste />} />
             <Route path="/environment/air" element={<EnvironmentAir />} />
             <Route path="/environment/care" element={<EnvironmentCare />} />
-            <Route path="/environment/water-dash" element={<EnvironmentWaterDash />} />
             <Route path="/environment/energy-dash" element={<EnvironmentEnergyDash />} />
             <Route path="/environment/waste-dash" element={<EnvironmentWasteDash />} />
             
