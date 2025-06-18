@@ -149,29 +149,37 @@ function EnvironmentWasteDash() {
           api.get('/environment_dash/non-hazardous-waste-units'),
           api.get('/environment_dash/non-hazardous-metrics'),
         ]);
-
+   
         setCompanies(companiesResponse.data);
-
         setHazGenYears(hazGenYearsResponse.data.data || []);
         setHazGenWasteType(hazGenWasteTypeResponse.data.data || []);
         setHazGenUnits(hazGenUnitsResponse.data.data || []);
-
         setHazDisYears(hazDisYearsResponse.data.data || []);
         setHazDisWasteType(hazDisWasteTypeResponse.data.data || []);
         setHazDisUnits(hazDisUnitsResponse.data.data || []);
-
         setNonHazYears(nonHazYearsResponse.data.data || []);
         setNonHazMetrics(nonHazMetricsResponse.data.data || []);
         setNonHazUnits(nonHazUnitsResponse.data.data || []);
-
         setLastUpdated(new Date());
+        setError(null); // Clear any previous errors
       } catch (error) {
-        // handle error
+        console.error('Error fetching initial data:', error);
+        setCompanies([]);
+        setHazGenYears([]);
+        setHazGenWasteType([]);
+        setHazGenUnits([]);
+        setHazDisYears([]);
+        setHazDisWasteType([]);
+        setHazDisUnits([]);
+        setNonHazYears([]);
+        setNonHazMetrics([]);
+        setNonHazUnits([]);
+        setError('Not Accessible. Only authorized people can access this.');
       }
     };
-
+   
     fetchInitialData();
-  }, []);
+   }, []);
 
   // 2. Update active filters when tab or data changes
   useEffect(() => {
@@ -1706,6 +1714,39 @@ function EnvironmentWasteDash() {
   useEffect(() => {
     console.log('Key metrics updated:', keyMetrics);
   }, [keyMetrics]);
+
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex',
+        flexDirection: 'row',
+        height: '100vh',
+        width: '100%',
+        margin: 0,
+        padding: 0,
+        overflow: 'hidden',
+        backgroundColor: '#f8fafc'
+      }}>
+        <Sidebar />
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#ffffff'
+        }}>
+          <div style={{
+            color: '#ef4444',
+            fontSize: '18px',
+            fontWeight: '600',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
