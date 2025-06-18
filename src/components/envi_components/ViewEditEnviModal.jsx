@@ -52,6 +52,7 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
   const [showReviseSiteSuccessModal, setShowReviseSiteSuccessModal] = useState(false);
   const [showReviseHeadSuccessModal, setShowReviseHeadSuccessModal] = useState(false);
   const [showEditRecordSuccessModal, setShowEditRecordSuccessModal] = useState(false);
+  const [showEditPromptModal, setShowEditPromptModal] = useState(false);
 
   if (!record) return null;
 
@@ -659,33 +660,36 @@ const handleStatusUpdate = async (action) => {
             justifyContent: 'space-between',
             mt: 3
           }}>
-            <Button
-              startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-              sx={{ 
-                color: isEditing ? '#1976d2' : '#FFA000',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  color: isEditing ? '#1565c0' : '#FB8C00',
-                },
-              }}
-              onClick={() => {
-                if (isEditing) {
-                  if (!isRecordUnchanged) {
-                    handleSave(); // only save if changed
+            {/* Hide EDIT/SAVE if status is under review (site) or under review (head) */}
+            {editedRecord.status !== 'Under review (site)' && editedRecord.status !== 'Under review (head level)' && (
+              <Button
+                startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
+                sx={{ 
+                  color: isEditing ? '#1976d2' : '#FFA000',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    color: isEditing ? '#1565c0' : '#FB8C00',
+                  },
+                }}
+                onClick={() => {
+                  if (isEditing) {
+                    if (!isRecordUnchanged) {
+                      handleSave(); // only save if changed
+                    } else {
+                      alert('No changes were made')
+                      setIsEditing(false);
+                    }
                   } else {
-                    alert('No changes were made')
-                    setIsEditing(false);
+                    setIsEditing(true);
                   }
-                } else {
-                  setIsEditing(true);
-                }
-              }}
-            >
-              {isEditing ? 'SAVE' : 'EDIT'}
-            </Button>
+                }}
+              >
+                {isEditing ? 'SAVE' : 'EDIT'}
+              </Button>
+            )}
             <Box>
               <Button 
                 variant='contained'
@@ -724,6 +728,85 @@ const handleStatusUpdate = async (action) => {
               )}    
             </Box>
           </Box>
+        )}
+        {showEditPromptModal && (
+          <Overlay onClose={() => setShowEditPromptModal(false)}>
+            <Paper sx={{
+              p: 4,
+              width: '400px',
+              borderRadius: '16px',
+              bgcolor: 'white',
+              outline: 'none',
+              textAlign: 'center'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                mb: 3
+              }}>
+                <Box sx={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#2B8C37',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2
+                }}>
+                  <Typography sx={{ 
+                    color: 'white', 
+                    fontSize: '2rem',
+                    fontWeight: 'bold'
+                  }}>
+                    ✓
+                  </Typography>
+                </Box>
+                <Typography sx={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 800,
+                  color: '#182959',
+                  mb: 2
+                }}>
+                  {isEditing && !isRecordUnchanged
+                    ? 'Record Edited Successfully!'
+                    : 'No Changes Made'}
+                </Typography>
+                <Typography sx={{ 
+                  fontSize: '1rem',
+                  color: '#666',
+                  mb: 3
+                }}>
+                  {isEditing && !isRecordUnchanged
+                    ? 'The record has been successfully updated.'
+                    : 'No changes were made to the record.'}
+                </Typography>
+              </Box>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mt: 3
+              }}>
+                <Button
+                  variant="contained"
+                  sx={{ 
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '10px 24px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={() => setShowEditPromptModal(false)}
+                >
+                  OK
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
         )}
         {isModalOpen && modalType === 'revise' && (
           <Overlay onClose={() => setIsModalOpen(false)}>
