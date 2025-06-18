@@ -273,6 +273,7 @@ export default function HELPDash() {
     // project: ''
   });
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [activeTab, setActiveTab] = useState('HELP'); // 'HELP' or 'Investments'
 
   // Fetch data from the same API as CSRActivity
   const fetchData = () => {
@@ -373,150 +374,220 @@ export default function HELPDash() {
           </Button>
         </Box>
 
-        {/* Filters Row - styled like EnvironmentEnergyDash */}
-        <Box
-          sx={{
-            display: 'flex',
-            gap: '10px',
-            mb: 3,
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            flexShrink: 0,
-          }}
-        >
-          {/* Year Filter */}
-          <select
-            value={filters.year}
-            onChange={e => handleFilter('year', e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e2e8f0',
+        {/* Tab Buttons */}
+        <Box sx={{
+          display: 'flex',
+          gap: '8px',
+          mb: 2,
+          flexShrink: 0
+        }}>
+          <Button
+            onClick={() => setActiveTab('HELP')}
+            sx={{
+              padding: '8px 16px',
+              backgroundColor: activeTab === 'HELP' ? '#10B981' : '#9CA3AF',
+              color: 'white',
+              border: 'none',
               borderRadius: '20px',
-              backgroundColor: 'white',
               fontSize: '12px',
-              fontWeight: '500',
+              fontWeight: '600',
               cursor: 'pointer',
-              minWidth: '100px'
+              minWidth: '80px',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: activeTab === 'HELP' ? '#059669' : '#6B7280'
+              }
             }}
           >
-            <option value="">All Years</option>
-            {yearOptions.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-
-          {/* Company Filter */}
-          <select
-            value={filters.company}
-            onChange={e => handleFilter('company', e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e2e8f0',
+            HELP
+          </Button>
+          <Button
+            onClick={() => setActiveTab('Investments')}
+            sx={{
+              padding: '8px 16px',
+              backgroundColor: activeTab === 'Investments' ? '#10B981' : '#9CA3AF',
+              color: 'white',
+              border: 'none',
               borderRadius: '20px',
-              backgroundColor: 'white',
               fontSize: '12px',
-              fontWeight: '500',
+              fontWeight: '600',
               cursor: 'pointer',
-              minWidth: '100px'
+              minWidth: '80px',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: activeTab === 'Investments' ? '#059669' : '#6B7280'
+              }
             }}
           >
-            <option value="">All Companies</option>
-            {companyOptions.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-
-          {/* Program Filter - removed */}
-          {/* Project Filter - removed */}
-
-          {(filters.year || filters.company /*|| filters.program || filters.project*/) && (
-            <button
-              style={{
-                padding: '8px 12px',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '20px',
-                fontSize: '11px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-              onClick={clearFilters}
-            >
-              Clear Filters
-            </button>
-          )}
+            Investments
+          </Button>
         </Box>
 
-        {/* KPI Grid */}
-        <Box sx={{ width: '100%' }}>
-          {kpiConfig.map(section => (
+        {/* Only render HELP dashboard if activeTab is HELP */}
+        {activeTab === 'HELP' && (
+          <>
+            {/* Filters Row - styled like EnvironmentEnergyDash */}
             <Box
-              key={section.category}
               sx={{
+                display: 'flex',
+                gap: '10px',
                 mb: 3,
-                width: '100%',
-                maxWidth: '100%',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                flexShrink: 0,
               }}
             >
-              <Typography
-                sx={{
-                  fontSize: 28, 
-                  fontWeight: 900,
-                  color: '#182959',
-                  mb: 1.2,
-                  letterSpacing: 1,
-                  textAlign: 'left',
-                  textTransform: 'uppercase',
-                  pl: { xs: 1, sm: 2 },
+              {/* Year Filter */}
+              <select
+                value={filters.year}
+                onChange={e => handleFilter('year', e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '20px',
+                  backgroundColor: 'white',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  minWidth: '100px'
                 }}
               >
-                {section.category === 'HEALTH' && "HEALTH"}
-                {section.category === 'EDUCATION' && "EDUCATION"}
-                {section.category === 'LIVELIHOOD' && "LIVELIHOOD"}
-              </Typography>
-              <Grid
-                container
-                spacing={1.5}
-                sx={{
-                  width: '100%',
-                  margin: 0,
-                  px: { xs: 0, sm: 1 },
-                  justifyContent: 'center', // Center all KPI boxes horizontally
-                  alignItems: 'center',     // Center all KPI boxes vertically
-                  textAlign: 'center',
+                <option value="">All Years</option>
+                {yearOptions.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+
+              {/* Company Filter */}
+              <select
+                value={filters.company}
+                onChange={e => handleFilter('company', e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '20px',
+                  backgroundColor: 'white',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  minWidth: '100px'
                 }}
               >
-                {section.items.map(item => (
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={Math.max(12 / section.items.length, 3)}
-                    lg={Math.max(12 / section.items.length, 3)}
-                    key={item.key}
+                <option value="">All Companies</option>
+                {companyOptions.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+
+              {(filters.year || filters.company) && (
+                <button
+                  style={{
+                    padding: '8px 12px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                  onClick={clearFilters}
+                >
+                  Clear Filters
+                </button>
+              )}
+            </Box>
+
+            {/* KPI Grid */}
+            <Box sx={{ width: '100%' }}>
+              {kpiConfig.map(section => (
+                <Box
+                  key={section.category}
+                  sx={{
+                    mb: 3,
+                    width: '100%',
+                    maxWidth: '100%',
+                  }}
+                >
+                  <Typography
                     sx={{
-                      display: 'flex',
-                      justifyContent: 'center', // Center KPIBox in grid cell
-                      alignItems: 'center',     // Center KPIBox in grid cell
-                      width: '100%',
-                      flexGrow: 1,
-                      flexBasis: 0,
+                      fontSize: 28, 
+                      fontWeight: 900,
+                      color: '#182959',
+                      mb: 1.2,
+                      letterSpacing: 1,
+                      textAlign: 'left',
+                      textTransform: 'uppercase',
+                      pl: { xs: 1, sm: 2 },
                     }}
                   >
-                    <KPIBox
-                      icon={item.icon}
-                      label={item.label}
-                      value={loading ? <CircularProgress size={22} /> : kpi[item.key]}
-                      lastUpdated={lastUpdated}
-                      bgColor={item.bgColor}
-                    />
+                    {section.category}
+                  </Typography>
+                  <Grid
+                    container
+                    spacing={1.5}
+                    sx={{
+                      width: '100%',
+                      margin: 0,
+                      px: { xs: 0, sm: 1 },
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {section.items.map(item => (
+                      <Grid
+                        item
+                        xs={12}
+                        sm={6}
+                        md={Math.max(12 / section.items.length, 3)}
+                        lg={Math.max(12 / section.items.length, 3)}
+                        key={item.key}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          width: '100%',
+                          flexGrow: 1,
+                          flexBasis: 0,
+                        }}
+                      >
+                        <KPIBox
+                          icon={item.icon}
+                          label={item.label}
+                          value={loading ? <CircularProgress size={22} /> : kpi[item.key]}
+                          lastUpdated={lastUpdated}
+                          bgColor={item.bgColor}
+                        />
+                      </Grid>
+                    ))}
                   </Grid>
-                ))}
-              </Grid>
+                </Box>
+              ))}
             </Box>
-          ))}
-        </Box>
+          </>
+        )}
+
+        {/* Investments Tab Placeholder */}
+        {activeTab === 'Investments' && (
+          <Box sx={{
+            width: '100%',
+            minHeight: '400px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#fff',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            mt: 4,
+            fontSize: 22,
+            color: '#64748b',
+            fontWeight: 700,
+            textAlign: 'center'
+          }}>
+            Investments dashboard coming soon.
+          </Box>
+        )}
       </Box>
     </Box>
   );
