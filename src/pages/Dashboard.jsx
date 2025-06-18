@@ -63,7 +63,7 @@ function Dashboard() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#333' }}>
-              PETRODASH
+              OVERVIEW
             </Typography>
             <Typography variant="body1" sx={{ color: '#666', mt: 0.5 }}>
               AS OF {getCurrentDateTime().toUpperCase()}
