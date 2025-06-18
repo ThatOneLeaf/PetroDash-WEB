@@ -19,6 +19,7 @@ import {
   AreaChart
 } from 'recharts';
 import Sidebar from '../../components/Sidebar';
+import MultiSelectWithChips from '../../components/DashboardComponents/MultiSelectDropdown'; // Import the component
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B', '#64748b', '#06B6D4', '#84CC16'];
 
@@ -29,14 +30,13 @@ function EnvironmentWasteDash() {
   const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
 
   // Filters - Common for all tabs
-  const [companyId, setCompanyId] = useState('');
-  const [quarter, setQuarter] = useState('');
+  const [companyId, setCompanyId] = useState([]); // Now handles array of company IDs
+  const [quarter, setQuarter] = useState([]); // Now handles array of quarters
   const [fromYear, setFromYear] = useState('');
   const [toYear, setToYear] = useState('');
-  const [wasteType, setWasteType] = useState(''); // Hazard Waste Filter 
-  const [metricsType, setMetrics] = useState('');
-  const [unit, setUnit] = useState('Kilogram'); // Default Selection
-
+  const [wasteType, setWasteType] = useState([]); // Now handles array of waste types
+  const [metricsType, setMetrics] = useState([]); // Now handles array of metrics
+  const [unit, setUnit] = useState('Kilogram'); // Now handles array of units with default
   // Active APIs
   const [activeYears, setActiveYears] = useState([]);
   const [activeWasteType, setActiveWasteType] = useState([]);
@@ -70,6 +70,7 @@ function EnvironmentWasteDash() {
   const [lineChartColors, setLineChartColors] = useState([]);
   const [hazGenTypeBarData, setHazGenTypeBarData] = useState([]);
   const [hazGenQrtrBarData, setHazGenQrtrBarData] = useState([]);
+  const [barChartColors, setBarChartColors] = useState({});
   const [hazDisYearBarData, setHazDisYearBarData] = useState({
     chartData: [],
     companies: [],
@@ -200,6 +201,8 @@ function EnvironmentWasteDash() {
         setActiveUnits([]);
         break;
     }
+    setFromYear(activeYears[0]);
+    setToYear(activeYears[activeYears.length - 1]);
   }, [
     activeTab,
     hazGenYears, hazGenWasteType, hazGenUnits,
@@ -348,12 +351,20 @@ function EnvironmentWasteDash() {
     return transformedData;
   };
 
-  const transformBarChartData = (apiData) => {
+  const transformBarChartDataWithColors = (apiData) => {
     if (!Array.isArray(apiData) || apiData.length === 0) {
-      return [];
+      return {
+        chartData: [],
+        wasteTypes: [],
+        colors: {}
+      };
     }
 
-    console.log('API Data for bar chart:', apiData); // Add this debug line
+    console.log('API Data for bar chart:', apiData);
+
+    // USE THE STORED COLOR MAPPING INSTEAD OF API COLORS
+    const wasteTypeColorMap = { ...wasteTypeColors };
+    const allWasteTypes = new Set();
 
     // Aggregate by waste_type for both generated and disposed
     const wasteMap = {};
@@ -362,21 +373,35 @@ function EnvironmentWasteDash() {
       const generate = item.total_generate !== undefined && item.total_generate !== null ? Number(item.total_generate) : 0;
       const dispose = item.total_disposed !== undefined && item.total_disposed !== null ? Number(item.total_disposed) : 0;
 
+      allWasteTypes.add(id);
+      
+      // Use stored color mapping or fallback
+      if (!wasteTypeColorMap[id]) {
+        wasteTypeColorMap[id] = wasteTypeColors[id] || COLORS[Array.from(allWasteTypes).indexOf(id) % COLORS.length];
+      }
+
       if (!wasteMap[id]) {
         wasteMap[id] = {
           waste_type: id,
           total_generate: 0,
           total_disposed: 0,
-          color: wasteTypeColors[id] || item.color || COLORS[Object.keys(wasteMap).length % COLORS.length]
+          color: wasteTypeColorMap[id]
         };
       }
       wasteMap[id].total_generate += generate;
       wasteMap[id].total_disposed += dispose;
     });
 
-    const result = Object.values(wasteMap);
-    console.log('Transformed bar chart data:', result); // Add this debug line
-    return result;
+    const chartData = Object.values(wasteMap);
+    const wasteTypes = Array.from(allWasteTypes);
+
+    console.log('Transformed bar chart data:', chartData);
+    
+    return {
+      chartData,
+      wasteTypes,
+      colors: wasteTypeColorMap
+    };
   };
 
   const transformQuarterBarChartData = (apiData) => {
@@ -559,17 +584,21 @@ function EnvironmentWasteDash() {
     });
   };
 
+  // Modified fetchParams function to handle arrays
   const fetchParams = () => {
     try {
-      // Build parameters (same logic as pie chart)
       const params = {};
       
-      if (companyId) {
+      // Handle company ID - check if it's an array and has values
+      if (Array.isArray(companyId) && companyId.length > 0) {
+        params.company_id = companyId;
+      } else if (!Array.isArray(companyId) && companyId) {
         params.company_id = companyId;
       } else {
         params.company_id = companies.map(company => company.id);
       }
 
+      // Handle year range
       if (fromYear && toYear) {
         const yearRange = activeYears.filter(year => year >= parseInt(fromYear) && year <= parseInt(toYear));
         params.year = yearRange;
@@ -583,40 +612,48 @@ function EnvironmentWasteDash() {
         params.year = activeYears;
       }
 
-      if (quarter) {
+      // Handle quarter - check if it's an array and has values
+      if (Array.isArray(quarter) && quarter.length > 0) {
+        params.quarter = quarter;
+      } else if (!Array.isArray(quarter) && quarter) {
         params.quarter = quarter;
       } else {
         params.quarter = ['Q1', 'Q2', 'Q3', 'Q4'];
       }
       
-      if (activeTab !== 'non_hazardous_generated'){
-        if (wasteType) {
+      if (activeTab !== 'non_hazardous_generated') {
+        // Handle waste type - check if it's an array and has values
+        if (Array.isArray(wasteType) && wasteType.length > 0) {
+          params.waste_type = wasteType;
+        } else if (!Array.isArray(wasteType) && wasteType) {
           params.waste_type = wasteType;
         } else {
           params.waste_type = activeWasteType;
         }
-      }
 
-      if (metricsType) {
-        params.metrics = metricsType;
-      } else {
-        params.metrics = activeMetrics;
-      }
-
-      if (activeTab !== 'non_hazardous_generated'){
+        // Handle unit - check if it's an array and has values
         if (unit) {
           params.unit = unit;
         } else {
           params.unit = activeUnits;
         }
-      }
-      
-      return params;
 
+      } else {
+        // Handle metrics type - check if it's an array and has values
+        if (Array.isArray(metricsType) && metricsType.length > 0) {
+          params.metrics = metricsType;
+        } else if (!Array.isArray(metricsType) && metricsType) {
+          params.metrics = metricsType;
+        } else {
+          params.metrics = activeMetrics;
+        }
+      }
+
+      return params;
     } catch (error) {
       console.error('Error response:', error.response?.data);
     }
-};
+  };
 
   useEffect(() => {
   const fetchKeyMetrics = async () => {
@@ -860,12 +897,12 @@ function EnvironmentWasteDash() {
         }
         
         // Transform the data
-        const transformedData = transformBarChartData(responseData);
+        const barChartResult = transformBarChartDataWithColors(responseData);
         
-        console.log('Final transformed data for bar chart:', transformedData);
+        console.log('Final transformed data for bar chart:', barChartResult.chartData);
         
         // Validate that transformed data has the right structure
-        const isValidData = transformedData.every(item => {
+        const isValidData = barChartResult.chartData.every(item => {
           if (!item.hasOwnProperty('waste_type')) return false;
           if (activeTab === 'hazardous_generated') {
             return item.hasOwnProperty('total_generate') && typeof item.total_generate === 'number';
@@ -876,12 +913,13 @@ function EnvironmentWasteDash() {
         });
         
         if (!isValidData) {
-          console.error('Transformed data is invalid:', transformedData);
+          console.error('Transformed data is invalid:', barChartResult.chartData);
           setHazGenTypeBarData([]);
           return;
         }
         
-        setHazGenTypeBarData(transformedData);
+        setHazGenTypeBarData(barChartResult.chartData);
+        setBarChartColors(barChartResult.colors); // Store colors separately
         
       } catch (error) {
         console.error('Failed to fetch hazard generated bar chart:', error);
@@ -1538,13 +1576,14 @@ function EnvironmentWasteDash() {
     );
   };
 
-  // Clear all filters function
+  // Modified clear filters function
   const clearAllFilters = () => {
-    setCompanyId('');
-    setQuarter('');
-    setFromYear('');
-    setToYear('');
-    setWasteType('');
+    setCompanyId([]);
+    setQuarter([]);
+    setFromYear(activeYears[0]);
+    setToYear(activeYears[activeYears.length - 1]);
+    setWasteType([]);
+    setMetrics([]);
     setUnit('Kilogram');
   };
 
@@ -1560,6 +1599,48 @@ function EnvironmentWasteDash() {
     // Add more mappings as needed
   };
 
+  // Helper function to get current unit for display
+  const getCurrentUnit = () => {
+    if (Array.isArray(unit) && unit.length === 1) {
+      return unit[0];
+    } else if (Array.isArray(unit) && unit.length > 1) {
+      return 'Mixed Units';
+    } else if (!Array.isArray(unit)) {
+      return unit || 'Kilogram';
+    }
+    return 'Kilogram';
+  };
+
+  // Prepare options for multi-select components
+  const companyOptions = companies.map(company => ({
+    value: company.id,
+    label: company.name
+  }));
+
+  const quarterOptions = [
+    { value: 'Q1', label: 'Q1' },
+    { value: 'Q2', label: 'Q2' },
+    { value: 'Q3', label: 'Q3' },
+    { value: 'Q4', label: 'Q4' }
+  ];
+
+  const wasteTypeOptions = activeWasteType.map(type => ({
+    value: type,
+    label: type
+  }));
+
+  const metricsOptions = activeMetrics.map(metric => ({
+    value: metric,
+    label: metric
+  }));
+
+  const unitOptions = activeUnits.map(unitItem => ({
+    value: unitItem,
+    label: unitItem
+  }));
+
+
+// Helper function for year on year cumulative (keep original logic but handle arrays)
   const yearOnYearCumulative = () => {
     let value;
     switch (activeTab) {
@@ -1570,7 +1651,7 @@ function EnvironmentWasteDash() {
         value = keyMetrics?.combined?.total_disposed;
         break;
       case 'non_hazardous_generated':
-        value = keyMetrics?.combined?.total_waste; // likely correct field
+        value = keyMetrics?.combined?.total_waste;
         break;
       default:
         value = 0;
@@ -1578,7 +1659,8 @@ function EnvironmentWasteDash() {
     }
 
     if (typeof value !== 'number' || isNaN(value)) return '--';
-    if (unit === 'Pieces' || unit === 'Pcs') {
+    const currentUnit = getCurrentUnit();
+    if (currentUnit === 'Pieces' || currentUnit === 'Pcs') {
       return Math.ceil(value).toLocaleString();
     }
     return value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -1605,7 +1687,8 @@ function EnvironmentWasteDash() {
     }
 
     if (typeof value !== 'number' || isNaN(value)) return '--';
-    if (unit === 'Pieces' || unit === 'Pcs') {
+    const currentUnit = getCurrentUnit();
+    if (currentUnit === 'Pieces' || currentUnit === 'Pcs') {
       return Math.ceil(value).toLocaleString();
     }
     return value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -1623,6 +1706,13 @@ function EnvironmentWasteDash() {
   useEffect(() => {
     console.log('Key metrics updated:', keyMetrics);
   }, [keyMetrics]);
+
+  // 5. Debug: Add console logs to verify colors are being applied
+  console.log('Current wasteTypeColors:', wasteTypeColors);
+  console.log('Bar chart entry colors:', currentData.barChartData.map(entry => ({
+    waste_type: entry.waste_type,
+    color: wasteTypeColors[entry.waste_type] || entry.color
+  })));
 
   return (
     <div style={{ 
@@ -1762,7 +1852,7 @@ function EnvironmentWasteDash() {
           </button>
         </div>
 
-        {/* Filters */}
+        {/* Modified Filters Section with Multi-Select Components */}
         <div style={{ 
           display: 'flex', 
           gap: '10px',
@@ -1771,28 +1861,14 @@ function EnvironmentWasteDash() {
           alignItems: 'center',
           flexShrink: 0
         }}>
-          {/* Company Filter */}
-          <select 
-            value={companyId}
-            onChange={(e) => setCompanyId(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '2px solid #e2e8f0',
-              borderRadius: '20px',
-              backgroundColor: 'white',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              minWidth: '100px'
-            }}
-          >
-            <option value="">All Companies</option>
-            {companies.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name}
-              </option>
-            ))}
-          </select>
+          {/* Company Multi-Select */}
+          <MultiSelectWithChips
+            label="Companies"
+            placeholder="All Companies"
+            options={companyOptions}
+            selectedValues={Array.isArray(companyId) ? companyId : (companyId ? [companyId] : [])}
+            onChange={(values) => setCompanyId(values)}
+          />
 
           {/* Unit Filter */}
           <select 
@@ -1817,84 +1893,37 @@ function EnvironmentWasteDash() {
           </select>
           
           {activeTab === 'non_hazardous_generated' ? (
-            <>
-              {/*Metrics Filter */}
-              <select 
-                value={metricsType}
-                onChange={(e) => setMetrics(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '20px',
-                  backgroundColor: 'white',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  minWidth: '100px'
-                }}
-              >
-                <option value="">All Metrics</option>
-                {activeMetrics.map((metrics) => (
-                  <option key={metrics} value={metrics}>
-                    {metrics}
-                  </option>
-                ))}
-              </select>
-            </>
-          ) :
-          <>
-            {/* Waste Type Filter */}
-            <select 
-              value={wasteType}
-              onChange={(e) => setWasteType(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '20px',
-                backgroundColor: 'white',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                minWidth: '100px'
-              }}
-            >
-              <option value="">All Waste Type</option>
-              {activeWasteType.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </>
-          }
-
-          {activeTab !== 'hazardous_disposed' && (
-            <>
-              {/* Quarter Filter */}
-              <select 
-                value={quarter}
-                onChange={(e) => setQuarter(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '20px',
-                  backgroundColor: 'white',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  minWidth: '100px'
-                }}
-              >
-                <option value="">All Quarter</option>
-                <option value="Q1">Q1</option>
-                <option value="Q2">Q2</option>
-                <option value="Q3">Q3</option>
-                <option value="Q4">Q4</option>
-              </select>
-            </>
+            /* Metrics Multi-Select for non-hazardous */
+            <MultiSelectWithChips
+              label="Metrics"
+              placeholder="All Metrics"
+              options={metricsOptions}
+              selectedValues={Array.isArray(metricsType) ? metricsType : (metricsType ? [metricsType] : [])}
+              onChange={(values) => setMetrics(values)}
+            />
+          ) : (
+            /* Waste Type Multi-Select for hazardous */
+            <MultiSelectWithChips
+              label="Waste Types"
+              placeholder="All Waste Types"
+              options={wasteTypeOptions}
+              selectedValues={Array.isArray(wasteType) ? wasteType : (wasteType ? [wasteType] : [])}
+              onChange={(values) => setWasteType(values)}
+            />
           )}
 
-          {/* Year Range Filter */}
+          {activeTab !== 'hazardous_disposed' && (
+            /* Quarter Multi-Select */
+            <MultiSelectWithChips
+              label="Quarters"
+              placeholder="All Quarters"
+              options={quarterOptions}
+              selectedValues={Array.isArray(quarter) ? quarter : (quarter ? [quarter] : [])}
+              onChange={(values) => setQuarter(values)}
+            />
+          )}
+
+          {/* Year Range Filters (keep as single select) */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <select 
               value={fromYear}
@@ -1916,13 +1945,7 @@ function EnvironmentWasteDash() {
               ))}
             </select>
 
-            <span style={{ 
-              color: '#64748b', 
-              fontSize: '12px', 
-              fontWeight: '500' 
-            }}>
-              to
-            </span>
+            <span style={{ color: '#64748b', fontSize: '12px', fontWeight: '500' }}>to</span>
 
             <select 
               value={toYear}
@@ -1948,7 +1971,13 @@ function EnvironmentWasteDash() {
           </div>
 
           {/* Clear All Filters Button */}
-          {(companyId || quarter || fromYear || toYear || wasteType || metricsType || (unit !== 'Kilogram')) && (
+          {((Array.isArray(companyId) && companyId.length > 0) || 
+            (Array.isArray(quarter) && quarter.length > 0) || 
+            (fromYear !== activeYears[0]) || 
+            (toYear !== activeYears[activeYears.length - 1]) || 
+            (Array.isArray(wasteType) && wasteType.length > 0) || 
+            (Array.isArray(metricsType) && metricsType.length > 0) || 
+            (Array.isArray(unit) && (unit.length !== 1 || unit[0] !== 'Kilogram'))) && (
             <button
               onClick={clearAllFilters}
               style={{
@@ -2426,14 +2455,17 @@ function EnvironmentWasteDash() {
                             formatter={(value) => `${Number(value).toLocaleString()} ${currentData.unit}`}
                             labelFormatter={(label) => wasteTypeShortNames[label] || label}
                           />
-                          <Bar 
-                            dataKey="total_generate" 
+                          <Bar
+                            dataKey={'total_generate'}
                             fill="#3B82F6"
                             label={{ position: 'top', fontSize: 10 }}
                           >
                             {currentData.barChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                            ))} 
+                              <Cell
+                                key={`bar-cell-${index}`}
+                                fill={barChartColors[entry.waste_type] || wasteTypeColors[entry.waste_type]}
+                              />
+                            ))}
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
@@ -3524,16 +3556,19 @@ function EnvironmentWasteDash() {
                           alignItems: 'center',
                           minWidth: '60px'
                         }}>
-                          <div style={{ fontSize: '10px', marginBottom: '8px', fontWeight: '600' }}>
-                            {nonHazMetricsHeatmapData.scale.max_waste.toLocaleString()}
+                          {/* Max value label */}
+                          <div style={{ fontSize: '10px', marginBottom: '4px', fontWeight: '600' }}>
+                            {nonHazMetricsHeatmapData.scale.max_waste.toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
                           </div>
-                          <div style={{ 
-                            display: 'flex', 
+                          {/* Color scale */}
+                          <div style={{
+                            display: 'flex',
                             flexDirection: 'column',
                             border: '1px solid #e2e8f0',
-                            borderRadius: '2px'
+                            borderRadius: '2px',
+                            overflow: 'hidden'
                           }}>
-                            {[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0].map(intensity => (
+                            {[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0].map((intensity, idx) => (
                               <div
                                 key={intensity}
                                 style={{
@@ -3544,7 +3579,8 @@ function EnvironmentWasteDash() {
                               />
                             ))}
                           </div>
-                          <div style={{ fontSize: '10px', marginTop: '8px', fontWeight: '600' }}>
+                          {/* Min value label */}
+                          <div style={{ fontSize: '10px', marginTop: '4px', fontWeight: '600' }}>
                             0
                           </div>
                         </div>
@@ -3760,7 +3796,7 @@ function EnvironmentWasteDash() {
                                 stroke={legendItem.color}
                                 strokeWidth={2}
                                 dot={{ fill: legendItem.color, strokeWidth: 2, r: 3 }}
-                                name={`${legendItem.company_id} - ${legendItem.metrics}`}
+                                name={`${legendItem.metrics}`}
                                 connectNulls={false}
                               />
                             );
