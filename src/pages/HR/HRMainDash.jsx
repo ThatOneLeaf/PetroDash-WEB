@@ -92,7 +92,9 @@ function HRMainDash() {
         </Box>
         
           {/* Page-specific content with controls inside */}
-          <Box mt={3}>{renderPage()}</Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <Box mt={0} sx={{ width: '98%' }}> {renderPage()}</Box>
+          </Box>
         </Box>
       </Box>
   );
