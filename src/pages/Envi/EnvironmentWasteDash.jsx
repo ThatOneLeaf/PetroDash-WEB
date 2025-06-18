@@ -664,63 +664,63 @@ function EnvironmentWasteDash() {
   };
 
   useEffect(() => {
-  const fetchKeyMetrics = async () => {
-    try {
-      // Build parameters using the same logic as other charts
-      const params = fetchParams();
-      
-      // Add the correct unit parameter based on active tab
+    const fetchKeyMetrics = async () => {
+      try {
+        // Build parameters using the same logic as other charts
+        const params = fetchParams();
+        
+        // Add the correct unit parameter based on active tab
+        if (activeTab === 'non_hazardous_generated') {
+          params.unit_of_measurement = unit;
+        } else {
+          params.unit = unit;
+        }
+
+        console.log('Fetching key metrics with params:', params);
+
+        let path = ''
+        if (activeTab === 'hazardous_generated') {
+          path = 'hazard-waste-key-metrics';
+        } else if (activeTab === 'hazardous_disposed') {
+          path = 'hazard-waste-dis-key-metrics';
+        } else {
+          path = 'non-haz-waste-key-metrics';
+        }
+
+        const response = await api.get(`/environment_dash/${path}`, { 
+          params,
+          paramsSerializer: { indexes: null }
+        });
+
+        console.log(`${activeTab} key metrics response:`, response.data);
+        
+        setKeyMetrics(response.data);
+        
+      } catch (error) {
+        console.error('Failed to fetch key metrics:', error);
+        console.error('Error response:', error.response?.data);
+        // Set default values on error
+        setKeyMetrics([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Update the condition to include activeMetrics for non-hazardous tab
+    if (companies.length > 0 && activeYears.length > 0) {
       if (activeTab === 'non_hazardous_generated') {
-        params.unit_of_measurement = unit;
+        // For non-hazardous, also wait for activeMetrics
+        if (activeMetrics.length > 0) {
+          fetchKeyMetrics();
+        }
       } else {
-        params.unit = unit;
-      }
-
-      console.log('Fetching key metrics with params:', params);
-
-      let path = ''
-      if (activeTab === 'hazardous_generated') {
-        path = 'hazard-waste-key-metrics';
-      } else if (activeTab === 'hazardous_disposed') {
-        path = 'hazard-waste-dis-key-metrics';
-      } else {
-        path = 'non-haz-waste-key-metrics';
-      }
-
-      const response = await api.get(`/environment_dash/${path}`, { 
-        params,
-        paramsSerializer: { indexes: null }
-      });
-
-      console.log(`${activeTab} key metrics response:`, response.data);
-      
-      setKeyMetrics(response.data);
-      
-    } catch (error) {
-      console.error('Failed to fetch key metrics:', error);
-      console.error('Error response:', error.response?.data);
-      // Set default values on error
-      setKeyMetrics([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update the condition to include activeMetrics for non-hazardous tab
-  if (companies.length > 0 && activeYears.length > 0) {
-    if (activeTab === 'non_hazardous_generated') {
-      // For non-hazardous, also wait for activeMetrics
-      if (activeMetrics.length > 0) {
-        fetchKeyMetrics();
-      }
-    } else {
-      // For hazardous tabs, wait for activeWasteType
-      if (activeWasteType.length > 0) {
-        fetchKeyMetrics();
+        // For hazardous tabs, wait for activeWasteType
+        if (activeWasteType.length > 0) {
+          fetchKeyMetrics();
+        }
       }
     }
-  }
-}, [activeTab, companyId, quarter, fromYear, toYear, wasteType, metricsType, unit, companies, activeYears, activeWasteType, activeMetrics, activeUnits]);
+  }, [activeTab, companyId, quarter, fromYear, toYear, wasteType, metricsType, unit, companies, activeYears, activeWasteType, activeMetrics, activeUnits]);
 
   useEffect(() => {
   const fetchHazGenTypePieChart = async () => {
@@ -1596,7 +1596,18 @@ function EnvironmentWasteDash() {
   };
 
   useEffect(() => {
-    clearAllFilters();
+    switch(activeTab) {
+      case 'hazardous_generated':
+        setQuarter([]);
+        setMetrics([]);
+        break;
+      case 'hazardous_disposed':
+        setMetrics([]);
+        break;
+      case 'non_hazardous_generated':
+        setWasteType([]);
+        break;
+    }
   }, [activeTab])
 
   const wasteTypeShortNames = {
