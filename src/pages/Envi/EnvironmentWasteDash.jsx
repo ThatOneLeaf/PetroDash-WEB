@@ -1779,7 +1779,8 @@ function EnvironmentWasteDash() {
         backgroundColor: '#ffffff',
         overflow: 'hidden',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column', 
+        zoom: 0.8
       }}>
         {/* Header */}
         <div style={{ 
