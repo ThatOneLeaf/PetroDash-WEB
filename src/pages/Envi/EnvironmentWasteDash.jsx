@@ -1707,13 +1707,6 @@ function EnvironmentWasteDash() {
     console.log('Key metrics updated:', keyMetrics);
   }, [keyMetrics]);
 
-  // 5. Debug: Add console logs to verify colors are being applied
-  console.log('Current wasteTypeColors:', wasteTypeColors);
-  console.log('Bar chart entry colors:', currentData.barChartData.map(entry => ({
-    waste_type: entry.waste_type,
-    color: wasteTypeColors[entry.waste_type] || entry.color
-  })));
-
   return (
     <div style={{ 
       display: 'flex',
