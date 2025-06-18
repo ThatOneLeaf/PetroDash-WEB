@@ -566,6 +566,7 @@ return (
             value={`${roundUpToNiceNumber(housePowerData?.totals?.est_house_powered || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             unit=""
             title="Estimated No. of Households Powered"
+            label={"Based on average consumption from PIDS (2017)"}
             colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
             style={{ flex: 1 }}
           />
@@ -680,7 +681,7 @@ return (
               <Box sx={{ flex: 1, minHeight: 0, height: '100%' }}>
                 <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
-                    <HorizontalGroupedBarChartComponent
+                    <VerticalStackedBarChartComponent
                       title="sample"
                       data={data?.stacked_bar || []}
                       legendName="Total Energy Generated"
@@ -705,7 +706,7 @@ return (
                       openZoomModal(
                         "Zoomed In: Total Energy Generated (Bar)",
                         "total_energy_generated_bar",
-                        <HorizontalGroupedBarChartComponent
+                        <VerticalStackedBarChartComponent
                       title="sample"
                       data={data?.stacked_bar || []}
                       legendName="Total Energy Generated"
@@ -734,7 +735,7 @@ return (
               <Box sx={{ flex: 1, minHeight: 0, height: '100%' }}>
                 <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
-                    <HorizontalGroupedBarChartComponent
+                    <VerticalStackedBarChartComponent
                       title="Estimated Households Powered Over Time"
                       data={housePowerData?.stacked_bar || []}
                       legendName="Total Energy Generated"

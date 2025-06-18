@@ -65,6 +65,7 @@ const VerticalStackedBarChartComponent = ({
   unit,
   colorMap = {},
   stackId = 'a',
+  yAxisLabel
 }) => {
   if (!data || data.length === 0) return <p>No data available</p>;
 
@@ -101,10 +102,11 @@ const VerticalStackedBarChartComponent = ({
               tickFormatter={(value) => formatXAxis(value, unit)}
               label={{
                 value: autoUnit,
-                position: 'insideLeft',
-                offset: -10,
+                position: 'middle',
+                offset: -25,
                 angle: 0,
-                style: { textAnchor: 'end', fontSize: 12 }
+                dy: 10,
+                style: { textAnchor: 'middle', fontSize: 12}
               }}
             />
             <YAxis

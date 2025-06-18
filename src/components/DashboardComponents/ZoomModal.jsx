@@ -11,7 +11,7 @@
     } from '@mui/material';
     import CloseIcon from '@mui/icons-material/Close';
     import DownloadIcon from '@mui/icons-material/Download';
-    //import * as htmlToImage from 'html-to-image';
+    import * as htmlToImage from 'html-to-image';
 
     const ZoomModal = ({
     open,
