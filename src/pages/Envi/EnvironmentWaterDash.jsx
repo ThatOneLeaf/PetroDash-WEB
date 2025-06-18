@@ -417,7 +417,8 @@ function EnvironmentWaterDash() {
         backgroundColor: '#ffffff',
         overflow: 'hidden',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        zoom: '0.8'  // Add this line
       }}>
         {/* Header - Compact */}
         <div style={{ 
