@@ -11,10 +11,12 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import WorkIcon from '@mui/icons-material/Work';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'; // Add import for Mobile Clinics icon
 import api from '../../services/api';
 import InvestmentPerProjectChart from '../CSR/Charts/InvestmentPerProject';
 import InvestmentPerProgramChart from '../CSR/Charts/InvestmentPerProgram';
 import InvestmentPerCompanyChart from '../CSR/Charts/InvestmentPerCompany';
+import ZoomModal from '../../components/DashboardComponents/ZoomModal'; // Add this import
 
 // KPI configuration for HELP dashboard
 const kpiConfig = [
@@ -22,7 +24,7 @@ const kpiConfig = [
   {
     category: 'HEALTH',
     items: [
-      {
+      { 
         label: 'Beneficiaries of annual medical mission',
         icon: <FavoriteIcon sx={{ color: '#ef4444', fontSize: 40 }} />, 
         key: 'medicalMissionBeneficiaries',
@@ -36,14 +38,20 @@ const kpiConfig = [
       },
       {
         label: 'Nutrition Programs',
-        icon: <RestaurantIcon sx={{ color: '#ef4444', fontSize: 40 }} />, // bigger icon
+        icon: <RestaurantIcon sx={{ color: '#ef4444', fontSize: 40 }} />,
         key: 'nutritionPrograms',
         bgColor: '#f8bcbc',
       },
       {
         label: 'Ambulance Donated',
-        icon: <LocalShippingIcon sx={{ color: '#ef4444', fontSize: 40 }} />, // bigger icon
+        icon: <LocalShippingIcon sx={{ color: '#ef4444', fontSize: 40 }} />, 
         key: 'ambulanceDonated',
+        bgColor: '#f8bcbc',
+      },
+      {
+        label: 'Mobile Clinics',
+        icon: <DirectionsBusIcon sx={{ color: '#ef4444', fontSize: 40 }} />, // icon for mobile clinics
+        key: 'mobileClinics',
         bgColor: '#f8bcbc',
       },
     ],
@@ -101,6 +109,7 @@ function aggregateKPI(data) {
     healthCenterBeneficiaries: 0,
     nutritionPrograms: 0,
     ambulanceDonated: 0,
+    mobileClinics: 0, // Add mobileClinics KPI
     // Education
     adoptedSchools: 0,
     collegeScholars: 0,
@@ -135,6 +144,10 @@ function aggregateKPI(data) {
     if (projectName.includes('ambulance')) {
       // If each row is a donation, count as 1 if csrReport is falsy
       result.ambulanceDonated += csrReport > 0 ? csrReport : 1;
+    }
+    if (projectName.includes('mobile clinic')) {
+      // If each row is a donation, count as 1 if csrReport is falsy
+      result.mobileClinics += csrReport > 0 ? csrReport : 1;
     }
 
     // Education
@@ -302,6 +315,12 @@ export default function HELPDash() {
   const [filters, setFilters] = useState({ year: '', company: '' });
   const [lastUpdated, setLastUpdated] = useState(null);
   const [activeTab, setActiveTab] = useState('HELP'); // 'HELP' or 'Investments'
+  const [zoomModal, setZoomModal] = useState({
+    open: false,
+    content: null,
+    title: '',
+    fileName: ''
+  });
 
   // Fetch HELP activities data from API
   const fetchData = () => {
@@ -360,7 +379,22 @@ export default function HELPDash() {
   // Handle tab switch and clear filters
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
-    clearFilters();
+    if (tab === 'HELP') {
+      // Set most recent year as default
+      setFilters(f => ({
+        ...f,
+        year: yearOptions.length > 0 ? yearOptions[0] : '',
+        company: ''
+      }));
+    } else {
+      // Investments: clear filters (all years)
+      setFilters({ year: '', company: '' });
+    }
+  };
+
+  // Helper to open modal with chart content
+  const openZoomModal = (title, fileName, content) => {
+    setZoomModal({ open: true, title, fileName, content });
   };
 
   return (
@@ -492,7 +526,7 @@ export default function HELPDash() {
                   height: '28px'
                 }}
               >
-                <option value="">All Years</option>
+                {/* No "All Years" option for HELP */}
                 {yearOptions.map(y => (
                   <option key={y} value={y}>{y}</option>
                 ))}
@@ -933,8 +967,27 @@ export default function HELPDash() {
                   height: '100%',
                   minHeight: 0,
                   padding: '10px 10px 8px 10px',
-                  justifyContent: 'flex-start'
+                  justifyContent: 'flex-start',
+                  cursor: 'pointer',
+                  transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
+                  '&:hover': {
+                    boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
+                    borderColor: '#10B981',
+                    transform: 'translateY(-2px) scale(1.01)'
+                  }
                 }}
+                onClick={() =>
+                  openZoomModal(
+                    'Investments per Project',
+                    'investments_per_project',
+                    <InvestmentPerProjectChart
+                      height={500}
+                      width={900}
+                      year={filters.year}
+                      companyId={filters.company}
+                    />
+                  )
+                }
               >
                 <Typography
                   sx={{
@@ -949,7 +1002,12 @@ export default function HELPDash() {
                 </Typography>
                 <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
-                    <InvestmentPerProjectChart height="100%" width="100%" />
+                    <InvestmentPerProjectChart
+                      height="100%"
+                      width="100%"
+                      year={filters.year}
+                      companyId={filters.company}
+                    />
                   </Box>
                 </Box>
               </Paper>
@@ -980,8 +1038,27 @@ export default function HELPDash() {
                     height: '50%',
                     minHeight: 0,
                     padding: '10px 10px 8px 10px',
-                    justifyContent: 'flex-start'
+                    justifyContent: 'flex-start',
+                    cursor: 'pointer',
+                    transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
+                    '&:hover': {
+                      boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
+                      borderColor: '#10B981',
+                      transform: 'translateY(-2px) scale(1.01)'
+                    }
                   }}
+                  onClick={() =>
+                    openZoomModal(
+                      'Investments per Program',
+                      'investments_per_program',
+                      <InvestmentPerProgramChart
+                        height={400}
+                        width={600}
+                        year={filters.year}
+                        companyId={filters.company}
+                      />
+                    )
+                  }
                 >
                   <Typography
                     sx={{
@@ -996,7 +1073,12 @@ export default function HELPDash() {
                   </Typography>
                   <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', height: '100%' }}>
-                      <InvestmentPerProgramChart height="100%" width="100%" />
+                      <InvestmentPerProgramChart
+                        height="100%"
+                        width="100%"
+                        year={filters.year}
+                        companyId={filters.company}
+                      />
                     </Box>
                   </Box>
                 </Paper>
@@ -1015,8 +1097,27 @@ export default function HELPDash() {
                     height: '50%',
                     minHeight: 0,
                     padding: '10px 10px 8px 10px',
-                    justifyContent: 'flex-start'
+                    justifyContent: 'flex-start',
+                    cursor: 'pointer',
+                    transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
+                    '&:hover': {
+                      boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
+                      borderColor: '#10B981',
+                      transform: 'translateY(-2px) scale(1.01)'
+                    }
                   }}
+                  onClick={() =>
+                    openZoomModal(
+                      'Investments per Company',
+                      'investments_per_company',
+                      <InvestmentPerCompanyChart
+                        height={400}
+                        width={600}
+                        year={filters.year}
+                        companyId={filters.company}
+                      />
+                    )
+                  }
                 >
                   <Typography
                     sx={{
@@ -1031,12 +1132,43 @@ export default function HELPDash() {
                   </Typography>
                   <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', height: '100%' }}>
-                      <InvestmentPerCompanyChart height="100%" width="100%" />
+                      <InvestmentPerCompanyChart
+                        height="100%"
+                        width="100%"
+                        year={filters.year}
+                        companyId={filters.company}
+                      />
                     </Box>
                   </Box>
                 </Paper>
               </Box>
             </Box>
+            {/* Zoom Modal */}
+            <ZoomModal
+              open={zoomModal.open}
+              onClose={() => setZoomModal({ ...zoomModal, open: false })}
+              title={zoomModal.title}
+              downloadFileName={zoomModal.fileName}
+              enableDownload={true}
+              maxWidth="xl"
+              height={600}
+            >
+              <Box sx={{
+                padding: '20px',
+                margin: '0 auto',
+                width: 'calc(100% - 40px)',
+                height: 'calc(100% - 40px)',
+                overflow: 'hidden',
+                '& .recharts-wrapper': {
+                  margin: '0 auto',
+                },
+                '& .recharts-surface': {
+                  overflow: 'visible',
+                }
+              }}>
+                {zoomModal.content}
+              </Box>
+            </ZoomModal>
           </>
         )}
       </Box>

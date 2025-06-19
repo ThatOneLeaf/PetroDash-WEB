@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Box, Typography, CircularProgress, IconButton, Tooltip as MuiTooltip } from "@mui/material";
+import { Paper, Box, Typography, CircularProgress } from "@mui/material";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import api from "../../../services/api";
 import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
 
@@ -86,22 +85,22 @@ const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
           interval={0}
           // angle={40}
           tick={{ fontSize: 10 }}
-          label={{
-            value: "Company Name",
-            position: "insideBottom",
-            offset: -10
-          }}
+          // label={{
+          //   value: "Company Name",
+          //   position: "insideBottom",
+          //   offset: -10
+          // }}
         />
         <YAxis
           type="number"
           tickFormatter={(value) => `₱${value.toLocaleString()}`}
           tick={{ fontSize: 10 }}
-          label={{
-            value: "Investment (₱)",
-            angle: -90,
-            position: "insideLeft",
-            offset: 0
-          }}
+          // label={{
+          //   value: "Investment (₱)",
+          //   angle: -90,
+          //   position: "insideLeft",
+          //   offset: 0
+          // }}
         />
         <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
         <Legend verticalAlign="top" align="right" />
@@ -116,14 +115,6 @@ const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
 
   return (
     <Box sx={{ p: 0, width: "100%", height: "100%", minHeight: 0 }}>
-      <Box display="flex" alignItems="center" justifyContent="flex-end" sx={{ mb: 1 }}>
-        {/* Zoom Button */}
-        <MuiTooltip title="Zoom">
-          <IconButton onClick={() => setZoomOpen(true)} size="small">
-            <ZoomInIcon />
-          </IconButton>
-        </MuiTooltip>
-      </Box>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={100} height="100%">
           <CircularProgress />
@@ -154,3 +145,4 @@ const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
 };
 
 export default InvestmentPerCompany;
+

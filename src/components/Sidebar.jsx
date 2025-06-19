@@ -154,6 +154,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
 
   // Helper: map current path to dashboard/repository equivalent
   const getToggledPath = (pathname, newMode) => {
+    // Overview Dashboard to Energy Repository
+    if (pathname === "/dashboard" && newMode === "repository") {
+      return "/energy/power-generation";
+    }
     // Economics
     if (pathname.startsWith("/economic")) {
       return newMode === "dashboard" ? "/economic" : "/economic/repository";

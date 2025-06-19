@@ -680,100 +680,92 @@ function EnvironmentWaterDash() {
           minHeight: 0
         }}>
           {/* Pie Chart - Takes full height of first column */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            padding: '12px', 
-            borderRadius: '8px', 
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0,
-            position: 'relative'
-          }}>
-            {/* Zoom button */}
-            <IconButton
-              onClick={() => openZoomModal(
-                'Water Volume Summary', 
-                'water-volume-summary',
-                // Pass content as a function that returns JSX
-                () => (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ flex: 1, minHeight: 400 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={150}
-                            innerRadius={60}
-                            fill="#8884d8"
-                            dataKey="value"
-                            paddingAngle={2}
-                            startAngle={90}
-                            endAngle={450}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={entry.color || COLORS[index % COLORS.length]} 
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip content={renderCustomTooltip} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    {/* Legend */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                      fontSize: '14px',
-                      marginTop: '16px',
-                      padding: '16px'
-                    }}>
-                      {pieData.map((entry, index) => (
-                        <div
-                          key={index}
-                          style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px'
-                          }}
+          <div
+            style={{
+              backgroundColor: 'white',
+              padding: '12px',
+              borderRadius: '8px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              position: 'relative',
+              cursor: 'pointer',
+              transition: 'box-shadow 0.2s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}
+            onClick={() => openZoomModal(
+              'Water Volume Summary',
+              'water-volume-summary',
+              () => (
+                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ flex: 1, minHeight: 400 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={150}
+                          innerRadius={60}
+                          fill="#8884d8"
+                          dataKey="value"
+                          paddingAngle={2}
+                          startAngle={90}
+                          endAngle={450}
                         >
-                          <div style={{
-                            width: '16px',
-                            height: '16px',
-                            backgroundColor: entry.color || COLORS[index % COLORS.length],
-                            borderRadius: '2px',
-                            flexShrink: 0
-                          }}></div>
-                          <span style={{ fontWeight: '500', fontSize: '14px' }}>
-                            {entry.label}: {(entry.value || 0).toLocaleString()} {unit}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                          {pieData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.color || COLORS[index % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip content={renderCustomTooltip} />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                )
-              )}
-              sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                zIndex: 10,
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 1)',
-                }
-              }}
-              size="small"
-            >
-              <ZoomInIcon fontSize="small" />
-            </IconButton>
+                  {/* Legend */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    fontSize: '14px',
+                    marginTop: '16px',
+                    padding: '16px'
+                  }}>
+                    {pieData.map((entry, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          backgroundColor: entry.color || COLORS[index % COLORS.length],
+                          borderRadius: '2px',
+                          flexShrink: 0
+                        }}></div>
+                        <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                          {entry.label}: {(entry.value || 0).toLocaleString()} {unit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
+            onMouseOver={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)'; }}
+            onMouseOut={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }}
+            title="Click to enlarge"
+          >
+            {/* Remove IconButton */}
             <h3 style={{
               fontSize: '13px',
               fontWeight: '600',
@@ -825,9 +817,9 @@ function EnvironmentWaterDash() {
                         endAngle={450}
                       >
                         {pieData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.color || COLORS[index % COLORS.length]} 
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color || COLORS[index % COLORS.length]}
                           />
                         ))}
                       </Pie>
@@ -849,9 +841,9 @@ function EnvironmentWaterDash() {
                   {pieData.map((entry, index) => (
                     <div
                       key={index}
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '4px'
                       }}
                     >
@@ -873,100 +865,92 @@ function EnvironmentWaterDash() {
           </div>
 
           {/* Second Column - Line Chart and Stacked Bar Chart */}
-          <div style={{ 
+          <div style={{
             display: 'flex',
             flexDirection: 'column',
             gap: '15px',
             minHeight: 0
           }}>
             {/* Line Chart - Top half of second column */}
-            <div style={{ 
-              flex: 1,
-              backgroundColor: 'white', 
-              padding: '12px', 
-              borderRadius: '8px', 
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 0,
-              position: 'relative'
-            }}>
-              {/* Zoom button */}
-              <IconButton
-                onClick={() => openZoomModal(
-                  'Water Volumes Over Time', 
-                  'water-volumes-over-time',
-                  () => (
-                    <div style={{ width: '100%', height: '100%' }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={lineChartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis 
-                            dataKey="year" 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                          />
-                          <YAxis 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                          />
-                          <Tooltip 
-                            formatter={(value, name) => [
-                              `${Number(value).toLocaleString()} ${unit}`, 
-                              name
-                            ]}
-                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                            contentStyle={{ fontSize: '14px' }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '14px' }} />
-                          <Line 
-                            type="monotone" 
-                            dataKey="abstracted" 
-                            stroke="#3B82F6" 
-                            strokeWidth={4}
-                            dot={{ fill: '#3B82F6', strokeWidth: 3, r: 5 }}
-                            name="Abstracted"
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="discharged" 
-                            stroke="#F97316" 
-                            strokeWidth={4}
-                            dot={{ fill: '#F97316', strokeWidth: 3, r: 5 }}
-                            name="Discharged"
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="consumed" 
-                            stroke="#10B981" 
-                            strokeWidth={4}
-                            dot={{ fill: '#10B981', strokeWidth: 3, r: 5 }}
-                            name="Consumed"
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )
-                )}
-                sx={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  zIndex: 10,
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 1)',
-                  }
-                }}
-                size="small"
-              >
-                <ZoomInIcon fontSize="small" />
-              </IconButton>
-              <h3 style={{ 
-                fontSize: '13px', 
-                fontWeight: '600', 
+            <div
+              style={{
+                flex: 1,
+                backgroundColor: 'white',
+                padding: '12px',
+                borderRadius: '8px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'box-shadow 0.2s',
+              }}
+              onClick={() => openZoomModal(
+                'Water Volumes Over Time',
+                'water-volumes-over-time',
+                () => (
+                  <div style={{ width: '100%', height: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={lineChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="year"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 14, fill: '#64748b' }}
+                        />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 14, fill: '#64748b' }}
+                        />
+                        <Tooltip
+                          formatter={(value, name) => [
+                            `${Number(value).toLocaleString()} ${unit}`,
+                            name
+                          ]}
+                          labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                          contentStyle={{ fontSize: '14px' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '14px' }} />
+                        <Line
+                          type="monotone"
+                          dataKey="abstracted"
+                          stroke="#3B82F6"
+                          strokeWidth={4}
+                          dot={{ fill: '#3B82F6', strokeWidth: 3, r: 5 }}
+                          name="Abstracted"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="discharged"
+                          stroke="#F97316"
+                          strokeWidth={4}
+                          dot={{ fill: '#F97316', strokeWidth: 3, r: 5 }}
+                          name="Discharged"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="consumed"
+                          stroke="#10B981"
+                          strokeWidth={4}
+                          dot={{ fill: '#10B981', strokeWidth: 3, r: 5 }}
+                          name="Consumed"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )
+              )}
+              onMouseOver={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)'; }}
+              onMouseOut={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }}
+              title="Click to enlarge"
+            >
+              {/* Remove IconButton */}
+              <h3 style={{
+                fontSize: '13px',
+                fontWeight: '600',
                 marginBottom: '10px',
                 color: '#1e293b',
                 flexShrink: 0
@@ -990,46 +974,46 @@ function EnvironmentWaterDash() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={lineChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="year" 
+                      <XAxis
+                        dataKey="year"
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 10, fill: '#64748b' }}
                       />
-                      <YAxis 
+                      <YAxis
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 10, fill: '#64748b' }}
                       />
-                      <Tooltip 
+                      <Tooltip
                         formatter={(value, name) => [
-                          `${Number(value).toLocaleString()} ${unit}`, 
+                          `${Number(value).toLocaleString()} ${unit}`,
                           name
                         ]}
                         labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                         contentStyle={{ fontSize: '12px' }}
                       />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Line 
-                        type="monotone" 
-                        dataKey="abstracted" 
-                        stroke="#3B82F6" 
+                      <Line
+                        type="monotone"
+                        dataKey="abstracted"
+                        stroke="#3B82F6"
                         strokeWidth={2}
                         dot={{ fill: '#3B82F6', strokeWidth: 2, r: 3 }}
                         name="Abstracted"
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="discharged" 
-                        stroke="#F97316" 
+                      <Line
+                        type="monotone"
+                        dataKey="discharged"
+                        stroke="#F97316"
                         strokeWidth={2}
                         dot={{ fill: '#F97316', strokeWidth: 2, r: 3 }}
                         name="Discharged"
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="consumed" 
-                        stroke="#10B981" 
+                      <Line
+                        type="monotone"
+                        dataKey="consumed"
+                        stroke="#10B981"
                         strokeWidth={2}
                         dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
                         name="Consumed"
@@ -1041,93 +1025,85 @@ function EnvironmentWaterDash() {
             </div>
 
             {/* Stacked Bar Chart - Bottom half of second column */}
-            <div style={{ 
-              flex: 1,
-              backgroundColor: 'white', 
-              padding: '12px', 
-              borderRadius: '8px', 
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 0,
-              position: 'relative'
-            }}>
-              {/* Zoom button */}
-              <IconButton
-                onClick={() => openZoomModal(
-                  'Water Management by Quarter', 
-                  'water-management-by-quarter',
-                  () => (
-                    <div style={{ width: '100%', height: '100%' }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={stackedBarData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis 
-                            dataKey="quarter" 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                          />
-                          <YAxis 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                          />
-                          <Tooltip 
-                            formatter={(value, name) => [
-                              `${Number(value).toLocaleString()} ${unit}`, 
-                              name
-                            ]}
-                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                            contentStyle={{ fontSize: '14px' }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '14px' }} />
-                          <Bar 
-                            dataKey="abstracted" 
-                            stackId="a" 
-                            strokeWidth={2}
-                            stroke="#3B82F6"
-                            fill="#3B82F6"
-                            name="Abstracted"
-                          />
-                          <Bar 
-                            dataKey="discharged" 
-                            stackId="a" 
-                            strokeWidth={2}
-                            stroke="#F97316"
-                            fill="#F97316"
-                            name="Discharged"
-                          />
-                          <Bar 
-                            dataKey="consumed" 
-                            stackId="a" 
-                            strokeWidth={2}
-                            stroke="#10B981"
-                            fill="#10B981"
-                            name="Consumed"
-                          />
-                        </ComposedChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )
-                )}
-                sx={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  zIndex: 10,
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 1)',
-                  }
-                }}
-                size="small"
-              >
-                <ZoomInIcon fontSize="small" />
-              </IconButton>
-              <h3 style={{ 
-                fontSize: '13px', 
-                fontWeight: '600', 
+            <div
+              style={{
+                flex: 1,
+                backgroundColor: 'white',
+                padding: '12px',
+                borderRadius: '8px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'box-shadow 0.2s',
+              }}
+              onClick={() => openZoomModal(
+                'Water Management by Quarter',
+                'water-management-by-quarter',
+                () => (
+                  <div style={{ width: '100%', height: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={stackedBarData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="quarter"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 14, fill: '#64748b' }}
+                        />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 14, fill: '#64748b' }}
+                        />
+                        <Tooltip
+                          formatter={(value, name) => [
+                            `${Number(value).toLocaleString()} ${unit}`,
+                            name
+                          ]}
+                          labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                          contentStyle={{ fontSize: '14px' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '14px' }} />
+                        <Bar
+                          dataKey="abstracted"
+                          stackId="a"
+                          strokeWidth={2}
+                          stroke="#3B82F6"
+                          fill="#3B82F6"
+                          name="Abstracted"
+                        />
+                        <Bar
+                          dataKey="discharged"
+                          stackId="a"
+                          strokeWidth={2}
+                          stroke="#F97316"
+                          fill="#F97316"
+                          name="Discharged"
+                        />
+                        <Bar
+                          dataKey="consumed"
+                          stackId="a"
+                          strokeWidth={2}
+                          stroke="#10B981"
+                          fill="#10B981"
+                          name="Consumed"
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                )
+              )}
+              onMouseOver={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.15)'; }}
+              onMouseOut={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }}
+              title="Click to enlarge"
+            >
+              {/* Remove IconButton */}
+              <h3 style={{
+                fontSize: '13px',
+                fontWeight: '600',
                 marginBottom: '10px',
                 color: '#1e293b',
                 flexShrink: 0
@@ -1136,8 +1112,8 @@ function EnvironmentWaterDash() {
               </h3>
               
               {!stackedBarData || stackedBarData.length === 0 ? (
-                <div style={{ 
-                  textAlign: 'center', 
+                <div style={{
+                  textAlign: 'center',
                   padding: '30px 15px',
                   color: '#64748b',
                   backgroundColor: '#f8fafc',
@@ -1151,45 +1127,45 @@ function EnvironmentWaterDash() {
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={stackedBarData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="quarter" 
+                      <XAxis
+                        dataKey="quarter"
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 10, fill: '#64748b' }}
                       />
-                      <YAxis 
+                      <YAxis
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 10, fill: '#64748b' }}
                       />
-                      <Tooltip 
+                      <Tooltip
                         formatter={(value, name) => [
-                          `${Number(value).toLocaleString()} ${unit}`, 
+                          `${Number(value).toLocaleString()} ${unit}`,
                           name
                         ]}
                         labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                         contentStyle={{ fontSize: '12px' }}
                       />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Bar 
-                        dataKey="abstracted" 
-                        stackId="a" 
+                      <Bar
+                        dataKey="abstracted"
+                        stackId="a"
                         strokeWidth={2}
                         stroke="#3B82F6"
                         fill="#3B82F6"
                         name="Abstracted"
                       />
-                      <Bar 
-                        dataKey="discharged" 
-                        stackId="a" 
+                      <Bar
+                        dataKey="discharged"
+                        stackId="a"
                         strokeWidth={2}
                         stroke="#F97316"
                         fill="#F97316"
                         name="Discharged"
                       />
-                      <Bar 
-                        dataKey="consumed" 
-                        stackId="a" 
+                      <Bar
+                        dataKey="consumed"
+                        stackId="a"
                         strokeWidth={2}
                         stroke="#10B981"
                         fill="#10B981"

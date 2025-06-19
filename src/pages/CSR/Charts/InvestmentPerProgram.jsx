@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Box, Typography, CircularProgress, IconButton, Tooltip as MuiTooltip } from "@mui/material";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import { Paper, Box, Typography, CircularProgress } from "@mui/material";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
+// import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
 import api from "../../../services/api";
 
@@ -12,6 +12,24 @@ import api from "../../../services/api";
  * - height: number (optional)
  * - width: number (optional)
  */
+
+// Program color map
+const programColorMap = {
+  health: "#ef4444",
+  education: "#1976d2",
+  livelihood: "#fbbf24",
+  default: "#a3a3a3"
+};
+
+// Helper to get program from programName
+function getProgram(row) {
+  const name = (row.programName || "").toLowerCase();
+  if (name.includes("health")) return "health";
+  if (name.includes("education")) return "education";
+  if (name.includes("livelihood")) return "livelihood";
+  return "default";
+}
+
 const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -54,6 +72,15 @@ const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
       .finally(() => setLoading(false));
   }, [year, companyId, yearProp]);
 
+  // Calculate max program name length for dynamic offset
+  const maxProgramNameLength = data.reduce(
+    (max, row) => Math.max(max, (row.programName || '').length),
+    0
+  );
+  // Adjust X axis label offset and tick font size based on name length
+  const xAxisLabelOffset = maxProgramNameLength > 18 ? -15 : -5;
+  const xAxisTickFontSize = maxProgramNameLength > 18 ? 10 : 11;
+
   // Helper to wrap legend name and adjust font size
   const getWrappedLegendName = (name) => {
     const words = name.split(" ");
@@ -84,43 +111,57 @@ const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
           dataKey="programName"
           type="category"
           interval={0}
-          tick={{ fontSize: 11 }}
-          label={{
-            value: "Program Name",
-            position: "insideBottom",
-            offset: -5
-          }}
+          tick={{ fontSize: 10 }}
         />
         <YAxis
           type="number"
+          tick={{ fontSize: 10 }}
           tickFormatter={(value) => `₱${value.toLocaleString()}`}
         />
         <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
-        <Legend verticalAlign="middle" align="right" layout="vertical" />
+        {/* Remove default Legend, add custom legend if needed */}
+        {/* <Legend verticalAlign="middle" align="right" layout="vertical" /> */}
         <Bar
           dataKey="projectExpenses"
           name={getWrappedLegendName("Investment Per Program")}
           fill="#1976d2"
-        />
+        >
+          {data.map((entry, idx) => (
+            <Cell
+              key={`cell-${idx}`}
+              fill={programColorMap[getProgram(entry)] || programColorMap.default}
+            />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
 
   return (
     <Box sx={{ p: 0, width: "100%", height: "100%", minHeight: 0 }}>
-      <Box display="flex" alignItems="center" justifyContent="flex-end" sx={{ mb: 1 }}>
+      {/* Removed Zoom Icon/Button */}
+      {/* <Box display="flex" alignItems="center" justifyContent="flex-end" sx={{ mb: 1 }}>
         <MuiTooltip title="Zoom In">
           <IconButton onClick={() => setZoomOpen(true)} size="small">
             <ZoomInIcon />
           </IconButton>
         </MuiTooltip>
-      </Box>
+      </Box> */}
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={100} height="100%">
           <CircularProgress />
         </Box>
       ) : (
-        <Box sx={{ width: "100%", height: "100%", minHeight: 0 }}>
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            minHeight: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
           {renderChart("100%", "100%")}
         </Box>
       )}

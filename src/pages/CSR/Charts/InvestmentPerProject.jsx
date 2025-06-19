@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Box, Typography, CircularProgress, IconButton, Tooltip as MuiTooltip } from "@mui/material";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import { Paper, Box, Typography, CircularProgress } from "@mui/material";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
+// import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import api from "../../../services/api";
 import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
 
@@ -18,6 +18,30 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
   const [year, setYear] = useState(yearProp || null);
   const [availableYears, setAvailableYears] = useState([]);
   const [zoomOpen, setZoomOpen] = useState(false);
+
+  // Define program colors (should match KPI colors)
+  const PROGRAM_COLORS = {
+    health: "#ef4444",      // red-500
+    education: "#1976d2",   // blue-700
+    livelihood: "#fbbf24",  // yellow-400
+    default: "#a3a3a3"      // neutral-400
+  };
+
+  // Helper to determine program by project/program name
+  function getProgram(row) {
+    const project = String(row.projectName || '').toLowerCase();
+    const program = String(row.programName || '').toLowerCase();
+    if (program.includes('health') || project.includes('medical') || project.includes('health center') || project.includes('ambulance') || project.includes('nutrition') || project.includes('feeding') || project.includes('supplement')) {
+      return 'health';
+    }
+    if (program.includes('education') || project.includes('school') || project.includes('scholar') || project.includes('teacher') || project.includes('tablet') || project.includes('mobile device') || project.includes('educational device')) {
+      return 'education';
+    }
+    if (program.includes('livelihood') || project.includes('livelihood')) {
+      return 'livelihood';
+    }
+    return 'default';
+  }
 
   // Fetch available years for default selection
   useEffect(() => {
@@ -54,71 +78,76 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
       .finally(() => setLoading(false));
   }, [year, companyId, yearProp]);
 
-  // Helper to wrap legend name and adjust font size
-  const getWrappedLegendName = (name) => {
-    const words = name.split(" ");
-    let fontSize = 16;
-    if (words.length > 4) fontSize = 11;
-    else if (words.length > 3) fontSize = 13;
-    else if (words.length > 2) fontSize = 14;
-    if (words.length > 2) {
-      return (
-        <span style={{ fontSize }}>
-          {words.slice(0, 2).join(" ")}
-          <br />
-          {words.slice(2).join(" ")}
-        </span>
-      );
-    }
-    return <span style={{ fontSize }}>{name}</span>;
-  };
-
   // Chart rendering logic as a function for reuse in modal
   const renderChart = (h = height || 350, w = width || "100%") => (
-    <ResponsiveContainer width={w} height={h}>
-      <BarChart
-        data={data}
-        layout="vertical"
-        margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
-      >
-        <XAxis
-          type="number"
-          tickFormatter={(value) => `₱${value.toLocaleString()}`}
-        />
-        <YAxis
-          type="category"
-          dataKey="projectName"
-          width={120}
-          interval={0}
-          tick={{ fontSize: 11 }}
-          label={{
-            value: "Project Name",
-            angle: -90,
-            position: "insideleft",
-            offset: 0
-          }}
-        />
-        <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
-        <Legend verticalAlign="middle" align="right" layout="vertical" />
-        <Bar
-          dataKey="projectExpenses"
-          name={getWrappedLegendName("Investment (₱)")}
-          fill="#1976d2"
-        />
-      </BarChart>
-    </ResponsiveContainer>
+    <Box sx={{ width: "100%", height: "100%", overflow: "hidden" }}>
+      <Box sx={{ width: "100%", height: h, overflow: "hidden" }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
+          >
+            <XAxis
+              type="number"
+              tick={{ fontSize: 10 }}
+              tickFormatter={(value) => `₱${value.toLocaleString()}`}
+            />
+            <YAxis
+              type="category"
+              dataKey="projectName"
+              width={120}
+              interval={0}
+              tick={{ fontSize: 10 }}
+            />
+            <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
+            {/* <Legend verticalAlign="middle" align="right" layout="vertical" /> */}
+            <Bar
+              dataKey="projectExpenses"
+              name="Investment (₱)"
+            >
+              {data.map((entry, idx) => (
+                <Cell
+                  key={`cell-${idx}`}
+                  fill={PROGRAM_COLORS[getProgram(entry)] || PROGRAM_COLORS.default}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </Box>
+      {/* Custom Legend */}
+      <Box display="flex" flexWrap="wrap" alignItems="center" mt={1} gap={2}>
+        <Box display="flex" alignItems="center">
+          <Box sx={{ width: 16, height: 16, bgcolor: PROGRAM_COLORS.health, mr: 1, borderRadius: 0.5, border: '1px solid #ccc' }} />
+          <Typography variant="caption">Health</Typography>
+        </Box>
+        <Box display="flex" alignItems="center">
+          <Box sx={{ width: 16, height: 16, bgcolor: PROGRAM_COLORS.education, mr: 1, borderRadius: 0.5, border: '1px solid #ccc' }} />
+          <Typography variant="caption">Education</Typography>
+        </Box>
+        <Box display="flex" alignItems="center">
+          <Box sx={{ width: 16, height: 16, bgcolor: PROGRAM_COLORS.livelihood, mr: 1, borderRadius: 0.5, border: '1px solid #ccc' }} />
+          <Typography variant="caption">Livelihood</Typography>
+        </Box>
+        <Box display="flex" alignItems="center">
+          <Box sx={{ width: 16, height: 16, bgcolor: PROGRAM_COLORS.default, mr: 1, borderRadius: 0.5, border: '1px solid #ccc' }} />
+          <Typography variant="caption">Other</Typography>
+        </Box>
+      </Box>
+    </Box>
   );
 
   return (
     <Box sx={{ p: 0, width: "100%", height: "100%", minHeight: 0 }}>
-      <Box display="flex" alignItems="center" justifyContent="flex-end" sx={{ mb: 1 }}>
-        {/* Zoom Button */}
+      {/* Removed Zoom Icon/Button */}
+      {/* <Box display="flex" alignItems="center" justifyContent="flex-end" sx={{ mb: 1 }}>
         <MuiTooltip title="Zoom">
           <IconButton onClick={() => setZoomOpen(true)} size="small">
             <ZoomInIcon />
           </IconButton>
         </MuiTooltip>
-      </Box>
+      </Box> */}
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={100} height="100%">
           <CircularProgress />
