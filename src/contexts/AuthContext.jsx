@@ -37,7 +37,11 @@ export const AuthProvider = ({ children }) => {
 
       // Fetch user details from API
       try {
-        const response = await api.get('/auth/me');
+        const response = await api.get('/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`
+          }
+        });
         setUser(response.data);
       } catch (error) {
         console.error('Failed to fetch user details:', error);
@@ -73,7 +77,12 @@ export const AuthProvider = ({ children }) => {
       setToken(data.access_token);
 
       // Fetch user details and store in memory
-      const userResponse = await api.get('/auth/me');
+      // Create a new API instance with the token to ensure it's sent
+      const userResponse = await api.get('/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${data.access_token}`
+        }
+      });
       setUser(userResponse.data);
 
       return data;
