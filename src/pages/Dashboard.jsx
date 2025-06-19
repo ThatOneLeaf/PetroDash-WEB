@@ -20,7 +20,6 @@ import EnviOverview from '../components/DashboardComponents/EnviOverview';
 import DashboardHeader from '../components/DashboardComponents/DashboardHeader';
 import { format } from 'date-fns';
 import HELPINvestments from './CSR/Charts/InvestmentKPI'
-import EnviOverview from '../components/DashboardComponents/EnviOverview'; // Import the EnviOverview component
 import EnergyTable from '../components/EnergyOverallTable';
 
 function Dashboard() {
