@@ -63,23 +63,10 @@ const HROverview = () => {
       }}
     >
       <Typography
-        variant="body2"
-        sx={{
-          fontSize: "0.75rem",
-          fontWeight: "bold",
-          mb: 0.5,
-          // textTransform: 'uppercase',
-          letterSpacing: "0.5px",
-        }}
-      >
-        {title}
-      </Typography>
-      <Typography
         variant="h5"
         sx={{
           fontWeight: "bold",
           fontSize: "1.5rem",
-          // fontFamily: 'monospace'
         }}
       >
         {loading ? "######" : formatNumber(value)}
@@ -88,6 +75,18 @@ const HROverview = () => {
             {unit}
           </Typography>
         )}
+      </Typography>
+
+      <Typography
+        variant="body2"
+        sx={{
+          fontSize: "0.75rem",
+          fontWeight: "bold",
+          mt: 0.5, // margin-top instead of mb
+          letterSpacing: "0.5px",
+        }}
+      >
+        {title}
       </Typography>
     </Paper>
   );
@@ -101,7 +100,7 @@ const HROverview = () => {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "1fr 1fr 1fr",
           gap: 1.5,
           height: "100%",
         }}
@@ -111,6 +110,7 @@ const HROverview = () => {
           value={totalSafetyManhours}
           color="#2E4057"
         />
+        <MetricCard title="Total Safety Manpower" value={0} color="#2E4057" />
         <MetricCard
           title="Total Training Hours"
           value={totalTrainingHours}
