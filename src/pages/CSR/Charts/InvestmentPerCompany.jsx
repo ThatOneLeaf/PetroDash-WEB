@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { Paper, Box, Typography, CircularProgress, IconButton, Tooltip as MuiTooltip } from "@mui/material";
-import BarChartComponent from "../../../components/charts/BarChartComponent";
-import api from "../../../services/api";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import api from "../../../services/api";
 import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
 
 /**
  * Props:
  * - year: number (optional)
- * - companyId: string (optional)
  * - height: number (optional)
  * - width: number (optional)
  */
-const InvestmentPerCompany = ({ year: yearProp, companyId, height, width }) => {
+const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState(yearProp || null);
+  const [availableYears, setAvailableYears] = useState([]);
   const [zoomOpen, setZoomOpen] = useState(false);
 
   // Fetch available years for default selection
@@ -27,9 +27,10 @@ const InvestmentPerCompany = ({ year: yearProp, companyId, height, width }) => {
           new Set((res.data || []).map((item) => item.projectYear))
         ).filter(Boolean);
         years.sort((a, b) => b - a); // Descending
+        setAvailableYears(years);
         if (!yearProp && years.length > 0) setYear(years[0]);
       })
-      .catch(() => {/* do nothing */});
+      .catch(() => setAvailableYears([]));
   }, [yearProp]);
 
   // Fetch data from API
@@ -40,32 +41,25 @@ const InvestmentPerCompany = ({ year: yearProp, companyId, height, width }) => {
       .get("/help/investments-per-company", {
         params: {
           ...(year ? { year } : {}),
-          ...(companyId ? { company_id: companyId } : {}),
         },
       })
       .then((res) => {
-        // Sort data in descending order by projectExpenses
-        const sorted = (res.data || []).slice().sort((a, b) => b.projectExpenses - a.projectExpenses);
+        console.log("API data:", res.data); // <-- Add this line
+        // Sort data in descending order by companyExpenses
+        const sorted = (res.data || []).slice().sort((a, b) => b.companyExpenses - a.companyExpenses);
         setData(sorted);
       })
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, [year, companyId, yearProp]);
+  }, [year, yearProp]);
 
-  // Map API data to BarChartComponent format
-  const chartData = data.map(item => ({
-    name: item.companyName,
-    value: item.projectExpenses
-  }));
-
-  // Chart rendering logic for modal reuse
+  // Helper to wrap legend name and adjust font size
   const getWrappedLegendName = (name) => {
     const words = name.split(" ");
     let fontSize = 16;
     if (words.length > 4) fontSize = 11;
     else if (words.length > 3) fontSize = 13;
     else if (words.length > 2) fontSize = 14;
-    // Wrap after 2 words
     if (words.length > 2) {
       return (
         <span style={{ fontSize }}>
@@ -78,34 +72,60 @@ const InvestmentPerCompany = ({ year: yearProp, companyId, height, width }) => {
     return <span style={{ fontSize }}>{name}</span>;
   };
 
+  console.log(data)
+
+  // Chart rendering logic as a function for reuse in modal
   const renderChart = (h = height || 350, w = width || "100%") => (
-    <BarChartComponent
-      title="Investments Per Company"
-      data={chartData}
-      legendName={getWrappedLegendName("Investment (₱)")}
-      unit="₱"
-      height={h}
-      width={w}
-      legendPosition="right"
-    />
+    <ResponsiveContainer width={w} height={h}>
+      <BarChart
+        data={data}
+        margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
+      >
+        <XAxis
+          dataKey="companyId"
+          interval={0}
+          // angle={40}
+          tick={{ fontSize: 10 }}
+          label={{
+            value: "Company Name",
+            position: "insideBottom",
+            offset: -10
+          }}
+        />
+        <YAxis
+          type="number"
+          tickFormatter={(value) => `₱${value.toLocaleString()}`}
+          tick={{ fontSize: 10 }}
+          label={{
+            value: "Investment (₱)",
+            angle: -90,
+            position: "insideLeft",
+            offset: 0
+          }}
+        />
+        <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
+        <Legend verticalAlign="top" align="right" />
+        <Bar
+          dataKey="projectExpenses"
+          name={getWrappedLegendName("Investment (₱)")}
+          fill="#1976d2"
+        />
+      </BarChart>
+    </ResponsiveContainer>
   );
 
   return (
-    <Paper sx={{ p: 3, borderRadius: 2, width: "100%", minHeight: 0, height: "100%" }}>
-      <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          Investments Per Company
-        </Typography>
-        <Box display="flex" alignItems="center" gap={1}>
-          <MuiTooltip title="Zoom">
-            <IconButton onClick={() => setZoomOpen(true)} size="small">
-              <ZoomInIcon />
-            </IconButton>
-          </MuiTooltip>
-        </Box>
+    <Box sx={{ p: 0, width: "100%", height: "100%", minHeight: 0 }}>
+      <Box display="flex" alignItems="center" justifyContent="flex-end" sx={{ mb: 1 }}>
+        {/* Zoom Button */}
+        <MuiTooltip title="Zoom">
+          <IconButton onClick={() => setZoomOpen(true)} size="small">
+            <ZoomInIcon />
+          </IconButton>
+        </MuiTooltip>
       </Box>
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight={300} height="100%">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight={100} height="100%">
           <CircularProgress />
         </Box>
       ) : (
@@ -114,7 +134,7 @@ const InvestmentPerCompany = ({ year: yearProp, companyId, height, width }) => {
         </Box>
       )}
       {!loading && data.length === 0 && (
-        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
+        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
           No data available for the selected filters.
         </Typography>
       )}
@@ -129,7 +149,7 @@ const InvestmentPerCompany = ({ year: yearProp, companyId, height, width }) => {
       >
         {renderChart(550, "100%")}
       </ZoomModal>
-    </Paper>
+    </Box>
   );
 };
 
