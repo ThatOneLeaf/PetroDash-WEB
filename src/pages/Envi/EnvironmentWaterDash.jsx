@@ -19,6 +19,10 @@ import {
 import Sidebar from '../../components/Sidebar';
 import MultiSelectWithChips from "../../components/DashboardComponents/MultiSelectDropdown";
 import StyledSelect from "../../components/DashboardComponents/StyledSelect";
+import RefreshIcon from '@mui/icons-material/Refresh';
+import ZoomModal from "../../components/DashboardComponents/ZoomModal"; // Adjust path as needed
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import { IconButton } from '@mui/material';
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981'];
 
@@ -51,6 +55,21 @@ function EnvironmentWaterDash() {
 
   // New state for available years from API
   const [availableYears, setAvailableYears] = useState([]);
+
+  const [zoomModal, setZoomModal] = useState({ 
+    open: false, 
+    content: null, 
+    title: '', 
+    fileName: '' 
+  });
+  const openZoomModal = (title, fileName, content) => {
+    setZoomModal({ 
+      open: true, 
+      title, 
+      fileName, 
+      content 
+    });
+  };
 
   // Function to format the current date and time
   const formatDateTime = (date) => {
@@ -449,7 +468,7 @@ function EnvironmentWaterDash() {
       <div style={{ 
         flex: 1,
         padding: '15px',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f4f6fb',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -492,7 +511,7 @@ function EnvironmentWaterDash() {
           <button 
             onClick={handleRefresh}
             style={{
-              backgroundColor: '#3B82F6',
+              backgroundColor: '#1976d2',
               color: 'white',
               border: 'none',
               padding: '8px 16px',
@@ -501,14 +520,16 @@ function EnvironmentWaterDash() {
               alignItems: 'center',
               gap: '8px',
               cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '500',
-              transition: 'background-color 0.2s ease'
+              fontSize: '13px',
+              fontWeight: '700',
+              transition: 'background-color 0.2s ease',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
             }}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#2563EB'}
-            onMouseOut={(e) => e.target.style.backgroundColor = '#3B82F6'}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#115293'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#1976d2'}
           >
-            🔄 REFRESH
+            <RefreshIcon style={{ fontSize: '16px' }} />
+            Refresh
           </button>
         </div>
 
@@ -666,8 +687,93 @@ function EnvironmentWaterDash() {
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: 0
+            minHeight: 0,
+            position: 'relative'
           }}>
+            {/* Zoom button */}
+            <IconButton
+              onClick={() => openZoomModal(
+                'Water Volume Summary', 
+                'water-volume-summary',
+                // Pass content as a function that returns JSX
+                () => (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ flex: 1, minHeight: 400 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={150}
+                            innerRadius={60}
+                            fill="#8884d8"
+                            dataKey="value"
+                            paddingAngle={2}
+                            startAngle={90}
+                            endAngle={450}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.color || COLORS[index % COLORS.length]} 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip content={renderCustomTooltip} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Legend */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      flexWrap: 'wrap',
+                      gap: '12px',
+                      fontSize: '14px',
+                      marginTop: '16px',
+                      padding: '16px'
+                    }}>
+                      {pieData.map((entry, index) => (
+                        <div
+                          key={index}
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px'
+                          }}
+                        >
+                          <div style={{
+                            width: '16px',
+                            height: '16px',
+                            backgroundColor: entry.color || COLORS[index % COLORS.length],
+                            borderRadius: '2px',
+                            flexShrink: 0
+                          }}></div>
+                          <span style={{ fontWeight: '500', fontSize: '14px' }}>
+                            {entry.label}: {(entry.value || 0).toLocaleString()} {unit}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              )}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                zIndex: 10,
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 1)',
+                }
+              }}
+              size="small"
+            >
+              <ZoomInIcon fontSize="small" />
+            </IconButton>
             <h3 style={{
               fontSize: '13px',
               fontWeight: '600',
@@ -782,8 +888,82 @@ function EnvironmentWaterDash() {
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
               display: 'flex',
               flexDirection: 'column',
-              minHeight: 0
+              minHeight: 0,
+              position: 'relative'
             }}>
+              {/* Zoom button */}
+              <IconButton
+                onClick={() => openZoomModal(
+                  'Water Volumes Over Time', 
+                  'water-volumes-over-time',
+                  () => (
+                    <div style={{ width: '100%', height: '100%' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={lineChartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="year" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${Number(value).toLocaleString()} ${unit}`, 
+                              name
+                            ]}
+                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                            contentStyle={{ fontSize: '14px' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '14px' }} />
+                          <Line 
+                            type="monotone" 
+                            dataKey="abstracted" 
+                            stroke="#3B82F6" 
+                            strokeWidth={4}
+                            dot={{ fill: '#3B82F6', strokeWidth: 3, r: 5 }}
+                            name="Abstracted"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="discharged" 
+                            stroke="#F97316" 
+                            strokeWidth={4}
+                            dot={{ fill: '#F97316', strokeWidth: 3, r: 5 }}
+                            name="Discharged"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="consumed" 
+                            stroke="#10B981" 
+                            strokeWidth={4}
+                            dot={{ fill: '#10B981', strokeWidth: 3, r: 5 }}
+                            name="Consumed"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )
+                )}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  zIndex: 10,
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 1)',
+                  }
+                }}
+                size="small"
+              >
+                <ZoomInIcon fontSize="small" />
+              </IconButton>
               <h3 style={{ 
                 fontSize: '13px', 
                 fontWeight: '600', 
@@ -869,8 +1049,82 @@ function EnvironmentWaterDash() {
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
               display: 'flex',
               flexDirection: 'column',
-              minHeight: 0
+              minHeight: 0,
+              position: 'relative'
             }}>
+              {/* Zoom button */}
+              <IconButton
+                onClick={() => openZoomModal(
+                  'Water Management by Quarter', 
+                  'water-management-by-quarter',
+                  () => (
+                    <div style={{ width: '100%', height: '100%' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={stackedBarData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="quarter" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${Number(value).toLocaleString()} ${unit}`, 
+                              name
+                            ]}
+                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                            contentStyle={{ fontSize: '14px' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '14px' }} />
+                          <Bar 
+                            dataKey="abstracted" 
+                            stackId="a" 
+                            strokeWidth={2}
+                            stroke="#3B82F6"
+                            fill="#3B82F6"
+                            name="Abstracted"
+                          />
+                          <Bar 
+                            dataKey="discharged" 
+                            stackId="a" 
+                            strokeWidth={2}
+                            stroke="#F97316"
+                            fill="#F97316"
+                            name="Discharged"
+                          />
+                          <Bar 
+                            dataKey="consumed" 
+                            stackId="a" 
+                            strokeWidth={2}
+                            stroke="#10B981"
+                            fill="#10B981"
+                            name="Consumed"
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )
+                )}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  zIndex: 10,
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 1)',
+                  }
+                }}
+                size="small"
+              >
+                <ZoomInIcon fontSize="small" />
+              </IconButton>
               <h3 style={{ 
                 fontSize: '13px', 
                 fontWeight: '600', 
@@ -948,6 +1202,17 @@ function EnvironmentWaterDash() {
             </div>
           </div>
         </div>
+        <ZoomModal 
+          open={zoomModal.open}
+          title={zoomModal.title}
+          onClose={() => setZoomModal({ ...zoomModal, open: false })} 
+          enableDownload 
+          downloadFileName={zoomModal.fileName}
+          height={600}
+        >
+          {/* Render the content function if it exists */}
+          {zoomModal.content && typeof zoomModal.content === 'function' ? zoomModal.content() : zoomModal.content}
+        </ZoomModal>
       </div>
     </div>
   );
