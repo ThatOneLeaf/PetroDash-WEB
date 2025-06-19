@@ -4,6 +4,13 @@ import {
 } from 'recharts';
 import { renderGenericLegend } from '../../utils/smallLegend';
 
+const formatTooltipValue = (value, unit) => {
+  const formatted = Number(value).toLocaleString();
+  if (unit?.toLowerCase() === 'pesos') return `₱${formatted}`;
+  return `${formatted} ${unit}`;
+};
+
+
 const CustomTooltip = ({ active, payload, label, unit }) => {
   if (!active || !payload || !payload.length) return null;
 
@@ -19,7 +26,7 @@ const CustomTooltip = ({ active, payload, label, unit }) => {
       <p style={{ marginBottom: 4, fontWeight: 'bold' }}>{formatPeriod(label)}</p>
       {payload.map((entry, index) => (
         <p key={`item-${index}`} style={{ color: entry.color, margin: 0 }}>
-          {entry.name}: {Number(entry.value).toLocaleString()} {unit}
+          {entry.name}: {formatTooltipValue(entry.value, unit)}
         </p>
       ))}
     </div>
@@ -33,9 +40,16 @@ const formatXAxis = (num, unit) => {
     num = num / 1_000;
   }
 
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-  return `${num.toFixed(1)}`;
+  const formatted = 
+    num >= 1_000_000 ? `${(num / 1_000_000).toFixed(1)}M` :
+    num >= 1_000 ? `${(num / 1_000).toFixed(1)}K` :
+    `${num.toFixed(1)}`;
+
+  if (unit === 'pesos') {
+    return `₱${formatted}`;
+  }
+
+  return formatted;
 };
 
 const formatPeriod = (period) => {
@@ -54,6 +68,25 @@ const formatPeriod = (period) => {
   return period;
 };
 
+const renderCustomYAxisTick = ({ x, y, payload }) => {
+  const rawValue = payload.value;
+  const value = /^\d{4}-/.test(rawValue) ? formatPeriod(rawValue) : rawValue;
+
+  // Split the label into chunks of ~12 characters
+  const words = value.match(/.{1,15}/g) || [];
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={4} textAnchor="end" fill="#666" style={{ fontSize: 12 }}>
+        {words.map((line, i) => (
+          <tspan key={i} x={0} dy={i === 0 ? 0 : 12}>{line}</tspan>
+        ))}
+      </text>
+    </g>
+  );
+};
+
+
 const defaultColors = [
   '#8884d8', '#82ca9d', '#ffc658', '#ff8042',
   '#a4de6c', '#d0ed57', '#8dd1e1', '#d888d8'
@@ -65,22 +98,22 @@ const VerticalStackedBarChartComponent = ({
   unit,
   colorMap = {},
   stackId = 'a',
-  yAxisLabel
+  yAxisLabel,
+  yAxisKey = 'period'
 }) => {
   if (!data || data.length === 0) return <p>No data available</p>;
 
-  const keys = Object.keys(data[0]).filter(k => k !== 'period');
+  const keys = Object.keys(data[0]).filter(k => k !== yAxisKey);
 
-  // Find the max value across all bars
   const maxValue = Math.max(...data.flatMap(d =>
     keys.map(key => d[key] ?? 0)
   ));
 
-  // Determine display unit
   const autoUnit =
     unit === 'kWh' && maxValue >= 1_000_000 ? 'GWh' :
     unit === 'kWh' && maxValue >= 1_000 ? 'MWh' :
-    unit === 'kWh'? 'kWh': yAxisLabel;
+    unit === 'kWh' ? 'kWh' :
+    yAxisLabel;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -94,7 +127,7 @@ const VerticalStackedBarChartComponent = ({
           <BarChart
             data={data}
             layout="vertical"
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
@@ -106,13 +139,14 @@ const VerticalStackedBarChartComponent = ({
                 offset: -25,
                 angle: 0,
                 dy: 10,
-                style: { textAnchor: 'middle', fontSize: 12}
+                style: { textAnchor: 'middle', fontSize: 12 }
               }}
             />
             <YAxis
               type="category"
-              dataKey="period"
-              tickFormatter={formatPeriod}
+              dataKey={yAxisKey}
+              tick={renderCustomYAxisTick}
+              width={120}
             />
             <Tooltip content={<CustomTooltip unit={autoUnit} />} />
             <Legend content={renderGenericLegend()} />
