@@ -2035,7 +2035,7 @@ function EnvironmentWasteDash() {
           flexShrink: 0
         }}>
           <div style={{
-            backgroundColor: '#3B82F6',
+            backgroundColor: '#1E40AF',
             color: 'white',
             padding: '15px',
             borderRadius: '8px',
@@ -2050,7 +2050,7 @@ function EnvironmentWasteDash() {
           </div>
 
           <div style={{
-            backgroundColor: '#1e293b',
+            backgroundColor: '#1E40AF',
             color: 'white',
             padding: '15px',
             borderRadius: '8px',
@@ -2074,7 +2074,7 @@ function EnvironmentWasteDash() {
           </div>
 
           <div style={{
-            backgroundColor: '#10B981',
+            backgroundColor: '#1E40AF',
             color: 'white',
             padding: '15px',
             borderRadius: '8px',
