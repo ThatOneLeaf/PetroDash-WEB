@@ -9,12 +9,13 @@ import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
  * Props:
  * - year: number (optional)
  * - companyId: string (optional)
+ * - height: number (optional)
+ * - width: number (optional)
  */
-const InvestmentPerProgram = ({ year: yearProp, companyId }) => {
+const InvestmentPerCompany = ({ year: yearProp, companyId, height, width }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState(yearProp || null);
-  const [availableYears, setAvailableYears] = useState([]);
   const [zoomOpen, setZoomOpen] = useState(false);
 
   // Fetch available years for default selection
@@ -26,10 +27,9 @@ const InvestmentPerProgram = ({ year: yearProp, companyId }) => {
           new Set((res.data || []).map((item) => item.projectYear))
         ).filter(Boolean);
         years.sort((a, b) => b - a); // Descending
-        setAvailableYears(years);
         if (!yearProp && years.length > 0) setYear(years[0]);
       })
-      .catch(() => setAvailableYears([]));
+      .catch(() => {/* do nothing */});
   }, [yearProp]);
 
   // Fetch data from API
@@ -59,34 +59,44 @@ const InvestmentPerProgram = ({ year: yearProp, companyId }) => {
   }));
 
   // Chart rendering logic for modal reuse
-  const renderChart = (height = 350) => (
+  const getWrappedLegendName = (name) => {
+    const words = name.split(" ");
+    let fontSize = 16;
+    if (words.length > 4) fontSize = 11;
+    else if (words.length > 3) fontSize = 13;
+    else if (words.length > 2) fontSize = 14;
+    // Wrap after 2 words
+    if (words.length > 2) {
+      return (
+        <span style={{ fontSize }}>
+          {words.slice(0, 2).join(" ")}
+          <br />
+          {words.slice(2).join(" ")}
+        </span>
+      );
+    }
+    return <span style={{ fontSize }}>{name}</span>;
+  };
+
+  const renderChart = (h = height || 350, w = width || "100%") => (
     <BarChartComponent
       title="Investments Per Company"
       data={chartData}
-      legendName="Investment (₱)"
+      legendName={getWrappedLegendName("Investment (₱)")}
       unit="₱"
-      height={height}
+      height={h}
+      width={w}
+      legendPosition="right"
     />
   );
 
   return (
-    <Paper sx={{ p: 3, borderRadius: 2, width: "100%", minHeight: 400 }}>
+    <Paper sx={{ p: 3, borderRadius: 2, width: "100%", minHeight: 0, height: "100%" }}>
       <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           Investments Per Company
         </Typography>
         <Box display="flex" alignItems="center" gap={1}>
-          {availableYears.length > 0 && (
-            <select
-              value={year || ""}
-              onChange={e => setYear(Number(e.target.value))}
-              style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ccc" }}
-            >
-              {availableYears.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          )}
           <MuiTooltip title="Zoom">
             <IconButton onClick={() => setZoomOpen(true)} size="small">
               <ZoomInIcon />
@@ -95,11 +105,13 @@ const InvestmentPerProgram = ({ year: yearProp, companyId }) => {
         </Box>
       </Box>
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight={300} height="100%">
           <CircularProgress />
         </Box>
       ) : (
-        renderChart()
+        <Box sx={{ width: "100%", height: "100%", minHeight: 0 }}>
+          {renderChart("100%", "100%")}
+        </Box>
       )}
       {!loading && data.length === 0 && (
         <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
@@ -115,10 +127,10 @@ const InvestmentPerProgram = ({ year: yearProp, companyId }) => {
         enableDownload
         downloadFileName="investments-per-company"
       >
-        {renderChart(550)}
+        {renderChart(550, "100%")}
       </ZoomModal>
     </Paper>
   );
 };
 
-export default InvestmentPerProgram;
+export default InvestmentPerCompany;

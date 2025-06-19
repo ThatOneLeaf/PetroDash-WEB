@@ -1,9 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import Sidebar from '../../components/Sidebar';
-import { Box, Typography, Grid, Paper, CircularProgress, Button, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Grid, Paper, CircularProgress, Button } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import SchoolIcon from '@mui/icons-material/School';
@@ -13,11 +12,11 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import WorkIcon from '@mui/icons-material/Work';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api';
-import Filter from '../../components/Filter/Filter'
-import InvestmentPerProjectChart from '../CSR/Charts/InvestmentPerProject'
-import InvestmentPerProgramChart from '../CSR/Charts/InvestmentPerProgram'
-import InvestmentPerCompanyChart from '../CSR/Charts/InvestmentPerCompany'
+import InvestmentPerProjectChart from '../CSR/Charts/InvestmentPerProject';
+import InvestmentPerProgramChart from '../CSR/Charts/InvestmentPerProgram';
+import InvestmentPerCompanyChart from '../CSR/Charts/InvestmentPerCompany';
 
+// KPI configuration for HELP dashboard
 const kpiConfig = [
   // Health
   {
@@ -27,25 +26,25 @@ const kpiConfig = [
         label: 'Beneficiaries of annual medical mission',
         icon: <FavoriteIcon sx={{ color: '#ef4444', fontSize: 40 }} />, 
         key: 'medicalMissionBeneficiaries',
-        bgColor: '#fdeaea', // subtle red
+        bgColor: '#f8bcbc', // slightly darker than #fdeaea
       },
       {
         label: 'Beneficiaries of health center',
         icon: <LocalHospitalIcon sx={{ color: '#ef4444', fontSize: 40 }} />,
         key: 'healthCenterBeneficiaries',
-        bgColor: '#fdeaea',
+        bgColor: '#f8bcbc',
       },
       {
         label: 'Nutrition Programs',
         icon: <RestaurantIcon sx={{ color: '#ef4444', fontSize: 40 }} />, // bigger icon
         key: 'nutritionPrograms',
-        bgColor: '#fdeaea',
+        bgColor: '#f8bcbc',
       },
       {
         label: 'Ambulance Donated',
         icon: <LocalShippingIcon sx={{ color: '#ef4444', fontSize: 40 }} />, // bigger icon
         key: 'ambulanceDonated',
-        bgColor: '#fdeaea',
+        bgColor: '#f8bcbc',
       },
     ],
   },
@@ -57,25 +56,25 @@ const kpiConfig = [
         label: 'Adopted Schools',
         icon: <SchoolIcon sx={{ color: '#1976d2', fontSize: 40 }} />, // bigger icon
         key: 'adoptedSchools',
-        bgColor: '#e3f0fc', // subtle blue
+        bgColor: '#b6d4f7', // slightly darker than #e3f0fc
       },
       {
         label: 'College Scholars',
         icon: <EmojiEventsIcon sx={{ color: '#1976d2', fontSize: 40 }} />, // bigger icon
         key: 'collegeScholars',
-        bgColor: '#e3f0fc',
+        bgColor: '#b6d4f7',
       },
       {
         label: 'Educational Mobile Devices',
         icon: <GroupsIcon sx={{ color: '#1976d2', fontSize: 40 }} />, // bigger icon
         key: 'educationalMobileDevices',
-        bgColor: '#e3f0fc',
+        bgColor: '#b6d4f7',
       },
       {
         label: 'Teachers Training',
         icon: <PersonAddIcon sx={{ color: '#1976d2', fontSize: 40 }} />, // bigger icon
         key: 'teachersTraining',
-        bgColor: '#e3f0fc',
+        bgColor: '#b6d4f7',
       },
     ],
   },
@@ -87,12 +86,13 @@ const kpiConfig = [
         label: 'Participants of Livelihood Training',
         icon: <WorkIcon sx={{ color: '#fbbf24', fontSize: 40 }} />, // bigger icon
         key: 'livelihoodParticipants',
-        bgColor: '#fffbe6', // subtle yellow
+        bgColor: '#fff3b0', // slightly darker than #fffbe6
       },
     ],
   },
 ];
 
+// Aggregates KPI values from API data
 function aggregateKPI(data) {
   // The backend returns: csrReport (number), projectName (string), projectId (string), programName (string)
   const result = {
@@ -165,7 +165,7 @@ function aggregateKPI(data) {
   return result;
 }
 
-// Helper to aggregate investments per program
+// Aggregates investment amounts per program
 function aggregateInvestments(data) {
   // Assume each row has: investmentAmount, projectName, programName
   const result = {
@@ -183,6 +183,7 @@ function aggregateInvestments(data) {
   return result;
 }
 
+// KPIBox: Displays a single KPI with icon, value, label, and last updated
 function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
   // Dynamically adjust font size based on label length to avoid wrapping
   let labelFontSize = 15;
@@ -279,26 +280,37 @@ function chunkArray(array, size) {
   return result;
 }
 
+// Helper to format date/time as "Month Day, Year at HH:MM:SS AM/PM"
+function formatDateTime(date) {
+  if (!date) return '';
+  const options = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  };
+  return date.toLocaleString('en-US', options);
+}
+
+// Main HELP Dashboard component
 export default function HELPDash() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    year: '',
-    company: '',
-    // program: '',
-    // project: ''
-  });
+  const [filters, setFilters] = useState({ year: '', company: '' });
   const [lastUpdated, setLastUpdated] = useState(null);
   const [activeTab, setActiveTab] = useState('HELP'); // 'HELP' or 'Investments'
 
-  // Fetch data from the same API as CSRActivity
+  // Fetch HELP activities data from API
   const fetchData = () => {
     setLoading(true);
     api.get('help/activities')
       .then(res => {
         setData(res.data);
         setLastUpdated(new Date());
-        console.log('HELPDash API data:', res.data); // <-- Add this line
+        // console.log('HELPDash API data:', res.data); // For debugging
       })
       .catch(() => {
         setData([]);
@@ -311,49 +323,45 @@ export default function HELPDash() {
     fetchData();
   }, []);
 
-  // Filter options
-  const yearOptions = useMemo(() => [
-    ...new Set(data.map(d => d.projectYear).filter(Boolean))
-  ].sort((a, b) => b - a), [data]);
-  const companyOptions = useMemo(() => [
-    ...new Set(data.map(d => d.companyName).filter(Boolean))
-  ].sort(), [data]);
-  const programOptions = useMemo(() => [
-    ...new Set(data.map(d => d.programName).filter(Boolean))
-  ].sort(), [data]);
-  const projectOptions = useMemo(() => {
-    // let filtered = data;
-    // if (filters.program) filtered = filtered.filter(d => d.programName === filters.program);
-    // return [...new Set(filtered.map(d => d.projectName).filter(Boolean))].sort();
-    return [];
-  }, [data /*, filters.program*/]);
+  // Memoized filter options for dropdowns
+  const yearOptions = useMemo(
+    () => [...new Set(data.map(d => d.projectYear).filter(Boolean))].sort((a, b) => b - a),
+    [data]
+  );
+  const companyOptions = useMemo(
+    () => [...new Set(data.map(d => d.companyName).filter(Boolean))].sort(),
+    [data]
+  );
 
-  // Filtered data for KPIs
+  // Filter data based on selected filters
   const filteredData = useMemo(() => {
     return data.filter(row => {
       if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
       if (filters.company && row.companyName !== filters.company) return false;
-      // if (filters.program && row.programName !== filters.program) return false;
-      // if (filters.project && row.projectName !== filters.project) return false;
       return true;
     });
   }, [data, filters]);
 
+  // Memoized KPI and investment values
   const kpi = useMemo(() => aggregateKPI(filteredData), [filteredData]);
-  // For Investments tab: aggregate investments per program
-  const investments = useMemo(() => aggregateInvestments(data), [data]);
+  const investments = useMemo(() => aggregateInvestments(filteredData), [filteredData]);
 
   // Handle filter change
   const handleFilter = (key, value) => {
     setFilters(f => ({
       ...f,
       [key]: value,
-      // ...(key === 'program' ? { project: '' } : {}) // Reset project if program changes
     }));
   };
 
   // Clear all filters
-  const clearFilters = () => setFilters({ year: '', company: '' /*, program: '', project: ''*/ });
+  const clearFilters = () => setFilters({ year: '', company: '' });
+
+  // Handle tab switch and clear filters
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    clearFilters();
+  };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', background: '#f4f6fb' }}>
@@ -367,23 +375,34 @@ export default function HELPDash() {
           mb: 2
         }}>
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 800, color: '#64748b', mb: 0.5 }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#64748b', mb: 0.5 }}>
               DASHBOARD
             </Typography>
-            <Typography sx={{ fontSize: 24, fontWeight: 800, color: '#182959', letterSpacing: 1 }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#182959', letterSpacing: 0.5 }}>
               Social - H.E.L.P
+            </Typography>
+            {/* Metadata: Last updated */}
+            <Typography sx={{
+              color: '#64748b',
+              fontSize: 10,
+              fontWeight: 400,
+              mt: 0.5
+            }}>
+              The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
             </Typography>
           </Box>
           <Button
             variant="contained"
-            startIcon={<RefreshIcon />}
+            startIcon={<RefreshIcon sx={{ fontSize: 16 }} />}
             sx={{
               backgroundColor: '#1976d2',
-              borderRadius: '8px',
-              fontWeight: 700,
-              fontSize: 13,
-              px: 2,
-              py: 1,
+              borderRadius: '7px',
+              fontWeight: 600,
+              fontSize: 11,
+              px: 1.5,
+              py: 0.5,
+              minHeight: '28px',
+              minWidth: '80px',
               '&:hover': { backgroundColor: '#115293' }
             }}
             onClick={fetchData}
@@ -395,22 +414,23 @@ export default function HELPDash() {
         {/* Tab Buttons */}
         <Box sx={{
           display: 'flex',
-          gap: '8px',
-          mb: 2,
+          gap: '6px',
+          mb: 1.5,
           flexShrink: 0
         }}>
           <Button
-            onClick={() => setActiveTab('HELP')}
+            onClick={() => handleTabSwitch('HELP')}
             sx={{
-              padding: '8px 16px',
+              padding: '5px 10px',
               backgroundColor: activeTab === 'HELP' ? '#10B981' : '#9CA3AF',
               color: 'white',
               border: 'none',
-              borderRadius: '20px',
-              fontSize: '12px',
+              borderRadius: '16px',
+              fontSize: '11px',
               fontWeight: '600',
               cursor: 'pointer',
-              minWidth: '80px',
+              minWidth: '60px',
+              minHeight: '26px',
               boxShadow: 'none',
               '&:hover': {
                 backgroundColor: activeTab === 'HELP' ? '#059669' : '#6B7280'
@@ -420,17 +440,18 @@ export default function HELPDash() {
             HELP
           </Button>
           <Button
-            onClick={() => setActiveTab('Investments')}
+            onClick={() => handleTabSwitch('Investments')}
             sx={{
-              padding: '8px 16px',
+              padding: '5px 10px',
               backgroundColor: activeTab === 'Investments' ? '#10B981' : '#9CA3AF',
               color: 'white',
               border: 'none',
-              borderRadius: '20px',
-              fontSize: '12px',
+              borderRadius: '16px',
+              fontSize: '11px',
               fontWeight: '600',
               cursor: 'pointer',
-              minWidth: '80px',
+              minWidth: '60px',
+              minHeight: '26px',
               boxShadow: 'none',
               '&:hover': {
                 backgroundColor: activeTab === 'Investments' ? '#059669' : '#6B7280'
@@ -441,15 +462,15 @@ export default function HELPDash() {
           </Button>
         </Box>
 
-        {/* Only render HELP dashboard if activeTab is HELP */}
+        {/* HELP Tab */}
         {activeTab === 'HELP' && (
           <>
-            {/* Filters Row - styled like EnvironmentEnergyDash */}
+            {/* Filters Row */}
             <Box
               sx={{
                 display: 'flex',
-                gap: '10px',
-                mb: 3,
+                gap: '7px',
+                mb: 2,
                 flexWrap: 'wrap',
                 alignItems: 'center',
                 flexShrink: 0,
@@ -460,14 +481,15 @@ export default function HELPDash() {
                 value={filters.year}
                 onChange={e => handleFilter('year', e.target.value)}
                 style={{
-                  padding: '8px 12px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '20px',
+                  padding: '5px 8px',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '14px',
                   backgroundColor: 'white',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  minWidth: '100px'
+                  minWidth: '70px',
+                  height: '28px'
                 }}
               >
                 <option value="">All Years</option>
@@ -481,14 +503,15 @@ export default function HELPDash() {
                 value={filters.company}
                 onChange={e => handleFilter('company', e.target.value)}
                 style={{
-                  padding: '8px 12px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '20px',
+                  padding: '5px 8px',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '14px',
                   backgroundColor: 'white',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  minWidth: '100px'
+                  minWidth: '70px',
+                  height: '28px'
                 }}
               >
                 <option value="">All Companies</option>
@@ -500,14 +523,15 @@ export default function HELPDash() {
               {(filters.year || filters.company) && (
                 <button
                   style={{
-                    padding: '8px 12px',
+                    padding: '5px 8px',
                     backgroundColor: '#ef4444',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '20px',
-                    fontSize: '11px',
+                    borderRadius: '14px',
+                    fontSize: '10px',
                     cursor: 'pointer',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    height: '28px'
                   }}
                   onClick={clearFilters}
                 >
@@ -586,15 +610,15 @@ export default function HELPDash() {
           </>
         )}
 
-        {/* Investments Tab Layout */}
+        {/* Investments Tab */}
         {activeTab === 'Investments' && (
           <>
-            {/* Filters Row (reuse HELP filters for now) */}
+            {/* Filters Row (reuse HELP filters) */}
             <Box
               sx={{
                 display: 'flex',
-                gap: '10px',
-                mb: 3,
+                gap: '7px',
+                mb: 2,
                 flexWrap: 'wrap',
                 alignItems: 'center',
                 flexShrink: 0,
@@ -605,14 +629,15 @@ export default function HELPDash() {
                 value={filters.year}
                 onChange={e => handleFilter('year', e.target.value)}
                 style={{
-                  padding: '8px 12px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '20px',
+                  padding: '5px 8px',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '14px',
                   backgroundColor: 'white',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  minWidth: '100px'
+                  minWidth: '70px',
+                  height: '28px'
                 }}
               >
                 <option value="">All Years</option>
@@ -626,14 +651,15 @@ export default function HELPDash() {
                 value={filters.company}
                 onChange={e => handleFilter('company', e.target.value)}
                 style={{
-                  padding: '8px 12px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '20px',
+                  padding: '5px 8px',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '14px',
                   backgroundColor: 'white',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  minWidth: '100px'
+                  minWidth: '70px',
+                  height: '28px'
                 }}
               >
                 <option value="">All Companies</option>
@@ -645,14 +671,15 @@ export default function HELPDash() {
               {(filters.year || filters.company) && (
                 <button
                   style={{
-                    padding: '8px 12px',
+                    padding: '5px 8px',
                     backgroundColor: '#ef4444',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '20px',
-                    fontSize: '11px',
+                    borderRadius: '14px',
+                    fontSize: '10px',
                     cursor: 'pointer',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    height: '28px'
                   }}
                   onClick={clearFilters}
                 >
@@ -661,179 +688,354 @@ export default function HELPDash() {
               )}
             </Box>
 
-            {/* KPI Row - wide, 3 columns */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    background: '#182959',
-                    color: 'white',
-                    border: '2px solid #182959',
-                    borderRadius: '14px',
-                    px: 3,
-                    py: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center', // <-- add this
-                    fontWeight: 700,
-                    fontSize: 18,
-                    boxShadow: 'none',
-                    width: '100%',
-                    maxWidth: 340,
-                    minHeight: 120,
-                    height: '100%',
-                    textAlign: 'center', // <-- add this
+            {/* KPI Row - 3 columns */}
+            <Box sx={{ display: 'flex', gap: 2, width: '100%', mb: 3 }}>
+              {/* Health KPI */}
+              <Paper
+                elevation={0}
+                sx={{
+                  background: '#f8bcbc',
+                  border: '2px solid #f8bcbc',
+                  borderRadius: '14px',
+                  px: 3,
+                  py: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 18,
+                  boxShadow: 'none',
+                  width: '100%',
+                  minWidth: 0,
+                  minHeight: 90,
+                  height: 90,
+                  textAlign: 'center',
+                  flex: 1
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 22, 
+                    fontWeight: 900,
+                    marginBottom: 2,
+                    textAlign: 'center',
+                    color: '#182959',
+                    letterSpacing: 0.5,
+                    lineHeight: 1.1,
                   }}
                 >
-                  {/* Number above label */}
-                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>
-                    {investments.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
-                    Health
-                  </div>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    background: '#182959',
-                    color: 'white',
-                    border: '2px solid #182959',
-                    borderRadius: '14px',
-                    px: 3,
-                    py: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center', // <-- add this
+                  {investments.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
                     fontWeight: 700,
-                    fontSize: 18,
-                    boxShadow: 'none',
-                    width: '100%',
-                    maxWidth: 340,
-                    minHeight: 120,
-                    height: '100%',
-                    textAlign: 'center', // <-- add this
+                    color: '#64748b',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
+                    letterSpacing: 0.2,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
-                  {/* Number above label */}
-                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>
-                    {investments.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
-                    Education
-                  </div>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    background: '#182959',
-                    color: 'white',
-                    border: '2px solid #182959',
-                    borderRadius: '14px',
-                    px: 3,
-                    py: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center', // <-- add this
-                    fontWeight: 700,
-                    fontSize: 18,
-                    boxShadow: 'none',
+                  Health
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: '#94a3b8',
+                    textAlign: 'center',
+                    marginTop: 2,
                     width: '100%',
-                    maxWidth: 340,
-                    minHeight: 120,
-                    height: '100%',
-                    textAlign: 'center', // <-- add this
+                    fontStyle: 'italic',
+                    letterSpacing: 0.2,
+                    fontWeight: 400,
                   }}
                 >
-                  {/* Number above label */}
-                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>
-                    {investments.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
-                    Livelihood
-                  </div>
-                </Paper>
-              </Grid>
-            </Grid>
+                  {lastUpdated && (
+                    <>
+                      As of: {new Date(lastUpdated).toLocaleString('default', { month: 'long' })}, {new Date(lastUpdated).getFullYear()}
+                    </>
+                  )}
+                </div>
+              </Paper>
+              {/* Education KPI */}
+              <Paper
+                elevation={0}
+                sx={{
+                  background: '#b6d4f7',
+                  border: '2px solid #b6d4f7',
+                  borderRadius: '14px',
+                  px: 3,
+                  py: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 18,
+                  boxShadow: 'none',
+                  width: '100%',
+                  minWidth: 0,
+                  minHeight: 90,
+                  height: 90,
+                  textAlign: 'center',
+                  flex: 1
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    marginBottom: 2,
+                    textAlign: 'center',
+                    color: '#182959',
+                    letterSpacing: 0.5,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {investments.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#64748b',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
+                    letterSpacing: 0.2,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  Education
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: '#94a3b8',
+                    textAlign: 'center',
+                    marginTop: 2,
+                    width: '100%',
+                    fontStyle: 'italic',
+                    letterSpacing: 0.2,
+                    fontWeight: 400,
+                  }}
+                >
+                  {lastUpdated && (
+                    <>
+                      As of: {new Date(lastUpdated).toLocaleString('default', { month: 'long' })}, {new Date(lastUpdated).getFullYear()}
+                    </>
+                  )}
+                </div>
+              </Paper>
+              {/* Livelihood KPI */}
+              <Paper
+                elevation={0}
+                sx={{
+                  background: '#fff3b0',
+                  border: '2px solid #fff3b0',
+                  borderRadius: '14px',
+                  px: 3,
+                  py: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 18,
+                  boxShadow: 'none',
+                  width: '100%',
+                  minWidth: 0,
+                  minHeight: 90,
+                  height: 90,
+                  textAlign: 'center',
+                  flex: 1
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    marginBottom: 2,
+                    textAlign: 'center',
+                    color: '#182959',
+                    letterSpacing: 0.5,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {investments.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#64748b',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
+                    letterSpacing: 0.2,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  Livelihood
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: '#94a3b8',
+                    textAlign: 'center',
+                    marginTop: 2,
+                    width: '100%',
+                    fontStyle: 'italic',
+                    letterSpacing: 0.2,
+                    fontWeight: 400,
+                  }}
+                >
+                  {lastUpdated && (
+                    <>
+                      As of: {new Date(lastUpdated).toLocaleString('default', { month: 'long' })}, {new Date(lastUpdated).getFullYear()}
+                    </>
+                  )}
+                </div>
+              </Paper>
+            </Box>
 
-            {/* Graph Containers Layout - taller */}
+            {/* Graph Containers Layout */}
             <Box
               sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
-                gridTemplateRows: { xs: 'auto auto auto', md: '1fr 1fr' },
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
                 gap: 2,
                 width: '100%',
-                alignItems: 'stretch'
+                alignItems: 'stretch',
+                minHeight: 0,
+                height: `calc(100vh - 64px - 48px - 32px - 120px - 48px)`, // subtract header, tabs, filters, KPI, margins
+                // 64px header, 48px tabs/filters, 120px KPI, 48px margins (adjust as needed)
               }}
             >
-              {/* Large Chart Container (Investments per Projects) */}
+              {/* Left: Large Chart Container (Investments per Projects) */}
               <Paper
                 elevation={0}
                 sx={{
-                  gridColumn: { xs: '1', md: '1' },
-                  gridRow: { xs: '1', md: '1 / span 2' },
-                  minHeight: { xs: 320, md: 500 },
-                  background: '#fff',
-                  borderRadius: '14px',
-                  border: '1.5px solid #e2e8f0',
+                  flex: 2,
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  background: '#fff',
+                  borderRadius: '10px',
+                  border: '1.5px solid #e2e8f0',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                  minWidth: 0,
+                  height: '100%',
+                  minHeight: 0,
+                  padding: '10px 10px 8px 10px',
+                  justifyContent: 'flex-start'
                 }}
               >
-                <InvestmentPerProjectChart />
-                {/* <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1 }}>
-                  Investments per Projects
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: '#1e293b',
+                    mb: 0.5,
+                    flexShrink: 0
+                  }}
+                >
+                  Investments per Project
                 </Typography>
-                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box> */}
+                <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <Box sx={{ width: '100%', height: '100%' }}>
+                    <InvestmentPerProjectChart height="100%" width="100%" />
+                  </Box>
+                </Box>
               </Paper>
-              {/* Top Right Chart Container */}
-              <Paper
-                elevation={0}
+              {/* Right: Stack of two charts */}
+              <Box
                 sx={{
-                  gridColumn: { xs: '1', md: '2' },
-                  gridRow: { xs: '2', md: '1' },
-                  maxHeight: '100%',
-                  background: '#fff',
-                  borderRadius: '14px',
-                  border: '1.5px solid #e2e8f0',
+                  flex: 1,
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  gap: 2,
+                  minWidth: 0,
+                  height: '100%',
+                  minHeight: 0,
                 }}
               >
-                <InvestmentPerProgramChart />
-                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
-              </Paper>
-              {/* Bottom Right Chart Container */}
-              <Paper
-                elevation={0}
-                sx={{
-                  gridColumn: { xs: '1', md: '2' },
-                  gridRow: { xs: '3', md: '2' },
-                  minHeight: { xs: 150, md: 240 },
-                  background: '#fff',
-                  borderRadius: '14px',
-                  border: '1.5px solid #e2e8f0',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <InvestmentPerCompanyChart />
-              </Paper>
+                {/* Top Right Chart */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    background: '#fff',
+                    borderRadius: '10px',
+                    border: '1.5px solid #e2e8f0',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    minWidth: 0,
+                    height: '50%',
+                    minHeight: 0,
+                    padding: '10px 10px 8px 10px',
+                    justifyContent: 'flex-start'
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#1e293b',
+                      mb: 0.5,
+                      flexShrink: 0
+                    }}
+                  >
+                    Investments per Program
+                  </Typography>
+                  <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <Box sx={{ width: '100%', height: '100%' }}>
+                      <InvestmentPerProgramChart height="100%" width="100%" />
+                    </Box>
+                  </Box>
+                </Paper>
+                {/* Bottom Right Chart */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    background: '#fff',
+                    borderRadius: '10px',
+                    border: '1.5px solid #e2e8f0',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    minWidth: 0,
+                    height: '50%',
+                    minHeight: 0,
+                    padding: '10px 10px 8px 10px',
+                    justifyContent: 'flex-start'
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#1e293b',
+                      mb: 0.5,
+                      flexShrink: 0
+                    }}
+                  >
+                    Investments per Company
+                  </Typography>
+                  <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <Box sx={{ width: '100%', height: '100%' }}>
+                      <InvestmentPerCompanyChart height="100%" width="100%" />
+                    </Box>
+                  </Box>
+                </Paper>
+              </Box>
             </Box>
           </>
         )}

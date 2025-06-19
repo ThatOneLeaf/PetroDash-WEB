@@ -9,8 +9,10 @@ import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
  * Props:
  * - year: number (optional)
  * - companyId: string (optional)
+ * - height: number (optional)
+ * - width: number (optional)
  */
-const InvestmentPerProject = ({ year: yearProp, companyId }) => {
+const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState(yearProp || null);
@@ -52,9 +54,28 @@ const InvestmentPerProject = ({ year: yearProp, companyId }) => {
       .finally(() => setLoading(false));
   }, [year, companyId, yearProp]);
 
+  // Helper to wrap legend name and adjust font size
+  const getWrappedLegendName = (name) => {
+    const words = name.split(" ");
+    let fontSize = 16;
+    if (words.length > 4) fontSize = 11;
+    else if (words.length > 3) fontSize = 13;
+    else if (words.length > 2) fontSize = 14;
+    if (words.length > 2) {
+      return (
+        <span style={{ fontSize }}>
+          {words.slice(0, 2).join(" ")}
+          <br />
+          {words.slice(2).join(" ")}
+        </span>
+      );
+    }
+    return <span style={{ fontSize }}>{name}</span>;
+  };
+
   // Chart rendering logic as a function for reuse in modal
-  const renderChart = (height = 350) => (
-    <ResponsiveContainer width="100%" height={height}>
+  const renderChart = (h = height || 350, w = width || "100%") => (
+    <ResponsiveContainer width={w} height={h}>
       <BarChart
         data={data}
         layout="vertical"
@@ -67,9 +88,9 @@ const InvestmentPerProject = ({ year: yearProp, companyId }) => {
         <YAxis
           type="category"
           dataKey="projectName"
-          width={180}
+          width={120}
           interval={0}
-          tick={{ fontSize: 13 }}
+          tick={{ fontSize: 11 }}
           label={{
             value: "Project Name",
             angle: -90,
@@ -78,15 +99,19 @@ const InvestmentPerProject = ({ year: yearProp, companyId }) => {
           }}
         />
         <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
-        <Legend />
-        <Bar dataKey="projectExpenses" name="Investment (₱)" fill="#1976d2" />
+        <Legend verticalAlign="middle" align="right" layout="vertical" />
+        <Bar
+          dataKey="projectExpenses"
+          name={getWrappedLegendName("Investment (₱)")}
+          fill="#1976d2"
+        />
       </BarChart>
     </ResponsiveContainer>
   );
 
   return (
-    <Box sx={{ p: 3, width: "100%", minHeight: 400 }}>
-      <Box display="flex" alignItems="center" justifyContent="flex-end" sx={{ mb: 2 }}>
+    <Box sx={{ p: 0, width: "100%", height: "100%", minHeight: 0 }}>
+      <Box display="flex" alignItems="center" justifyContent="flex-end" sx={{ mb: 1 }}>
         {/* Zoom Button */}
         <MuiTooltip title="Zoom">
           <IconButton onClick={() => setZoomOpen(true)} size="small">
@@ -95,14 +120,16 @@ const InvestmentPerProject = ({ year: yearProp, companyId }) => {
         </MuiTooltip>
       </Box>
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight={100} height="100%">
           <CircularProgress />
         </Box>
       ) : (
-        renderChart()
+        <Box sx={{ width: "100%", height: "100%", minHeight: 0 }}>
+          {renderChart("100%", "100%")}
+        </Box>
       )}
       {!loading && data.length === 0 && (
-        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
+        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
           No data available for the selected filters.
         </Typography>
       )}
@@ -115,7 +142,7 @@ const InvestmentPerProject = ({ year: yearProp, companyId }) => {
         enableDownload
         downloadFileName="investments-per-project"
       >
-        {renderChart(550)}
+        {renderChart(550, "100%")}
       </ZoomModal>
     </Box>
   );
