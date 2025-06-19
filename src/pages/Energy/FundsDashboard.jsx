@@ -439,6 +439,7 @@ if (loading) {
       </Box>
 
       {/* Main content area with centered loader */}
+      
       <Box
         sx={{
           flexGrow: 1,
@@ -471,8 +472,9 @@ if (loading) {
 return (
   <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
     <SideBar />
-
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',width: '111.11%',
+    height: '111.11%', transform:"scale(0.9)",  transformOrigin: 'top left' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pt: 2, flexShrink: 0 }}>
         <DashboardHeader
@@ -921,6 +923,7 @@ return (
         >
           {zoomModal.content}
         </ZoomModal>
+      </Box>
       </Box>
     </Box>
   </Box>
