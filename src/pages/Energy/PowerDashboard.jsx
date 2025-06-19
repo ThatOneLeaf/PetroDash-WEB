@@ -492,7 +492,10 @@ return (
   <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
     <SideBar />
 
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' ,width: '111.11%',
+    height: '111.11%', transform:"scale(0.9)",  transformOrigin: 'top left'}}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pt: 2, flexShrink: 0 }}>
         <DashboardHeader
@@ -581,7 +584,7 @@ return (
                 <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <LineChartComponent
-                      title={generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate)}
+                      title={generateFullChartTitle("Power Generation Over Time", x, y, filters, startDate, endDate)}
                       data={data?.line_graph?.total_energy_generated || []}
                       unit="kWh"
                       colorMap={
@@ -601,10 +604,10 @@ return (
                     sx={{ position: 'absolute', top: 8, right: 8 }}
                     onClick={() =>
                       openZoomModal(
-                        generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate),
+                        generateFullChartTitle("Power Generation Over Time", x, y, filters, startDate, endDate),
                         "total_energy_generated_chart",
                         <LineChartComponent
-                          title={generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate)}
+                          title={generateFullChartTitle("Power Generation Over Time", x, y, filters, startDate, endDate)}
                           data={data?.line_graph?.total_energy_generated || []}
                           unit="kWh"
                           colorMap={
@@ -631,7 +634,7 @@ return (
                 <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <PieChartComponent
-                      title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
+                      title={generateFullChartTitle("Power Generation Distribution", x, y, filters, startDate, endDate)}
                       data={data?.pie_chart?.total_energy_generated || []}
                       colorMap={
                             chartReady
@@ -650,10 +653,10 @@ return (
                     sx={{ position: 'absolute', top: 8, right: 8 }}
                     onClick={() =>
                       openZoomModal(
-                        generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate),
+                        generateFullChartTitle("Power Generation Distribution", x, y, filters, startDate, endDate),
                         "total_energy_generated_pie",
                         <PieChartComponent
-                          title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
+                          title={generateFullChartTitle("PPower Generation Distribution", x, y, filters, startDate, endDate)}
                           data={data?.pie_chart?.total_energy_generated || []}
                         colorMap={
                             chartReady
@@ -682,9 +685,9 @@ return (
                 <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <VerticalStackedBarChartComponent
-                      title="sample"
+                      title={generateFullChartTitle("Cumulative Power Generation", x, y, filters, startDate, endDate)}
                       data={data?.stacked_bar || []}
-                      legendName="Total Energy Generated"
+                      legendName="Cumulative Power Generation"
                       unit="kWh"
                       colorMap={
                             chartReady
@@ -704,12 +707,12 @@ return (
                     sx={{ position: 'absolute', top: 8, right: 8 }}
                     onClick={() =>
                       openZoomModal(
-                        "Zoomed In: Total Energy Generated (Bar)",
+                        generateFullChartTitle("Cumulative Power Generation", x, y, filters, startDate, endDate),
                         "total_energy_generated_bar",
                         <VerticalStackedBarChartComponent
-                      title="sample"
+                      title={generateFullChartTitle("Cumulative Power Generation", x, y, filters, startDate, endDate)}
                       data={data?.stacked_bar || []}
-                      legendName="Total Energy Generated"
+                      legendName="Cumulative Power Generation"
                       unit="kWh"
                       colorMap={
                             chartReady
@@ -736,7 +739,7 @@ return (
                 <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <VerticalStackedBarChartComponent
-                      title="Estimated Households Powered Over Time"
+                      title={generateFullChartTitle("Number of Households Powered", x, y, filters, startDate, endDate)}
                       data={housePowerData?.stacked_bar || []}
                       legendName="Total Energy Generated"
                       yAxisLabel={"No. of Household"}
@@ -758,23 +761,24 @@ return (
                     sx={{ position: 'absolute', top: 8, right: 8 }}
                     onClick={() =>
                       openZoomModal(
-                        "Zoomed In: Households Powered Over Time",
+                        generateFullChartTitle("Number of Households Powered", x, y, filters, startDate, endDate),
                         "households_powered_over_time",
-                        <LineChartComponent
-                          title="Estimated Households Powered Over Time"
+                        <VerticalStackedBarChartComponent
+                          title={generateFullChartTitle("Number of Households Powered", x, y, filters, startDate, endDate)}
                           data={housePowerData?.stacked_bar || []}
-                          yAxisLabel="No. of Households"
+                          legendName="Total Energy Generated"
+                          yAxisLabel={"No. of Household"}
                           colorMap={
-                            chartReady
-                              ? getColorMapForGroupBy(
-                                  x,
-                                  housePowerData?.stacked_bar || [],
-                                  plantColors,
-                                  plantMetadata,
-                                  generationSourceColors
-                                )
-                              : {}
-                          }
+                                chartReady
+                                  ? getColorMapForGroupBy(
+                                      x,
+                                      data?.line_graph?.total_energy_generated || [],
+                                      plantColors,
+                                      plantMetadata,
+                                      generationSourceColors
+                                    )
+                                  : {}
+                              }
                         />
                       )
                     }
@@ -811,7 +815,7 @@ return (
       }}
     >
       <LineChartComponent
-        title="Monthly CO2 Avoidance Trends by Power Plant"
+        title={generateFullChartTitle("CO₂ Avoidance Over Time", x, y, filters, startDate, endDate)}
         data={data?.line_graph?.total_co2_avoidance || []}
         yAxisLabel="tons CO2"
         unit="tons CO2"
@@ -832,12 +836,24 @@ return (
         sx={{ position: 'absolute', top: 8, right: 8 }}
         onClick={() =>
           openZoomModal(
-            "Zoomed In: Monthly CO2 Avoidance Trends by Power Plant",
+            generateFullChartTitle("CO₂ Avoidance Over Time", x, y, filters, startDate, endDate),
             "co2_avoidance_trends_chart",
             <LineChartComponent
-              title="Monthly CO2 Avoidance Trends by Power Plant"
+              title={generateFullChartTitle("CO₂ Avoidance Over Time", x, y, filters, startDate, endDate)}
+              data={data?.line_graph?.total_co2_avoidance || []}
               yAxisLabel="tons CO2"
               unit="tons CO2"
+              colorMap={
+                chartReady
+                  ? getColorMapForGroupBy(
+                      x,
+                      data?.line_graph?.total_energy_generated || [],
+                      plantColors,
+                      plantMetadata,
+                      generationSourceColors
+                    )
+                  : {}
+              }
             />
           )
         }
@@ -1044,11 +1060,13 @@ return (
           onClose={() => setZoomModal({ ...zoomModal, open: false })}
           title={zoomModal.title}
           downloadFileName={zoomModal.fileName}
+          maxWidth="lg"
           enableDownload
         >
           {zoomModal.content}
         </ZoomModal>
       </Box>
+    </Box>
     </Box>
   </Box>
 );
