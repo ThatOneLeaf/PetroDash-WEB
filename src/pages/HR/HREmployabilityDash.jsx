@@ -102,16 +102,6 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   };
 
   //CHARTS
-  const [openModal, setOpenModal] = useState(false);
-  const [activeChart, setActiveChart] = useState(null);
-  const [chartText, setchartText] = useState(null);
-  const handleClose = () => setOpenModal(false);
-
-  const handleOpen = ({ chartKey, chartText }) => {
-    setActiveChart(chartKey);
-    setchartText(chartText);
-    setOpenModal(true);
-  };
 
   useEffect(() => {
     console.log(companyFilter);

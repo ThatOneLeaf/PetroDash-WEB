@@ -1,4 +1,4 @@
-// ZoomModal.js (full file with reusable modal state logic)
+// Enhanced ZoomModal.js with better support for custom styled charts
 import React, { useRef, useState } from 'react';
 import {
     Dialog,
@@ -40,39 +40,10 @@ const ZoomModal = ({
     const handleDownload = async () => {
         if (chartRef.current) {
             try {
-                // Clone the chart node including the time overlay
                 const node = chartRef.current;
-                const clone = node.cloneNode(true);
-
-                // Copy computed styles for all children (for accurate rendering)
-                const copyStyles = (sourceElem, targetElem) => {
-                    const computedStyle = window.getComputedStyle(sourceElem);
-                    for (let key of computedStyle) {
-                        targetElem.style[key] = computedStyle.getPropertyValue(key);
-                    }
-                    Array.from(sourceElem.children).forEach((srcChild, i) => {
-                        if (targetElem.children[i]) copyStyles(srcChild, targetElem.children[i]);
-                    });
-                };
-                copyStyles(node, clone);
-
-                // Update the overlay in the clone to show date and time
-                const overlay = clone.querySelector('[data-zoom-modal-time]');
-                if (overlay) {
-                    overlay.innerText = now.toLocaleString();
-                }
-
-                // Wrap clone in a container for absolute positioning
-                const container = document.createElement('div');
-                container.style.position = 'relative';
-                container.style.width = node.offsetWidth + 'px';
-                container.style.height = node.offsetHeight + 'px';
-                clone.style.width = '100%';
-                clone.style.height = '100%';
-                container.appendChild(clone);
-
-                // Convert container to image
-                const dataUrl = await htmlToImage.toPng(container, {
+                
+                // Enhanced options for better custom chart rendering
+                const options = {
                     backgroundColor: '#ffffff',
                     width: node.offsetWidth,
                     height: node.offsetHeight,
@@ -80,14 +51,62 @@ const ZoomModal = ({
                         width: node.offsetWidth + 'px',
                         height: node.offsetHeight + 'px',
                     },
-                });
+                    // Improved settings for custom styled elements
+                    pixelRatio: 2, // Higher quality
+                    skipAutoScale: true,
+                    // Include fonts and ensure text is rendered
+                    fontEmbedCSS: true,
+                    // Wait for fonts to load
+                    skipFonts: false,
+                    // Ensure all styles are captured
+                    includeQueryParams: true,
+                    // Better handling of gradients and backgrounds
+                    cacheBust: true,
+                    // Custom filter to ensure all elements are included
+                    filter: (node) => {
+                        // Include all nodes, don't filter anything out
+                        return true;
+                    }
+                };
+
+                // Method 1: Try html-to-image with enhanced options
+                let dataUrl;
+                try {
+                    dataUrl = await htmlToImage.toPng(node, options);
+                } catch (firstError) {
+                    console.log('First method failed, trying alternative...', firstError);
+                    
+                    // Method 2: Alternative approach with different library method
+                    try {
+                        dataUrl = await htmlToImage.toJpeg(node, {
+                            ...options,
+                            quality: 0.95,
+                            backgroundColor: '#ffffff'
+                        });
+                    } catch (secondError) {
+                        console.log('Second method failed, trying canvas approach...', secondError);
+                        
+                        // Method 3: Canvas-based approach
+                        dataUrl = await htmlToImage.toCanvas(node, options).then(canvas => {
+                            return canvas.toDataURL('image/png');
+                        });
+                    }
+                }
+
+                // Download the image
                 const link = document.createElement('a');
-                link.download = `${downloadFileName}.png`;
+                link.download = `${downloadFileName}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
                 link.href = dataUrl;
+                document.body.appendChild(link);
                 link.click();
+                document.body.removeChild(link);
+                
                 setSnackbarOpen(true);
             } catch (error) {
-                console.error('Failed to export image', error);
+                console.error('Failed to export image:', error);
+                
+                // Show error to user
+                alert('Failed to download chart. Please try again or contact support.');
             }
         }
     };
@@ -120,9 +139,18 @@ const ZoomModal = ({
                             overflow: 'hidden',
                             bgcolor: '#ffffff',
                             position: 'relative',
+                            // Ensure fonts are loaded and styles are applied
+                            fontFamily: 'inherit',
+                            fontSize: 'inherit',
+                            // Force hardware acceleration for better rendering
+                            transform: 'translateZ(0)',
+                            // Ensure all child elements are properly contained
+                            '& *': {
+                                boxSizing: 'border-box',
+                            }
                         }}
                     >
-                        {/* Subtle time overlay in modal */}
+                        {/* Enhanced time overlay */}
                         <Box
                             data-zoom-modal-time
                             sx={{
@@ -135,16 +163,19 @@ const ZoomModal = ({
                                 px: 1.5,
                                 py: 0.5,
                                 borderRadius: 2,
-                                zIndex: 10,
+                                zIndex: 1000, // Higher z-index to ensure visibility
                                 pointerEvents: 'none',
                                 fontFamily: 'inherit',
                                 fontWeight: 400,
                                 letterSpacing: 0.1,
                                 userSelect: 'none',
                                 transition: 'all 0.2s',
+                                // Ensure this element is properly rendered
+                                willChange: 'transform',
+                                transform: 'translateZ(0)',
                             }}
                         >
-                            {now.toLocaleTimeString()}
+                            {now.toLocaleString()}
                         </Box>
                         {children}
                     </Box>
@@ -171,7 +202,7 @@ const ZoomModal = ({
                                 fontWeight: 600,
                                 fontSize: 16,
                                 boxShadow: 2,
-                                borderRadius: 3, // rounder corners
+                                borderRadius: 3,
                             }}
                         >
                             Download Image
@@ -190,7 +221,7 @@ const ZoomModal = ({
                     severity="success"
                     sx={{ width: '100%' }}
                 >
-                    The {title} Chart successfully downloaded!
+                    The {title} chart was successfully downloaded!
                 </Alert>
             </Snackbar>
         </>
@@ -198,8 +229,3 @@ const ZoomModal = ({
 };
 
 export default ZoomModal;
-
-// No changes needed here, as the modal is opened by parent via props.
-    // const [zoomModal, setZoomModal] = useState({ open: false, content: null, title: '', fileName: '' });
-    // const openZoomModal = (title, fileName, content) => setZoomModal({ open: true, title, fileName, content });
-    // <ZoomModal {...zoomModal} onClose={() => setZoomModal({ ...zoomModal, open: false })} enableDownload />

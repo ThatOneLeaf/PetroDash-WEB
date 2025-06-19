@@ -67,41 +67,76 @@ const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
     return <span style={{ fontSize }}>{name}</span>;
   };
 
+  // Helper: generate a color palette (extend as needed)
+  const COLORS = [
+    "#1976d2", "#388e3c", "#fbc02d", "#d32f2f", "#7b1fa2", "#0288d1", "#c2185b",
+    "#ffa000", "#388e3c", "#455a64", "#f57c00", "#0288d1", "#afb42b", "#6d4c41",
+    "#00897b", "#c62828", "#5d4037", "#303f9f", "#0097a7", "#fbc02d"
+  ];
+
+  // Helper: get color for a company index
+  const getCompanyColor = (idx) => COLORS[idx % COLORS.length];
+
   // Chart rendering logic as a function for reuse in modal
   const renderChart = (h = height || 350, w = width || "100%") => (
     <ResponsiveContainer width={w} height={h}>
       <BarChart
         data={data}
-        margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
+        margin={{ top: 16, right: 24, left: 8, bottom: 48 }}
       >
         <XAxis
           dataKey="companyId"
           interval={0}
           angle={20}
           tick={{ fontSize: 10 }}
-          // label={{
-          //   value: "Company Name",
-          //   position: "insideBottom",
-          //   offset: -10
-          // }}
         />
         <YAxis
           type="number"
           tickFormatter={(value) => `₱${value.toLocaleString()}`}
           tick={{ fontSize: 10 }}
-          // label={{
-          //   value: "Investment (₱)",
-          //   angle: -90,
-          //   position: "insideLeft",
-          //   offset: 0
-          // }}
         />
         <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
-        <Legend verticalAlign="top" align="right" />
+        {/* Custom Legend at the bottom, small font */}
+        <Legend
+          verticalAlign="bottom"
+          align="center"
+          height={36}
+          iconSize={10}
+          wrapperStyle={{ fontSize: 11, marginTop: 8 }}
+          payload={
+            data.map((entry, idx) => ({
+              value: entry.companyId,
+              type: "square",
+              color: getCompanyColor(idx),
+              id: entry.companyId
+            }))
+          }
+        />
+        {/* Single Bar, color by company */}
         <Bar
           dataKey="projectExpenses"
-          name={getWrappedLegendName("Investment (₱)")}
-          fill="#1976d2"
+          name="Investment (₱)"
+          isAnimationActive={false}
+          barSize={30}
+          fill={
+            // fallback color if function not supported
+            COLORS[0]
+          }
+          // Per-bar color
+          {...{
+            shape: (props) => {
+              const { x, y, width, height, index } = props;
+              return (
+                <rect
+                  x={x}
+                  y={y}
+                  width={width}
+                  height={height}
+                  fill={getCompanyColor(index)}
+                />
+              );
+            }
+          }}
         />
       </BarChart>
     </ResponsiveContainer>

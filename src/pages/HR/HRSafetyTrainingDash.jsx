@@ -18,7 +18,8 @@ import MultiSelectWithChips from "../../components/DashboardComponents/MultiSele
 import ClearButton from "../../components/DashboardComponents/ClearButton";
 import KPIIndicatorCard from "../../components/KPIIndicatorCard";
 import KPICard from "../../components/DashboardComponents/KPICard";
-
+import ZoomModal from "../../components/DashboardComponents/ZoomModal"; // Adjust path as needed
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import {
   LineChart,
   Line,
@@ -348,17 +349,19 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
   };
 
   const showClearButton = companyFilter.length > 0 || positionFilter.length > 0;
-
-  //CHARTS
-  const [openModal, setOpenModal] = useState(false);
-  const [activeChart, setActiveChart] = useState(null);
-  const [chartText, setchartText] = useState(null);
-  const handleClose = () => setOpenModal(false);
-
-  const handleOpen = ({ chartKey, chartText }) => {
-    setActiveChart(chartKey);
-    setchartText(chartText);
-    setOpenModal(true);
+  const [zoomModal, setZoomModal] = useState({
+    open: false,
+    content: null,
+    title: "",
+    fileName: "",
+  });
+  const openZoomModal = (title, fileName, content) => {
+    setZoomModal({
+      open: true,
+      title,
+      fileName,
+      content,
+    });
   };
 
   useEffect(() => {
@@ -418,6 +421,52 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
       value: val,
     }));
   };
+
+  //helper functions for charts
+  const barColors = [
+    "#1976d2",
+    "#e57373",
+    "#ffb300",
+    "#388e3c",
+    "#8e24aa",
+    "#fbc02d",
+    "#0288d1",
+    "#c62828",
+    "#43a047",
+  ];
+
+  const getIncidentTypes = (data) => [
+    ...new Set(data.map((i) => i.incident_type)),
+  ];
+
+  const transformIncidentData = (data) => {
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const types = getIncidentTypes(data);
+
+    return months.map((month) => {
+      const row = { month };
+      types.forEach((type) => {
+        row[type] = data
+          .filter((i) => i.month_name === month && i.incident_type === type)
+          .reduce((sum, i) => sum + i.incident_count, 0);
+      });
+      return row;
+    });
+  };
+
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
       <Box
@@ -509,6 +558,137 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
             flexGrow: 1,
           }}
         >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "12px",
+              borderRadius: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              position: "relative",
+              cursor: "pointer",
+              transition: "box-shadow 0.2s",
+              width: "100%",
+              height: "100%",
+            }}
+            onClick={() =>
+              openZoomModal(
+                "Incidents Per Month",
+                "incidents-per-month",
+                () => (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <div style={{ flex: 1, minHeight: 400 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={transformIncidentData(incidentPerMonth)}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="month"
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
+                          />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Legend />
+                          {getIncidentTypes(incidentPerMonth).map(
+                            (type, idx) => (
+                              <Bar
+                                key={type}
+                                dataKey={type}
+                                stackId="a"
+                                fill={barColors[idx % barColors.length]}
+                                name={type}
+                                barSize={12}
+                              />
+                            )
+                          )}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )
+              )
+            }
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 4px 16px rgba(59,130,246,0.15)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            }}
+            title="Click to enlarge"
+          >
+            <h3
+              style={{
+                fontSize: "13px",
+                fontWeight: "600",
+                marginBottom: "10px",
+                color: "#1e293b",
+                flexShrink: 0,
+              }}
+            >
+              Incidents Per Month
+            </h3>
+
+            {!incidentPerMonth || incidentPerMonth.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "30px 15px",
+                  color: "#64748b",
+                  backgroundColor: "#f8fafc",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                }}
+              >
+                No data available for selected filters
+              </div>
+            ) : (
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={transformIncidentData(incidentPerMonth)}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="month"
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    {getIncidentTypes(incidentPerMonth).map((type, idx) => (
+                      <Bar
+                        key={type}
+                        dataKey={type}
+                        stackId="a"
+                        fill={barColors[idx % barColors.length]}
+                        name={type}
+                        barSize={12}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          {/* 
           <Paper
             sx={{
               p: 2,
@@ -573,7 +753,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                   <YAxis allowDecimals={false} />
                   <Tooltip />
                   <Legend />
-                  {/* Render a Bar for each incident type */}
+                 
                   {Array.from(
                     new Set(incidentPerMonth.map((i) => i.incident_type))
                   ).map((type, idx) => (
@@ -601,7 +781,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                 </BarChart>
               </ResponsiveContainer>
             </Box>
-          </Paper>
+          </Paper>*/}
           <Box
             sx={{
               display: "grid",
@@ -611,6 +791,124 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
               flexGrow: 1,
             }}
           >
+            <div
+              style={{
+                backgroundColor: "white",
+                padding: "12px",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                position: "relative",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s",
+                width: "100%",
+                height: "100%",
+              }}
+              onClick={() =>
+                openZoomModal(
+                  "Total Man Hours Per Year",
+                  "total-man-hours-year",
+                  () => (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <div style={{ flex: 1, minHeight: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={manHours}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="year" />
+                            <YAxis domain={[0, "auto"]} />
+                            <Tooltip
+                              formatter={(value) => `${value} man hours`}
+                              itemStyle={{ color: "#000" }}
+                            />
+                            <Legend />
+                            <Line
+                              type="monotone"
+                              dataKey="yearly"
+                              stroke="#1976d2"
+                              dot={{ fill: "#1976d2" }}
+                              name="Man Hours"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )
+                )
+              }
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(59,130,246,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+              }}
+              title="Click to enlarge"
+            >
+              <h3
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  marginBottom: "10px",
+                  color: "#1e293b",
+                  flexShrink: 0,
+                }}
+              >
+                Total Man Hours Per Year
+              </h3>
+
+              {!manHours || manHours.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "30px 15px",
+                    color: "#64748b",
+                    backgroundColor: "#f8fafc",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
+                >
+                  No data available for selected filters
+                </div>
+              ) : (
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={manHours}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="year" />
+                      <YAxis domain={[0, "auto"]} />
+                      <Tooltip
+                        formatter={(value) => `${value} man hours`}
+                        itemStyle={{ color: "#000" }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="yearly"
+                        stroke="#1976d2"
+                        dot={{ fill: "#1976d2" }}
+                        name="Man Hours"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+            {/* 
             <Paper
               sx={{
                 p: 1,
@@ -648,7 +946,127 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
-            </Paper>
+            </Paper>*/}
+
+            <div
+              style={{
+                backgroundColor: "white",
+                padding: "12px",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                position: "relative",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s",
+                width: "100%",
+                height: "100%",
+              }}
+              onClick={() =>
+                openZoomModal(
+                  "Total Man Power Per Year",
+                  "total-manpower-year",
+                  () => (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <div style={{ flex: 1, minHeight: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={manpowerPerYear}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="year" />
+                            <YAxis domain={[0, "auto"]} />
+                            <Tooltip
+                              formatter={(value) => `${value} manpowers`}
+                              itemStyle={{ color: "#000" }}
+                            />
+                            <Legend />
+                            <Line
+                              type="monotone"
+                              dataKey="manpower"
+                              stroke="#1976d2"
+                              dot={{ fill: "#1976d2" }}
+                              name="Count"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )
+                )
+              }
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(59,130,246,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+              }}
+              title="Click to enlarge"
+            >
+              <h3
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  marginBottom: "10px",
+                  color: "#1e293b",
+                  flexShrink: 0,
+                }}
+              >
+                Total Man Power Per Year
+              </h3>
+
+              {!manpowerPerYear || manpowerPerYear.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "30px 15px",
+                    color: "#64748b",
+                    backgroundColor: "#f8fafc",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
+                >
+                  No data available for selected filters
+                </div>
+              ) : (
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={manpowerPerYear}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="year" />
+                      <YAxis domain={[0, "auto"]} />
+                      <Tooltip
+                        formatter={(value) => `${value} manpowers`}
+                        itemStyle={{ color: "#000" }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="manpower"
+                        stroke="#1976d2"
+                        dot={{ fill: "#1976d2" }}
+                        name="Count"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* 
 
             <Paper
               sx={{
@@ -687,9 +1105,23 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
-            </Paper>
+            </Paper>*/}
           </Box>
         </Box>
+
+        <ZoomModal
+          open={zoomModal.open}
+          title={zoomModal.title}
+          onClose={() => setZoomModal({ ...zoomModal, open: false })}
+          enableDownload
+          downloadFileName={zoomModal.fileName}
+          height={600}
+        >
+          {/* Render the content function if it exists */}
+          {zoomModal.content && typeof zoomModal.content === "function"
+            ? zoomModal.content()
+            : zoomModal.content}
+        </ZoomModal>
       </Box>
     </Box>
   );
