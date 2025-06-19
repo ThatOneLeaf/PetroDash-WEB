@@ -55,9 +55,9 @@ function App() {
             <Route path="/economic/repository" element={<ProtectedRoute requiredRoles={["R03"]}><EconomicRepository /></ProtectedRoute>} />
 
             {/* CSV Routes */}
-            <Route path="/energy/power-generation" element={<Energy />} />
-            <Route path="/energy" element={<PowerDashboard />} />
-            <Route path="/social/er1-94" element={<FundsDashboard/>}/>
+            <Route path="/energy/power-generation" element={<ProtectedRoute requiredRoles={["R05","R04","R03"]}><Energy /></ProtectedRoute>} />
+            <Route path="/energy" element={<ProtectedRoute requiredRoles={["R04", "R03", "R02"]}><PowerDashboard /></ProtectedRoute>} />
+            <Route path="/social/er1-94" element={<ProtectedRoute requiredRoles={["R04", "R03", "R02"]}><FundsDashboard /></ProtectedRoute>}/>
 
             {/* Environment Routes */}
             

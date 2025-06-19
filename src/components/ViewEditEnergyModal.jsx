@@ -46,16 +46,18 @@ const ViewEditEnergyModal = ({
   const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
 
   useEffect(() => {
-    const fetchPowerPlants = async () => {
-      try {
-        const response = await api.get('/reference/power_plants');
-        setPowerPlants(response.data);
-      } catch (error) {
-        alert('Failed to load power plants');
-      }
-    };
-    fetchPowerPlants();
-  }, []);
+  const fetchPowerPlants = async () => {
+    try {
+      const response = await api.get('/reference/power_plants');
+      console.log('Loaded power plants:', response.data); // 👈 LOG HERE
+      setPowerPlants(response.data);
+    } catch (error) {
+      alert('Failed to load power plants');
+    }
+  };
+  fetchPowerPlants();
+}, []);
+
 
   useEffect(() => {
     if (!energyId || !powerplantId) return;
@@ -280,26 +282,27 @@ const handleRejectConfirm = async () => {
 
         <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
           <FormControl fullWidth sx={{ gridColumn: '1 / -1' }}>
-            <InputLabel>Power Project</InputLabel>
-            <Select
-              value={editedRecord.power_plant_id || ''}
-              onChange={(e) => handleChange('power_plant_id', e.target.value)}
-              disabled={!isEditing || isReadOnly}
-              label="Power Plant"
-            >
-              {powerPlants.length > 0 ? (
-                powerPlants.map((pp) => (
-                  <MenuItem key={pp.power_plant_id} value={pp.power_plant_id}>
-                    {pp.site_name}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem value={editedRecord.power_plant_id || ''}>
-                  {editedRecord.power_plant_id || 'N/A'}
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
+          <InputLabel>Power Project</InputLabel>
+          <Select
+            label="Power Plant"
+            value={
+              powerPlants.some(p => p.id === editedRecord.power_plant_id)
+                ? editedRecord.power_plant_id
+                : ''
+            }
+            onChange={(e) => handleChange('power_plant_id', e.target.value)}
+            disabled={!isEditing || isReadOnly}
+          >
+            {powerPlants.map((pp) => (
+              <MenuItem key={pp.id} value={pp.id}>
+                {pp.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+
+
 
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
