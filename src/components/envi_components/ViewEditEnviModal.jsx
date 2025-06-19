@@ -418,6 +418,14 @@ const handleStatusUpdate = async (action) => {
     onClose();
   };
 
+  // Function to check if field should be hidden for Diesel table
+  const shouldHideField = (key) => {
+    if (table === 'Diesel') {
+      return ['month', 'quarter', 'year'].includes(key);
+    }
+    return false;
+  };
+
   return (
     <Paper sx={{
         p: 4,
@@ -474,7 +482,9 @@ const handleStatusUpdate = async (action) => {
           gap: 1,
           mb: 2
         }}>
-          {Object.entries(editedRecord).map(([key, value]) => (
+          {Object.entries(editedRecord)
+            .filter(([key, value]) => !shouldHideField(key)) // Filter out hidden fields
+            .map(([key, value]) => (
             <Box key={key} sx={{ marginBottom: '0.5rem' }}>
               
               {isEditing && key === "date" ? (

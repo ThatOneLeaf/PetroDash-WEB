@@ -20,6 +20,7 @@ import EnviOverview from '../components/DashboardComponents/EnviOverview';
 import DashboardHeader from '../components/DashboardComponents/DashboardHeader';
 import { format } from 'date-fns';
 import HELPINvestments from './CSR/Charts/InvestmentKPI'
+import EnergyTable from '../components/EnergyOverallTable';
 
 function Dashboard() {
   const { logout } = useAuth();
@@ -130,26 +131,29 @@ function Dashboard() {
                   flex: '1 1 25%'
                 }}
               >
+                {/* Floating label */}
                 <Typography 
                   variant="h6" 
                   sx={{ 
                     position: 'absolute',
-                    top: -12,
+                    top: -14,
                     left: 16,
                     backgroundColor: 'white',
                     px: 1,
                     fontWeight: 'bold',
-                    color: '#333'
+                    color: '#333',
+                    zIndex: 2
                   }}
                 >
                   ENERGY
                 </Typography>
-                <Box sx={{ pt: 2, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Energy component will be inserted here
-                  </Typography>
+
+                {/* Padding top so ENERGY label doesn't overlap table */}
+                <Box sx={{ pt: 0.3, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <EnergyTable />
                 </Box>
               </Paper>
+
 
               {/* Second Row - 2 Columns */}
               <Box sx={{ display: 'flex', gap: 2, flex: '1 1 60%' }}>
