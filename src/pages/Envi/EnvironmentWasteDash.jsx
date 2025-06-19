@@ -1941,7 +1941,6 @@ function EnvironmentWasteDash() {
 
           {/* Unit Filter */}
           <SingleSelectDropdown
-            label="Unit"
             options={unitOptions}
             selectedValue={unit}
             onChange={(value) => setUnit(value)}
@@ -1950,7 +1949,6 @@ function EnvironmentWasteDash() {
           {activeTab === 'non_hazardous_generated' ? (
             /* Metrics Multi-Select for non-hazardous */
             <MultiSelectWithChips
-              label="Metrics"
               placeholder="All Metrics"
               options={metricsOptions}
               selectedValues={Array.isArray(metricsType) ? metricsType : (metricsType ? [metricsType] : [])}
