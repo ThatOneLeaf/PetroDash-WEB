@@ -79,18 +79,6 @@ const EnviOverview = () => {
       }}
     >
       <Typography
-        variant="body2"
-        sx={{
-          fontSize: '0.75rem',
-          fontWeight: 'bold',
-          mb: 0.5,
-          // textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}
-      >
-        {title}
-      </Typography>
-      <Typography
         variant="h5"
         sx={{
           fontWeight: 'bold',
@@ -104,6 +92,18 @@ const EnviOverview = () => {
             {unit}
           </Typography>
         )}
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{
+          fontSize: '0.75rem',
+          fontWeight: 'bold',
+          mb: 0.5,
+          // textTransform: 'uppercase',
+          letterSpacing: '0.5px'
+        }}
+      >
+        {title}
       </Typography>
     </Paper>
   );
@@ -123,25 +123,25 @@ const EnviOverview = () => {
         }}
       >
         <MetricCard
-          title="Trees Planted"
           value={enviData.treesPlanted}
+          title="Trees Planted"
           color="#2E4057"
         />
         <MetricCard
-          title="Reforested Area"
           value={enviData.reforestedArea}
+          title="Reforested Area"
           unit="ha"
           color="#048A81"
         />
         <MetricCard
-          title="Recycled Eco Bricks"
           value={enviData.recycledEcoBricks}
+          title="Recycled Eco Bricks"
           unit="kg"
           color="#54C6EB"
         />
         <MetricCard
-          title="Cleanup Participants"
           value={enviData.cleanupParticipants}
+          title="Cleanup Participants"
           color="#6A994E"
         />
       </Box>
