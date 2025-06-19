@@ -19,11 +19,12 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import loginImage from "../../assets/login_image.png";
-import { login } from "../../services/auth";
+import { useAuth } from "../../contexts/AuthContext";
 
 const interFont = { fontFamily: "Inter, sans-serif" };
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

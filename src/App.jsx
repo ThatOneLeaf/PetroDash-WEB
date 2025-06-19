@@ -6,6 +6,7 @@ import Landing from "./pages/Landing";
 import LoginPage from "./pages/Login_page/Login_page";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
+import { AuthProvider } from "./contexts/AuthContext";
 import EconomicRepository from "./pages/Economic/EconomicRepository";
 import EnvironmentEnergy from "./pages/Envi/EnvironmentEnergy";
 import EnvironmentWater from "./pages/Envi/EnvironmentWater";
@@ -27,10 +28,11 @@ import FundsDashboard from "./pages/Energy/FundsDashboard";
 
 function App() {
   return (
-    <Router>
-      <div className="app">
-        <main>
-          <Routes>
+    <AuthProvider>
+      <Router>
+        <div className="app">
+          <main>
+            <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<LoginPage />} />
 
@@ -75,6 +77,7 @@ function App() {
         </main>
       </div>
     </Router>
+    </AuthProvider>
   );
 }
 

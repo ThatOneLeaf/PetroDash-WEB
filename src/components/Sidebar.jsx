@@ -4,8 +4,10 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
+import { Typography } from "@mui/material";
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import DashboardIcon from "../assets/Icons/dashboard.svg";
+import { useAuth } from "../contexts/AuthContext";
 
 // Import icons and logos
 import PetroDashLogo from "../assets/petrodashlogo.png";
@@ -19,6 +21,7 @@ import LogoutIcon from "../assets/Icons/logout.svg";
 import DropDownIcon from "../assets/Icons/drop-down.svg";
 
 function SideBar({ collapsed: collapsedProp = false }) {
+  const { user, logout, getUserEmail, getUserRoleName } = useAuth();
   const [collapsed, setCollapsed] = useState(true);
   const [envOpen, setEnvOpen] = useState(false);
   const [socialOpen, setSocialOpen] = useState(false);
@@ -224,6 +227,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
   React.useEffect(() => {
     localStorage.setItem("sidebarMode", mode);
   }, [mode]);
+
+  // Get user details from context
+  const userEmail = getUserEmail();
+  const userRole = getUserRoleName();
 
   return (
     <>
@@ -1043,6 +1050,45 @@ function SideBar({ collapsed: collapsedProp = false }) {
           </Box>
         </Box>
         <Box sx={{ mb: 3 }}>
+          {/* User Info Section */}
+          {!collapsed && userEmail && (
+            <Box
+              sx={{
+                px: 4,
+                py: 2,
+                mb: 2,
+                bgcolor: "#f8f9fa",
+                borderRadius: 2,
+                mx: 2,
+                border: "1px solid #e9ecef",
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#1a3365",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  mb: 0.5,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {userEmail}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "#6c757d",
+                  fontSize: 12,
+                  fontWeight: 500,
+                }}
+              >
+                {userRole}
+              </Typography>
+            </Box>
+          )}
           <Box
             sx={{
               display: "flex",
@@ -1111,7 +1157,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
               },
             }}
             onClick={() => {
-              navigate("/");
+              logout();
             }}
           >
             <img
