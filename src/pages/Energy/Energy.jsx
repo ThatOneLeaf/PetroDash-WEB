@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ClearIcon from '@mui/icons-material/Clear';
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import LaunchIcon from "@mui/icons-material/Launch";
+import CheckIcon from '@mui/icons-material/Check';
 import {
   Box,
   Button,
@@ -38,6 +39,7 @@ function Energy() {
   const [isImportEnergyModalOpen, setIsImportEnergyModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({
     key: 'date',
@@ -73,10 +75,27 @@ function Energy() {
     setSelectedRecord(null);
   };
 
+  const handleSelectionChange = (selectedIds) => {
+  if (selectedIds.length > 0) {
+    setSelectedRowId(selectedIds[selectedIds.length - 1]); // Always pick the last selected
+  } else {
+    setSelectedRowId(null);
+  }
+};
+
+
 
   const [powerPlants, setPowerPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Placeholder for role-based permissions (currently all true)
+  const canEdit = true;      // user?.role === 'admin' || user?.role === 'editor';
+  const canApprove = true;   // user?.role === 'admin';
+  const canAdd = true;       // canEdit
+  const canImport = true;    // canEdit
+  const canExport = true;    // true for all users
+
 
   const fetchEnergyData = async () => {
     setLoading(true);
@@ -227,6 +246,9 @@ function Energy() {
     setPage(newPage);
   };
 
+
+
+
   useEffect(() => {
     const calculateRowsPerPage = () => {
       const vh = window.innerHeight;
@@ -243,16 +265,42 @@ function Energy() {
     return () => window.removeEventListener('resize', calculateRowsPerPage);
   }, []);
 
-  if (loading) return (
-    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
-      <Box sx={{ textAlign: 'center' }}>
-        <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
-        <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
-          Loading Energy Data...
-        </Typography>
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", height: "100vh" }}>
+        {/* Sidebar (fixed width) */}
+        <Box sx={{ width: 240, flexShrink: 0 }}>
+          <SideBar />
+        </Box>
+
+        {/* Main content area with centered loader */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            overflow: "auto",
+            padding: "2rem",
+          }}
+        >
+          <Box sx={{ textAlign: "center" }}>
+            <CircularProgress size={64} thickness={5} sx={{ color: "#182959" }} />
+            <Typography
+              sx={{
+                mt: 2,
+                color: "#182959",
+                fontWeight: 700,
+                fontSize: 20,
+              }}
+            >
+              Loading Power Generation Data...
+            </Typography>
+          </Box>
+        </Box>
       </Box>
-    </Box>
-  );
+    );
+  }
   if (error) return <div>{error}</div>;
 
   return (
@@ -276,39 +324,84 @@ function Energy() {
             </Box>
 
 
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 2,
-                justifyContent: { xs: "center", sm: "flex-end" },
-                alignItems: "center",
-                width: "100%",
-              }}
-            >
-              <ButtonComp
-                label="Export Data"
-                rounded={true}
-                onClick={() => exportExcelData(filteredData, exportFields, "Daily Power Generated")}
-                color="blue"
-                startIcon={<FileUploadIcon />}
-              />    
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2,
+              justifyContent: { xs: "center", sm: "flex-end" },
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            {/* Show when no row is selected */}
+          {selectedRowIds.length === 0 && (
+            <>
+              {canExport && (
+                <ButtonComp
+                  label="Export Data"
+                  rounded
+                  onClick={() =>
+                    exportExcelData(filteredData, exportFields, "Daily Power Generated")
+                  }
+                  color="blue"
+                  startIcon={<FileUploadIcon />}
+                />
+              )}
+              {canImport && (
+                <ButtonComp
+                  label="Import"
+                  rounded
+                  onClick={() => setIsImportEnergyModalOpen(true)}
+                  color="blue"
+                />
+              )}
+              {canAdd && (
+                <ButtonComp
+                  label="Add Record"
+                  rounded
+                  onClick={() => setIsAddEnergyModalOpen(true)}
+                  color="green"
+                  startIcon={<AddIcon />}
+                />
+              )}
+            </>
+          )}
 
-              <ButtonComp
-                label="Import"
-                rounded={true}
-                onClick={() => setIsImportEnergyModalOpen(true)}
-                color="blue"
-              />
 
-              <ButtonComp
-                label="Add Record"
-                rounded={true}
-                onClick={() => setIsAddEnergyModalOpen(true)}
-                color="green"
-                startIcon={<AddIcon />}
-              />
-            </Box>
+{selectedRowIds.length > 0 && canApprove && (
+  <>
+    <ButtonComp
+      label="Approve"
+      rounded
+      onClick={() => {
+        const record = data.find(r => r.energyId === selectedRowIds[0]);
+        if (record) {
+          console.log("Approving:", record);
+          // your approve logic
+        }
+      }}
+      color="green"
+      startIcon={<CheckIcon />}
+    />
+    <ButtonComp
+      label="Revise"
+      rounded
+      onClick={() => {
+        const record = data.find(r => r.energyId === selectedRowIds[0]);
+        if (record) {
+          console.log("Revising:", record);
+          // your revise logic
+        }
+      }}
+      color="blue"
+    />
+  </>
+)}
+
+          </Box>
+
+
 
           </Box>
 
@@ -378,8 +471,16 @@ function Energy() {
             </Typography>
           ) : (
             <Table
+              idKey="energyId"
+              onSelectionChange={(selectedRows) => {
+                setTimeout(() => {
+                  setSelectedRowIds(selectedRows);
+                }, 0);
+              }}
+
               columns={columns}
               rows={paginatedData}
+              filteredData={filteredData}
               rowsPerPage={rowsPerPage}
               onSort={handleSort}
               sortConfig={sortConfig}

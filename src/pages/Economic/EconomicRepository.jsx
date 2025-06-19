@@ -36,6 +36,8 @@ import Table from '../../components/Table/Table';
 import Pagination from '../../components/Pagination/pagination';
 import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
+import RepositoryHeader from '../../components/RepositoryHeader';
+import MultiSelectWithChips from '../../components/DashboardComponents/MultiSelectDropdown';
 
 const sections = [
   { key: 'generated', label: 'Generated' },
@@ -69,9 +71,9 @@ export default function EconomicRepository() {
 
   // Filter and search states
   const [filters, setFilters] = useState({
-    year: '',
+    year: [],
     type: '',
-    company: ''
+    company: []
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -116,7 +118,7 @@ export default function EconomicRepository() {
   // Fetch data based on selected section
   useEffect(() => {
     setPage(1);
-    setFilters({ year: '', type: '', company: '' });
+    setFilters({ year: [], type: '', company: [] });
     setSearchTerm('');
     
     if (selected === 'generated') {
@@ -158,8 +160,8 @@ export default function EconomicRepository() {
           { key: 'comp', label: 'Company ID' },
           { key: 'year', label: 'Year' },
           { key: 'government', label: 'Government', render: (val, row) => renderSplitCell(row, 'government') },
-          { key: 'localSupplierSpending', label: 'Local Supplier Spending', render: (val, row) => renderSplitCell(row, 'localSupplierSpending') },
-          { key: 'foreignSupplierSpending', label: 'Foreign Supplier Spending', render: (val, row) => renderSplitCell(row, 'foreignSupplierSpending') },
+          { key: 'localSupplierSpending', label: 'Local Suppliers', render: (val, row) => renderSplitCell(row, 'localSupplierSpending') },
+          { key: 'foreignSupplierSpending', label: 'Foreign Suppliers', render: (val, row) => renderSplitCell(row, 'foreignSupplierSpending') },
           { key: 'employee', label: 'Employee', render: (val, row) => renderSplitCell(row, 'employee') },
           { key: 'community', label: 'Community', render: (val, row) => renderSplitCell(row, 'community') },
           { key: 'totalDistributed', label: 'Total Distributed (₱)', render: (val, row) => `₱ ${Number(row.totalDistributed || 0).toLocaleString()}` },
@@ -171,8 +173,8 @@ export default function EconomicRepository() {
         return [
           { key: 'year', label: 'Year', render: (val) => val },
           { key: 'interest', label: 'Interest', render: (val) => val != null ? Number(val).toLocaleString() : '0' },
-          { key: 'dividendsToNci', label: 'Dividends to NCI', render: (val) => val != null ? Number(val).toLocaleString() : '0' },
-          { key: 'dividendsToParent', label: 'Dividends to Parent', render: (val) => val != null ? Number(val).toLocaleString() : '0' },
+          { key: 'dividendsToNci', label: 'Dividends NCI', render: (val) => val != null ? Number(val).toLocaleString() : '0' },
+          { key: 'dividendsToParent', label: 'Dividends Parent', render: (val) => val != null ? Number(val).toLocaleString() : '0' },
           { key: 'total', label: 'Total (₱)', render: (val) => val != null ? `₱ ${Number(val).toLocaleString()}` : '₱ 0' },
         ];
       
@@ -196,9 +198,9 @@ export default function EconomicRepository() {
     }
 
     // Filters
-    if (filters.year) filtered = filtered.filter(row => row.year === filters.year);
+    if (filters.year && filters.year.length > 0) filtered = filtered.filter(row => filters.year.includes(row.year));
     if (filters.type) filtered = filtered.filter(row => row.type === filters.type);
-    if (filters.company) filtered = filtered.filter(row => row.comp === filters.company);
+    if (filters.company && filters.company.length > 0) filtered = filtered.filter(row => filters.company.includes(row.comp));
 
     // Special processing for expenditures
     if (selected === 'expenditures') {
@@ -496,25 +498,10 @@ export default function EconomicRepository() {
             alignItems: 'center',
             marginBottom: '0.5rem'
           }}>
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start'
-            }}>
-              <Typography sx={{ 
-                fontSize: '0.75rem', 
-                fontWeight: 800,
-              }}>
-                REPOSITORY
-              </Typography>
-              <Typography sx={{ 
-                fontSize: '2.25rem', 
-                color: '#182959', 
-                fontWeight: 800
-              }}>
-                Economic - {sections.find(s => s.key === selected)?.label}
-              </Typography>
-            </Box>
+            <RepositoryHeader 
+              label="REPOSITORY"
+              title={`Economic - ${sections.find(s => s.key === selected)?.label}`}
+            />
             
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <Button
@@ -608,16 +595,88 @@ export default function EconomicRepository() {
             />
             
             {yearOptions.length > 0 && (
-              <Filter
-                label="Year"
-                options={[{ label: 'All Years', value: '' }, ...yearOptions]}
-                value={filters.year}
-                onChange={val => {
-                  setFilters(prev => ({ ...prev, year: val }));
-                  setPage(1);
-                }}
-                placeholder="Year"
-              />
+              <Box sx={{ 
+                minWidth: 120, 
+                maxWidth: 300,
+                position: 'relative',
+                '& .MuiFormControl-root': {
+                  width: '100%',
+                },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px',
+                  border: '1px solid #d1d5db',
+                  fontSize: '14px',
+                  fontWeight: 400,
+                  minHeight: '40px',
+                  '&:hover': {
+                    borderColor: '#9ca3af',
+                  },
+                  '&.Mui-focused': {
+                    borderColor: '#3b82f6',
+                    boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none',
+                  },
+                },
+                '& .MuiSelect-select': {
+                  padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  height: '24px',
+                  minHeight: 'unset',
+                  flexWrap: 'nowrap !important',
+                  overflow: 'hidden',
+                },
+                '& .MuiChip-root': {
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  borderRadius: '4px',
+                  height: '20px',
+                  '&:nth-of-type(n+3)': {
+                    display: 'none',
+                  },
+                },
+                '& .MuiSelect-icon': {
+                  color: '#6b7280',
+                },
+                // Override placeholder text styling
+                '& span': {
+                  color: '#6b7280 !important',
+                  fontSize: '14px !important',
+                },
+              }}>
+                <MultiSelectWithChips
+                  label="Year"
+                  options={yearOptions}
+                  selectedValues={filters.year}
+                  onChange={val => {
+                    setFilters(prev => ({ ...prev, year: val }));
+                    setPage(1);
+                  }}
+                  placeholder="All Years"
+                />
+                {filters.year.length > 2 && (
+                  <Box sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '32px',
+                    transform: 'translateY(-50%)',
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    backgroundColor: '#f3f4f6',
+                    color: '#6b7280',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    pointerEvents: 'none',
+                  }}>
+                    +{filters.year.length - 2}
+                  </Box>
+                )}
+              </Box>
             )}
             
             {selected === 'expenditures' && (
@@ -632,16 +691,88 @@ export default function EconomicRepository() {
                   }}
                   placeholder="Type"
                 />
-                <Filter
-                  label="Company"
-                  options={[{ label: 'All Companies', value: '' }, ...companyOptions]}
-                  value={filters.company}
-                  onChange={val => {
-                    setFilters(prev => ({ ...prev, company: val }));
-                    setPage(1);
-                  }}
-                  placeholder="Company"
-                />
+                <Box sx={{ 
+                  minWidth: 150, 
+                  maxWidth: 400,
+                  position: 'relative',
+                  '& .MuiFormControl-root': {
+                    width: '100%',
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    minHeight: '40px',
+                    '&:hover': {
+                      borderColor: '#9ca3af',
+                    },
+                    '&.Mui-focused': {
+                      borderColor: '#3b82f6',
+                      boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                  '& .MuiSelect-select': {
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    height: '24px',
+                    minHeight: 'unset',
+                    flexWrap: 'nowrap !important',
+                    overflow: 'hidden',
+                  },
+                  '& .MuiChip-root': {
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    borderRadius: '4px',
+                    height: '20px',
+                    '&:nth-of-type(n+3)': {
+                      display: 'none',
+                    },
+                  },
+                  '& .MuiSelect-icon': {
+                    color: '#6b7280',
+                  },
+                  // Override placeholder text styling
+                  '& span': {
+                    color: '#6b7280 !important',
+                    fontSize: '14px !important',
+                  },
+                }}>
+                  <MultiSelectWithChips
+                    label="Company"
+                    options={companyOptions}
+                    selectedValues={filters.company}
+                    onChange={val => {
+                      setFilters(prev => ({ ...prev, company: val }));
+                      setPage(1);
+                    }}
+                    placeholder="All Companies"
+                  />
+                  {filters.company.length > 2 && (
+                    <Box sx={{
+                      position: 'absolute',
+                      top: '50%',
+                      right: '32px',
+                      transform: 'translateY(-50%)',
+                      fontSize: '12px',
+                      fontWeight: 400,
+                      backgroundColor: '#f3f4f6',
+                      color: '#6b7280',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      pointerEvents: 'none',
+                    }}>
+                      +{filters.company.length - 2}
+                    </Box>
+                  )}
+                </Box>
               </>
             )}
           </Box>

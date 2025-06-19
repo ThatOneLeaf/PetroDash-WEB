@@ -451,13 +451,6 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
               placeholder="All Companies"
             />
 
-            <MultiSelectWithChips
-              label="Position"
-              options={uniqueOptions("position_id")}
-              selectedValues={positionFilter}
-              onChange={setPositionFilter}
-              placeholder="All Position"
-            />
             <MultiSelectWithChips label="Start Date" placeholder="Start Date" />
             <MultiSelectWithChips label="End Date" placeholder="End Date" />
 
