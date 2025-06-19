@@ -1,149 +1,8 @@
-import { useState, useEffect } from 'react';
-import {
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  IconButton,
-  Box,
-  TextField,
-  Select,
-  MenuItem,
-} from '@mui/material';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import AddIcon from '@mui/icons-material/Add';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import EditIcon from '@mui/icons-material/Edit';
-import api from '../../services/api';
-import Overlay from '../../components/modal';
+import { Box, Typography } from '@mui/material';
+import ConstructionIcon from '@mui/icons-material/Construction';
 import Sidebar from '../../components/Sidebar';
-import AddEnvironmentEnergyModal from '../../components/envi_components/AddEnergyElectricityModal';
-import Table from '../../components/Table/Table';
-import Pagination from '../../components/Pagination/pagination';
-import Filter from '../../components/Filter/Filter';
-import Search from '../../components/Filter/Search';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
 
 function EnvironmentAir() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState({
-    key: 'year',
-    direction: 'desc'
-  });
-  
-  const rowsPerPage = 10;
-
-  const [filters, setFilters] = useState({
-    year: '',
-    type: '',
-    company: ''
-  });
-
-  useEffect(() => {
-    fetchExpendituresData();
-  }, []);
-
-  const fetchExpendituresData = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/economic/expenditures');
-      console.log('Data from API:', response.data);
-      setData(response.data);
-    } catch (error) {
-      console.error('Error fetching expenditures data:', error);
-      setError('Error fetching data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSort = (key) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-
-  const getSortedData = (dataToSort = data) => {
-    const sortedData = [...dataToSort].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return sortedData;
-  };
-
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const getFilteredData = () => {
-    let filteredData = [...data];
-    
-    // Apply search filter
-    if (searchTerm) {
-      filteredData = filteredData.filter(row => 
-        row.comp.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.year.toString().includes(searchTerm)
-      );
-    }
-
-    // Apply filters
-    if (filters.year) {
-      filteredData = filteredData.filter(row => row.year === filters.year);
-    }
-    if (filters.type) {
-      filteredData = filteredData.filter(row => row.type === filters.type);
-    }
-    if (filters.company) {
-      filteredData = filteredData.filter(row => row.comp === filters.company);
-    }
-    
-    return filteredData;
-  };
-
-  // Update getCurrentPageData to use filtered data
-  const getCurrentPageData = () => {
-    const filteredData = getFilteredData();
-    const sortedData = getSortedData(filteredData);
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return sortedData.slice(start, end);
-  };
-
-  const totalPages = Math.ceil(getFilteredData().length / rowsPerPage);
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
-  };
-
-  const renderSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />;
-  };
-
-  if (loading) return (
-    <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
-      <Box sx={{ textAlign: 'center' }}>
-        <CircularProgress size={64} thickness={5} sx={{ color: '#182959' }} />
-        <Typography sx={{ mt: 2, color: '#182959', fontWeight: 700, fontSize: 20 }}>
-          Loading Air Data...
-        </Typography>
-      </Box>
-    </Box>
-  );
-  if (error) return <div>{error}</div>;
-
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
@@ -169,73 +28,26 @@ function EnvironmentAir() {
                 Environment - Air
               </h2>
             </div>
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <Button
-                variant="contained"
-                startIcon={<FileUploadIcon />}
-                sx={{
-                  backgroundColor: '#182959',
-                  borderRadius: '999px',
-                  padding: '9px 18px',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: '#0f1a3c', // darker shade on hover
-                  },
-                }}
-              >
-                EXPORT DATA
-              </Button>
-              <Button
-                variant="contained"
-                sx={{ 
-                  backgroundColor: '#182959',
-                  borderRadius: '999px', // Fully rounded (pill-style)
-                  padding: '9px 18px',    // Optional: adjust padding for better look
-                  fontSize: '1rem', // Optional: adjust font size
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: '#0f1a3c', // darker shade on hover
-                  },
-                }}
-              >
-                IMPORT
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                sx={{ 
-                  backgroundColor: '#2B8C37',
-                  borderRadius: '999px', // Fully rounded (pill-style)
-                  padding: '9px 18px',    // Optional: adjust padding for better look 
-                  fontSize: '1rem', // Optional: adjust font size
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: '#256d2f', // darker shade of #2B8C37
-                  },
-                }}
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                ADD RECORD
-              </Button>
-            </div>
           </div>
 
-
-
-
-
-          {isAddModalOpen && (
-            <Overlay onClose={() => setIsAddModalOpen(false)}>
-              <AddEnvironmentEnergyModal 
-                onClose={() => {
-                  setIsAddModalOpen(false);
-                  fetchExpendituresData(); // Refresh data after adding
-                }} 
-              />
-            </Overlay>
-          )}
+          {/* Coming Soon Message */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '400px',
+            textAlign: 'center',
+            gap: 2
+          }}>
+            <ConstructionIcon sx={{ fontSize: 80, color: '#182959', opacity: 0.7 }} />
+            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#182959', mb: 1 }}>
+              Coming Soon
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#666', maxWidth: '500px', lineHeight: 1.6 }}>
+              Data for this section is not yet available. This page will be updated once the necessary information has been provided.
+            </Typography>
+          </Box>
         </div>
       </Box>
     </Box>

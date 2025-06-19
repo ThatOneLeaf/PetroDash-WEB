@@ -13,6 +13,8 @@ import EnvironmentWaste from "./pages/Envi/EnvironmentWaste";
 import EnvironmentAir from "./pages/Envi/EnvironmentAir";
 import EnvironmentCare from "./pages/Envi/EnvironmentCare";
 import EnvironmentWaterDash from "./pages/Envi/EnvironmentWaterDash";
+import EnvironmentAirDash from "./pages/Envi/EnvironmentAirDash";
+import EnvironmentCareDash from "./pages/Envi/EnvironmentCareDash";
 import CSR from "./pages/CSR/CSRActivity";
 import Energy from "./pages/Energy/Energy";
 import HR from "./pages/HR/HRMain";
@@ -38,12 +40,16 @@ function App() {
             <Route path="/economic/repository" element={<ProtectedRoute><EconomicRepository /></ProtectedRoute>} />
             
             {/* Protected Routes Environment */}
-            <Route path="/environment/energy" element={<ProtectedRoute><EnvironmentEnergy /></ProtectedRoute>} />
-            <Route path="/environment/water" element={<ProtectedRoute><EnvironmentWater /></ProtectedRoute>} />
-            <Route path="/environment/waste" element={<ProtectedRoute><EnvironmentWaste /></ProtectedRoute>} />
-            <Route path="/environment/water-dash" element={<ProtectedRoute><EnvironmentWaterDash /></ProtectedRoute>} />
-            <Route path="/environment/energy-dash" element={<ProtectedRoute><EnvironmentEnergyDash /></ProtectedRoute>} />
-            <Route path="/environment/waste-dash" element={<ProtectedRoute><EnvironmentWasteDash /></ProtectedRoute>} />
+            <Route path="/environment/energy" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentEnergy /></ProtectedRoute>} />
+            <Route path="/environment/water" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentWater /></ProtectedRoute>} />
+            <Route path="/environment/waste" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentWaste /></ProtectedRoute>} />
+            <Route path="/environment/air" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentAir /></ProtectedRoute>} />
+            <Route path="/environment/care" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentCare /></ProtectedRoute>} />
+            <Route path="/environment/water-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentWaterDash /></ProtectedRoute>} />
+            <Route path="/environment/energy-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentEnergyDash /></ProtectedRoute>} />
+            <Route path="/environment/waste-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentWasteDash /></ProtectedRoute>} />
+            <Route path="/environment/air-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentAirDash /></ProtectedRoute>} />
+            <Route path="/environment/care-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentCareDash /></ProtectedRoute>} />
 
             {/* Protected Routes */}
             <Route path="/economic" element={<ProtectedRoute requiredRoles={["R02", "R03"]}><Economic /></ProtectedRoute>} />
@@ -55,9 +61,7 @@ function App() {
             <Route path="/social/er1-94" element={<FundsDashboard/>}/>
 
             {/* Environment Routes */}
-            <Route path="/environment/air" element={<EnvironmentAir />} />
-            <Route path="/environment/care" element={<EnvironmentCare />} />
-            <Route path="/environment/waste-dash" element={<EnvironmentWasteDash />} />
+            
             
             {/* HELP Routes */}
             <Route path="/social/help" element={<ProtectedRoute requiredRoles={["R02"]}><CSR /></ProtectedRoute>} />
