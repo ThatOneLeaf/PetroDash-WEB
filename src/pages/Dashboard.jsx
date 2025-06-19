@@ -17,6 +17,7 @@ import { Box, Button, Typography, Paper, CircularProgress } from "@mui/material"
 import Sidebar from '../components/Sidebar';
 import { logout } from '../services/auth';
 import EnviOverview from '../components/DashboardComponents/EnviOverview'; // Import the EnviOverview component
+import HELPINvestments from './CSR/Charts/InvestmentKPI'
 
 function Dashboard() {
   const [data, setData] = useState([]);
@@ -187,7 +188,7 @@ function Dashboard() {
                     >
                       ENVIRONMENT
                     </Typography>
-                    <Box sx={{ pt: 2, height: '100%', px: 2, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Box sx={{ pt: 2, height: '100%', width: '100%', px: 2, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <EnviOverview />
                     </Box>
                   </Paper>
@@ -219,9 +220,11 @@ function Dashboard() {
                       SOCIAL
                     </Typography>
                     <Box sx={{ pt: 2, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography variant="body2" color="text.secondary">
+                      {/* <Typography variant="body2" color="text.secondary">
                         Social component will be inserted here
-                      </Typography>
+                        <HELPINvestments />
+                      </Typography> */}
+                      <HELPINvestments />
                     </Box>
                   </Paper>
 

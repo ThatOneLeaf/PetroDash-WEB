@@ -84,7 +84,7 @@ const EnviOverview = () => {
           fontSize: '0.75rem',
           fontWeight: 'bold',
           mb: 0.5,
-          textTransform: 'uppercase',
+          // textTransform: 'uppercase',
           letterSpacing: '0.5px'
         }}
       >
@@ -95,7 +95,7 @@ const EnviOverview = () => {
         sx={{
           fontWeight: 'bold',
           fontSize: '1.5rem',
-          fontFamily: 'monospace'
+          // fontFamily: 'monospace'
         }}
       >
         {loading ? '######' : formatNumber(value)}
@@ -113,7 +113,7 @@ const EnviOverview = () => {
   }
 
   return (
-    <Box sx={{ height: '100%', p: 1 }}>
+    <Box sx={{ height: '100%', width: '100%', p: 1 }}>
       <Box
         sx={{
           display: 'grid',
