@@ -43,7 +43,8 @@ import MonthRangeSelect from "../../components/DashboardComponents/MonthRangeSel
 import KPICard from "../../components/DashboardComponents/KPICard";
 import ClearButton from "../../components/DashboardComponents/ClearButton";
 import MonthRangePicker from "../../components/Filter/MonthRangePicker";
-
+import ZoomModal from "../../components/DashboardComponents/ZoomModal"; // Adjust path as needed
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
 const leaveTypes = [
   { year: 2019, SPL: 3, Paternity: 1, Maternity: 6 },
   { year: 2020, SPL: 2, Paternity: 0, Maternity: 5 },
@@ -84,6 +85,21 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   };
 
   const showClearButton = companyFilter.length > 0 || positionFilter.length > 0;
+
+  const [zoomModal, setZoomModal] = useState({
+    open: false,
+    content: null,
+    title: "",
+    fileName: "",
+  });
+  const openZoomModal = (title, fileName, content) => {
+    setZoomModal({
+      open: true,
+      title,
+      fileName,
+      content,
+    });
+  };
 
   //CHARTS
   const [openModal, setOpenModal] = useState(false);
@@ -211,6 +227,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
+          zoom: "0.8",
         }}
       >
         {/* Filters */}
@@ -281,208 +298,6 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           />
         </Box>
 
-        <Modal open={openModal} onClose={handleClose}>
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "90%",
-              maxWidth: 1000,
-              bgcolor: "#fff",
-              borderRadius: 3,
-              p: 3,
-
-              boxShadow: 24,
-              outline: "none",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2, // margin below the header
-              }}
-            >
-              <Box sx={{ flexGrow: 1, textAlign: "center" }}>
-                <Typography variant="h6" sx={{ color: "#000" }}>
-                  {chartText}
-                </Typography>
-              </Box>
-
-              <IconButton
-                onClick={handleClose}
-                sx={{
-                  position: "relative", // relative to Box, not absolute
-                  zIndex: 10,
-                }}
-              >
-                <CloseIcon />
-              </IconButton>
-            </Box>
-
-            {activeChart === "employeeCountChart" && (
-              <ResponsiveContainer width="100%" height={500}>
-                <BarChart data={employeeCountByCompany}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="company" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" name="Employee Count">
-                    {employeeCountByCompany.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-
-            {activeChart === "ageDistributionChart" && (
-              <ResponsiveContainer width="100%" height={400}>
-                <PieChart>
-                  <Pie
-                    data={ageDistribution}
-                    dataKey="count"
-                    nameKey="age_group"
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius="80%"
-                    innerRadius="40%"
-                    fill="#8884d8"
-                    paddingAngle={2}
-                    startAngle={90}
-                    endAngle={450}
-                  >
-                    {ageDistribution.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                        className="recharts-sector"
-                      />
-                    ))}
-                  </Pie>
-                  <Legend iconType="square" />
-                  <Tooltip formatter={(value, name) => [`${value}`, name]} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-
-            {activeChart === "parentalLeavePerYearChart" && (
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={leaveSeasons}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis domain={[0, "auto"]} />
-                  <Tooltip
-                    formatter={(value) => `${value} leaves`}
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="leave_count"
-                    stroke="#1976d2"
-                    dot={{ fill: "#1976d2" }}
-                    name="Leave Count"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-
-            {/* {activeChart === "attrtitionRatePerYearChart" && (
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={attritionData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis
-                    domain={[0, "auto"]}
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <Tooltip
-                    formatter={(value) => `${value}%`}
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="attrition_rate_percent"
-                    stroke="#ff7300"
-                    dot={{ fill: "#ff7300" }}
-                    name="Attrition Rate (%)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )} */}
-
-            {activeChart === "genderDistributionChart" && (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={genderDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="position" />
-                  <YAxis />
-                  <Tooltip
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="Male" fill="#4285F4" />
-                  <Bar dataKey="Female" fill="#EA4335" />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-
-            {activeChart === "typesOfLeaveTakenPerYearChart" && (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={leaveTypes}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis />
-                  <Tooltip
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend iconType="square" />
-                  <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
-                  <Bar
-                    dataKey="Paternity"
-                    stackId="a"
-                    fill="#ffa726"
-                    name="Paternity"
-                  />
-                  <Bar
-                    dataKey="Maternity"
-                    stackId="a"
-                    fill="#66bb6a"
-                    name="Maternity"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </Box>
-        </Modal>
-
         <Box
           sx={{
             display: "grid",
@@ -492,6 +307,109 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             flexGrow: 1,
           }}
         >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "12px",
+              borderRadius: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              position: "relative",
+              cursor: "pointer",
+              transition: "box-shadow 0.2s",
+            }}
+            onClick={() =>
+              openZoomModal(
+                "Gender Distribution by Position",
+                "gender-distribution",
+                () => (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <div style={{ flex: 1, minHeight: 400 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={genderDistribution}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="position" />
+                          <YAxis />
+                          <Tooltip itemStyle={{ color: "#000" }} />
+                          <Legend />
+                          <Bar dataKey="Male" fill="#4285F4" />
+                          <Bar dataKey="Female" fill="#EA4335" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )
+              )
+            }
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 4px 16px rgba(59,130,246,0.15)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            }}
+            title="Click to enlarge"
+          >
+            <h3
+              style={{
+                fontSize: "13px",
+                fontWeight: "600",
+                marginBottom: "10px",
+                color: "#1e293b",
+                flexShrink: 0,
+              }}
+            >
+              Gender Distribution by Position
+            </h3>
+
+            {!genderDistribution || genderDistribution.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "30px 15px",
+                  color: "#64748b",
+                  backgroundColor: "#f8fafc",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                }}
+              >
+                No data available for selected filters
+              </div>
+            ) : (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                }}
+              >
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={genderDistribution}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="position" />
+                      <YAxis />
+                      <Tooltip itemStyle={{ color: "#000" }} />
+                      <Legend />
+                      <Bar dataKey="Male" fill="#4285F4" />
+                      <Bar dataKey="Female" fill="#EA4335" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+          {/*
           <Paper
             sx={{
               p: 1,
@@ -528,7 +446,148 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 </BarChart>
               </ResponsiveContainer>
             </Box>
-          </Paper>
+          </Paper> */}
+
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "12px",
+              borderRadius: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              position: "relative",
+              cursor: "pointer",
+              transition: "box-shadow 0.2s",
+            }}
+            onClick={() =>
+              openZoomModal(
+                "Age Group Distribution",
+                "age-distribution",
+                () => (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <div style={{ flex: 1, minHeight: 400 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={ageDistribution}
+                            dataKey="count"
+                            nameKey="age_group"
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={150}
+                            innerRadius={60}
+                            fill="#8884d8"
+                            paddingAngle={2}
+                            startAngle={90}
+                            endAngle={450}
+                          >
+                            {ageDistribution.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value, name) => [`${value}`, name]}
+                          />
+                          <Legend iconType="square" />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )
+              )
+            }
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 4px 16px rgba(59,130,246,0.15)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            }}
+            title="Click to enlarge"
+          >
+            <h3
+              style={{
+                fontSize: "13px",
+                fontWeight: "600",
+                marginBottom: "10px",
+                color: "#1e293b",
+                flexShrink: 0,
+              }}
+            >
+              Age Group Distribution
+            </h3>
+
+            {!ageDistribution || ageDistribution.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "30px 15px",
+                  color: "#64748b",
+                  backgroundColor: "#f8fafc",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                }}
+              >
+                No data available for selected filters
+              </div>
+            ) : (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                }}
+              >
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={ageDistribution}
+                        dataKey="count"
+                        nameKey="age_group"
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius="80%"
+                        innerRadius="40%"
+                        fill="#8884d8"
+                        paddingAngle={2}
+                        startAngle={90}
+                        endAngle={450}
+                      >
+                        {ageDistribution.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value, name) => [`${value}`, name]}
+                      />
+                      <Legend iconType="square" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/*
 
           <Paper
             sx={{
@@ -552,12 +611,12 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     `}
               </style>
             </>
-            {/* Title outside ResponsiveContainer */}
+           
             <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
               Age Group Distribution
             </Typography>
 
-            {/* Set a fixed height for the chart wrapper */}
+          
             <Box sx={{ height: 250 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -589,6 +648,150 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               </ResponsiveContainer>
             </Box>
           </Paper>
+
+          */}
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "12px",
+              borderRadius: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              position: "relative",
+              cursor: "pointer",
+              transition: "box-shadow 0.2s",
+            }}
+            onClick={() =>
+              openZoomModal(
+                "Types of Leaves Taken Per Year",
+                "leave-types",
+                () => (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <div style={{ flex: 1, minHeight: 400 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={leaveTypes}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="year" />
+                          <YAxis />
+                          <Tooltip itemStyle={{ color: "#000" }} />
+                          <Legend iconType="square" />
+                          <Bar
+                            dataKey="SPL"
+                            stackId="a"
+                            fill="#1976d2"
+                            name="SPL"
+                          />
+                          <Bar
+                            dataKey="Paternity"
+                            stackId="a"
+                            fill="#ffa726"
+                            name="Paternity"
+                          />
+                          <Bar
+                            dataKey="Maternity"
+                            stackId="a"
+                            fill="#66bb6a"
+                            name="Maternity"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )
+              )
+            }
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 4px 16px rgba(59,130,246,0.15)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            }}
+            title="Click to enlarge"
+          >
+            <h3
+              style={{
+                fontSize: "13px",
+                fontWeight: "600",
+                marginBottom: "10px",
+                color: "#1e293b",
+                flexShrink: 0,
+              }}
+            >
+              Types of Leaves Taken Per Year
+            </h3>
+
+            {!leaveTypes || leaveTypes.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "30px 15px",
+                  color: "#64748b",
+                  backgroundColor: "#f8fafc",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                }}
+              >
+                No data available for selected filters
+              </div>
+            ) : (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                }}
+              >
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart
+                      data={leaveTypes}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="year" />
+                      <YAxis />
+                      <Tooltip itemStyle={{ color: "#000" }} />
+                      <Legend iconType="square" />
+                      <Bar
+                        dataKey="SPL"
+                        stackId="a"
+                        fill="#1976d2"
+                        name="SPL"
+                      />
+                      <Bar
+                        dataKey="Paternity"
+                        stackId="a"
+                        fill="#ffa726"
+                        name="Paternity"
+                      />
+                      <Bar
+                        dataKey="Maternity"
+                        stackId="a"
+                        fill="#66bb6a"
+                        name="Maternity"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/*
           <Paper
             sx={{
               p: 1,
@@ -638,7 +841,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 </BarChart>
               </ResponsiveContainer>
             </Box>
-          </Paper>
+          </Paper> */}
 
           {/* 
           <Paper
@@ -697,6 +900,129 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               gap: 2,
             }}
           >
+            <div
+              style={{
+                backgroundColor: "white",
+                padding: "12px",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                position: "relative",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s",
+                width: "100%",
+                maxWidth: "800px",
+                maxWidth: "1000px",
+                height: "400px",
+              }}
+              onClick={() =>
+                openZoomModal(
+                  "Employee Count Per Company",
+                  "employee-count-company",
+                  () => (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <div style={{ flex: 1, minHeight: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={employeeCountByCompany}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="company" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="count" name="Employee Count">
+                              {employeeCountByCompany.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                  className="recharts-sector"
+                                />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )
+                )
+              }
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(59,130,246,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+              }}
+              title="Click to enlarge"
+            >
+              <h3
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  marginBottom: "10px",
+                  color: "#1e293b",
+                  flexShrink: 0,
+                }}
+              >
+                Employee Count Per Company
+              </h3>
+
+              {!employeeCountByCompany ||
+              employeeCountByCompany.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "30px 15px",
+                    color: "#64748b",
+                    backgroundColor: "#f8fafc",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
+                >
+                  No data available for selected filters
+                </div>
+              ) : (
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                  }}
+                >
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={employeeCountByCompany}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="company" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="count" name="Employee Count">
+                          {employeeCountByCompany.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                              className="recharts-sector"
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 
             <Paper
               sx={{
                 p: 1,
@@ -734,7 +1060,135 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
-            </Paper>
+            </Paper>*/}
+
+            <div
+              style={{
+                backgroundColor: "white",
+                padding: "12px",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                position: "relative",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s",
+                width: "100%",
+                maxWidth: "800px",
+              }}
+              onClick={() =>
+                openZoomModal(
+                  "Parental Leaves Per Year",
+                  "parental-leaves",
+                  () => (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <div style={{ flex: 1, minHeight: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={leaveSeasons}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="year" />
+                            <YAxis domain={[0, "auto"]} />
+                            <Tooltip
+                              formatter={(value) => `${value} leaves`}
+                              itemStyle={{ color: "#000" }}
+                            />
+                            <Legend />
+                            <Line
+                              type="monotone"
+                              dataKey="leave_count"
+                              stroke="#1976d2"
+                              dot={{ fill: "#1976d2" }}
+                              name="Leave Count"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )
+                )
+              }
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(59,130,246,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+              }}
+              title="Click to enlarge"
+            >
+              <h3
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  marginBottom: "10px",
+                  color: "#1e293b",
+                  flexShrink: 0,
+                }}
+              >
+                Parental Leaves Per Year
+              </h3>
+
+              {!leaveSeasons || leaveSeasons.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "30px 15px",
+                    color: "#64748b",
+                    backgroundColor: "#f8fafc",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
+                >
+                  No data available for selected filters
+                </div>
+              ) : (
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                  }}
+                >
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart
+                        data={leaveSeasons}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" />
+                        <YAxis domain={[0, "auto"]} />
+                        <Tooltip
+                          formatter={(value) => `${value} leaves`}
+                          itemStyle={{ color: "#000" }}
+                        />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="leave_count"
+                          stroke="#1976d2"
+                          dot={{ fill: "#1976d2" }}
+                          name="Leave Count"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* 
             <Paper
               sx={{
                 p: 1,
@@ -779,9 +1233,23 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
-            </Paper>
+            </Paper>*/}
           </Box>
         </Box>
+
+        <ZoomModal
+          open={zoomModal.open}
+          title={zoomModal.title}
+          onClose={() => setZoomModal({ ...zoomModal, open: false })}
+          enableDownload
+          downloadFileName={zoomModal.fileName}
+          height={600}
+        >
+          {/* Render the content function if it exists */}
+          {zoomModal.content && typeof zoomModal.content === "function"
+            ? zoomModal.content()
+            : zoomModal.content}
+        </ZoomModal>
       </Box>
     </Box>
   );
