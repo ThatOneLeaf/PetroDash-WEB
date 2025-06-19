@@ -65,7 +65,7 @@ function App() {
             
             
             {/* HELP Routes */}
-            <Route path="/social/help" element={<ProtectedRoute requiredRoles={["R02"]}><CSR /></ProtectedRoute>} />
+            <Route path="/social/help" element={<ProtectedRoute requiredRoles={["R02","R03"]}><CSR /></ProtectedRoute>} />
             <Route path="/social/help-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><HELPDash /></ProtectedRoute>} />
 
             {/* HR Routes */}
