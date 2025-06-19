@@ -328,8 +328,16 @@ export default function HELPDash() {
     () => [...new Set(data.map(d => d.projectYear).filter(Boolean))].sort((a, b) => b - a),
     [data]
   );
+  // Company options now include both id and name
   const companyOptions = useMemo(
-    () => [...new Set(data.map(d => d.companyName).filter(Boolean))].sort(),
+    () =>
+      [
+        ...new Map(
+          data
+            .filter(d => d.companyId && d.companyName)
+            .map(d => [d.companyId, { id: d.companyId, name: d.companyName }])
+        ).values(),
+      ].sort((a, b) => a.name.localeCompare(b.name)),
     [data]
   );
 
@@ -337,7 +345,7 @@ export default function HELPDash() {
   const filteredData = useMemo(() => {
     return data.filter(row => {
       if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
-      if (filters.company && row.companyName !== filters.company) return false;
+      if (filters.company && row.companyId !== filters.company) return false;
       return true;
     });
   }, [data, filters]);
@@ -516,7 +524,7 @@ export default function HELPDash() {
               >
                 <option value="">All Companies</option>
                 {companyOptions.map(c => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
 
@@ -664,7 +672,7 @@ export default function HELPDash() {
               >
                 <option value="">All Companies</option>
                 {companyOptions.map(c => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
 
@@ -918,7 +926,7 @@ export default function HELPDash() {
                 // 64px header, 48px tabs/filters, 120px KPI, 48px margins (adjust as needed)
               }}
             >
-              {/* Left: Large Chart Container (Investments per Projects) */}
+              {/* Investments per Projects */}
               <Paper
                 elevation={0}
                 sx={{
@@ -949,11 +957,15 @@ export default function HELPDash() {
                 </Typography>
                 <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
-                    <InvestmentPerProjectChart height="100%" width="100%" />
+                    <InvestmentPerProjectChart
+                      height="100%"
+                      width="100%"
+                      year={filters.year}
+                      companyId={filters.company}
+                    />
                   </Box>
                 </Box>
               </Paper>
-              {/* Right: Stack of two charts */}
               <Box
                 sx={{
                   flex: 1,
@@ -965,7 +977,8 @@ export default function HELPDash() {
                   minHeight: 0,
                 }}
               >
-                {/* Top Right Chart */}
+                {console.log("company id: ", filters.company)}
+                {/* Investments per Programs */}
                 <Paper
                   elevation={0}
                   sx={{
@@ -996,11 +1009,16 @@ export default function HELPDash() {
                   </Typography>
                   <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', height: '100%' }}>
-                      <InvestmentPerProgramChart height="100%" width="100%" />
+                      <InvestmentPerProgramChart
+                        height="100%"
+                        width="100%"
+                        year={filters.year}
+                        companyId={filters.company}
+                      />
                     </Box>
                   </Box>
                 </Paper>
-                {/* Bottom Right Chart */}
+                {/* Investments per Company */}
                 <Paper
                   elevation={0}
                   sx={{
@@ -1031,7 +1049,7 @@ export default function HELPDash() {
                   </Typography>
                   <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', height: '100%' }}>
-                      <InvestmentPerCompanyChart height="100%" width="100%" />
+                      <InvestmentPerCompanyChart height="100%" width="100%" year={filters.year} />
                     </Box>
                   </Box>
                 </Paper>

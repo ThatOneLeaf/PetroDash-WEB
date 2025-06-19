@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Paper, Box, Typography, CircularProgress, IconButton, Tooltip as MuiTooltip } from "@mui/material";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
 import api from "../../../services/api";
@@ -15,7 +15,6 @@ import api from "../../../services/api";
 const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [year, setYear] = useState(yearProp || null);
   const [availableYears, setAvailableYears] = useState([]);
   const [zoomOpen, setZoomOpen] = useState(false);
 
@@ -29,19 +28,17 @@ const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
         ).filter(Boolean);
         years.sort((a, b) => b - a); // Descending
         setAvailableYears(years);
-        if (!yearProp && years.length > 0) setYear(years[0]);
       })
       .catch(() => setAvailableYears([]));
   }, [yearProp]);
 
-  // Fetch data from API
+  // Fetch data from API (always fetch, use yearProp and companyId directly)
   useEffect(() => {
-    if (!year && !yearProp) return;
     setLoading(true);
     api
       .get("/help/investments-per-program", {
         params: {
-          ...(year ? { year } : {}),
+          ...(yearProp ? { year: yearProp } : {}),
           ...(companyId ? { company_id: companyId } : {}),
         },
       })
@@ -52,7 +49,7 @@ const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
       })
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, [year, companyId, yearProp]);
+  }, [yearProp, companyId]);
 
   // Helper to wrap legend name and adjust font size
   const getWrappedLegendName = (name) => {
@@ -78,7 +75,7 @@ const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
     <ResponsiveContainer width={w} height={h}>
       <BarChart
         data={data}
-        margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
+        margin={{ top: 16, right: 24, left: 32, bottom: 32 }}
       >
         <XAxis
           dataKey="programName"
@@ -94,9 +91,9 @@ const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
         <YAxis
           type="number"
           tickFormatter={(value) => `₱${value.toLocaleString()}`}
+          tick={{ fontSize: 10 }}
         />
         <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
-        <Legend verticalAlign="middle" align="right" layout="vertical" />
         <Bar
           dataKey="projectExpenses"
           name={getWrappedLegendName("Investment Per Program")}
@@ -120,7 +117,7 @@ const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
           <CircularProgress />
         </Box>
       ) : (
-        <Box sx={{ width: "100%", height: "100%", minHeight: 0 }}>
+        <Box sx={{ width: "100%", height: "100%", minHeight: 0, display: "flex", justifyContent: "center" }}>
           {renderChart("100%", "100%")}
         </Box>
       )}
@@ -137,8 +134,8 @@ const InvestmentPerProgram = ({ year: yearProp, companyId, height, width }) => {
         enableDownload
         downloadFileName="investments-per-program"
       >
-        <Box sx={{ width: 900, height: 500, minWidth: 300 }}>
-          {renderChart(500, "100%")}
+        <Box sx={{ width: 900, height: 500, minWidth: 300, display: "flex", justifyContent: "center", alignItems: "center" }}>
+          {renderChart(500, 800)}
         </Box>
       </ZoomModal>
     </Box>

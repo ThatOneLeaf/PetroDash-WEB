@@ -14,7 +14,6 @@ import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
 const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [year, setYear] = useState(yearProp || null);
   const [availableYears, setAvailableYears] = useState([]);
   const [zoomOpen, setZoomOpen] = useState(false);
 
@@ -28,30 +27,27 @@ const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
         ).filter(Boolean);
         years.sort((a, b) => b - a); // Descending
         setAvailableYears(years);
-        if (!yearProp && years.length > 0) setYear(years[0]);
       })
       .catch(() => setAvailableYears([]));
   }, [yearProp]);
 
-  // Fetch data from API
+  // Fetch data from API (use yearProp directly)
   useEffect(() => {
-    if (!year && !yearProp) return;
     setLoading(true);
     api
       .get("/help/investments-per-company", {
         params: {
-          ...(year ? { year } : {}),
+          ...(yearProp ? { year: yearProp } : {}),
         },
       })
       .then((res) => {
-        console.log("API data:", res.data); // <-- Add this line
         // Sort data in descending order by companyExpenses
         const sorted = (res.data || []).slice().sort((a, b) => b.companyExpenses - a.companyExpenses);
         setData(sorted);
       })
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, [year, yearProp]);
+  }, [yearProp]);
 
   // Helper to wrap legend name and adjust font size
   const getWrappedLegendName = (name) => {
@@ -71,8 +67,6 @@ const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
     }
     return <span style={{ fontSize }}>{name}</span>;
   };
-
-  console.log(data)
 
   // Chart rendering logic as a function for reuse in modal
   const renderChart = (h = height || 350, w = width || "100%") => (
