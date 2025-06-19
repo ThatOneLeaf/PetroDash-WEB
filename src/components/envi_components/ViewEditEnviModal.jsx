@@ -51,8 +51,8 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
   // Add new modals for revision and edit success
   const [showReviseSiteSuccessModal, setShowReviseSiteSuccessModal] = useState(false);
   const [showReviseHeadSuccessModal, setShowReviseHeadSuccessModal] = useState(false);
-  const [showEditRecordSuccessModal, setShowEditRecordSuccessModal] = useState(false);
-  const [showEditPromptModal, setShowEditPromptModal] = useState(false);
+  const [showEditSaveSuccessModal, setShowEditSaveSuccessModal] = useState(false);
+  const [editSaveSuccessMessage, setEditSaveSuccessMessage] = useState('');
 
   if (!record) return null;
 
@@ -266,9 +266,6 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
       // alert(response.data.message || "Record saved successfully.");
       setIsEditing(false);
 
-      // Show edit record success modal
-      setShowEditRecordSuccessModal(true);
-
       // Close the modal and trigger data refresh
       status(false); // This will trigger data refresh in parent component
       onClose(); // This will close the modal
@@ -394,6 +391,19 @@ const handleStatusUpdate = async (action) => {
     setIsModalOpen(true);
   };
 
+  const handleEditSaveSuccess = (message) => {
+    setEditSaveSuccessMessage(message);
+    setShowEditSaveSuccessModal(true);
+    // Do NOT close the main modal or trigger status/onClose here
+  };
+
+  // Only close the main modal and trigger status/onClose after OK is clicked
+  const handleEditSaveSuccessOk = () => {
+    setShowEditSaveSuccessModal(false);
+    status(false); // or any follow-up logic
+    onClose();
+  };
+
   return (
     <Paper sx={{
         p: 4,
@@ -436,6 +446,7 @@ const handleStatusUpdate = async (action) => {
           alignItems: 'flex-start',
           mb: 3
         }}>
+
           
           
           <Typography sx={{ fontSize: '1.75rem', color: '#182959', fontWeight: 800}}>
@@ -678,9 +689,20 @@ const handleStatusUpdate = async (action) => {
                   if (isEditing) {
                     if (!isRecordUnchanged) {
                       handleSave(); // only save if changed
+                      if (
+                        editedRecord.status === 'For Revision (Site)' ||
+                        editedRecord.status === 'For Revision (Head)'
+                      ) {
+                        handleEditSaveSuccess('The record has been successfully updated.');
+                      }
                     } else {
-                      alert('No changes were made')
                       setIsEditing(false);
+                      if (
+                        editedRecord.status === 'For Revision (Site)' ||
+                        editedRecord.status === 'For Revision (Head)'
+                      ) {
+                        handleEditSaveSuccess('No changes were made to the record.');
+                      }
                     }
                   } else {
                     setIsEditing(true);
@@ -729,85 +751,7 @@ const handleStatusUpdate = async (action) => {
             </Box>
           </Box>
         )}
-        {showEditPromptModal && (
-          <Overlay onClose={() => setShowEditPromptModal(false)}>
-            <Paper sx={{
-              p: 4,
-              width: '400px',
-              borderRadius: '16px',
-              bgcolor: 'white',
-              outline: 'none',
-              textAlign: 'center'
-            }}>
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                mb: 3
-              }}>
-                <Box sx={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  backgroundColor: '#2B8C37',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 2
-                }}>
-                  <Typography sx={{ 
-                    color: 'white', 
-                    fontSize: '2rem',
-                    fontWeight: 'bold'
-                  }}>
-                    ✓
-                  </Typography>
-                </Box>
-                <Typography sx={{ 
-                  fontSize: '1.5rem', 
-                  fontWeight: 800,
-                  color: '#182959',
-                  mb: 2
-                }}>
-                  {isEditing && !isRecordUnchanged
-                    ? 'Record Edited Successfully!'
-                    : 'No Changes Made'}
-                </Typography>
-                <Typography sx={{ 
-                  fontSize: '1rem',
-                  color: '#666',
-                  mb: 3
-                }}>
-                  {isEditing && !isRecordUnchanged
-                    ? 'The record has been successfully updated.'
-                    : 'No changes were made to the record.'}
-                </Typography>
-              </Box>
-              <Box sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                mt: 3
-              }}>
-                <Button
-                  variant="contained"
-                  sx={{ 
-                    backgroundColor: '#2B8C37',
-                    borderRadius: '999px',
-                    padding: '10px 24px',
-                    fontSize: '1rem',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#256d2f',
-                    },
-                  }}
-                  onClick={() => setShowEditPromptModal(false)}
-                >
-                  OK
-                </Button>
-              </Box>
-            </Paper>
-          </Overlay>
-        )}
+
         {isModalOpen && modalType === 'revise' && (
           <Overlay onClose={() => setIsModalOpen(false)}>
             <Paper
@@ -1014,81 +958,6 @@ const handleStatusUpdate = async (action) => {
             </Paper>
           </Overlay>
         )}
-        {showEditRecordSuccessModal && (
-          <Overlay onClose={() => setShowEditRecordSuccessModal(false)}>
-            <Paper sx={{
-              p: 4,
-              width: '400px',
-              borderRadius: '16px',
-              bgcolor: 'white',
-              outline: 'none',
-              textAlign: 'center'
-            }}>
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                mb: 3
-              }}>
-                <Box sx={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  backgroundColor: '#2B8C37',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 2
-                }}>
-                  <Typography sx={{ 
-                    color: 'white', 
-                    fontSize: '2rem',
-                    fontWeight: 'bold'
-                  }}>
-                    ✓
-                  </Typography>
-                </Box>
-                <Typography sx={{ 
-                  fontSize: '1.5rem', 
-                  fontWeight: 800,
-                  color: '#182959',
-                  mb: 2
-                }}>
-                  Record Edited Successfully!
-                </Typography>
-                <Typography sx={{ 
-                  fontSize: '1rem',
-                  color: '#666',
-                  mb: 3
-                }}>
-                  The record has been successfully updated.
-                </Typography>
-              </Box>
-              <Box sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                mt: 3
-              }}>
-                <Button
-                  variant="contained"
-                  sx={{ 
-                    backgroundColor: '#2B8C37',
-                    borderRadius: '999px',
-                    padding: '10px 24px',
-                    fontSize: '1rem',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#256d2f',
-                    },
-                  }}
-                  onClick={() => setShowEditRecordSuccessModal(false)}
-                >
-                  OK
-                </Button>
-              </Box>
-            </Paper>
-          </Overlay>
-        )}
         {showReviseSiteSuccessModal && (
           <Overlay onClose={() => { setShowReviseSiteSuccessModal(false); status(false); }}>
             <Paper sx={{
@@ -1232,6 +1101,74 @@ const handleStatusUpdate = async (action) => {
                     },
                   }}
                   onClick={() => { setShowReviseHeadSuccessModal(false); status(false); }}
+                >
+                  OK
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
+        )}
+        {showEditSaveSuccessModal && (
+          <Overlay onClose={handleEditSaveSuccessOk}>
+            <Paper sx={{
+              p: 4,
+              width: '400px',
+              borderRadius: '16px',
+              bgcolor: 'white',
+              outline: 'none',
+              textAlign: 'center'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                mb: 3
+              }}>
+                <Box sx={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#2B8C37',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2
+                }}>
+                  <Typography sx={{ 
+                    color: 'white', 
+                    fontSize: '2rem',
+                    fontWeight: 'bold'
+                  }}>
+                    ✓
+                  </Typography>
+                </Box>
+                <Typography sx={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 800,
+                  color: '#182959',
+                  mb: 2
+                }}>
+                  {editSaveSuccessMessage}
+                </Typography>
+              </Box>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mt: 3
+              }}>
+                <Button
+                  variant="contained"
+                  sx={{ 
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '10px 24px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                  onClick={handleEditSaveSuccessOk}
                 >
                   OK
                 </Button>
