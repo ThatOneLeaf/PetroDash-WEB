@@ -30,7 +30,19 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
   const [nextStatus, setNextStatus] = useState("");
   const [remarks, setRemarks] = useState("");
   const recordIdKey = Object.keys(record)[0];
-  const permanentlyReadOnlyFields = [Object.keys(record)[0],"company", "status"];
+  
+  // Updated permanentlyReadOnlyFields to include metrics and unit for hazard tables
+  const permanentlyReadOnlyFields = (() => {
+    const baseFields = [Object.keys(record)[0], "company", "status"];
+    
+    // Add metrics and unit as read-only for hazard-related tables
+    if (table === 'Hazard Generated' || table === 'Hazard Disposed' || table === 'Non-Hazard Generated') {
+      return [...baseFields, "metrics", "unit"];
+    }
+    
+    return baseFields;
+  })();
+  
   const withOptionFields = ["source", "unit", "quarter", "year", "month", "property", "type", "metrics"];
 
   const [sourceOptions, setSourceOptions] = useState([]);
@@ -196,39 +208,52 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
 
   const handleChange = (key, value) => {
     let newValue = value;
-  
+
     // Convert to number if key is a numeric field
     if (["consumption", "volume", "waste_generated", "waste_disposed", "waste"].includes(key)) {
       // Allow empty string
       if (value === '') {
         newValue = '';
       } else {
-        // Remove any non-numeric characters except decimal point and allow temporary states
-        const cleanedValue = value.toString().replace(/[^0-9.]/g, '');
-        
-        // Handle multiple decimal points - keep only the first one
-        const parts = cleanedValue.split('.');
-        if (parts.length > 2) {
-          newValue = parts[0] + '.' + parts.slice(1).join('');
-        } else {
-          newValue = cleanedValue;
-        }
-        
-        // Allow temporary invalid states (like just "." or "0.") while typing
-        // but prevent clearly invalid final values
-        if (newValue && newValue !== '.' && newValue !== '0' && newValue !== '0.') {
-          const numericValue = parseFloat(newValue);
-          // Only reject if it's a complete number that's <= 0
-          if (!isNaN(numericValue) && numericValue <= 0 && !newValue.endsWith('.')) {
-            return; // Don't update if it's a complete non-positive number
+        // For Non-Hazard Generated waste with "Pieces" unit, only allow whole numbers
+        if (key === "waste" && table === 'Non-Hazard Generated' && editedRecord.unit === "Pieces") {
+          // Remove any non-numeric characters and decimal points
+          const cleanedValue = value.toString().replace(/[^0-9]/g, '');
+          
+          // Prevent entering "0" or numbers starting with 0
+          if (cleanedValue === '0' || (cleanedValue.startsWith('0') && cleanedValue.length > 1)) {
+            return;
           }
-        } else if (newValue === '0' || (newValue.startsWith('0') && !newValue.includes('.'))) {
-          // Prevent entering just "0" or numbers starting with 0 (except decimals like "0.5")
-          return;
+          
+          newValue = cleanedValue;
+        } else {
+          // Regular decimal handling for other cases
+          const cleanedValue = value.toString().replace(/[^0-9.]/g, '');
+          
+          // Handle multiple decimal points - keep only the first one
+          const parts = cleanedValue.split('.');
+          if (parts.length > 2) {
+            newValue = parts[0] + '.' + parts.slice(1).join('');
+          } else {
+            newValue = cleanedValue;
+          }
+          
+          // Allow temporary invalid states (like just "." or "0.") while typing
+          // but prevent clearly invalid final values
+          if (newValue && newValue !== '.' && newValue !== '0' && newValue !== '0.') {
+            const numericValue = parseFloat(newValue);
+            // Only reject if it's a complete number that's <= 0
+            if (!isNaN(numericValue) && numericValue <= 0 && !newValue.endsWith('.')) {
+              return; // Don't update if it's a complete non-positive number
+            }
+          } else if (newValue === '0' || (newValue.startsWith('0') && !newValue.includes('.'))) {
+            // Prevent entering just "0" or numbers starting with 0 (except decimals like "0.5")
+            return;
+          }
         }
       }
     }
-  
+
     setEditedRecord(prev => ({
       ...prev,
       [key]: newValue
@@ -520,7 +545,7 @@ const handleStatusUpdate = async (action) => {
 
               ) :
        
-                isEditing && withOptionFields.includes(key) ? (
+                isEditing && withOptionFields.includes(key) && !permanentlyReadOnlyFields.includes(key) ? (
                   <FormControl fullWidth>
                     <InputLabel>
                       {isEditing && !permanentlyReadOnlyFields.includes(key) ? (
@@ -634,7 +659,7 @@ const handleStatusUpdate = async (action) => {
                         ))
                       )}
                       {key === "quarter" && (
-                        ["Q1", "Q2", "Q3", "Q4", "N/A"].map((option) => (
+                        ["Q1", "Q2", "Q3", "Q4"].map((option) => (
                           <MenuItem key={option} value={option}>
                             {option}
                           </MenuItem>
