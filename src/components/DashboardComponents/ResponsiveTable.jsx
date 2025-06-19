@@ -1,0 +1,78 @@
+import React, { useRef, useState, useEffect } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper
+} from '@mui/material';
+
+const GenericResponsiveTable = ({ data }) => {
+  const containerRef = useRef(null);
+  const [fontSize, setFontSize] = useState('1rem'); // Default font size
+
+  // Update font size based on container width
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const width = entry.contentRect.width;
+        // Adjust these breakpoints and sizes as needed
+        if (width < 400) setFontSize('0.7rem');
+        else if (width < 600) setFontSize('0.85rem');
+        else if (width < 900) setFontSize('1rem');
+        else setFontSize('1.1rem');
+      }
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  if (!data || data.length === 0) {
+    return <div>No data available.</div>;
+  }
+
+  const headers = Object.keys(data[0]);
+
+  return (
+    <TableContainer
+      component={Paper}
+      ref={containerRef}
+      sx={{
+        height: '100%',
+        width: '100%',
+        overflow: 'auto'
+      }}
+    >
+      <Table stickyHeader size="small" sx={{ fontSize }}>
+        <TableHead>
+          <TableRow>
+            {headers.map((header) => (
+              <TableCell key={header} sx={{ fontSize }}>{header}</TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {data.map((row, index) => (
+            <TableRow key={index}>
+              {headers.map((key) => (
+                <TableCell key={key} sx={{ fontSize }}>
+                  {typeof row[key] === 'number'
+                    ? row[key].toLocaleString()
+                    : row[key]}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+
+export default GenericResponsiveTable;

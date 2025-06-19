@@ -11,7 +11,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Button
+  Button,
+  ToggleButton, ToggleButtonGroup
 } from "@mui/material";
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -51,6 +52,7 @@ import WindPowerIcon from '@mui/icons-material/WindPower';
 import ForestIcon from '@mui/icons-material/Forest';
 import VerticalStackedBarChartComponent from "../../components/charts/VerticalStackedBar";
 import HorizontalGroupedBarChartComponent from "../../components/charts/HorizontalGrouped";
+import GenericResponsiveTable from "../../components/DashboardComponents/ResponsiveTable";
 
 
 
@@ -81,8 +83,8 @@ const getUniqueOptions = (data, idField, nameField) => {
 };
 
 const tabs = [
-  { key: "generation", label: "Power Generation" },
-  { key: "avoidance", label: "CO2 Avoidance" },
+  { key: "main", label: "Primary Allocation" },
+  { key: "sub", label: "Beneficiaries" },
 ];
   const iconMap = {
   EQ_1: DirectionsCarIcon ,
@@ -160,7 +162,7 @@ function FundsDashboard() {
   };
 
 
-  const [activeTab, setActiveTab] = useState("generation");
+  const [activeTab, setActiveTab] = useState("main");
   const [data, setData] = useState({});
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -194,6 +196,7 @@ function FundsDashboard() {
   const [equivalenceData, setEquivalenceData] = useState({});
   const [housePowerData, setHousePowerData] = useState({});
   const [staticData, setStaticData] = useState({});
+
 
   const chartReady =
   Object.keys(plantColors).length > 0 &&
@@ -244,10 +247,22 @@ const getColorMapForGroupBy = (
   const colorMap = {};
 
   dataItems.forEach((item) => {
-    const rawKey = item.name; // <-- use `name` field instead of `item[groupByKey]`
+    let rawKey;
+
+    // Dynamically get the key based on groupByKey
+    if (groupByKey === 'power_plant_id') {
+      rawKey = item.power_plant_id || item.name;
+    } else if (groupByKey === 'company_id') {
+      rawKey = item.company_id || item.name;
+    } else if (groupByKey === 'generation_source') {
+      rawKey = item.generation_source || item.name;
+    } else if (groupByKey === 'ff_name') {
+      rawKey = item.ff_name;
+    } else {
+      rawKey = item[groupByKey] || item.name;
+    }
 
     if (!rawKey) return;
-    console.log("🔎 Checking key:", rawKey);
 
     const key = typeof rawKey === 'string' ? rawKey.trim().toUpperCase() : rawKey;
 
@@ -260,25 +275,23 @@ const getColorMapForGroupBy = (
       colorMap[key] = match?.color || '#A5B4FC';
     } else if (groupByKey === 'generation_source') {
       colorMap[key.toLowerCase()] = generationSourceColors[key.toLowerCase()] || '#D1FAE5';
+    } else if (groupByKey === 'ff_name') {
+      colorMap[key] = generationSourceColors[key.toLowerCase()] || '#FDE68A';
     } else {
-      colorMap[key] = '#E5E7EB';
+      colorMap[key] = '#E5E7EB'; // fallback
     }
   });
-
-  console.log(colorMap)
-
-  
-  console.log('🧪 getColorMapForGroupBy inputs:', {
-  groupByKey,
-  sampleItem: dataItems,
-  plantColors,
-  plantMetadataLength: plantMetadata?.length,
-  generationSourceColors
-});
 
   return colorMap;
 };
 
+
+const [lineView, setLineView] = React.useState('period');
+const handleLineViewChange = (event, newValue) => {
+  if (newValue !== null) {
+    setLineView(newValue);
+  }
+};
 
 
 
@@ -292,8 +305,6 @@ const fetchData = async () => {
 
     if (filters.company) params.p_company_id = filters.company;
     if (filters.powerPlant) params.p_power_plant_id = filters.powerPlant;
-    if (filters.generationSource) params.p_generation_source = filters.generationSource;
-    if (filters.province) params.p_province = filters.province;
 
     if (startDate) {
       const start = new Date(startDate);
@@ -314,10 +325,14 @@ const fetchData = async () => {
     }
 
     const query = new URLSearchParams(params).toString();
-    const response = await api.get(`/energy/energy_dashboard?${query}`);
-
-    const raw = response?.data;
-    const energyData = raw?.energy_data || {};
+    const response = await api.get(`/energy/fund_allocation_dashboard?${query}`);
+    const raw = await response.data; // ✅ json is defined here
+    console.log(raw.data?.funds_allocated_peso?.allocation?.total); // should not be undefined
+    console.log(raw.data?.funds_allocated_peso?.allocation); // should not be undefined
+    console.log(raw.data?.funds_allocated_peso?.allocation?.total); // should be 2170613.92
+    console.log(raw)
+    console.log("this data", data?.funds_allocated_peso?.allocation?.total)
+    const energyData = raw.data || {};
     const rawData = energyData?.results || [];
 
     setData(energyData);
@@ -344,16 +359,12 @@ const fetchData = async () => {
   const clearAllFilters = () => {
     setCompanyFilter([]);
     setPowerPlantFilter([]);
-    setGenerationSourceFilter([]);
-    setProvinceFilter([]);
     setStartDate(null);
     setEndDate(null);
   };
 useEffect(() => {
   const loadColors = async () => {
-    console.log("🔍 Calling getPowerPlantColors...");
     const colors = await getPowerPlantColors();
-    console.log("✅ Colors loaded:", colors);
     setPlantColors(colors);
   };
 
@@ -369,30 +380,11 @@ useEffect(() => {
         const res = await api.get("/reference/pp_info");
         const data = res.data;
         setPlantMetadata(data);
-        console.log(data)
 
         const u = getUniqueOptions;
 
         setCompanyOptions(u(data, "company_id", "company_name"));
         setPowerPlantOptions(u(data, "power_plant_id", "power_plant_id"));
-        setGenerationSourceOptions(u(data, "generation_source", "generation_source"));
-        setProvinceOptions(u(data, "province", "province"));
-
-          const uniqueSources = [...new Set(data.map(d => d.generation_source).filter(Boolean))];
-
-        // Generate a color for each generation source
-        const palette = [
-          '#FBBF24', '#34D399', '#60A5FA', '#A78BFA', '#F97316',
-          '#6B7280', '#059669', '#EF4444', '#10B981', '#8B5CF6',
-          '#F43F5E', '#22D3EE', '#4ADE80', '#EAB308', '#3B82F6',
-        ];
-
-        const sourceColors = {};
-        uniqueSources.forEach((source, index) => {
-          sourceColors[source.toLowerCase()] = palette[index % palette.length];
-        });
-
-        setGenerationSourceColors(sourceColors);
       } catch (err) {
         console.error("Error loading filters", err);
       }
@@ -405,9 +397,7 @@ useEffect(() => {
 useEffect(() => {
   const newFilters = {
     company: companyFilter,
-    powerPlant: powerPlantFilter,
-    generationSource: generationSourceFilter,
-    province: provinceFilter,
+    powerPlant: powerPlantFilter
   };
 
   const syncedFilters = Object.fromEntries(
@@ -415,7 +405,7 @@ useEffect(() => {
   );
 
   setFilters(syncedFilters);
-}, [companyFilter, powerPlantFilter, generationSourceFilter, provinceFilter]);
+}, [companyFilter, powerPlantFilter]);
 
 useEffect(() => {
   fetchData();
@@ -425,7 +415,6 @@ useEffect(() => {
   const xOptions = [
     { label: "Power Plant", value: "power_plant_id" },
     { label: "Company", value: "company_id" },
-    { label: "Generation Source", value: "generation_source" }
   ];
 
   const yOptions = [
@@ -437,17 +426,8 @@ useEffect(() => {
   const showClearButton =
     companyFilter.length > 0 ||
     powerPlantFilter.length > 0 ||
-    generationSourceFilter.length > 0 ||
-    provinceFilter.length > 0 ||
     startDate !== null ||
     endDate !== null;
-
-  const categoryHeadings = {
-  'greenhouse gas emissions': 'This is equivalent to greenhouse gas emissions from:',
-  'CO2 emissions': 'This is equivalent to CO2 emissions from:',
-  'greenhouse gas emissions avoided': 'This is equivalent to greenhouse gas emissions avoided by:',
-  'carbon sequestered': 'This is equivalent to carbon sequestered by:',
-};
 
 
 if (loading) {
@@ -479,7 +459,7 @@ if (loading) {
               fontSize: 20,
             }}
           >
-            Loading Energy Dashboard...
+            Loading ER 1-94 Funds Allocation Dashboard...
           </Typography>
         </Box>
       </Box>
@@ -496,7 +476,7 @@ return (
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pt: 2, flexShrink: 0 }}>
         <DashboardHeader
-          title="Energy"
+          title="ER 1-94 Funds Allocation"
           lastUpdated={lastUpdated}
           formatDateTime={formatDateTime}
         />
@@ -528,7 +508,6 @@ return (
         >
           <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
           <MultiSelectWithChips label="Power Plants" options={powerPlantOptions} selectedValues={powerPlantFilter} onChange={setPowerPlantFilter} placeholder="All Power Projects" />
-          <MultiSelectWithChips label="Generation Sources" options={generationSourceOptions} selectedValues={generationSourceFilter} onChange={setGenerationSourceFilter} placeholder="All Sources" />
           <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
 
           {showClearButton && <ClearButton onClick={clearAllFilters} />}
@@ -543,500 +522,397 @@ return (
       <Box sx={{ flex: 1, px: 2, pb: 2, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
 
 
-        {/* KPI Cards */}
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'nowrap', pb: 2 }}>
-          <KPICard
-            loading={false}
-            value={`${(data?.totals?.total_energy_generated || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-            unit="kWh"
-            title="Total Energy Generated"
-            colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
-            style={{ flex: 1 }}
-          />
-          <KPICard
-            loading={false}
-            value={`${(data?.totals?.total_co2_avoidance || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-            unit="tons CO2"
-            title="Total CO₂ Avoided"
-            colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
-            style={{ flex: 1 }}
-          />
-          <KPICard
-            loading={false}
-            value={`${roundUpToNiceNumber(housePowerData?.totals?.est_house_powered || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-            unit=""
-            title="Estimated No. of Households Powered"
-            colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
-            style={{ flex: 1 }}
-          />
-        </Box>
-
-        {/* Generation Charts */}
-        {activeTab === "generation" && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 0, flex: 1 }}>
-            <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0, maxHeight: '50%' }}>
-              {/* Line Chart - 60% width */}
-              <Box sx={{ flex: 3, minHeight: 0, height: '100%' }}>
-                <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
-                  <Box sx={{ width: '100%', height: '100%' }}>
-                    <LineChartComponent
-                      title={generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate)}
-                      data={data?.line_graph?.total_energy_generated || []}
-                      unit="kWh"
-                      colorMap={
-                        chartReady
-                          ? getColorMapForGroupBy(
-                              x,
-                              data?.line_graph?.total_energy_generated || [],
-                              plantColors,
-                              plantMetadata,
-                              generationSourceColors
-                            )
-                          : {}
-                      }/>
-                  </Box>
-                  <Button
-                    size="small"
-                    sx={{ position: 'absolute', top: 8, right: 8 }}
-                    onClick={() =>
-                      openZoomModal(
-                        generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate),
-                        "total_energy_generated_chart",
-                        <LineChartComponent
-                          title={generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate)}
-                          data={data?.line_graph?.total_energy_generated || []}
-                          unit="kWh"
-                          colorMap={
-                            chartReady
-                              ? getColorMapForGroupBy(
-                                  x,
-                                  data?.line_graph?.total_energy_generated || [],
-                                  plantColors,
-                                  plantMetadata,
-                                  generationSourceColors
-                                )
-                              : {}
-                          }/>
-                      )
-                    }
-                  >
-                    🔍
-                  </Button>
-                </Paper>
-              </Box>
-
-              {/* Pie Chart - 40% width */}
-              <Box sx={{ flex: 2, minHeight: 0, height: '100%' }}>
-                <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
-                  <Box sx={{ width: '100%', height: '100%' }}>
-                    <PieChartComponent
-                      title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
-                      data={data?.pie_chart?.total_energy_generated || []}
-                      colorMap={
-                            chartReady
-                              ? getColorMapForGroupBy(
-                                  x,
-                                  data?.line_graph?.total_energy_generated || [],
-                                  plantColors,
-                                  plantMetadata,
-                                  generationSourceColors
-                                )
-                              : {}
-                          }/>
-                  </Box>
-                  <Button
-                    size="small"
-                    sx={{ position: 'absolute', top: 8, right: 8 }}
-                    onClick={() =>
-                      openZoomModal(
-                        generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate),
-                        "total_energy_generated_pie",
-                        <PieChartComponent
-                          title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
-                          data={data?.pie_chart?.total_energy_generated || []}
-                        colorMap={
-                            chartReady
-                              ? getColorMapForGroupBy(
-                                  x,
-                                  data?.line_graph?.total_energy_generated || [],
-                                  plantColors,
-                                  plantMetadata,
-                                  generationSourceColors
-                                )
-                              : {}
-                          }/>
-                      )
-                    }
-                  >
-                    🔍
-                  </Button>
-                </Paper>
-              </Box>
-            </Box>
-
-
-            <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0, maxHeight: '50%' }}>
-              {/* Stacked Bar Chart */}
-              <Box sx={{ flex: 1, minHeight: 0, height: '100%' }}>
-                <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
-                  <Box sx={{ width: '100%', height: '100%' }}>
-                    <HorizontalGroupedBarChartComponent
-                      title="sample"
-                      data={data?.stacked_bar || []}
-                      legendName="Total Energy Generated"
-                      unit="kWh"
-                      colorMap={
-                            chartReady
-                              ? getColorMapForGroupBy(
-                                  x,
-                                  data?.line_graph?.total_energy_generated || [],
-                                  plantColors,
-                                  plantMetadata,
-                                  generationSourceColors
-                                )
-                              : {}
-                          }
-                    />
-                  </Box>
-                  <Button
-                    size="small"
-                    sx={{ position: 'absolute', top: 8, right: 8 }}
-                    onClick={() =>
-                      openZoomModal(
-                        "Zoomed In: Total Energy Generated (Bar)",
-                        "total_energy_generated_bar",
-                        <HorizontalGroupedBarChartComponent
-                      title="sample"
-                      data={data?.stacked_bar || []}
-                      legendName="Total Energy Generated"
-                      unit="kWh"
-                      colorMap={
-                            chartReady
-                              ? getColorMapForGroupBy(
-                                  x,
-                                  data?.line_graph?.total_energy_generated || [],
-                                  plantColors,
-                                  plantMetadata,
-                                  generationSourceColors
-                                )
-                              : {}
-                          }
-                    />
-                      )
-                    }
-                  >
-                    🔍
-                  </Button>
-                </Paper>
-              </Box>
-
-              {/* Line Chart - Households Powered */}
-              <Box sx={{ flex: 1, minHeight: 0, height: '100%' }}>
-                <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
-                  <Box sx={{ width: '100%', height: '100%' }}>
-                    <HorizontalGroupedBarChartComponent
-                      title="Estimated Households Powered Over Time"
-                      data={housePowerData?.stacked_bar || []}
-                      legendName="Total Energy Generated"
-                      yAxisLabel={"No. of Household"}
-                      colorMap={
-                            chartReady
-                              ? getColorMapForGroupBy(
-                                  x,
-                                  data?.line_graph?.total_energy_generated || [],
-                                  plantColors,
-                                  plantMetadata,
-                                  generationSourceColors
-                                )
-                              : {}
-                          }
-                    />
-                  </Box>
-                  <Button
-                    size="small"
-                    sx={{ position: 'absolute', top: 8, right: 8 }}
-                    onClick={() =>
-                      openZoomModal(
-                        "Zoomed In: Households Powered Over Time",
-                        "households_powered_over_time",
-                        <LineChartComponent
-                          title="Estimated Households Powered Over Time"
-                          data={housePowerData?.stacked_bar || []}
-                          yAxisLabel="No. of Households"
-                          colorMap={
-                            chartReady
-                              ? getColorMapForGroupBy(
-                                  x,
-                                  housePowerData?.stacked_bar || [],
-                                  plantColors,
-                                  plantMetadata,
-                                  generationSourceColors
-                                )
-                              : {}
-                          }
-                        />
-                      )
-                    }
-                  >
-                    🔍
-                  </Button>
-                </Paper>
-              </Box>
-            </Box>
-          </Box>
-        )}
-
-        {/*Avoidance Section*/}
-        {activeTab === "avoidance" && (
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, minHeight: 0, flex: 1 }}>
-{/* Column 1 */}
-  <Box
+{/* Generation Charts with KPI inside tab */}
+{activeTab === "main" && (
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 0, flex: 1 }}>
+    {/* Row 1: 2 Columns */}
+<Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0 }}>
+  {/* Column 1: 2 rows, equal height */}
+  <Box sx={{ flex: 7, display: 'flex', flexDirection: 'column', gap: 2, minHeight: 0 }}>
+    {/* Row 1: Line Chart */}
+    {/* Row 1: Line Chart */}
+<Box sx={{ flex: 1, minHeight: 0 }}>
+  <Paper sx={{ height: '100%', p: 2, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+    
+    {/* Toggle Buttons */}
+{/* Toggle Button - lower right */}
+<Box
+  sx={{
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    zIndex: 1, // Make sure it's above chart if overlapping
+  }}
+>
+  <ToggleButtonGroup
+    value={lineView}
+    exclusive
+    onChange={handleLineViewChange}
+    size="small"
+    color="primary"
     sx={{
-      flex: '0 0 45%',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 2,
-      minHeight: 0,
+      '& .MuiToggleButton-root': {
+        px: 1.5,
+        py: 0.5,
+        fontSize: 10,
+        minHeight: '18px',
+      }
     }}
   >
-    {/* Chart - 60% */}
-    <Paper
-      elevation={3}
-      sx={{
-        p: 1,
-        flex: 6,
-        position: 'relative',
-        minHeight: 0,
-      }}
-    >
-      <LineChartComponent
-        title="Monthly CO2 Avoidance Trends by Power Plant"
-        data={data?.line_graph?.total_co2_avoidance || []}
-        yAxisLabel="tons CO2"
-        unit="tons CO2"
+    <ToggleButton value="period">Period</ToggleButton>
+    <ToggleButton value="category">Category</ToggleButton>
+  </ToggleButtonGroup>
+</Box>
+
+
+
+
+    {/* Chart Content */}
+    <Box sx={{ flex: 1, width: '100%', height: '100%' }}>
+      <VerticalStackedBarChartComponent
+        title="Estimated Households Powered Over Time"
+        data={
+            lineView === 'period'
+            ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
+            : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || []
+        }
+        legendName="Total Energy Generated"
+        yAxisLabel={"Pesos"}
+        unit="pesos"
+        yAxisKey={lineView === 'period' ? 'period' : 'ff_name'}
+
         colorMap={
-          chartReady
+            chartReady
             ? getColorMapForGroupBy(
                 x,
-                data?.line_graph?.total_energy_generated || [],
+                lineView === 'period'
+            ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
+            : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || [],
                 plantColors,
                 plantMetadata,
                 generationSourceColors
-              )
+                )
             : {}
         }
-      />
-      <Button
-        size="small"
-        sx={{ position: 'absolute', top: 8, right: 8 }}
-        onClick={() =>
-          openZoomModal(
-            "Zoomed In: Monthly CO2 Avoidance Trends by Power Plant",
-            "co2_avoidance_trends_chart",
-            <LineChartComponent
-              title="Monthly CO2 Avoidance Trends by Power Plant"
-              yAxisLabel="tons CO2"
-              unit="tons CO2"
-            />
-          )
-        }
-      >
-        🔍
-      </Button>
-    </Paper>
-
-    {/* Table - 40% */}
-<Paper
-  elevation={3}
-  sx={{
-    p: 1,
-    flex: 4,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
-  }}
->
-  <TableContainer
-    component={Box}
-    sx={{
-      flex: 1,
-      minHeight: 0,
-      overflowX: 'hidden', // ✅ prevent horizontal scrollbar
-      overflowY: 'hidden',   // ✅ allow vertical scroll if really needed
-    }}
-  >
-    <Table
-      size="small"
-      stickyHeader
-      aria-label="summary table"
-      sx={{
-        width: '100%',
-        tableLayout: 'fixed',
-        height: '100%',
-        '& td, & th': {
-          whiteSpace: 'normal',
-          wordWrap: 'break-word',
-        },
-      }}
-    >
-      <TableHead>
-        <TableRow>
-          <TableCell sx={{ width: '25%' }}>
-            <Typography
-              sx={{ fontSize: 'clamp(0.5rem, 0.8vw, 1rem)', fontWeight: 'bold' }}
-            >
-              Source
-            </Typography>
-          </TableCell>
-          <TableCell sx={{ width: '75%' }}>
-            <Typography
-              sx={{ fontSize: 'clamp(0.5rem, 0.8vw, 1rem)', fontWeight: 'bold' }}
-            >
-              Formula
-            </Typography>
-          </TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {[...Array(3)].map((_, index) => (
-          <TableRow key={index}>
-            <TableCell>
-              <Typography sx={{ fontSize: 'clamp(0.3rem, 0.8vw, 1rem)' }}>
-                {(staticData?.[index]?.label || `Label ${index + 1}`)
-                  .replace(/\b\w/g, char => char.toUpperCase())}
-              </Typography>
-            </TableCell>
-            <TableCell>
-              {staticData?.[index]?.formula
-                ? staticData[index].formula.split(';').map((line, i) => (
-                    <Typography
-                      key={i}
-                      sx={{ fontSize: 'clamp(0.3rem, 0.8vw, 1rem)' }}
-                    >
-                      {line}
-                    </Typography>
-                  ))
-                : '-'}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </TableContainer>
-</Paper>
-
-  </Box>
-
-
-          {/* Column 2 */}
-{/* Column 2 */}
-<Box
-  sx={{
-    flex: '0 0 55%',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    minHeight: 0,
-  }}
->
-  <Paper
-    elevation={3}
-    sx={{
-      flex: 1,
-      height: '100%',
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: 1,
-      p: 1,
-    }}
-  >
-    {Object.entries(equivalenceData).map(([category, records]) => (
-      <Box
-        key={category}
-        sx={{
-          border: '1px solid #ccc',
-          borderRadius: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-          overflow: 'hidden',
-          p: 1,
-        }}
-      >
-        <Typography
-          variant="subtitle1"
-          gutterBottom
-          sx={{
-            fontWeight: 600,
-            mb: 0.5,
-            fontSize: {
-              xs: '0.25rem',
-              sm: '0.4rem',
-              md: '0.75rem',
-            },
-          }}
-        >
-          {categoryHeadings[category] || category}
-        </Typography>
-
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: '1fr 1fr',
-            },
-            gap: 1,
-            flex: 1,
-            minHeight: 0,
-            gridAutoRows: '1fr', // 🔑 Makes each row same height
-          }}
-        >
-          {Object.entries(records).map(([eqKey, [eq]], index, arr) => {
-  const isLast = index === arr.length - 1;
-  const isOdd = arr.length % 2 === 1;
-  const scheme = colorSchemes[eq.equivalence_category] || colorSchemes.default;
-
-  return (
-    <Box
-      key={eqKey}
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',         // 🔑 Let it stretch inside grid
-        width: '100%',
-        ...(isLast && isOdd && {
-          gridColumn: 'span 2',
-        }),
-      }}
-    >
-      <KPICard
-        loading={false}
-        value={`${(eq.co2_equivalent || 0).toLocaleString(undefined, {
-          maximumFractionDigits: 2,
-        })}`}
-        unit=""
-        title={eq.metric || `Metric ${index + 1}`}
-        icon={iconMap[eqKey]}
-        colorScheme={scheme}
-        style={{
-          height: '100%',
-          width: '100%',
-        }}
-        tooltip={eq.equivalence_label}
-      />
+        />
     </Box>
-  );
-})}
-        </Box>
-      </Box>
-    ))}
+
+    {/* Zoom Button */}
+    <Button
+      size="small"
+      sx={{ position: 'absolute', top: 8, right: 8 }}
+      onClick={() =>
+        openZoomModal(
+          generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate),
+          "total_energy_generated_chart",
+          <LineChartComponent
+            title={generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate)}
+            data={
+              lineView === 'period'
+                ? data?.line_graph?.total_energy_generated || []
+                : data?.line_graph?.total_energy_generated_by_category || []
+            }
+            unit="kWh"
+            colorMap={
+              chartReady
+                ? getColorMapForGroupBy(
+                    x,
+                    lineView === 'period'
+                ? data?.line_graph?.total_energy_generated || []
+                : data?.line_graph?.total_energy_generated_by_category || [],
+                    plantColors,
+                    plantMetadata,
+                    generationSourceColors
+                  )
+                : {}
+            }
+          />
+        )
+      }
+    >
+      🔍
+    </Button>
   </Paper>
 </Box>
 
 
+{/* Row 2: Stacked Bar Chart */}
+<Box sx={{ flex: 1, minHeight: 0 }}>
+  <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ flex: 1, minHeight: 0 }}>
+      <GenericResponsiveTable
+        data={data?.funds_allocated_peso?.allocation?.tabledata}
+      />
+    </Box>
+  </Paper>
+</Box>
+
+  </Box>
+
+  {/* Column 2: KPI + Pie Chart */}
+  <Box sx={{ flex: 3, display: 'flex', flexDirection: 'column', gap: 1, minHeight: 0 }}>
+    {/* KPI Card */}
+    <Box sx={{ flexShrink: 0 }}>
+      <KPICard
+        loading={false}
+        value={`₱ ${(data?.funds_allocated_peso?.allocation?.total || 0).toLocaleString(undefined, {
+          maximumFractionDigits: 2,
+        })}`}
+        unit=""
+        title="Total Energy Generated in Peso"
+        colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
+        style={{ width: '100%' }}
+      />
+    </Box>
+
+    {/* Pie Chart */}
+    <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
+        <Box sx={{ width: '100%', height: '100%' }}>
+          <PieChartComponent
+            title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
+            data={data?.funds_allocated_peso?.allocation?.pie || []}
+            colorMap={
+              chartReady
+                ? getColorMapForGroupBy(
+                    x,
+                    data?.funds_allocated_peso?.allocation?.pie || [],
+                    plantColors,
+                    plantMetadata,
+                    generationSourceColors
+                  )
+                : {}
+            }
+          />
         </Box>
-    )}
+        <Button
+          size="small"
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+          onClick={() =>
+            openZoomModal(
+              generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate),
+              "total_energy_generated_pie",
+              <PieChartComponent
+                title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
+                data={data?.funds_allocated_peso?.allocation?.pie || []}
+                colorMap={
+                  chartReady
+                    ? getColorMapForGroupBy(
+                        x,
+                        data?.funds_allocated_peso?.allocation?.pie || [],
+                        plantColors,
+                        plantMetadata,
+                        generationSourceColors
+                      )
+                    : {}
+                }
+              />
+            )
+          }
+        >
+          🔍
+        </Button>
+      </Paper>
+    </Box>
+  </Box>
+</Box>
+
+  </Box>
+)}
+{/* Generation Charts with KPI inside tab */}
+{activeTab === "sub" && (
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 0, flex: 1 }}>
+    {/* Row 1: 2 Columns */}
+<Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0 }}>
+  {/* Column 1: 2 rows, equal height */}
+  <Box sx={{ flex: 7, display: 'flex', flexDirection: 'column', gap: 2, minHeight: 0 }}>
+    {/* Row 1: Line Chart */}
+    {/* Row 1: Line Chart */}
+<Box sx={{ flex: 1, minHeight: 0 }}>
+  <Paper sx={{ height: '100%', p: 2, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+    
+    {/* Toggle Buttons */}
+{/* Toggle Button - lower right */}
+<Box
+  sx={{
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    zIndex: 1, // Make sure it's above chart if overlapping
+  }}
+>
+  <ToggleButtonGroup
+    value={lineView}
+    exclusive
+    onChange={handleLineViewChange}
+    size="small"
+    color="primary"
+    sx={{
+      '& .MuiToggleButton-root': {
+        px: 1.5,
+        py: 0.5,
+        fontSize: 10,
+        minHeight: '18px',
+      }
+    }}
+  >
+    <ToggleButton value="period">Period</ToggleButton>
+    <ToggleButton value="category">Category</ToggleButton>
+  </ToggleButtonGroup>
+</Box>
+
+
+
+
+    {/* Chart Content */}
+    <Box sx={{ flex: 1, width: '100%', height: '100%' }}>
+      <VerticalStackedBarChartComponent
+        title="Estimated Households Powered Over Time"
+        data={
+            lineView === 'period'
+            ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
+            : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || []
+        }
+        legendName="Total Energy Generated"
+        yAxisLabel={"Pesos"}
+        unit="pesos"
+        yAxisKey={lineView === 'period' ? 'period' : 'ff_name'}
+
+        colorMap={
+            chartReady
+            ? getColorMapForGroupBy(
+                x,
+                data?.funds_allocated_peso?.beneficiaries?.tabledata,
+                plantColors,
+                plantMetadata,
+                generationSourceColors
+                )
+            : {}
+        }
+        />
+    </Box>
+
+    {/* Zoom Button */}
+    <Button
+      size="small"
+      sx={{ position: 'absolute', top: 8, right: 8 }}
+      onClick={() =>
+        openZoomModal(
+          generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate),
+          "total_energy_generated_chart",
+          <LineChartComponent
+            title={generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate)}
+            data={
+              lineView === 'period'
+                ? data?.line_graph?.total_energy_generated || []
+                : data?.line_graph?.total_energy_generated_by_category || []
+            }
+            unit="kWh"
+            colorMap={
+              chartReady
+                ? getColorMapForGroupBy(
+                    x,
+                    data?.funds_allocated_peso?.beneficiaries?.tabledata,
+                    plantColors,
+                    plantMetadata,
+                    generationSourceColors
+                  )
+                : {}
+            }
+          />
+        )
+      }
+    >
+      🔍
+    </Button>
+  </Paper>
+</Box>
+
+
+{/* Row 2: Stacked Bar Chart */}
+<Box sx={{ flex: 1, minHeight: 0 }}>
+  <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ flex: 1, minHeight: 0 }}>
+      <GenericResponsiveTable
+        data={data?.funds_allocated_peso?.beneficiaries?.tabledata}
+      />
+    </Box>
+  </Paper>
+</Box>
+
+  </Box>
+
+  {/* Column 2: KPI + Pie Chart */}
+  <Box sx={{ flex: 3, display: 'flex', flexDirection: 'column', gap: 1, minHeight: 0 }}>
+    {/* KPI Card */}
+    <Box sx={{ flexShrink: 0 }}>
+      <KPICard
+        loading={false}
+        value={`₱ ${(data?.funds_allocated_peso?.allocation?.total || 0).toLocaleString(undefined, {
+          maximumFractionDigits: 2,
+        })}`}
+        unit=""
+        title="Total Energy Generated in Peso"
+        colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
+        style={{ width: '100%' }}
+      />
+    </Box>
+
+    {/* Pie Chart */}
+    <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
+        <Box sx={{ width: '100%', height: '100%' }}>
+          <PieChartComponent
+            title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
+            data={data?.funds_allocated_peso?.allocation?.pie || []}
+            colorMap={
+              chartReady
+                ? getColorMapForGroupBy(
+                    x,
+                    data?.funds_allocated_peso?.beneficiaries?.pie || [],
+                    plantColors,
+                    plantMetadata,
+                    generationSourceColors
+                  )
+                : {}
+            }
+          />
+        </Box>
+        <Button
+          size="small"
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+          onClick={() =>
+            openZoomModal(
+              generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate),
+              "total_energy_generated_pie",
+              <PieChartComponent
+                title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
+                data={data?.funds_allocated_peso?.allocation?.pie || []}
+                colorMap={
+                  chartReady
+                    ? getColorMapForGroupBy(
+                        x,
+                        data?.funds_allocated_peso?.beneficiaries?.pie || [],
+                        plantColors,
+                        plantMetadata,
+                        generationSourceColors
+                      )
+                    : {}
+                }
+              />
+            )
+          }
+        >
+          🔍
+        </Button>
+      </Paper>
+    </Box>
+  </Box>
+</Box>
+
+  </Box>
+)}
+
 
         <ZoomModal
           open={zoomModal.open}
