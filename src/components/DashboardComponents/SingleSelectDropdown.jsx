@@ -30,7 +30,6 @@ const SingleSelectDropdown = ({
         width: '100%',
         '& .MuiOutlinedInput-root': {
           borderRadius: '20px',
-          backgroundColor: 'white',
           fontSize: '12px',
           fontWeight: 500,
           height: '32px', // 🔧 Adjust height here

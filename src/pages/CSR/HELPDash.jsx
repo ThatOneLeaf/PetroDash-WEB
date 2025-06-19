@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { Box, Typography, Grid, Paper, CircularProgress, Button } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -18,8 +18,6 @@ import InvestmentPerProgramChart from '../CSR/Charts/InvestmentPerProgram';
 import InvestmentPerCompanyChart from '../CSR/Charts/InvestmentPerCompany';
 import ZoomModal from '../../components/DashboardComponents/ZoomModal'; // Add this import
 import InvestmentKPI from '../CSR/Charts/InvestmentKPI'; // Add this import
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 // KPI configuration for HELP dashboard
 const kpiConfig = [
@@ -324,28 +322,6 @@ export default function HELPDash() {
     title: '',
     fileName: ''
   });
-  const [exporting, setExporting] = useState(false);
-  const kpiRef = useRef();
-  const investmentKPIRef = useRef();
-  const projectChartRef = useRef();
-  const programChartRef = useRef();
-  const companyChartRef = useRef();
-
-  // --- Add refs for each exportable element ---
-  const helpExportRef = useRef();
-  const investExportRef = useRef();
-  const helpHeaderRef = useRef();
-  const helpFiltersRef = useRef();
-  const helpHealthKPIRef = useRef();
-  const helpEducationKPIRef = useRef();
-  const helpLivelihoodKPIRef = useRef();
-
-  const investHeaderRef = useRef();
-  const investFiltersRef = useRef();
-  const investKPIRef = useRef();
-  const investProjectChartRef = useRef();
-  const investProgramChartRef = useRef();
-  const investCompanyChartRef = useRef();
 
   // Fetch HELP activities data from API
   const fetchData = () => {
@@ -422,59 +398,6 @@ export default function HELPDash() {
     setZoomModal({ open: true, title, fileName, content });
   };
 
-  // Export report handler: screenshot each element and add to PDF in order, preserving scale
-  const handleExportReport = async () => {
-    setExporting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 700));
-      const doc = new jsPDF('p', 'pt', 'a4');
-      let y = 30;
-      const marginX = 40;
-      const pageWidth = doc.internal.pageSize.getWidth() - marginX * 2;
-      const addImageToPDF = async (ref, doc, y, maxWidth = pageWidth) => {
-        if (!ref.current) return y;
-        const canvas = await html2canvas(ref.current, { useCORS: true, backgroundColor: null });
-        let imgWidth = canvas.width;
-        let imgHeight = canvas.height;
-        // Scale down if wider than maxWidth
-        if (imgWidth > maxWidth) {
-          const scale = maxWidth / imgWidth;
-          imgWidth = maxWidth;
-          imgHeight = imgHeight * scale;
-        }
-        // Add new page if not enough space
-        if (y + imgHeight > doc.internal.pageSize.getHeight() - 30) {
-          doc.addPage();
-          y = 30;
-        }
-        doc.addImage(canvas, 'PNG', marginX, y, imgWidth, imgHeight);
-        return y + imgHeight + 12;
-      };
-
-      // --- HELP PAGE ---
-      y = await addImageToPDF(helpHeaderRef, doc, y);
-      y = await addImageToPDF(helpFiltersRef, doc, y);
-      y = await addImageToPDF(helpHealthKPIRef, doc, y);
-      y = await addImageToPDF(helpEducationKPIRef, doc, y);
-      y = await addImageToPDF(helpLivelihoodKPIRef, doc, y);
-
-      // --- INVESTMENTS PAGE ---
-      doc.addPage();
-      y = 30;
-      y = await addImageToPDF(investHeaderRef, doc, y);
-      y = await addImageToPDF(investFiltersRef, doc, y);
-      y = await addImageToPDF(investKPIRef, doc, y);
-      y = await addImageToPDF(investProjectChartRef, doc, y);
-      y = await addImageToPDF(investProgramChartRef, doc, y);
-      y = await addImageToPDF(investCompanyChartRef, doc, y);
-
-      doc.save('HELP_Dashboard_Report.pdf');
-    } catch (err) {
-      alert('Export failed. Please try again.');
-    }
-    setExporting(false);
-  };
-
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', background: '#f4f6fb' }}>
       <Sidebar />
@@ -503,44 +426,24 @@ export default function HELPDash() {
               The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="contained"
-              startIcon={<RefreshIcon sx={{ fontSize: 16 }} />}
-              sx={{
-                backgroundColor: '#1976d2',
-                borderRadius: '7px',
-                fontWeight: 600,
-                fontSize: 11,
-                px: 1.5,
-                py: 0.5,
-                minHeight: '28px',
-                minWidth: '80px',
-                '&:hover': { backgroundColor: '#115293' }
-              }}
-              onClick={fetchData}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: '#10B981',
-                borderRadius: '7px',
-                fontWeight: 600,
-                fontSize: 11,
-                px: 1.5,
-                py: 0.5,
-                minHeight: '28px',
-                minWidth: '80px',
-                '&:hover': { backgroundColor: '#059669' }
-              }}
-              onClick={handleExportReport}
-              disabled={exporting}
-            >
-              {exporting ? 'Exporting...' : 'Export Report'}
-            </Button>
-          </Box>
+          <Button
+            variant="contained"
+            startIcon={<RefreshIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              backgroundColor: '#1976d2',
+              borderRadius: '7px',
+              fontWeight: 600,
+              fontSize: 11,
+              px: 1.5,
+              py: 0.5,
+              minHeight: '28px',
+              minWidth: '80px',
+              '&:hover': { backgroundColor: '#115293' }
+            }}
+            onClick={fetchData}
+          >
+            Refresh
+          </Button>
         </Box>
 
         {/* Tab Buttons */}
@@ -673,7 +576,7 @@ export default function HELPDash() {
             </Box>
 
             {/* KPI Grid */}
-            <Box sx={{ width: '100%' }} ref={kpiRef}>
+            <Box sx={{ width: '100%' }}>
               {kpiConfig.map(section => (
                 <Box
                   key={section.category}
@@ -821,12 +724,10 @@ export default function HELPDash() {
             </Box>
 
             {/* KPI Row - 3 columns */}
-            <Box ref={investmentKPIRef}>
-              <InvestmentKPI
-                year={filters.year}
-                companyId={filters.company}
-              />
-            </Box>
+            <InvestmentKPI
+              year={filters.year}
+              companyId={filters.company}
+            />
 
             {/* Graph Containers Layout */}
             <Box
@@ -889,7 +790,7 @@ export default function HELPDash() {
                 >
                   Investments per Project
                 </Typography>
-                <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }} ref={projectChartRef}>
+                <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <InvestmentPerProjectChart
                       height="100%"
@@ -961,7 +862,7 @@ export default function HELPDash() {
                   >
                     Investments per Program
                   </Typography>
-                  <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }} ref={programChartRef}>
+                  <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', height: '100%' }}>
                       <InvestmentPerProgramChart
                         height="100%"
@@ -1021,7 +922,7 @@ export default function HELPDash() {
                   >
                     Investments per Company
                   </Typography>
-                  <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }} ref={companyChartRef}>
+                  <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', height: '100%' }}>
                       <InvestmentPerCompanyChart
                         height="100%"
@@ -1062,552 +963,6 @@ export default function HELPDash() {
             </ZoomModal>
           </>
         )}
-        {/* --- Hidden containers for PDF export --- */}
-        <Box sx={{ display: 'block', position: 'absolute', left: '-9999px', top: 0, width: 0, height: 0, zIndex: -1 }}>
-          {/* HELP export view */}
-          <Box ref={helpExportRef} sx={{ width: 1200, p: 3, background: '#f4f6fb' }}>
-            {/* Header */}
-            <Box ref={helpHeaderRef} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Box>
-                <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#64748b', mb: 0.5 }}>
-                  DASHBOARD
-                </Typography>
-                <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#182959', letterSpacing: 0.5 }}>
-                  Social - H.E.L.P
-                </Typography>
-                <Typography sx={{
-                  color: '#64748b',
-                  fontSize: 10,
-                  fontWeight: 400,
-                  mt: 0.5
-                }}>
-                  The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
-                </Typography>
-              </Box>
-            </Box>
-            {/* Tabs and filters */}
-            <Box sx={{ display: 'flex', gap: '6px', mb: 1.5 }}>
-              <Button
-                sx={{
-                  padding: '5px 10px',
-                  backgroundColor: '#10B981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '16px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  minWidth: '60px',
-                  minHeight: '26px',
-                  boxShadow: 'none'
-                }}
-              >
-                HELP
-              </Button>
-              <Button
-                sx={{
-                  padding: '5px 10px',
-                  backgroundColor: '#9CA3AF',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '16px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  minWidth: '60px',
-                  minHeight: '26px',
-                  boxShadow: 'none'
-                }}
-              >
-                Investments
-              </Button>
-            </Box>
-            <Box
-              ref={helpFiltersRef}
-              sx={{
-                display: 'flex',
-                gap: '7px',
-                mb: 2,
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <select
-                value={filters.year}
-                style={{
-                  padding: '5px 8px',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '14px',
-                  backgroundColor: 'white',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  minWidth: '70px',
-                  height: '28px'
-                }}
-                readOnly
-              >
-                {yearOptions.map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <select
-                value={filters.company}
-                style={{
-                  padding: '5px 8px',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '14px',
-                  backgroundColor: 'white',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  minWidth: '70px',
-                  height: '28px'
-                }}
-                readOnly
-              >
-                <option value="">All Companies</option>
-                {companyOptions.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </Box>
-            {/* KPI Sections */}
-            <Box sx={{ width: '100%' }}>
-              {/* Health */}
-              <Box ref={helpHealthKPIRef} sx={{ mb: 3, width: '100%', maxWidth: '100%' }}>
-                <Typography
-                  sx={{
-                    fontSize: 28, 
-                    fontWeight: 900,
-                    color: '#182959',
-                    mb: 1.2,
-                    letterSpacing: 1,
-                    textAlign: 'left',
-                    textTransform: 'uppercase',
-                    pl: { xs: 1, sm: 2 },
-                  }}
-                >
-                  HEALTH
-                </Typography>
-                <Grid
-                  container
-                  spacing={1.5}
-                  sx={{
-                    width: '100%',
-                    margin: 0,
-                    px: { xs: 0, sm: 1 },
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                  }}
-                >
-                  {kpiConfig[0].items.map(item => (
-                    <Grid
-                      item
-                      xs={12}
-                      sm={6}
-                      md={Math.max(12 / kpiConfig[0].items.length, 3)}
-                      lg={Math.max(12 / kpiConfig[0].items.length, 3)}
-                      key={item.key}
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        width: '100%',
-                        flexGrow: 1,
-                        flexBasis: 0,
-                      }}
-                    >
-                      <KPIBox
-                        icon={item.icon}
-                        label={item.label}
-                        value={kpi[item.key]}
-                        lastUpdated={lastUpdated}
-                        bgColor={item.bgColor}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-              {/* Education */}
-              <Box ref={helpEducationKPIRef} sx={{ mb: 3, width: '100%', maxWidth: '100%' }}>
-                <Typography
-                  sx={{
-                    fontSize: 28, 
-                    fontWeight: 900,
-                    color: '#182959',
-                    mb: 1.2,
-                    letterSpacing: 1,
-                    textAlign: 'left',
-                    textTransform: 'uppercase',
-                    pl: { xs: 1, sm: 2 },
-                  }}
-                >
-                  EDUCATION
-                </Typography>
-                <Grid
-                  container
-                  spacing={1.5}
-                  sx={{
-                    width: '100%',
-                    margin: 0,
-                    px: { xs: 0, sm: 1 },
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                  }}
-                >
-                  {kpiConfig[1].items.map(item => (
-                    <Grid
-                      item
-                      xs={12}
-                      sm={6}
-                      md={Math.max(12 / kpiConfig[1].items.length, 3)}
-                      lg={Math.max(12 / kpiConfig[1].items.length, 3)}
-                      key={item.key}
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        width: '100%',
-                        flexGrow: 1,
-                        flexBasis: 0,
-                      }}
-                    >
-                      <KPIBox
-                        icon={item.icon}
-                        label={item.label}
-                        value={kpi[item.key]}
-                        lastUpdated={lastUpdated}
-                        bgColor={item.bgColor}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-              {/* Livelihood */}
-              <Box ref={helpLivelihoodKPIRef} sx={{ mb: 3, width: '100%', maxWidth: '100%' }}>
-                <Typography
-                  sx={{
-                    fontSize: 28, 
-                    fontWeight: 900,
-                    color: '#182959',
-                    mb: 1.2,
-                    letterSpacing: 1,
-                    textAlign: 'left',
-                    textTransform: 'uppercase',
-                    pl: { xs: 1, sm: 2 },
-                  }}
-                >
-                  LIVELIHOOD
-                </Typography>
-                <Grid
-                  container
-                  spacing={1.5}
-                  sx={{
-                    width: '100%',
-                    margin: 0,
-                    px: { xs: 0, sm: 1 },
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                  }}
-                >
-                  {kpiConfig[2].items.map(item => (
-                    <Grid
-                      item
-                      xs={12}
-                      sm={6}
-                      md={Math.max(12 / kpiConfig[2].items.length, 3)}
-                      lg={Math.max(12 / kpiConfig[2].items.length, 3)}
-                      key={item.key}
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        width: '100%',
-                        flexGrow: 1,
-                        flexBasis: 0,
-                      }}
-                    >
-                      <KPIBox
-                        icon={item.icon}
-                        label={item.label}
-                        value={kpi[item.key]}
-                        lastUpdated={lastUpdated}
-                        bgColor={item.bgColor}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            </Box>
-          </Box>
-          {/* Investments export view */}
-          <Box ref={investExportRef} sx={{ width: 1200, p: 3, background: '#f4f6fb' }}>
-            {/* Header */}
-            <Box ref={investHeaderRef} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Box>
-                <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#64748b', mb: 0.5 }}>
-                  DASHBOARD
-                </Typography>
-                <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#182959', letterSpacing: 0.5 }}>
-                  Social - H.E.L.P
-                </Typography>
-                <Typography sx={{
-                  color: '#64748b',
-                  fontSize: 10,
-                  fontWeight: 400,
-                  mt: 0.5
-                }}>
-                  The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
-                </Typography>
-              </Box>
-            </Box>
-            {/* Tabs and filters */}
-            <Box sx={{ display: 'flex', gap: '6px', mb: 1.5 }}>
-              <Button
-                sx={{
-                  padding: '5px 10px',
-                  backgroundColor: '#9CA3AF',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '16px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  minWidth: '60px',
-                  minHeight: '26px',
-                  boxShadow: 'none'
-                }}
-              >
-                HELP
-              </Button>
-              <Button
-                sx={{
-                  padding: '5px 10px',
-                  backgroundColor: '#10B981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '16px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  minWidth: '60px',
-                  minHeight: '26px',
-                  boxShadow: 'none'
-                }}
-              >
-                Investments
-              </Button>
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                gap: '7px',
-                mb: 2,
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <select
-                value={filters.year}
-                onChange={e => handleFilter('year', e.target.value)}
-                style={{
-                  padding: '5px 8px',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '14px',
-                  backgroundColor: 'white',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  minWidth: '70px',
-                  height: '28px'
-                }}
-              >
-                <option value="">All Years</option>
-                {yearOptions.map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <select
-                value={filters.company}
-                onChange={e => handleFilter('company', e.target.value)}
-                style={{
-                  padding: '5px 8px',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '14px',
-                  backgroundColor: 'white',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  minWidth: '70px',
-                  height: '28px'
-                }}
-              >
-                <option value="">All Companies</option>
-                {companyOptions.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </Box>
-            {/* KPI Row */}
-            <Box ref={investKPIRef}>
-              <InvestmentKPI
-                year={filters.year}
-                companyId={filters.company}
-              />
-            </Box>
-            {/* Graph Containers Layout */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                gap: 2,
-                width: '100%',
-                alignItems: 'stretch',
-                minHeight: 0,
-                height: 400,
-              }}
-            >
-              {/* Left: Large Chart Container (Investments per Projects) */}
-              <Paper
-                ref={investProjectChartRef}
-                elevation={0}
-                sx={{
-                  flex: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  background: '#fff',
-                  borderRadius: '10px',
-                  border: '1.5px solid #e2e8f0',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                  minWidth: '50%',
-                  maxWidth: '55%',
-                  height: '100%',
-                  minHeight: 0,
-                  padding: '10px 10px 8px 10px',
-                  justifyContent: 'flex-start',
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: '#1e293b',
-                    mb: 0.5,
-                    flexShrink: 0
-                  }}
-                >
-                  Investments per Project
-                </Typography>
-                <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <Box sx={{ width: '100%', height: '100%' }}>
-                    <InvestmentPerProjectChart
-                      height={300}
-                      width={500}
-                      year={filters.year}
-                      companyId={filters.company}
-                    />
-                  </Box>
-                </Box>
-              </Paper>
-              {/* Right: Stack of two charts */}
-              <Box
-                sx={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2,
-                  minWidth: 0,
-                  height: '100%',
-                  minHeight: 0,
-                }}
-              >
-                {/* Investments per Programs */}
-                <Paper
-                  ref={investProgramChartRef}
-                  elevation={0}
-                  sx={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: '#fff',
-                    borderRadius: '10px',
-                    border: '1.5px solid #e2e8f0',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                    minWidth: 0,
-                    height: '50%',
-                    minHeight: 0,
-                    padding: '10px 10px 8px 10px',
-                    justifyContent: 'flex-start',
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#1e293b',
-                      mb: 0.5,
-                      flexShrink: 0
-                    }}
-                  >
-                    Investments per Program
-                  </Typography>
-                  <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <Box sx={{ width: '100%', height: '100%' }}>
-                      <InvestmentPerProgramChart
-                        height={140}
-                        width={250}
-                        year={filters.year}
-                        companyId={filters.company}
-                      />
-                    </Box>
-                  </Box>
-                </Paper>
-                {/* Bottom Right Chart */}
-                <Paper
-                  ref={investCompanyChartRef}
-                  elevation={0}
-                  sx={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: '#fff',
-                    borderRadius: '10px',
-                    border: '1.5px solid #e2e8f0',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                    minWidth: 0,
-                    height: '50%',
-                    minHeight: 0,
-                    padding: '10px 10px 8px 10px',
-                    justifyContent: 'flex-start',
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#1e293b',
-                      mb: 0.5,
-                      flexShrink: 0
-                    }}
-                  >
-                    Investments per Company
-                  </Typography>
-                  <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <Box sx={{ width: '100%', height: '100%' }}>
-                      <InvestmentPerCompanyChart
-                        height={140}
-                        width={250}
-                        year={filters.year}
-                        companyId={filters.company}
-                      />
-                    </Box>
-                  </Box>
-                </Paper>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-        {/* --- End hidden containers --- */}
       </Box>
     </Box>
   );

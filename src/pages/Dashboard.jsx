@@ -15,7 +15,7 @@ import {
 import api from '../services/api';
 import { Box, Button, Typography, Paper, Card, CardContent, Grid, CircularProgress } from "@mui/material";
 import Sidebar from '../components/Sidebar';
-import { logout } from '../services/auth';
+import { useAuth } from '../contexts/AuthContext';
 import EnviOverview from '../components/DashboardComponents/EnviOverview';
 import DashboardHeader from '../components/DashboardComponents/DashboardHeader';
 import { format } from 'date-fns';
@@ -23,6 +23,7 @@ import HELPINvestments from './CSR/Charts/InvestmentKPI'
 import EnergyTable from '../components/EnergyOverallTable';
 
 function Dashboard() {
+  const { logout } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -192,21 +193,31 @@ function Dashboard() {
                   </Box>
                 ) : (
                   <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    {/* KPI Cards Row - 1/3 of height */}
-                    <Box sx={{ height: '25%', mb: 1 }}>
-                      <Grid container spacing={1} sx={{ height: '100%' }}>
+                    {/* KPI Cards Row - Compact fit-content height */}
+                    <Box sx={{ height: 'fit-content', mb: 1, flexShrink: 0 }}>
+                      <Grid container spacing={1}>
                         {/* Value Generated Card */}
                         <Grid size={4}>
-                          <Card sx={{ borderRadius: 2, boxShadow: 1, height: '100%' }}>
-                            <CardContent sx={{ textAlign: 'center', py: 0.8, px: 1, '&:last-child': { pb: 0.8 } }}>
-                              <Typography variant="h5" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1rem' }}>
+                          <Card sx={{ borderRadius: 2, boxShadow: 1, height: 'fit-content' }}>
+                            <CardContent sx={{ 
+                              textAlign: 'center', 
+                              py: 0.5, 
+                              px: 1, 
+                              '&:last-child': { pb: 0.5 },
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minHeight: 'unset'
+                            }}>
+                              <Typography variant="h5" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1.1rem', mb: 0.2, lineHeight: 1.2 }}>
                                 {currentYearMetrics ? currentYearMetrics.totalGenerated.toLocaleString() : '0'}
                               </Typography>
-                              <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.6rem' }}>
+                              <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.7rem', mb: 0.2, lineHeight: 1.1 }}>
                                 Value Generated
                               </Typography>
                               {previousYearMetrics && (
-                                <Typography variant="caption" sx={{ color: '#2B8C37', fontSize: '0.5rem' }}>
+                                <Typography variant="caption" sx={{ color: '#2B8C37', fontSize: '0.6rem', lineHeight: 1 }}>
                                   ▲{calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated)}% from last year
                                 </Typography>
                               )}
@@ -216,16 +227,26 @@ function Dashboard() {
                         
                         {/* Value Distributed Card */}
                         <Grid size={4}>
-                          <Card sx={{ borderRadius: 2, boxShadow: 1, bgcolor: '#182959', height: '100%' }}>
-                            <CardContent sx={{ textAlign: 'center', py: 0.8, px: 1, '&:last-child': { pb: 0.8 } }}>
-                              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                          <Card sx={{ borderRadius: 2, boxShadow: 1, bgcolor: '#182959', height: 'fit-content' }}>
+                            <CardContent sx={{ 
+                              textAlign: 'center', 
+                              py: 0.5, 
+                              px: 1, 
+                              '&:last-child': { pb: 0.5 },
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minHeight: 'unset'
+                            }}>
+                              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem', mb: 0.2, lineHeight: 1.2 }}>
                                 {currentYearMetrics ? currentYearMetrics.totalDistributed.toLocaleString() : '0'}
                               </Typography>
-                              <Typography variant="body2" sx={{ color: 'white', fontSize: '0.6rem' }}>
+                              <Typography variant="body2" sx={{ color: 'white', fontSize: '0.7rem', mb: 0.2, lineHeight: 1.1 }}>
                                 Value Distributed
                               </Typography>
                               {previousYearMetrics && (
-                                <Typography variant="caption" sx={{ color: 'white', fontSize: '0.5rem' }}>
+                                <Typography variant="caption" sx={{ color: 'white', fontSize: '0.6rem', lineHeight: 1 }}>
                                   ▲{calculateGrowth(currentYearMetrics?.totalDistributed, previousYearMetrics?.totalDistributed)}% from last year
                                 </Typography>
                               )}
@@ -235,18 +256,29 @@ function Dashboard() {
                         
                         {/* Value Retained Card */}
                         <Grid size={4}>
-                          <Card sx={{ borderRadius: 2, boxShadow: 1, height: '100%' }}>
-                            <CardContent sx={{ textAlign: 'center', py: 0.8, px: 1, '&:last-child': { pb: 0.8 } }}>
-                              <Typography variant="h5" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1rem' }}>
+                          <Card sx={{ borderRadius: 2, boxShadow: 1, height: 'fit-content' }}>
+                            <CardContent sx={{ 
+                              textAlign: 'center', 
+                              py: 0.5, 
+                              px: 1, 
+                              '&:last-child': { pb: 0.5 },
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minHeight: 'unset'
+                            }}>
+                              <Typography variant="h5" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1.1rem', mb: 0.2, lineHeight: 1.2 }}>
                                 {currentYearMetrics ? currentYearMetrics.valueRetained.toLocaleString() : '0'}
                               </Typography>
-                              <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.6rem' }}>
+                              <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.7rem', mb: 0.2, lineHeight: 1.1 }}>
                                 Value Retained
                               </Typography>
                               {previousYearMetrics && (
                                 <Typography variant="caption" sx={{ 
                                   color: previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '#ff5722' : '#2B8C37', 
-                                  fontSize: '0.5rem' 
+                                  fontSize: '0.6rem',
+                                  lineHeight: 1
                                 }}>
                                   {previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '▼' : '▲'}
                                   {Math.abs(calculateGrowth(currentYearMetrics?.valueRetained, previousYearMetrics?.valueRetained))}% from last year
