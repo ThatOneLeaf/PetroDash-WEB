@@ -272,7 +272,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minHeight: "100px", fontSize: "18px" }}
           />
           <KPICard
             loading={false}
@@ -284,7 +284,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minHeight: "100px" }}
           />
         </Box>
 
@@ -305,10 +305,12 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
               display: "flex",
               flexDirection: "column",
-              minHeight: 0,
+              height: "400px", // ✅ Match height
               position: "relative",
               cursor: "pointer",
               transition: "box-shadow 0.2s",
+              width: "100%",
+              maxWidth: "1000px",
             }}
             onClick={() =>
               openZoomModal(
@@ -323,7 +325,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       flexDirection: "column",
                     }}
                   >
-                    <div style={{ flex: 1, minHeight: 400 }}>
+                    <div style={{ flex: 1 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={genderDistribution}>
                           <CartesianGrid strokeDasharray="3 3" />
@@ -370,35 +372,28 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   backgroundColor: "#f8fafc",
                   borderRadius: "6px",
                   fontSize: "12px",
+                  flex: 1,
                 }}
               >
                 No data available for selected filters
               </div>
             ) : (
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: 0,
-                }}
-              >
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={genderDistribution}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="position" />
-                      <YAxis />
-                      <Tooltip itemStyle={{ color: "#000" }} />
-                      <Legend />
-                      <Bar dataKey="Male" fill="#4285F4" />
-                      <Bar dataKey="Female" fill="#EA4335" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+              <div style={{ flex: 1 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={genderDistribution}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="position" />
+                    <YAxis />
+                    <Tooltip itemStyle={{ color: "#000" }} />
+                    <Legend />
+                    <Bar dataKey="Male" fill="#4285F4" />
+                    <Bar dataKey="Female" fill="#EA4335" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
+
           {/*
           <Paper
             sx={{
@@ -437,7 +432,6 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               </ResponsiveContainer>
             </Box>
           </Paper> */}
-
           <div
             style={{
               backgroundColor: "white",
@@ -446,10 +440,11 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
               display: "flex",
               flexDirection: "column",
-              minHeight: 0,
-              position: "relative",
+              height: "400px", // ✅ Consistent height
               cursor: "pointer",
               transition: "box-shadow 0.2s",
+              width: "100%",
+              maxWidth: "1000px",
             }}
             onClick={() =>
               openZoomModal(
@@ -464,7 +459,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       flexDirection: "column",
                     }}
                   >
-                    <div style={{ flex: 1, minHeight: 400 }}>
+                    <div style={{ flex: 1 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -474,8 +469,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            outerRadius={150}
-                            innerRadius={60}
+                            outerRadius="80%"
+                            innerRadius="40%"
                             fill="#8884d8"
                             paddingAngle={2}
                             startAngle={90}
@@ -529,50 +524,40 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   backgroundColor: "#f8fafc",
                   borderRadius: "6px",
                   fontSize: "12px",
+                  flex: 1,
                 }}
               >
                 No data available for selected filters
               </div>
             ) : (
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: 0,
-                }}
-              >
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={ageDistribution}
-                        dataKey="count"
-                        nameKey="age_group"
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius="80%"
-                        innerRadius="40%"
-                        fill="#8884d8"
-                        paddingAngle={2}
-                        startAngle={90}
-                        endAngle={450}
-                      >
-                        {ageDistribution.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value, name) => [`${value}`, name]}
-                      />
-                      <Legend iconType="square" />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+              <div style={{ flex: 1 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={ageDistribution}
+                      dataKey="count"
+                      nameKey="age_group"
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius="80%"
+                      innerRadius="40%"
+                      fill="#8884d8"
+                      paddingAngle={2}
+                      startAngle={90}
+                      endAngle={450}
+                    >
+                      {ageDistribution.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [`${value}`, name]} />
+                    <Legend iconType="square" />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
@@ -648,10 +633,11 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
               display: "flex",
               flexDirection: "column",
-              minHeight: 0,
-              position: "relative",
+              height: "400px", // ✅ match height
               cursor: "pointer",
               transition: "box-shadow 0.2s",
+              width: "100%",
+              maxWidth: "1000px", // optional limit
             }}
             onClick={() =>
               openZoomModal(
@@ -666,7 +652,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       flexDirection: "column",
                     }}
                   >
-                    <div style={{ flex: 1, minHeight: 400 }}>
+                    <div style={{ flex: 1 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={leaveTypes}
@@ -732,51 +718,38 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   backgroundColor: "#f8fafc",
                   borderRadius: "6px",
                   fontSize: "12px",
+                  flex: 1,
                 }}
               >
                 No data available for selected filters
               </div>
             ) : (
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: 0,
-                }}
-              >
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart
-                      data={leaveTypes}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="year" />
-                      <YAxis />
-                      <Tooltip itemStyle={{ color: "#000" }} />
-                      <Legend iconType="square" />
-                      <Bar
-                        dataKey="SPL"
-                        stackId="a"
-                        fill="#1976d2"
-                        name="SPL"
-                      />
-                      <Bar
-                        dataKey="Paternity"
-                        stackId="a"
-                        fill="#ffa726"
-                        name="Paternity"
-                      />
-                      <Bar
-                        dataKey="Maternity"
-                        stackId="a"
-                        fill="#66bb6a"
-                        name="Maternity"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+              <div style={{ flex: 1 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={leaveTypes}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip itemStyle={{ color: "#000" }} />
+                    <Legend iconType="square" />
+                    <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
+                    <Bar
+                      dataKey="Paternity"
+                      stackId="a"
+                      fill="#ffa726"
+                      name="Paternity"
+                    />
+                    <Bar
+                      dataKey="Maternity"
+                      stackId="a"
+                      fill="#66bb6a"
+                      name="Maternity"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
@@ -898,14 +871,11 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                 display: "flex",
                 flexDirection: "column",
-                minHeight: 0,
-                position: "relative",
-                cursor: "pointer",
-                transition: "box-shadow 0.2s",
+                height: "400px",
                 width: "100%",
                 maxWidth: "800px",
-                maxWidth: "1000px",
-                height: "400px",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s",
               }}
               onClick={() =>
                 openZoomModal(
@@ -920,7 +890,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                         flexDirection: "column",
                       }}
                     >
-                      <div style={{ flex: 1, minHeight: 400 }}>
+                      <div style={{ flex: 1 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={employeeCountByCompany}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -975,39 +945,31 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     backgroundColor: "#f8fafc",
                     borderRadius: "6px",
                     fontSize: "12px",
+                    flex: 1,
                   }}
                 >
                   No data available for selected filters
                 </div>
               ) : (
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: 0,
-                  }}
-                >
-                  <div style={{ flex: 1, minHeight: 0 }}>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={employeeCountByCompany}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="company" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="count" name="Employee Count">
-                          {employeeCountByCompany.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                              className="recharts-sector"
-                            />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                <div style={{ flex: 1 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={employeeCountByCompany}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="company" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="count" name="Employee Count">
+                        {employeeCountByCompany.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                            className="recharts-sector"
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>
@@ -1060,12 +1022,11 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                 display: "flex",
                 flexDirection: "column",
-                minHeight: 0,
-                position: "relative",
-                cursor: "pointer",
-                transition: "box-shadow 0.2s",
+                height: "400px", // ✅ Match height
                 width: "100%",
                 maxWidth: "800px",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s",
               }}
               onClick={() =>
                 openZoomModal(
@@ -1152,7 +1113,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   }}
                 >
                   <div style={{ flex: 1, minHeight: 0 }}>
-                    <ResponsiveContainer width="100%" height={250}>
+                    <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={leaveSeasons}
                         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -1178,6 +1139,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 </div>
               )}
             </div>
+
             {/* 
             <Paper
               sx={{
