@@ -6,7 +6,7 @@ import {
   Paper,
   Typography,
   IconButton,
-  Stack
+  Stack,
 } from "@mui/material";
 
 import {
@@ -42,67 +42,7 @@ import MultiSelectWithChips from "../../components/DashboardComponents/MultiSele
 import MonthRangeSelect from "../../components/DashboardComponents/MonthRangeSelect";
 import KPICard from "../../components/DashboardComponents/KPICard";
 import ClearButton from "../../components/DashboardComponents/ClearButton";
-
-import KPIIndicatorCard from "../../components/KPIIndicatorCard"; // Remove This
-
-import Sidebar from "../../components/Sidebar";
-
-// Dummy data
-const attritionData = [
-  {
-    year: 2019,
-    total_employees: 154,
-    resigned_count: 0,
-    attrition_rate_percent: "0.00",
-  },
-  {
-    year: 2020,
-    total_employees: 156,
-    resigned_count: 1,
-    attrition_rate_percent: "0.64",
-  },
-  {
-    year: 2021,
-    total_employees: 156,
-    resigned_count: 6,
-    attrition_rate_percent: "3.85",
-  },
-  {
-    year: 2022,
-    total_employees: 155,
-    resigned_count: 1,
-    attrition_rate_percent: "0.65",
-  },
-];
-
-const genderDistribution = [
-  { position: "MM", gender: "M", count: 35 },
-  { position: "RF", gender: "M", count: 60 },
-  { position: "SM", gender: "M", count: 5 },
-  { position: "MM", gender: "F", count: 25 },
-  { position: "RF", gender: "F", count: 30 },
-  { position: "SM", gender: "F", count: 3 },
-];
-
-const leaveSeasons = [
-  { year: 2019, leave_count: 8 },
-  { year: 2020, leave_count: 8 },
-  { year: 2021, leave_count: 9 },
-  { year: 2022, leave_count: 14 },
-];
-
-const ageDistribution = [
-  { age_group: "30-50", count: 100 },
-  { age_group: "Above 50", count: 25 },
-  { age_group: "Below 30", count: 29 },
-];
-
-const employeeCountByCompany = [
-  { company: "MGI", count: 30 },
-  { company: "PSC", count: 30 },
-  { company: "PWEI", count: 25 },
-  { company: "RGEC", count: 69 },
-];
+import MonthRangePicker from "../../components/Filter/MonthRangePicker";
 
 const leaveTypes = [
   { year: 2019, SPL: 3, Paternity: 1, Maternity: 6 },
@@ -112,9 +52,6 @@ const leaveTypes = [
 ];
 
 // Dashboard values
-const totalEmployees = attritionData[attritionData.length - 1].total_employees;
-const avgTenure = 5.68;
-const attritionRate = attritionData[attritionData.length - 1].attrition_rate_percent;
 
 const COLORS = [
   "#3B82F6",
@@ -125,37 +62,30 @@ const COLORS = [
   "#F59E0B",
 ];
 
-function DemographicsDash({}) {
-  //INITIALIZE
+function DemographicsDash({ shouldReload, setShouldReload }) {
+  //INITIALIZE -DATA
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [totalEmployees, setTotalEmployees] = useState(null);
+  const [avgTenure, setAvgTenure] = useState(null);
+  const [employeeCountByCompany, setEmployeeCountByCompany] = useState([]);
+  const [ageDistribution, setAgeDistribution] = useState([]);
+  const [leaveSeasons, setLeaveSeasons] = useState([]);
+  const [genderDistribution, setGenderDistribution] = useState([]);
 
-
-  // const [attritionData, setAttritionData] = useState([]);
-  const [lastUpdated, setLastUpdated] = useState(new Date()); // Add state for last updated time
-  
   // FILTERING
-
   const [companyFilter, setCompanyFilter] = useState([]);
+  const [positionFilter, setPositionFilter] = useState([]);
 
   const clearAllFilters = () => {
-    setCompanyFilter([]); }
-  
-  const showClearButton =
-    companyFilter.length > 0;
-  const [filters, setFilters] = useState({
-    company_name: "",
-    gender: "",
-    position_id: "",
-    p_np: "",
-    employment_status: "",
-    status_id: "",
-  });
+    setCompanyFilter([]);
+    setPositionFilter([]);
+  };
 
-  const [companyOptions, setCompanyOptions] = useState([]);
-  const genderOptions = [];
-  const positionOptions = [];
-  const employementCategoryOptions = [];
-  const employementStatusOptions = [];
+  const showClearButton = companyFilter.length > 0 || positionFilter.length > 0;
 
+  //CHARTS
   const [openModal, setOpenModal] = useState(false);
   const [activeChart, setActiveChart] = useState(null);
   const [chartText, setchartText] = useState(null);
@@ -167,98 +97,190 @@ function DemographicsDash({}) {
     setOpenModal(true);
   };
 
-  const isFiltering = useMemo(() => {
-    return Object.values(filters).some((v) => v !== null && v !== "");
-  }, [filters]);
-
   useEffect(() => {
-    const fetchFilterData = async () => {
+    console.log(companyFilter);
+
+    const fetchHRData = async () => {
       try {
-        const res = await api.get("/reference/pp_info");
-        const data = res.data;
-        setPlantMetadata(data);
+        const params = {};
+        if (companyFilter.length > 0)
+          params.company_id = companyFilter.join(",");
+        if (positionFilter.length > 0)
+          params.position_id = positionFilter.join(",");
 
-        const u = getUniqueOptions;
+        const [
+          totalEmpRes,
+          avgTenureRes,
+          companyCountRes,
+          ageDistRes,
+          leaveSeasonsRes,
+          genderDistRes,
+        ] = await Promise.all([
+          api.get("hr/total_active_employees", { params }),
+          api.get("hr/average_tenure_rate", { params }),
+          api.get("hr/employee_count_per_company", { params }),
+          api.get("hr/age_distribution", { params }),
+          api.get("hr/peak_leave_seasons", { params }),
+          api.get("hr/gender_distribution_per_position", { params }),
+        ]);
 
-        setCompanyOptions(u(data, "company_id", "company_name"));
-        // setPowerPlantOptions(u(data, "power_plant_id", "power_plant_id"));
-        // setGenerationSourceOptions(u(data, "generation_source", "generation_source"));
-        // setProvinceOptions(u(data, "province", "province"));
-      } catch (err) {
-        console.error("Error loading filters", err);
+        setTotalEmployees(totalEmpRes.data[0]["total_active_employees"]);
+        setAvgTenure(avgTenureRes.data[0]["avg_tenure_rate"]);
+
+        setEmployeeCountByCompany(
+          companyCountRes.data.map((item) => ({
+            company: item.company_id,
+            count: item.employee_count,
+          }))
+        );
+
+        setAgeDistribution(
+          ageDistRes.data.map((item) => ({
+            age_group: item.age_category,
+            count: parseInt(item.total_employees),
+          }))
+        );
+
+        setLeaveSeasons(
+          leaveSeasonsRes.data.map((item) => ({
+            year: item.year,
+            leave_count: parseInt(item.total_leave),
+          }))
+        );
+
+        const grouped = {};
+        genderDistRes.data.forEach(
+          ({ position_id, gender, employee_count }) => {
+            if (!grouped[position_id])
+              grouped[position_id] = {
+                position: position_id,
+                Male: 0,
+                Female: 0,
+              };
+            if (gender === "M") grouped[position_id].Male = employee_count;
+            if (gender === "F") grouped[position_id].Female = employee_count;
+          }
+        );
+        setGenderDistribution(Object.values(grouped));
+      } catch (error) {
+        console.error("Failed to fetch HR data:", error);
+        setTotalEmployees("N/A");
+        setAvgTenure("N/A");
+        setEmployeeCountByCompany([]);
+        setAgeDistribution([]);
+        setLeaveSeasons([]);
+        setGenderDistribution([]);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchFilterData();
+    fetchHRData();
+  }, [companyFilter, positionFilter, shouldReload]);
+
+  const fetchEmployabilityData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("hr/employability_records_by_status");
+      console.log("Employability Data from API:", response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching Employability data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployabilityData();
   }, []);
-  const transformed = [];
 
-  genderDistribution.forEach((entry) => {
-    const { position, gender, count } = entry;
+  const uniqueOptions = (key) => {
+    return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
+      label: val,
+      value: val,
+    }));
+  };
 
-    let existing = transformed.find((item) => item.position === position);
-    if (!existing) {
-      existing = { position, Male: 0, Female: 0 };
-      transformed.push(existing);
-    }
-
-    if (gender === "M") {
-      existing.Male = count;
-    } else if (gender === "F") {
-      existing.Female = count;
-    }
-  });
-    return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        
+  return (
+    <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         {/* Filters */}
         <Box sx={{ px: 0, pb: 1, flexShrink: 0 }}>
           <Stack
-          direction="row"
-          spacing={1}
-          flexWrap="wrap"
-          alignItems="flex-start"
-          sx={{
-            rowGap: 1,
-            columnGap: 0,
-            '@media (max-width: 600px)': {
-              flexDirection: 'column',
-              alignItems: 'stretch',
-            },
-          }}
-        >
-          <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
-          <MultiSelectWithChips label="Start Date" placeholder="Start Date" />
-          <MultiSelectWithChips label="End Date" placeholder="End Date" />
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            alignItems="flex-start"
+            sx={{
+              rowGap: 1,
+              columnGap: 0,
+              "@media (max-width: 600px)": {
+                flexDirection: "column",
+                alignItems: "stretch",
+              },
+            }}
+          >
+            <MultiSelectWithChips
+              label="Companies"
+              options={uniqueOptions("company_id")}
+              selectedValues={companyFilter}
+              onChange={setCompanyFilter}
+              placeholder="All Companies"
+            />
 
-          {showClearButton && <ClearButton onClick={clearAllFilters} />}
+            <MultiSelectWithChips
+              label="Position"
+              options={uniqueOptions("position_id")}
+              selectedValues={positionFilter}
+              onChange={setPositionFilter}
+              placeholder="All Position"
+            />
+            <MultiSelectWithChips label="Start Date" placeholder="Start Date" />
+            <MultiSelectWithChips label="End Date" placeholder="End Date" />
 
-          <Box sx={{ flexGrow: 1, minWidth: 10 }} />
-        </Stack>
+            {showClearButton && <ClearButton onClick={clearAllFilters} />}
+
+            <Box sx={{ flexGrow: 1, minWidth: 10 }} />
+          </Stack>
         </Box>
 
-
         {/* KPI Cards */}
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'nowrap', pb: 2 }}>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "nowrap", pb: 2 }}>
           <KPICard
             loading={false}
             value={totalEmployees}
-            unit="kWh"
-            title="Total Energy Generated"
-            colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
+            unit=""
+            title="Total Active Employees"
+            colorScheme={{
+              backgroundColor: "#1E40AF",
+              textColor: "#FFFFFF",
+              iconColor: "#FFFFFF",
+            }}
             style={{ flex: 1 }}
           />
           <KPICard
             loading={false}
             value={avgTenure}
-            unit="kWh"
-            title="Total Energy Generated"
-            colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
+            unit=""
+            title="Average Tenure Rate"
+            colorScheme={{
+              backgroundColor: "#1E40AF",
+              textColor: "#FFFFFF",
+              iconColor: "#FFFFFF",
+            }}
             style={{ flex: 1 }}
           />
         </Box>
-        
+
         <Modal open={openModal} onClose={handleClose}>
           <Box
             sx={{
@@ -411,7 +433,7 @@ function DemographicsDash({}) {
 
             {activeChart === "genderDistributionChart" && (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={transformed}>
+                <BarChart data={genderDistribution}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="position" />
                   <YAxis />
@@ -464,8 +486,7 @@ function DemographicsDash({}) {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gridAutoRows: "1fr",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: 2,
             minHeight: 320,
             flexGrow: 1,
@@ -475,35 +496,35 @@ function DemographicsDash({}) {
             sx={{
               p: 1,
               textAlign: "center",
-              cursor: "pointer",
+              flex: 1,
+              maxWidth: 600,
+
               color: "#fff",
             }}
             onClick={() =>
               handleOpen({
-                chartKey: "employeeCountChart",
-                chartText: "Employee Count Per Company",
+                chartKey: "genderDistributionChart",
+                chartText: "Gender Distribution by Position",
               })
             }
           >
             <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-              Employee Count Per Company
+              Gender Distribution by Position
             </Typography>
             <Box sx={{ height: 250 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={employeeCountByCompany}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={genderDistribution}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="company" />
+                  <XAxis dataKey="position" />
                   <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" name="Employee Count">
-                    {employeeCountByCompany.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                        className="recharts-sector"
-                      />
-                    ))}
-                  </Bar>
+                  <Tooltip
+                    itemStyle={{
+                      color: "#000",
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="Male" fill="#4285F4" />
+                  <Bar dataKey="Female" fill="#EA4335" />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
@@ -577,134 +598,6 @@ function DemographicsDash({}) {
             }}
             onClick={() =>
               handleOpen({
-                chartKey: "parentalLeavePerYearChart",
-                chartText: "Pareantal Leave Per Year",
-              })
-            }
-          >
-            <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-              Parental Leaves Per Year
-            </Typography>
-            <Box sx={{ height: 250 }}>
-              <ResponsiveContainer>
-                <LineChart
-                  data={leaveSeasons}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis domain={[0, "auto"]} />
-                  <Tooltip
-                    formatter={(value) => `${value} leaves`}
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="leave_count"
-                    stroke="#1976d2"
-                    dot={{ fill: "#1976d2" }}
-                    name="Leave Count"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-
-          <Paper
-            sx={{
-              p: 1,
-              textAlign: "center",
-
-              color: "#fff",
-            }}
-            onClick={() =>
-              handleOpen({
-                chartKey: "attrtitionRatePerYearChart",
-                chartText: "Attrition Rate Per Year",
-              })
-            }
-          >
-            {/* <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-              Attrition Rate Per Year
-            </Typography>
-            <Box sx={{ height: 250 }}>
-              <ResponsiveContainer>
-                <LineChart
-                  data={attritionData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis
-                    domain={[0, "auto"]}
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <Tooltip
-                    formatter={(value) => `${value}%`}
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="attrition_rate_percent"
-                    stroke="#ff7300"
-                    dot={{ fill: "#ff7300" }}
-                    name="Attrition Rate (%)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-
-          <Paper
-            sx={{
-              p: 1,
-              textAlign: "center",
-
-              color: "#fff",
-            }}
-            onClick={() =>
-              handleOpen({
-                chartKey: "genderDistributionChart",
-                chartText: "Gender Distribution by Position",
-              })
-            }
-          > */}
-            <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-              Gender Distribution by Position
-            </Typography>
-            <Box sx={{ height: 250 }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={transformed}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="position" />
-                  <YAxis />
-                  <Tooltip
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="Male" fill="#4285F4" />
-                  <Bar dataKey="Female" fill="#EA4335" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-          <Paper
-            sx={{
-              p: 1,
-              textAlign: "center",
-
-              color: "#fff",
-            }}
-            onClick={() =>
-              handleOpen({
                 chartKey: "typesOfLeaveTakenPerYearChart",
                 chartText: "Types of Leaves Taken Per Year",
               })
@@ -746,6 +639,148 @@ function DemographicsDash({}) {
               </ResponsiveContainer>
             </Box>
           </Paper>
+
+          {/* 
+          <Paper
+            sx={{
+              p: 1,
+              textAlign: "center",
+
+              color: "#fff",
+            }}
+            onClick={() =>
+              handleOpen({
+                chartKey: "attrtitionRatePerYearChart",
+                chartText: "Attrition Rate Per Year",
+              })
+            }
+          >
+             <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
+              Attrition Rate Per Year
+            </Typography>
+            <Box sx={{ height: 250 }}>
+              <ResponsiveContainer>
+                <LineChart
+                  data={attritionData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="year" />
+                  <YAxis
+                    domain={[0, "auto"]}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip
+                    formatter={(value) => `${value}%`}
+                    itemStyle={{
+                      color: "#000",
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="attrition_rate_percent"
+                    stroke="#ff7300"
+                    dot={{ fill: "#ff7300" }}
+                    name="Attrition Rate (%)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </Paper>*/}
+
+          <Box
+            sx={{
+              gridColumn: "1 / -1", // span all 3 columns
+              display: "flex",
+              justifyContent: "center",
+              gap: 2,
+            }}
+          >
+            <Paper
+              sx={{
+                p: 1,
+                textAlign: "center",
+                flex: 1,
+                maxWidth: 600,
+                color: "#fff",
+              }}
+              onClick={() =>
+                handleOpen({
+                  chartKey: "employeeCountChart",
+                  chartText: "Employee Count Per Company",
+                })
+              }
+            >
+              <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
+                Employee Count Per Company
+              </Typography>
+              <Box sx={{ height: 250 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={employeeCountByCompany}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="company" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" name="Employee Count">
+                      {employeeCountByCompany.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                          className="recharts-sector"
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Paper>
+            <Paper
+              sx={{
+                p: 1,
+                textAlign: "center",
+                flex: 1,
+                maxWidth: 600,
+                color: "#fff",
+              }}
+              onClick={() =>
+                handleOpen({
+                  chartKey: "parentalLeavePerYearChart",
+                  chartText: "Pareantal Leave Per Year",
+                })
+              }
+            >
+              <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
+                Parental Leaves Per Year
+              </Typography>
+              <Box sx={{ height: 250 }}>
+                <ResponsiveContainer>
+                  <LineChart
+                    data={leaveSeasons}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis domain={[0, "auto"]} />
+                    <Tooltip
+                      formatter={(value) => `${value} leaves`}
+                      itemStyle={{
+                        color: "#000",
+                      }}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="leave_count"
+                      stroke="#1976d2"
+                      dot={{ fill: "#1976d2" }}
+                      name="Leave Count"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            </Paper>
+          </Box>
         </Box>
       </Box>
     </Box>

@@ -1,11 +1,5 @@
 import { useState } from "react";
-import { 
-  Box,
-  Button,
-  Container,
-  IconButton,
-  Typography
-} from "@mui/material";
+import { Box, Button, Container, IconButton, Typography } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
 import Sidebar from "../../components/Sidebar";
@@ -18,6 +12,7 @@ import PageButtons from "../../components/hr_components/page_button";
 import HREmployability from "./HREmployabilityDash";
 import HRSafetyTraining from "./HRSafetyTrainingDash";
 
+import RefreshIcon from "@mui/icons-material/Refresh";
 import Overlay from "../../components/modal";
 import DashboardHeader from "../../components/DashboardComponents/DashboardHeader";
 import RefreshButton from "../../components/DashboardComponents/RefreshButton";
@@ -26,8 +21,6 @@ import MultiSelectWithChips from "../../components/DashboardComponents/MultiSele
 import MonthRangeSelect from "../../components/DashboardComponents/MonthRangeSelect";
 import dayjs from "dayjs";
 
-
-
 const formatDateTime = (date) => format(date, "PPPpp");
 
 const tabs = [
@@ -35,68 +28,102 @@ const tabs = [
   { key: "safetyandtraining", label: "Safety & Training Overview" },
 ];
 
-
-
 function HRMainDash() {
   const lastUpdated = new Date();
-  const [selected, setSelected] = useState("Employability");
   const [activeTab, setActiveTab] = useState("employability");
-  
-  const [filteredExportData, setFilteredExportData] = useState(null);
-
-  const pages = ["Employability", "Safety & Training Overview"];
-
-  const handleFilteredDataFromChild = (data) => {
-    setFilteredExportData(data);
-  };
+  const [shouldReload, setShouldReload] = useState(false);
 
   const renderPage = () => {
+    const commonProps = {
+      shouldReload,
+      setShouldReload,
+    };
     switch (activeTab) {
       case "employability":
-        return <HREmployability />;
+        return <HREmployability {...commonProps} />;
 
       case "safetyandtraining":
-        return <HRSafetyTraining />;
+        return <HRSafetyTraining {...commonProps} />;
       default:
         return <div>Page Not Found</div>;
     }
   };
 
   const handleRefresh = () => {
-    window.location.reload();
+    setShouldReload((prev) => !prev);
   };
 
-  //create api for export
-  const exportToExcel = async () => {};
-
-    return (
+  return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pt: 2, flexShrink: 0 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            px: 2,
+            pt: 2,
+            flexShrink: 0,
+          }}
+        >
           <DashboardHeader
             title="Human Resources"
             lastUpdated={lastUpdated}
             formatDateTime={formatDateTime}
           />
           <Box sx={{ mt: "15px" }}>
-            <RefreshButton onClick={handleRefresh} />
+            <button
+              onClick={handleRefresh}
+              style={{
+                backgroundColor: "#1976d2",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: "700",
+                transition: "background-color 0.2s ease",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              }}
+              onMouseOver={(e) => (e.target.style.backgroundColor = "#115293")}
+              onMouseOut={(e) => (e.target.style.backgroundColor = "#1976d2")}
+            >
+              <RefreshIcon style={{ fontSize: "16px" }} />
+              Refresh
+            </button>
           </Box>
         </Box>
-
 
         {/* Tabs */}
         <Box sx={{ px: 2, flexShrink: 0 }}>
-          <TabButtons tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+          <TabButtons
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
         </Box>
-        
-          {/* Page-specific content with controls inside */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <Box mt={0} sx={{ width: '98%' }}> {renderPage()}</Box>
+
+        {/* Page-specific content with controls inside */}
+        <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <Box mt={0} sx={{ width: "98%" }}>
+            {" "}
+            {renderPage()}
           </Box>
         </Box>
       </Box>
+    </Box>
   );
 
   // return (
@@ -141,7 +168,7 @@ function HRMainDash() {
   //                   backgroundColor: "#0f1a3c",
   //                 },
   //               }}
-        
+
   //               onClick={handleRefresh}
   //             >
   //               REFRESH

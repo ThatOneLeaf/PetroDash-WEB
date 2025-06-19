@@ -18,7 +18,7 @@ import StatusChip from "../../components/StatusChip";
 
 import dayjs from "dayjs";
 
-import ViewUpdateOSHModal from "../../components/hr_components/ViewUpdateOSHModal"
+import ViewUpdateOSHModal from "../../components/hr_components/ViewUpdateOSHModal";
 
 function OSH({ onFilterChange, shouldReload, setShouldReload }) {
   //INITIALIZE
@@ -196,11 +196,7 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
         }}
       >
         <Box sx={{ textAlign: "center" }}>
-          <CircularProgress
-            size={64}
-            thickness={5}
-            sx={{ color: "#182959" }}
-          />
+          <CircularProgress size={64} thickness={5} sx={{ color: "#182959" }} />
           <Typography
             sx={{
               mt: 2,
@@ -368,14 +364,30 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
         }
 
         {/* Pagination */}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: "1rem",
+          }}
+        >
+          {/* Row Count Display */}
+          <Typography sx={{ fontSize: "0.85rem" }}>
+            Showing {filteredData.length}{" "}
+            {filteredData.length === 1 ? "record" : "records"}
+          </Typography>
           <Pagination
             page={page}
             count={Math.ceil(filteredData.length / rowsPerPage)}
             onChange={handlePageChange}
           />
+          <Typography sx={{ fontSize: "0.85rem" }}>
+            Showing{" "}
+            {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
+            {Math.min(page * rowsPerPage, filteredData.length)} records
+          </Typography>
         </Box>
-
 
         {selectedRecord != null &&
           (console.log("Selected Record:", selectedRecord),
@@ -397,10 +409,7 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
 
         {isUpdateModal && (
           <Overlay onClose={() => setIsUpdateModal(false)}>
-            <UpdateOSHModal
-              onClose={() => setIsUpdateModal(false)}
-              row={row}
-            />
+            <UpdateOSHModal onClose={() => setIsUpdateModal(false)} row={row} />
           </Overlay>
         )}
       </Box>

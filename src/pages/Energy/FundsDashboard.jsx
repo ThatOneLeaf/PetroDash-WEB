@@ -912,8 +912,6 @@ return (
 
   </Box>
 )}
-
-
         <ZoomModal
           open={zoomModal.open}
           onClose={() => setZoomModal({ ...zoomModal, open: false })}

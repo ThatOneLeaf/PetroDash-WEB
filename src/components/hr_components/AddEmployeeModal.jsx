@@ -15,6 +15,10 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+
+dayjs.extend(isSameOrAfter);
+
 import api from "../../services/api";
 
 function AddEmployeeModal({ onClose, onSuccess }) {
@@ -33,6 +37,8 @@ function AddEmployeeModal({ onClose, onSuccess }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [openPicker, setOpenPicker] = useState(null);
 
   // DATA -- CHANGE PER PAGE
   const fetchEmployabilityData = async () => {
@@ -76,7 +82,91 @@ function AddEmployeeModal({ onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
-    console.log(formData);
+    /* VALIDATION */
+    const MIN_DATE = dayjs("1994-09-29");
+    const MIN_BIRTHDATE = dayjs("1900-01-01");
+    const today = dayjs();
+
+    const {
+      employeeId,
+      gender,
+      position,
+      birthdate,
+      employeeCategory,
+      employeeStatus,
+      tenureStart,
+      tenureEnded,
+    } = formData;
+
+    const isInOptions = (value, key) =>
+      uniqueOptions(key).some((option) => option.value === value);
+
+    const isValidEmployeeId = employeeId.trim() !== "";
+    const isValidEmployeeIdExists = !uniqueOptions("employee_id").some(
+      (option) => option.value === employeeId.trim()
+    );
+    const isValidGender = isInOptions(gender, "gender");
+    const isValidPosition = isInOptions(position, "position_id");
+    const isValidBirthdate =
+      birthdate &&
+      dayjs(birthdate).isValid() &&
+      dayjs(birthdate).isBefore(today) &&
+      dayjs(birthdate).isAfter(MIN_BIRTHDATE);
+    const isValidCategory = isInOptions(employeeCategory, "p_np");
+    const isValidStatus = isInOptions(employeeStatus, "employment_status");
+    const isValidTenureStart =
+      tenureStart &&
+      dayjs(tenureStart).isValid() &&
+      dayjs(tenureStart).isAfter(MIN_DATE);
+
+    const isValidTenureEnded =
+      !tenureEnded ||
+      (dayjs(tenureEnded).isValid() &&
+        dayjs(tenureEnded).isSameOrAfter(tenureStart));
+
+    if (!isValidEmployeeId) {
+      alert("Employee ID is required.");
+      return;
+    }
+
+    if (!isValidEmployeeIdExists) {
+      alert("Employee ID must be unique.");
+      return;
+    }
+
+    if (!isValidGender) {
+      alert("Please select a valid Gender.");
+      return;
+    }
+
+    if (!isValidPosition) {
+      alert("Please select a valid Position.");
+      return;
+    }
+    if (!isValidBirthdate) {
+      alert("Please enter a valid Birthdate");
+      return;
+    }
+
+    if (!isValidCategory) {
+      alert("Please select a valid Employee Category.");
+      return;
+    }
+
+    if (!isValidStatus) {
+      alert("Please select a valid Employee Status.");
+      return;
+    }
+
+    if (!isValidTenureStart) {
+      alert("Tenure Start must be a valid date.");
+      return;
+    }
+
+    if (!isValidTenureEnded) {
+      alert("Tenure Ended must be the same as or after Tenure Start.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -243,6 +333,10 @@ function AddEmployeeModal({ onClose, onSuccess }) {
             label="Birthdate"
             value={formData.birthdate}
             onChange={handleDateChange("birthdate")}
+            open={openPicker === "birth"}
+            onOpen={() => setOpenPicker("birth")}
+            onClose={() => setOpenPicker(null)}
+            minDate={dayjs("1900-01-01")}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },
             }}
@@ -292,6 +386,9 @@ function AddEmployeeModal({ onClose, onSuccess }) {
             label="Tenure Start"
             value={formData.tenureStart}
             onChange={handleDateChange("tenureStart")}
+            open={openPicker === "start"}
+            onOpen={() => setOpenPicker("start")}
+            onClose={() => setOpenPicker(null)}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },
             }}
@@ -303,6 +400,10 @@ function AddEmployeeModal({ onClose, onSuccess }) {
             label="Tenure Ended"
             value={formData.tenureEnded}
             onChange={handleDateChange("tenureEnded")}
+            open={openPicker === "end"}
+            onOpen={() => setOpenPicker("end")}
+            onClose={() => setOpenPicker(null)}
+            minDate={dayjs("1994-09-29")}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },
             }}

@@ -8,6 +8,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Autocomplete,
   Box,
 } from "@mui/material";
 
@@ -15,6 +16,9 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+
+dayjs.extend(isSameOrAfter);
 
 import api from "../../services/api";
 
@@ -29,23 +33,31 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const MIN_DATE = dayjs("1994-09-29");
 
-  const fetchParentalData = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("hr/parental_leave_records_by_status");
-      console.log("Parental Data from API:", response.data);
-      setData(response.data);
-    } catch (error) {
-      console.error("Error fetching Parental data:", error);
-      setError("Error fetching data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [employabilityData, setEmployabilityData] = useState([]);
 
   useEffect(() => {
-    fetchParentalData();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [parentalRes, employabilityRes] = await Promise.all([
+          api.get("hr/parental_leave_records_by_status"),
+          api.get("hr/employability_records_by_status"),
+        ]);
+        console.log("Parental:", parentalRes.data);
+        console.log("Employability:", employabilityRes.data);
+        setData(parentalRes.data);
+        setEmployabilityData(employabilityRes.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("Error fetching data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const uniqueOptions = (key) => {
@@ -54,6 +66,10 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
       value: val,
     }));
   };
+
+  const employeeOptions = Array.from(
+    new Set(employabilityData.map((item) => item.employee_id))
+  ).map((val) => ({ label: val, value: val }));
 
   const handleChange = (field) => (event) => {
     const newFormData = {
@@ -72,6 +88,44 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
 
   const handleSubmit = async () => {
     console.log(formData);
+
+    /* VALIDATIONS*/
+
+    const { employeeId, dateAvailed, daysAvailed, typeOfLeave } = formData;
+
+    const isValidEmployee = employeeOptions.some(
+      (option) => option.label === employeeId
+    );
+
+    const isValidLeaveType = uniqueOptions("type_of_leave").some(
+      (option) => option.value === typeOfLeave
+    );
+
+    const isValidDate =
+      dateAvailed && dayjs(dateAvailed).isSameOrAfter(MIN_DATE);
+
+    const isValidDays =
+      daysAvailed !== "" && !isNaN(daysAvailed) && Number(daysAvailed) > 0;
+
+    if (!employeeId || !isValidEmployee) {
+      alert("Please select a valid Employee ID.");
+      return;
+    }
+
+    if (!isValidDate) {
+      alert("Please select a valid Date Availed (not before 1994-09-29).");
+      return;
+    }
+
+    if (!isValidDays) {
+      alert("Days Availed must be a number greater than 0.");
+      return;
+    }
+
+    if (!typeOfLeave || !isValidLeaveType) {
+      alert("Please select a valid Type of Leave.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -159,11 +213,19 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
           ))}
         </Select>*/}
 
-        <TextField
-          label="Employee ID"
+        <Autocomplete
+          freeSolo
+          options={employeeOptions}
           value={formData.employeeId}
-          onChange={handleChange("employeeId")}
-          type="text"
+          onInputChange={(event, newInputValue) => {
+            setFormData((prev) => ({
+              ...prev,
+              employeeId: newInputValue,
+            }));
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label="Employee ID" fullWidth />
+          )}
         />
 
         <FormControl sx={{ minWidth: 120 }}>
@@ -187,6 +249,7 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
           value={formData.daysAvailed}
           onChange={handleChange("daysAvailed")}
           type="number"
+          inputProps={{ min: 1 }}
         />
 
         <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -194,6 +257,7 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
             label="Date Availed"
             value={formData.dateAvailed}
             onChange={handleDateChange("dateAvailed")}
+            minDate={dayjs("1994-09-29")}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },
             }}

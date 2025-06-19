@@ -53,6 +53,11 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
   const [showReviseHeadSuccessModal, setShowReviseHeadSuccessModal] = useState(false);
   const [showEditSaveSuccessModal, setShowEditSaveSuccessModal] = useState(false);
   const [editSaveSuccessMessage, setEditSaveSuccessMessage] = useState('');
+  const [showRemarksRequiredModal, setShowRemarksRequiredModal] = useState(false);
+  const [showSaveErrorModal, setShowSaveErrorModal] = useState(false);
+  const [saveErrorMessage, setSaveErrorMessage] = useState('');
+  const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
+
 
   if (!record) return null;
 
@@ -230,6 +235,17 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
     }));
   };
 
+  const handleConfirmClose = () => {
+    setShowUnsavedChangesModal(false);
+    const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
+    status(isUnchanged);
+    onClose();
+  };
+
+  const handleCancelClose = () => {
+    setShowUnsavedChangesModal(false);
+  };
+
   const handleSave = async () => {
     console.log("Updated Data before processing:", editedRecord);
     
@@ -249,10 +265,10 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
         }
       }
     });
-  
+
     console.log("Processed Data for API:", processedRecord);
     console.log("Field names:", Object.keys(processedRecord));
-  
+
     try {
       let response;
       if (!source) {
@@ -263,18 +279,16 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
         response = await api.post(`${source}${updatePath}`, processedRecord);
       }
       
-      // alert(response.data.message || "Record saved successfully.");
       setIsEditing(false);
-
-      // Close the modal and trigger data refresh
-      status(false); // This will trigger data refresh in parent component
-      onClose(); // This will close the modal
+      return true; // Return true on success
 
     } catch (error) {
       const errorMessage = error.response?.data?.detail || error.message || "Unknown error occurred";
-      alert(`Failed to save record: ${errorMessage}`);
-      console.error("Save error:", error.response?.data); // Added for debugging
-    } 
+      setSaveErrorMessage(errorMessage);
+      setShowSaveErrorModal(true);
+      console.error("Save error:", error.response?.data);
+      return false; // Return false on error
+    }
   };
 
   const fetchNextStatus = (action) => {
@@ -320,7 +334,7 @@ const handleStatusUpdate = async (action) => {
   try {
     if (action === 'revise') {
       if (!remarks){
-        alert('Remarks is required for the status update')
+        setShowRemarksRequiredModal(true);
         return;
       }
     } else {
@@ -432,8 +446,8 @@ const handleStatusUpdate = async (action) => {
             onClick={() => {
               const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
               if (isEditing && !isUnchanged) {
-                const confirmClose = window.confirm("You have unsaved changes. Are you sure you want to close without saving?");
-                if (!confirmClose) return; // do nothing if user cancels
+                setShowUnsavedChangesModal(true);
+                return;
               }
               status(isUnchanged)
               onClose();
@@ -685,14 +699,14 @@ const handleStatusUpdate = async (action) => {
                     color: isEditing ? '#1565c0' : '#FB8C00',
                   },
                 }}
-                onClick={() => {
+                onClick={async () => {
                   if (isEditing) {
                     if (!isRecordUnchanged) {
-                      handleSave(); // only save if changed
-                      if (
+                      const saveSuccess = await handleSave(); // Get the result
+                      if (saveSuccess && ( // Only show success modal if save was successful
                         editedRecord.status === 'For Revision (Site)' ||
                         editedRecord.status === 'For Revision (Head)'
-                      ) {
+                      )) {
                         handleEditSaveSuccess('The record has been successfully updated.');
                       }
                     } else {
@@ -729,7 +743,7 @@ const handleStatusUpdate = async (action) => {
               >
                 Approve
               </Button>
-              {(editedRecord.status !== 'For Revisions (Site)' || editedRecord.status !== 'For Revisions (Head)') && (
+              {(editedRecord.status !== 'For Revision (Site)' && editedRecord.status !== 'For Revision (Head)') && (
                 <Button 
                   variant='contained'
                   sx={{ 
@@ -1176,6 +1190,250 @@ const handleStatusUpdate = async (action) => {
             </Paper>
           </Overlay>
         )}
+        {showRemarksRequiredModal && (
+        <Overlay onClose={() => setShowRemarksRequiredModal(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Box sx={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: '#f44336',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2
+              }}>
+                <Typography sx={{ 
+                  color: 'white', 
+                  fontSize: '2rem',
+                  fontWeight: 'bold'
+                }}>
+                  !
+                </Typography>
+              </Box>
+              <Typography sx={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 800,
+                color: '#182959',
+                mb: 2
+              }}>
+                Remarks Required
+              </Typography>
+              <Typography sx={{ 
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                Remarks is required for the status update.
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 3
+            }}>
+              <Button
+                variant="contained"
+                sx={{ 
+                  backgroundColor: '#f44336',
+                  borderRadius: '999px',
+                  padding: '10px 24px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#d32f2f',
+                  },
+                }}
+                onClick={() => setShowRemarksRequiredModal(false)}
+              >
+                OK
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      {showSaveErrorModal && (
+        <Overlay onClose={() => setShowSaveErrorModal(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Box sx={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: '#f44336',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2
+              }}>
+                <Typography sx={{ 
+                  color: 'white', 
+                  fontSize: '2rem',
+                  fontWeight: 'bold'
+                }}>
+                  ✗
+                </Typography>
+              </Box>
+              <Typography sx={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 800,
+                color: '#182959',
+                mb: 2
+              }}>
+                Save Failed
+              </Typography>
+              <Typography sx={{ 
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                {saveErrorMessage}
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 3
+            }}>
+              <Button
+                variant="contained"
+                sx={{ 
+                  backgroundColor: '#f44336',
+                  borderRadius: '999px',
+                  padding: '10px 24px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#d32f2f',
+                  },
+                }}
+                onClick={() => setShowSaveErrorModal(false)}
+              >
+                OK
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      {showUnsavedChangesModal && (
+        <Overlay onClose={handleCancelClose}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Box sx={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: '#FF9800',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2
+              }}>
+                <Typography sx={{ 
+                  color: 'white', 
+                  fontSize: '2rem',
+                  fontWeight: 'bold'
+                }}>
+                  !
+                </Typography>
+              </Box>
+              <Typography sx={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 800,
+                color: '#182959',
+                mb: 2
+              }}>
+                Unsaved Changes
+              </Typography>
+              <Typography sx={{ 
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                You have unsaved changes. Are you sure you want to close without saving?
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: 1,
+              mt: 3
+            }}>
+              <Button
+                variant="outlined"
+                sx={{ 
+                  borderColor: '#182959',
+                  color: '#182959',
+                  borderRadius: '999px',
+                  padding: '6px 16px',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    borderColor: '#0f1a3c',
+                    color: '#0f1a3c',
+                  },
+                }}
+                onClick={handleCancelClose}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                sx={{ 
+                  backgroundColor: '#FF9800',
+                  borderRadius: '999px',
+                  padding: '6px 16px',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#F57C00',
+                  },
+                }}
+                onClick={handleConfirmClose}
+              >
+                Close Without Saving
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
     </Paper>
   );
 };

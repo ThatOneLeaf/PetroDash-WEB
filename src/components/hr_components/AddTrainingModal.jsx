@@ -6,6 +6,7 @@ import {
   Button,
   Select,
   MenuItem,
+  Autocomplete,
   Box,
 } from "@mui/material";
 
@@ -13,6 +14,11 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+
+dayjs.extend(isSameOrAfter);
+
 import api from "../../services/api";
 
 function AddTrainingModal({ onClose, onSuccess }) {
@@ -24,12 +30,38 @@ function AddTrainingModal({ onClose, onSuccess }) {
     numberOfParticipants: "",
   });
 
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     setLoading(false);
   }, []);
+
+  const fetchTrainingData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("hr/training_records_by_status");
+      console.log("Training Data from API:", response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching Training data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTrainingData();
+  }, []);
+
+  const uniqueOptions = (key) => {
+    return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
+      label: val,
+      value: val,
+    }));
+  };
 
   const handleChange = (field) => (event) => {
     const newFormData = {
@@ -48,6 +80,46 @@ function AddTrainingModal({ onClose, onSuccess }) {
 
   const handleSubmit = async () => {
     console.log(formData);
+
+    /* VALIDATIONS */
+    const MIN_DATE = dayjs("1994-09-29");
+
+    const { trainingName, date, trainingHours, numberOfParticipants } =
+      formData;
+
+    const isValidTrainingName = trainingName.trim() !== "";
+
+    const isValidDate = date && dayjs(date).isSameOrAfter(MIN_DATE);
+
+    const isValidTrainingHours =
+      trainingHours !== "" &&
+      !isNaN(trainingHours) &&
+      Number(trainingHours) > 0;
+
+    const isValidParticipants =
+      numberOfParticipants !== "" &&
+      !isNaN(numberOfParticipants) &&
+      Number(numberOfParticipants) > 0;
+
+    if (!isValidTrainingName) {
+      alert("Training Name is required.");
+      return;
+    }
+
+    if (!isValidDate) {
+      alert("Please select a valid Date.");
+      return;
+    }
+
+    if (!isValidTrainingHours) {
+      alert("Training Hours must be a number greater than 0.");
+      return;
+    }
+
+    if (!isValidParticipants) {
+      alert("Number of Participants must be a number greater than 0.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -134,11 +206,19 @@ function AddTrainingModal({ onClose, onSuccess }) {
           ))}
         </Select>*/}
 
-        <TextField
-          label="Training Name"
+        <Autocomplete
+          freeSolo
+          options={uniqueOptions("training_title")}
           value={formData.trainingName}
-          onChange={handleChange("trainingName")}
-          type="text"
+          onInputChange={(event, newInputValue) => {
+            setFormData((prev) => ({
+              ...prev,
+              trainingName: newInputValue,
+            }));
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label="Training Name" fullWidth />
+          )}
         />
 
         <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -149,6 +229,7 @@ function AddTrainingModal({ onClose, onSuccess }) {
             slotProps={{
               textField: { fullWidth: true, size: "medium" },
             }}
+            minDate={dayjs("1994-09-29")}
           />
         </LocalizationProvider>
 
@@ -157,6 +238,7 @@ function AddTrainingModal({ onClose, onSuccess }) {
           value={formData.trainingHours}
           onChange={handleChange("trainingHours")}
           type="number"
+          inputProps={{ min: 1 }}
         />
 
         <TextField
@@ -164,6 +246,7 @@ function AddTrainingModal({ onClose, onSuccess }) {
           value={formData.numberOfParticipants}
           onChange={handleChange("numberOfParticipants")}
           type="number"
+          inputProps={{ min: 1 }}
         />
       </Box>
       <Box
