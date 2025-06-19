@@ -14,6 +14,9 @@ import WorkIcon from '@mui/icons-material/Work';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../../services/api';
 import Filter from '../../components/Filter/Filter'
+import InvestmentPerProjectChart from '../CSR/Charts/InvestmentPerProject'
+import InvestmentPerProgramChart from '../CSR/Charts/InvestmentPerProgram'
+import InvestmentPerCompanyChart from '../CSR/Charts/InvestmentPerCompany'
 
 const kpiConfig = [
   // Health
@@ -181,20 +184,12 @@ function aggregateInvestments(data) {
 }
 
 function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
-  // Wrap label if more than 3 words
-  const words = label.split(' ');
-  let displayLabel;
-  if (words.length > 3) {
-    displayLabel = (
-      <>
-        {words.slice(0, 3).join(' ')}
-        <br />
-        {words.slice(3).join(' ')}
-      </>
-    );
-  } else {
-    displayLabel = label;
-  }
+  // Dynamically adjust font size based on label length to avoid wrapping
+  let labelFontSize = 15;
+  if (label.length > 35) labelFontSize = 11;
+  else if (label.length > 28) labelFontSize = 12;
+  else if (label.length > 22) labelFontSize = 13;
+  else if (label.length > 16) labelFontSize = 14;
 
   // Format last updated as "Month, Year"
   let asOfText = '';
@@ -213,22 +208,22 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
         boxShadow: 'none',
         width: '100%',
         minWidth: 0,
-        minHeight: 0,
+        minHeight: 120,
+        height: '100%',
         padding: '18px 18px 14px 18px',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',   
-        height: '100%',
         textAlign: 'center',
       }}
     >
-      <Box sx={{ fontSize: 48, mr: 0.5 /* reduced from 2 */ }}>{icon}</Box>
+      <Box sx={{ fontSize: 48, mr: 0.5 }}>{icon}</Box>
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         {/*KPIS */}
         <Typography
           sx={{
-            fontSize: 34, 
+            fontSize: 28,
             fontWeight: 900,
             color: '#182959',
             textAlign: 'center',
@@ -242,17 +237,20 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
         {/* KPIS LABELS */}
         <Typography
           sx={{
-            fontSize: 15, 
+            fontSize: labelFontSize,
             fontWeight: 700,
             color: '#64748b',
             textAlign: 'center',
             lineHeight: 1.2,
-            wordBreak: 'break-word',
-            whiteSpace: 'pre-line',
+            wordBreak: 'keep-all',
+            whiteSpace: 'nowrap',
             width: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
+          title={label}
         >
-          {displayLabel}
+          {label}
         </Typography>
         <Typography
           sx={{
@@ -678,18 +676,22 @@ export default function HELPDash() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'center', // <-- add this
                     fontWeight: 700,
                     fontSize: 18,
                     boxShadow: 'none',
                     width: '100%',
                     maxWidth: 340,
+                    minHeight: 120,
+                    height: '100%',
+                    textAlign: 'center', // <-- add this
                   }}
                 >
                   {/* Number above label */}
-                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>
                     {investments.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
                     Health
                   </div>
                 </Paper>
@@ -707,18 +709,22 @@ export default function HELPDash() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'center', // <-- add this
                     fontWeight: 700,
                     fontSize: 18,
                     boxShadow: 'none',
                     width: '100%',
                     maxWidth: 340,
+                    minHeight: 120,
+                    height: '100%',
+                    textAlign: 'center', // <-- add this
                   }}
                 >
                   {/* Number above label */}
-                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>
                     {investments.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
                     Education
                   </div>
                 </Paper>
@@ -736,18 +742,22 @@ export default function HELPDash() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'center', // <-- add this
                     fontWeight: 700,
                     fontSize: 18,
                     boxShadow: 'none',
                     width: '100%',
                     maxWidth: 340,
+                    minHeight: 120,
+                    height: '100%',
+                    textAlign: 'center', // <-- add this
                   }}
                 >
                   {/* Number above label */}
-                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>
                     {investments.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
                     Livelihood
                   </div>
                 </Paper>
@@ -781,10 +791,11 @@ export default function HELPDash() {
                   justifyContent: 'center'
                 }}
               >
-                <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1 }}>
+                <InvestmentPerProjectChart />
+                {/* <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1 }}>
                   Investments per Projects
                 </Typography>
-                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
+                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box> */}
               </Paper>
               {/* Top Right Chart Container */}
               <Paper
@@ -792,7 +803,7 @@ export default function HELPDash() {
                 sx={{
                   gridColumn: { xs: '1', md: '2' },
                   gridRow: { xs: '2', md: '1' },
-                  minHeight: { xs: 150, md: 240 },
+                  maxHeight: '100%',
                   background: '#fff',
                   borderRadius: '14px',
                   border: '1.5px solid #e2e8f0',
@@ -802,9 +813,7 @@ export default function HELPDash() {
                   justifyContent: 'center'
                 }}
               >
-                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 1 }}>
-                  Chart 2
-                </Typography>
+                <InvestmentPerProgramChart />
                 <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
               </Paper>
               {/* Bottom Right Chart Container */}
@@ -823,10 +832,7 @@ export default function HELPDash() {
                   justifyContent: 'center'
                 }}
               >
-                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 1 }}>
-                  Chart 3
-                </Typography>
-                <Box sx={{ color: '#94a3b8', fontSize: 13 }}>Chart placeholder</Box>
+                <InvestmentPerCompanyChart />
               </Paper>
             </Box>
           </>
