@@ -46,19 +46,42 @@ const manHours = [
   { year: 2023, yearly: 160200 },
   { year: 2024, yearly: 165500 },
 ];
-
 const manpowerPerYear = [
-  { year: 2014, manpower: 2100 },
-  { year: 2015, manpower: 2300 },
-  { year: 2016, manpower: 2500 },
-  { year: 2017, manpower: 2700 },
-  { year: 2018, manpower: 3100 },
-  { year: 2019, manpower: 3400 },
-  { year: 2020, manpower: 3200 },
-  { year: 2021, manpower: 3600 },
-  { year: 2022, manpower: 3800 },
-  { year: 2023, manpower: 3950 },
-  { year: 2024, manpower: 4000 },
+  {
+    year: 2019,
+    total_manhours: 9434,
+    manpower: 5,
+  },
+  {
+    year: 2020,
+    total_manhours: 13496,
+    manpower: 8,
+  },
+  {
+    year: 2021,
+    total_manhours: 15066,
+    manpower: 9,
+  },
+  {
+    year: 2022,
+    total_manhours: 19283,
+    manpower: 9,
+  },
+  {
+    year: 2023,
+    total_manhours: 20767,
+    manpower: 10,
+  },
+  {
+    year: 2024,
+    total_manhours: 19333,
+    manpower: 9,
+  },
+  {
+    year: 2025,
+    total_manhours: 7173,
+    manpower: 8,
+  },
 ];
 
 const incidentPerMonth = [
@@ -521,7 +544,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minHeight: "100px" }}
           />
           <KPICard
             loading={false}
@@ -533,7 +556,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minHeight: "100px" }}
           />
           <KPICard
             loading={false}
@@ -822,7 +845,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                       <div style={{ flex: 1, minHeight: 400 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart
-                            data={manHours}
+                            data={manpowerPerYear}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
@@ -835,7 +858,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                             <Legend />
                             <Line
                               type="monotone"
-                              dataKey="yearly"
+                              dataKey="total_manhours"
                               stroke="#1976d2"
                               dot={{ fill: "#1976d2" }}
                               name="Man Hours"
@@ -868,7 +891,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                 Total Man Hours Per Year
               </h3>
 
-              {!manHours || manHours.length === 0 ? (
+              {!manpowerPerYear || manpowerPerYear.length === 0 ? (
                 <div
                   style={{
                     textAlign: "center",
@@ -885,7 +908,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                 <div style={{ flex: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
-                      data={manHours}
+                      data={manpowerPerYear}
                       margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
@@ -898,7 +921,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
                       <Legend />
                       <Line
                         type="monotone"
-                        dataKey="yearly"
+                        dataKey="total_manhours"
                         stroke="#1976d2"
                         dot={{ fill: "#1976d2" }}
                         name="Man Hours"
