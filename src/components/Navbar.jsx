@@ -190,7 +190,7 @@ function Navbar({
             <img
               src="src/assets/petrodashlogo.png"
               alt="PetroDash"
-              style={{ height: '40px' }}
+              style={{ height: '60px' }}
               className="navbar-logo"
             />
           </Link>

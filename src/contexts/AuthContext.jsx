@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { setupAuthInterceptors } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -15,6 +15,22 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('access_token'));
+
+  // Helper function to get current token
+  const getToken = () => {
+    const storedToken = localStorage.getItem('access_token');
+    const expiry = localStorage.getItem('token_expiry');
+
+    if (!storedToken || !expiry) return null;
+
+    // Check if token expired
+    if (Date.now() >= parseInt(expiry)) {
+      logout();
+      return null;
+    }
+
+    return storedToken;
+  };
 
   // Initialize auth state
   useEffect(() => {
@@ -54,6 +70,9 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
 
+    // Setup API interceptors with the context's getToken function
+    setupAuthInterceptors(getToken, logout);
+    
     initAuth();
   }, []);
 
