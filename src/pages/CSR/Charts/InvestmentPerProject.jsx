@@ -30,10 +30,27 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
   function getProgram(row) {
     const project = String(row.projectName || '').toLowerCase();
     const program = String(row.programName || '').toLowerCase();
-    if (program.includes('health') || project.includes('medical') || project.includes('health center') || project.includes('ambulance') || project.includes('nutrition') || project.includes('feeding') || project.includes('supplement')) {
+    if (
+      program.includes('health') ||
+      project.includes('medical') ||
+      project.includes('health center') ||
+      project.includes('ambulance') ||
+      project.includes('nutrition') ||
+      project.includes('feeding') ||
+      project.includes('supplement') ||
+      project.includes('mobile clinic') // Add detection for mobile clinic
+    ) {
       return 'health';
     }
-    if (program.includes('education') || project.includes('school') || project.includes('scholar') || project.includes('teacher') || project.includes('tablet') || project.includes('mobile device') || project.includes('educational device')) {
+    if (
+      program.includes('education') ||
+      project.includes('school') ||
+      project.includes('scholar') ||
+      project.includes('teacher') ||
+      project.includes('tablet') ||
+      project.includes('mobile device') ||
+      project.includes('educational device')
+    ) {
       return 'education';
     }
     if (program.includes('livelihood') || project.includes('livelihood')) {

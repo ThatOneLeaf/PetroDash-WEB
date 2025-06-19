@@ -19,8 +19,8 @@ const ZoomModal = ({
     open,
     onClose,
     title = 'Modal',
-    maxWidth = 'lg',
-    height = 500,
+    maxWidth = 'sm', // changed from 'md' to 'sm'
+    height = 400,
     children,
     enableDownload = false,
     downloadFileName = 'chart',
@@ -115,11 +115,12 @@ const ZoomModal = ({
                     <Box
                         ref={chartRef}
                         sx={{
-                            width: '100%',
+                            width: '75%', // reduced from '100%' to 75%
                             height,
                             overflow: 'hidden',
                             bgcolor: '#ffffff',
                             position: 'relative',
+                            margin: '0 auto', // center the box
                         }}
                     >
                         {/* Subtle time overlay in modal */}
@@ -167,7 +168,7 @@ const ZoomModal = ({
                                 '&:hover': {
                                     bgcolor: '#20662A',
                                 },
-                                minWidth: 200,
+                                minWidth: 140, // reduced from 200
                                 fontWeight: 600,
                                 fontSize: 16,
                                 boxShadow: 2,
