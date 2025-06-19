@@ -50,6 +50,7 @@ function EnvironmentWaste() {
   const [remarks, setRemarks] = useState("");
   const [showStatusErrorModal, setShowStatusErrorModal] = useState(false);
   const [showBulkReviseModal, setShowBulkReviseModal] = useState(false);
+  const [showRemarksRequiredModal, setShowRemarksRequiredModal] = useState(false);
   const statuses = ["URS","FRS","URH","FRH","APP"];
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
@@ -394,9 +395,10 @@ function EnvironmentWaste() {
     try {
       if (action === 'revise') {
         if (!remarks){
-          alert('Remarks is required for the status update')
+          setShowRemarksRequiredModal(true);
           return;
         }
+
       } else {
         const confirm = window.confirm('Are you sure you want to approve this record?');
           if (!confirm) return;
@@ -1172,6 +1174,81 @@ function EnvironmentWaste() {
                     },
                   }}
                   onClick={() => setShowBulkReviseModal(false)}
+                >
+                  OK
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
+        )}
+        {showRemarksRequiredModal && (
+          <Overlay onClose={() => setShowRemarksRequiredModal(false)}>
+            <Paper sx={{
+              p: 4,
+              width: '400px',
+              borderRadius: '16px',
+              bgcolor: 'white',
+              outline: 'none',
+              textAlign: 'center'
+            }}>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                mb: 3
+              }}>
+                <Box sx={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#f44336',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2
+                }}>
+                  <Typography sx={{ 
+                    color: 'white', 
+                    fontSize: '2rem',
+                    fontWeight: 'bold'
+                  }}>
+                    !
+                  </Typography>
+                </Box>
+                <Typography sx={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 800,
+                  color: '#182959',
+                  mb: 2
+                }}>
+                  Remarks Required
+                </Typography>
+                <Typography sx={{ 
+                  fontSize: '1rem',
+                  color: '#666',
+                  mb: 3
+                }}>
+                  Remarks is required for the status update.
+                </Typography>
+              </Box>
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mt: 3
+              }}>
+                <Button
+                  variant="contained"
+                  sx={{ 
+                    backgroundColor: '#f44336',
+                    borderRadius: '999px',
+                    padding: '10px 24px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#d32f2f',
+                    },
+                  }}
+                  onClick={() => setShowRemarksRequiredModal(false)}
                 >
                   OK
                 </Button>

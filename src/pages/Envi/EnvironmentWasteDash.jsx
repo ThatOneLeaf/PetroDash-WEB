@@ -1941,7 +1941,6 @@ function EnvironmentWasteDash() {
 
           {/* Unit Filter */}
           <SingleSelectDropdown
-            label="Unit"
             options={unitOptions}
             selectedValue={unit}
             onChange={(value) => setUnit(value)}
@@ -1981,7 +1980,6 @@ function EnvironmentWasteDash() {
           {/* Year Range Filters (keep as single select) */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <SingleSelectDropdown
-              label="From Year"
               options={[
                 { value: '', label: 'From Year' },
                 ...activeYears.map(year => ({ value: year, label: year.toString() }))
@@ -1993,7 +1991,6 @@ function EnvironmentWasteDash() {
             <span style={{ color: '#64748b', fontSize: '12px', fontWeight: '500' }}>to</span>
 
             <SingleSelectDropdown
-              label="To Year"
               options={[
                 { value: '', label: 'To Year' },
                 ...activeYears.filter(year => !fromYear || year >= parseInt(fromYear)).map(year => ({ value: year, label: year.toString() }))
