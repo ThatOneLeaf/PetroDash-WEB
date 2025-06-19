@@ -135,13 +135,13 @@ const EnviOverview = () => {
         />
         <MetricCard
           value={enviData.recycledEcoBricks}
-          title="Recycled Eco Bricks"
+          title="Recycled Materials"
           unit="kg"
           color="#54C6EB"
         />
         <MetricCard
           value={enviData.cleanupParticipants}
-          title="Cleanup Participants"
+          title="Cleanup Drive Participants"
           color="#6A994E"
         />
       </Box>
