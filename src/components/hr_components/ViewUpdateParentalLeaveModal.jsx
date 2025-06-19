@@ -23,7 +23,10 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedRecord, setEditedRecord] = useState(record || {});
 
-  const permanentlyReadOnlyFields = ["employee_id", "company_name", "status"];
+  const permanentlyReadOnlyFields = ["employee_id", "company_id", "status"];
+
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectRemarks, setRejectRemarks] = useState("");
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,15 +95,64 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
   const isRecordUnchanged =
     JSON.stringify(record) === JSON.stringify(editedRecord);
 
+  const handleApprove = async () => {
+    const confirm = window.confirm(
+      "Are you sure you want to approve this record?"
+    );
+    if (!confirm) return;
+
+    try {
+      onClose(); // CLOSE MODAL HERE
+    } catch (error) {
+      const msg = error.response?.data?.detail || error.message;
+      alert(`Failed to approve: ${msg}`);
+    }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectRemarks.trim()) {
+      alert("Please enter remarks before rejecting.");
+      return;
+    }
+
+    try {
+      if (updateStatus) updateStatus("REJ");
+      setRejectDialogOpen(false);
+      onClose(); // CLOSE MODAL HERE
+    } catch (error) {
+      const msg = error.response?.data?.detail || error.message;
+      alert(`Failed to reject: ${msg}`);
+    }
+  };
+
+  const handleCloseClick = () => {
+    if (isEditing && !isUnchanged) {
+      const confirmClose = window.confirm(
+        "You have unsaved changes. Close anyway?"
+      );
+      if (!confirmClose) return;
+    }
+    if (updateStatus) updateStatus(isUnchanged);
+    onClose();
+  };
   return (
-    <Paper
-      sx={{
-        p: 4,
-        width: "600px",
-        borderRadius: "16px",
-        bgcolor: "white",
-      }}
-    >
+    <Paper sx={{ p: 4, width: 600, borderRadius: 2, position: "relative" }}>
+      {/* Close Button */}
+      <Button
+        onClick={handleCloseClick}
+        sx={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          minWidth: "auto",
+          padding: 0,
+          color: "grey.600",
+        }}
+      >
+        ✕
+      </Button>
+
+      {/* Title */}
       <Box
         sx={{
           display: "flex",
@@ -109,116 +161,72 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
           mb: 3,
         }}
       >
-        <Typography
-          sx={{
-            fontSize: "0.85rem",
-            fontWeight: 800,
-          }}
-        >
+        <Typography sx={{ fontSize: "0.85rem", fontWeight: 800 }}>
           {isEditing ? "EDIT RECORD" : "VIEW RECORD"}
         </Typography>
         <Typography
           sx={{ fontSize: "1.75rem", color: "#182959", fontWeight: 800 }}
         >
-          {title}
+          Leave Record
         </Typography>
       </Box>
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 1,
-          mb: 2,
-        }}
-      >
+      {/* Status and Remarks */}
+      <Box mb={2} width="100%">
+        <Typography variant="body2" fontWeight={600}>
+          Status:{" "}
+          <span
+            style={{
+              color:
+                status === "APP" ? "green" : status === "REJ" ? "red" : "#555",
+            }}
+          >
+            {status || "PENDING"}
+          </span>
+        </Typography>
+        {remarks && (
+          <Box mt={1} p={1} bgcolor="grey.100" borderRadius={1}>
+            <Typography variant="body2" color="text.secondary" fontWeight={500}>
+              Remarks:
+            </Typography>
+            <Typography variant="body2" color="text.primary">
+              {remarks}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+
+      {/* Form Fields */}
+      <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
         <TextField
-          label={
-            isEditing && !permanentlyReadOnlyFields.includes("employee_id") ? (
-              <>
-                Employee ID <span style={{ color: "red" }}>*</span>
-              </>
-            ) : (
-              "Employee ID"
-            )
-          }
+          label={getLabel("Employee ID", "employee_id")}
           variant="outlined"
           fullWidth
           value={editedRecord.employee_id ?? ""}
           onChange={(e) => handleChange("employee_id", e.target.value)}
           type="text"
-          InputProps={{
-            readOnly:
-              !isEditing || permanentlyReadOnlyFields.includes("employee_id"),
-            sx: {
-              color: isEditing ? "black" : "#182959",
-            },
-          }}
-          InputLabelProps={{
-            sx: {
-              color: isEditing ? "#182959" : "grey",
-            },
-          }}
+          InputProps={getInputProps("employee_id")}
+          InputLabelProps={getLabelProps()}
         />
 
         <TextField
-          label={
-            isEditing && !permanentlyReadOnlyFields.includes("company_id") ? (
-              <>
-                Company <span style={{ color: "red" }}>*</span>
-              </>
-            ) : (
-              "Company"
-            )
-          }
+          label={getLabel("Company", "company_id")}
           variant="outlined"
           fullWidth
           value={editedRecord.company_id ?? ""}
           onChange={(e) => handleChange("company_id", e.target.value)}
           type="text"
-          InputProps={{
-            readOnly:
-              !isEditing || permanentlyReadOnlyFields.includes("company_id"),
-            sx: {
-              color: isEditing ? "black" : "#182959",
-            },
-          }}
-          InputLabelProps={{
-            sx: {
-              color: isEditing ? "#182959" : "grey",
-            },
-          }}
+          InputProps={getInputProps("company_id")}
+          InputLabelProps={getLabelProps()}
         />
 
-        {isEditing ? (
-          <FormControl fullWidth sx={{ minWidth: 120 }}>
+        {isEditable("type_of_leave") ? (
+          <FormControl fullWidth sx={{ gridColumn: "1 / -1" }}>
             <InputLabel>
-              {isEditing &&
-              !permanentlyReadOnlyFields.includes("type_of_leave") ? (
-                <>
-                  <span style={{ color: isEditing ? "#182959" : "grey" }}>
-                    Type of Leave
-                  </span>
-                  <span style={{ color: "red" }}>*</span>
-                </>
-              ) : (
-                "Type of Leave"
-              )}
+              {getLabel("Type of Leave", "type_of_leave")}
             </InputLabel>
             <Select
-              label={
-                isEditing &&
-                !permanentlyReadOnlyFields.includes("type_of_leave") ? (
-                  <>
-                    <span style={{ color: isEditing ? "#182959" : "grey" }}>
-                      Type of Leave
-                    </span>
-                    <span style={{ color: "red" }}>*</span>
-                  </>
-                ) : (
-                  "Type of Leave"
-                )
-              }
+              label="Type of Leave"
               value={editedRecord.type_of_leave ?? ""}
               onChange={(e) => handleChange("type_of_leave")(e)}
               sx={{ height: "55px" }}
@@ -236,75 +244,32 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
             label="Type of Leave"
             variant="outlined"
             fullWidth
-            value={editedRecord.type_of_leave}
+            value={editedRecord.type_of_leave ?? ""}
             onChange={(e) => handleChange("type_of_leave", e.target.value)}
             type="text"
-            InputProps={{
-              readOnly:
-                !isEditing ||
-                permanentlyReadOnlyFields.includes("type_of_leave"),
-              sx: {
-                color: isEditing ? "black" : "#182959",
-              },
-            }}
-            InputLabelProps={{
-              sx: {
-                color: isEditing ? "#182959" : "grey",
-              },
-            }}
+            InputProps={getInputProps("type_of_leave")}
+            InputLabelProps={getLabelProps()}
           />
         )}
-        <box />
 
         <TextField
-          label={
-            isEditing && !permanentlyReadOnlyFields.includes("days") ? (
-              <>
-                Days Availed <span style={{ color: "red" }}>*</span>
-              </>
-            ) : (
-              "Days Availed"
-            )
-          }
+          label={getLabel("Days Availed", "days")}
           variant="outlined"
           fullWidth
           value={editedRecord.days ?? ""}
           onChange={handleChange("days")}
           type="number"
-          InputProps={{
-            min: 0,
-            readOnly: !isEditing || permanentlyReadOnlyFields.includes("days"),
-            sx: {
-              color: isEditing ? "black" : "#182959",
-            },
-          }}
-          InputLabelProps={{
-            sx: {
-              color: isEditing ? "#182959" : "grey",
-            },
-          }}
+          InputProps={{ ...getInputProps("days"), min: 0 }}
+          InputLabelProps={getLabelProps()}
         />
 
-        {isEditing ? (
+        {isEditable("date") ? (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label={
-                isEditing && !permanentlyReadOnlyFields.includes("date") ? (
-                  <>
-                    <span style={{ color: isEditing ? "#182959" : "grey" }}>
-                      Date Availed
-                    </span>
-                    <span style={{ color: "red" }}>*</span>
-                  </>
-                ) : (
-                  "Date Availed"
-                )
-              }
+              label={getLabel("Date Availed", "date")}
               value={editedRecord.date ? dayjs(editedRecord.date) : null}
               onChange={handleDateChange("date")}
-              slotProps={{
-                textField: { fullWidth: true, size: "medium" },
-              }}
+              slotProps={{ textField: { fullWidth: true, size: "medium" } }}
             />
           </LocalizationProvider>
         ) : (
@@ -319,18 +284,8 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
             }
             onChange={(e) => handleChange("date", e.target.value)}
             type="text"
-            InputProps={{
-              readOnly:
-                !isEditing || permanentlyReadOnlyFields.includes("date"),
-              sx: {
-                color: isEditing ? "black" : "#182959",
-              },
-            }}
-            InputLabelProps={{
-              sx: {
-                color: isEditing ? "#182959" : "grey",
-              },
-            }}
+            InputProps={getInputProps("date")}
+            InputLabelProps={getLabelProps()}
           />
         )}
 
@@ -338,89 +293,96 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
           label="Status"
           variant="outlined"
           fullWidth
-          value={editedRecord.status_id}
+          value={editedRecord.status_id ?? ""}
           onChange={(e) => handleChange("status_id", e.target.value)}
           type="text"
-          InputProps={{
-            readOnly:
-              !isEditing || permanentlyReadOnlyFields.includes("status_id"),
-            sx: {
-              color: isEditing ? "black" : "#182959",
-            },
-          }}
-          InputLabelProps={{
-            sx: {
-              color: isEditing ? "#182959" : "grey",
-            },
-          }}
+          InputProps={getInputProps("status_id")}
+          InputLabelProps={getLabelProps()}
         />
-
-        <Box />
       </Box>
 
+      {/* Footer Actions */}
       <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          mt: 3,
-        }}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mt={4}
       >
-        <Button
-          startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-          sx={{
-            color: isEditing ? "#1976d2" : "#FFA000",
-            borderRadius: "999px",
-            padding: "9px 18px",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            "&:hover": {
-              color: isEditing ? "#1565c0" : "#FB8C00",
-            },
-          }}
-          onClick={() => {
-            if (isEditing) {
-              if (!isRecordUnchanged) {
-                handleSave(); // only save if changed
+        {/* Left Button: Save or Edit */}
+        <Box display="flex" gap={1}>
+          <Button
+            startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
+            onClick={async () => {
+              if (isReadOnly) return;
+              if (isEditing) {
+                if (!isUnchanged) {
+                  await handleSave();
+                } else {
+                  alert("No changes made.");
+                  setIsEditing(false);
+                }
               } else {
-                alert("No changes were made");
-                setIsEditing(false);
+                setIsEditing(true);
               }
-            } else {
-              setIsEditing(true);
-            }
-          }}
-        >
-          {isEditing ? "SAVE" : "EDIT"}
-        </Button>
+            }}
+            disabled={isReadOnly}
+          >
+            {isEditing ? "Save" : "Edit"}
+          </Button>
+        </Box>
 
-        <Button
-          variant="contained"
-          sx={{
-            backgroundColor: "#2B8C37",
-            borderRadius: "999px",
-            padding: "9px 18px",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            "&:hover": {
-              backgroundColor: "#256d2f",
-            },
-          }}
-          onClick={() => {
-            const isUnchanged =
-              JSON.stringify(record) === JSON.stringify(editedRecord);
-            if (isEditing && !isUnchanged) {
-              const confirmClose = window.confirm(
-                "You have unsaved changes. Are you sure you want to close without saving?"
-              );
-              if (!confirmClose) return; // do nothing if user cancels
-            }
-            status(isUnchanged);
-            onClose();
-          }}
-        >
-          CLOSE
-        </Button>
+        {/* Right Buttons: Approve / Revise */}
+        {!isReadOnly && !isEditing && (
+          <Box display="flex" gap={1}>
+            <Button variant="outlined" color="success" onClick={handleApprove}>
+              Approve
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => setRejectDialogOpen(true)}
+            >
+              Revise
+            </Button>
+          </Box>
+        )}
+
+        {isReadOnly && (
+          <Typography variant="caption" color="error">
+            This record has been approved and cannot be edited.
+          </Typography>
+        )}
       </Box>
+
+      {/* Reject Remarks Dialog */}
+      <Dialog
+        open={rejectDialogOpen}
+        onClose={() => setRejectDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Request to Revise Record</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Remarks"
+            multiline
+            fullWidth
+            rows={4}
+            value={rejectRemarks}
+            onChange={(e) => setRejectRemarks(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleRejectConfirm}
+            variant="contained"
+            color="error"
+          >
+            Confirm Revision Request
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };

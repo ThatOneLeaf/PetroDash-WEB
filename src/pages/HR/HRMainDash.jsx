@@ -1,11 +1,5 @@
 import { useState } from "react";
-import { 
-  Box,
-  Button,
-  Container,
-  IconButton,
-  Typography
-} from "@mui/material";
+import { Box, Button, Container, IconButton, Typography } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
 import Sidebar from "../../components/Sidebar";
@@ -26,8 +20,6 @@ import MultiSelectWithChips from "../../components/DashboardComponents/MultiSele
 import MonthRangeSelect from "../../components/DashboardComponents/MonthRangeSelect";
 import dayjs from "dayjs";
 
-
-
 const formatDateTime = (date) => format(date, "PPPpp");
 
 const tabs = [
@@ -35,46 +27,52 @@ const tabs = [
   { key: "safetyandtraining", label: "Safety & Training Overview" },
 ];
 
-
-
 function HRMainDash() {
   const lastUpdated = new Date();
-  const [selected, setSelected] = useState("Employability");
   const [activeTab, setActiveTab] = useState("employability");
-  
-  const [filteredExportData, setFilteredExportData] = useState(null);
-
-  const pages = ["Employability", "Safety & Training Overview"];
-
-  const handleFilteredDataFromChild = (data) => {
-    setFilteredExportData(data);
-  };
+  const [shouldReload, setShouldReload] = useState(false);
 
   const renderPage = () => {
+    const commonProps = {
+      shouldReload,
+      setShouldReload,
+    };
     switch (activeTab) {
       case "employability":
-        return <HREmployability />;
+        return <HREmployability {...commonProps} />;
 
       case "safetyandtraining":
-        return <HRSafetyTraining />;
+        return <HRSafetyTraining {...commonProps} />;
       default:
         return <div>Page Not Found</div>;
     }
   };
 
   const handleRefresh = () => {
-    window.location.reload();
+    setShouldReload((prev) => !prev);
   };
 
-  //create api for export
-  const exportToExcel = async () => {};
-
-    return (
+  return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pt: 2, flexShrink: 0 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            px: 2,
+            pt: 2,
+            flexShrink: 0,
+          }}
+        >
           <DashboardHeader
             title="Human Resources"
             lastUpdated={lastUpdated}
@@ -85,18 +83,24 @@ function HRMainDash() {
           </Box>
         </Box>
 
-
         {/* Tabs */}
         <Box sx={{ px: 2, flexShrink: 0 }}>
-          <TabButtons tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+          <TabButtons
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
         </Box>
-        
-          {/* Page-specific content with controls inside */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <Box mt={0} sx={{ width: '98%' }}> {renderPage()}</Box>
+
+        {/* Page-specific content with controls inside */}
+        <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <Box mt={0} sx={{ width: "98%" }}>
+            {" "}
+            {renderPage()}
           </Box>
         </Box>
       </Box>
+    </Box>
   );
 
   // return (
@@ -141,7 +145,7 @@ function HRMainDash() {
   //                   backgroundColor: "#0f1a3c",
   //                 },
   //               }}
-        
+
   //               onClick={handleRefresh}
   //             >
   //               REFRESH

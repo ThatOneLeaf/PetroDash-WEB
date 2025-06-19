@@ -372,12 +372,29 @@ function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
         }
 
         {/* Pagination */}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: "1rem",
+          }}
+        >
+          {/* Row Count Display */}
+          <Typography sx={{ fontSize: "0.85rem" }}>
+            Showing {filteredData.length}{" "}
+            {filteredData.length === 1 ? "record" : "records"}
+          </Typography>
           <Pagination
             page={page}
             count={Math.ceil(filteredData.length / rowsPerPage)}
             onChange={handlePageChange}
           />
+          <Typography sx={{ fontSize: "0.85rem" }}>
+            Showing{" "}
+            {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
+            {Math.min(page * rowsPerPage, filteredData.length)} records
+          </Typography>
         </Box>
 
         {selectedRecord != null &&

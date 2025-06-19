@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Button, Box, Paper, Typography } from "@mui/material";
+import { Button, Box, Paper, Typography, Stack } from "@mui/material";
 
 import LaunchIcon from "@mui/icons-material/Launch";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -14,6 +14,8 @@ import Pagination from "../../components/Pagination/pagination";
 import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
+import MultiSelectWithChips from "../../components/DashboardComponents/MultiSelectDropdown";
+import ClearButton from "../../components/DashboardComponents/ClearButton";
 import KPIIndicatorCard from "../../components/KPIIndicatorCard";
 
 import {
@@ -63,7 +65,11 @@ const incidentPerMonth = [
   { incident_type: "Accident", month_name: "January", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "January", incident_count: 0 },
   { incident_type: "Accident", month_name: "January", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "January", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "January",
+    incident_count: 0,
+  },
   { incident_type: "Accident", month_name: "January", incident_count: 0 },
   { incident_type: "Violation", month_name: "January", incident_count: 0 },
   { incident_type: "Illness", month_name: "January", incident_count: 0 },
@@ -72,7 +78,11 @@ const incidentPerMonth = [
   { incident_type: "Accident", month_name: "January", incident_count: 0 },
   { incident_type: "Accident", month_name: "January", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "January", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "January", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "January",
+    incident_count: 0,
+  },
   { incident_type: "Violation", month_name: "January", incident_count: 0 },
   { incident_type: "Accident", month_name: "February", incident_count: 0 },
   { incident_type: "Accident", month_name: "February", incident_count: 0 },
@@ -80,11 +90,19 @@ const incidentPerMonth = [
   { incident_type: "Accident", month_name: "February", incident_count: 0 },
   { incident_type: "Illness", month_name: "February", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "February", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "February", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "February",
+    incident_count: 0,
+  },
   { incident_type: "Violation", month_name: "February", incident_count: 0 },
   { incident_type: "Illness", month_name: "February", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "February", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "February", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "February",
+    incident_count: 0,
+  },
   { incident_type: "Violation", month_name: "February", incident_count: 0 },
   { incident_type: "Accident", month_name: "February", incident_count: 0 },
   { incident_type: "Accident", month_name: "February", incident_count: 0 },
@@ -93,7 +111,11 @@ const incidentPerMonth = [
   { incident_type: "Illness", month_name: "March", incident_count: 0 },
   { incident_type: "Accident", month_name: "March", incident_count: 0 },
   { incident_type: "Accident", month_name: "March", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "March", incident_count: 1 },
+  {
+    incident_type: "Property Incident",
+    month_name: "March",
+    incident_count: 1,
+  },
   { incident_type: "Accident", month_name: "March", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "March", incident_count: 0 },
   { incident_type: "Violation", month_name: "March", incident_count: 0 },
@@ -102,7 +124,11 @@ const incidentPerMonth = [
   { incident_type: "Accident", month_name: "March", incident_count: 0 },
   { incident_type: "Accident", month_name: "March", incident_count: 0 },
   { incident_type: "Accident", month_name: "March", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "March", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "March",
+    incident_count: 0,
+  },
   { incident_type: "Illness", month_name: "March", incident_count: 0 },
   { incident_type: "Violation", month_name: "March", incident_count: 0 },
   { incident_type: "Accident", month_name: "March", incident_count: 0 },
@@ -112,11 +138,19 @@ const incidentPerMonth = [
   { incident_type: "Accident", month_name: "April", incident_count: 0 },
   { incident_type: "Illness", month_name: "April", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "April", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "April", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "April",
+    incident_count: 0,
+  },
   { incident_type: "Violation", month_name: "April", incident_count: 0 },
   { incident_type: "Illness", month_name: "April", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "April", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "April", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "April",
+    incident_count: 0,
+  },
   { incident_type: "Violation", month_name: "April", incident_count: 0 },
   { incident_type: "Accident", month_name: "April", incident_count: 0 },
   { incident_type: "Accident", month_name: "April", incident_count: 0 },
@@ -170,7 +204,11 @@ const incidentPerMonth = [
   { incident_type: "Property Incident", month_name: "July", incident_count: 0 },
   { incident_type: "Accident", month_name: "July", incident_count: 0 },
   { incident_type: "Violation", month_name: "July", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "August", incident_count: 1 },
+  {
+    incident_type: "Property Incident",
+    month_name: "August",
+    incident_count: 1,
+  },
   { incident_type: "Accident", month_name: "August", incident_count: 0 },
   { incident_type: "Accident", month_name: "August", incident_count: 0 },
   { incident_type: "Accident", month_name: "August", incident_count: 0 },
@@ -183,12 +221,20 @@ const incidentPerMonth = [
   { incident_type: "Near Miss", month_name: "August", incident_count: 0 },
   { incident_type: "Violation", month_name: "August", incident_count: 0 },
   { incident_type: "Accident", month_name: "August", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "August", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "August",
+    incident_count: 0,
+  },
   { incident_type: "Illness", month_name: "August", incident_count: 0 },
   { incident_type: "Accident", month_name: "August", incident_count: 0 },
   { incident_type: "Accident", month_name: "September", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "September", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "September", incident_count: 1 },
+  {
+    incident_type: "Property Incident",
+    month_name: "September",
+    incident_count: 1,
+  },
   { incident_type: "Accident", month_name: "September", incident_count: 0 },
   { incident_type: "Accident", month_name: "September", incident_count: 0 },
   { incident_type: "Violation", month_name: "September", incident_count: 0 },
@@ -198,7 +244,11 @@ const incidentPerMonth = [
   { incident_type: "Violation", month_name: "September", incident_count: 0 },
   { incident_type: "Accident", month_name: "September", incident_count: 0 },
   { incident_type: "Accident", month_name: "September", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "September", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "September",
+    incident_count: 0,
+  },
   { incident_type: "Accident", month_name: "September", incident_count: 0 },
   { incident_type: "Illness", month_name: "September", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "September", incident_count: 0 },
@@ -209,10 +259,18 @@ const incidentPerMonth = [
   { incident_type: "Accident", month_name: "October", incident_count: 0 },
   { incident_type: "Illness", month_name: "October", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "October", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "October", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "October",
+    incident_count: 0,
+  },
   { incident_type: "Illness", month_name: "October", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "October", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "October", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "October",
+    incident_count: 0,
+  },
   { incident_type: "Violation", month_name: "October", incident_count: 0 },
   { incident_type: "Accident", month_name: "October", incident_count: 0 },
   { incident_type: "Accident", month_name: "October", incident_count: 0 },
@@ -224,17 +282,29 @@ const incidentPerMonth = [
   { incident_type: "Accident", month_name: "November", incident_count: 0 },
   { incident_type: "Illness", month_name: "November", incident_count: 0 },
   { incident_type: "Near Miss", month_name: "November", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "November", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "November",
+    incident_count: 0,
+  },
   { incident_type: "Violation", month_name: "November", incident_count: 0 },
   { incident_type: "Illness", month_name: "November", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "November", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "November",
+    incident_count: 0,
+  },
   { incident_type: "Near Miss", month_name: "November", incident_count: 0 },
   { incident_type: "Accident", month_name: "November", incident_count: 0 },
   { incident_type: "Accident", month_name: "November", incident_count: 0 },
   { incident_type: "Accident", month_name: "November", incident_count: 0 },
   { incident_type: "Accident", month_name: "November", incident_count: 0 },
   { incident_type: "Violation", month_name: "November", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "December", incident_count: 0 },
+  {
+    incident_type: "Property Incident",
+    month_name: "December",
+    incident_count: 0,
+  },
   { incident_type: "Accident", month_name: "December", incident_count: 0 },
   { incident_type: "Accident", month_name: "December", incident_count: 0 },
   { incident_type: "Accident", month_name: "December", incident_count: 0 },
@@ -249,7 +319,11 @@ const incidentPerMonth = [
   { incident_type: "Accident", month_name: "December", incident_count: 0 },
   { incident_type: "Illness", month_name: "December", incident_count: 0 },
   { incident_type: "Violation", month_name: "December", incident_count: 0 },
-  { incident_type: "Property Incident", month_name: "December", incident_count: 0 }
+  {
+    incident_type: "Property Incident",
+    month_name: "December",
+    incident_count: 0,
+  },
 ];
 
 function HRSafetyTrainingDash({}) {
@@ -274,7 +348,6 @@ function HRSafetyTrainingDash({}) {
     return Object.values(filters).some((v) => v !== null && v !== "");
   }, [filters]);
 
-  
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
       <Box
@@ -286,93 +359,42 @@ function HRSafetyTrainingDash({}) {
         }}
       >
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-          <Filter
-            label="Company"
-            options={[{ label: "All Companies", value: "" }, ...companyOptions]}
-            value={filters.company_name}
-            onChange={(val) => {
-              setFilters((prev) => ({ ...prev, company_name: val }));
-              setPage(1);
+          <Stack
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            alignItems="flex-start"
+            sx={{
+              rowGap: 1,
+              columnGap: 0,
+              "@media (max-width: 600px)": {
+                flexDirection: "column",
+                alignItems: "stretch",
+              },
             }}
-            placeholder="Company"
-          />
+          >
+            <MultiSelectWithChips
+              label="Companies"
+              options={""}
+              selectedValues={""}
+              onChange={""}
+              placeholder="All Companies"
+            />
 
-          <Filter
-            label="Gender"
-            options={[{ label: "All Genders", value: "" }, ...genderOptions]}
-            value={filters.gender}
-            onChange={(val) => {
-              setFilters((prev) => ({ ...prev, gender: val }));
-              setPage(1);
-            }}
-            placeholder="Gender"
-          />
+            <MultiSelectWithChips
+              label="Position"
+              options={""}
+              selectedValues={""}
+              onChange={""}
+              placeholder="All Position"
+            />
+            <MultiSelectWithChips label="Start Date" placeholder="Start Date" />
+            <MultiSelectWithChips label="End Date" placeholder="End Date" />
 
-          <Filter
-            label="Position"
-            options={[{ label: "All Position", value: "" }, ...positionOptions]}
-            value={filters.position_id}
-            onChange={(val) => {
-              setFilters((prev) => ({ ...prev, position_id: val }));
-              setPage(1);
-            }}
-            placeholder="Position"
-          />
+            {showClearButton && <ClearButton onClick={clearAllFilters} />}
 
-          <Filter
-            label="Employement Category"
-            options={[
-              { label: "All Employement Category", value: "" },
-              ...employementCategoryOptions,
-            ]}
-            value={filters.p_np}
-            onChange={(val) => {
-              setFilters((prev) => ({ ...prev, p_np: val }));
-              setPage(1);
-            }}
-            placeholder="Employement Category"
-          />
-
-          <Filter
-            label="Employement Status"
-            options={[
-              { label: "All Employement Status", value: "" },
-              ...employementStatusOptions,
-            ]}
-            value={filters.employment_status}
-            onChange={(val) => {
-              setFilters((prev) => ({ ...prev, employment_status: val }));
-              setPage(1);
-            }}
-            placeholder="Employement Status"
-          />
-
-          {isFiltering && (
-            <Button
-              variant="outline"
-              startIcon={<ClearIcon />}
-              sx={{
-                color: "#182959",
-                borderRadius: "999px",
-                padding: "9px 18px",
-                fontSize: "0.85rem",
-                fontWeight: "bold",
-              }}
-              onClick={() => {
-                setFilters({
-                  company_name: "",
-                  gender: "",
-                  position_id: "",
-                  p_np: "",
-                  employment_status: "",
-                  status_id: "",
-                });
-                setPage(1);
-              }}
-            >
-              Clear Filters
-            </Button>
-          )}
+            <Box sx={{ flexGrow: 1, minWidth: 10 }} />
+          </Stack>
         </Box>
         <Box sx={{ display: "flex", height: "120px", gap: 2, mb: 3 }}>
           <KPIIndicatorCard
@@ -404,70 +426,95 @@ function HRSafetyTrainingDash({}) {
           <Paper
             sx={{
               p: 2,
-              textAlign: "center"
+              textAlign: "center",
             }}
           >
-              <Typography variant="h6" sx={{ color: "#000000", mb: 1 }}>
-                Incidents Per Month
-              </Typography>
-              <Box sx={{ height: 350, bgcolor: "#fff", borderRadius: 2, p: 2 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={
-                      // Transform data for grouped bar chart
-                      (() => {
-                        // Get all months in order
-                        const months = [
-                          "January", "February", "March", "April", "May", "June",
-                          "July", "August", "September", "October", "November", "December"
-                        ];
-                        // Get all unique incident types
-                        const types = [...new Set(incidentPerMonth.map(i => i.incident_type))];
-                        // Build data: one object per month, each type as a key
-                        return months.map(month => {
-                          const row = { month };
-                          types.forEach(type => {
-                            row[type] = incidentPerMonth
-                              .filter(i => i.month_name === month && i.incident_type === type)
-                              .reduce((sum, i) => sum + i.incident_count, 0);
-                          });
-                          return row;
+            <Typography variant="h6" sx={{ color: "#000000", mb: 1 }}>
+              Incidents Per Month
+            </Typography>
+            <Box sx={{ height: 350, bgcolor: "#fff", borderRadius: 2, p: 2 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={
+                    // Transform data for grouped bar chart
+                    (() => {
+                      // Get all months in order
+                      const months = [
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                      ];
+                      // Get all unique incident types
+                      const types = [
+                        ...new Set(
+                          incidentPerMonth.map((i) => i.incident_type)
+                        ),
+                      ];
+                      // Build data: one object per month, each type as a key
+                      return months.map((month) => {
+                        const row = { month };
+                        types.forEach((type) => {
+                          row[type] = incidentPerMonth
+                            .filter(
+                              (i) =>
+                                i.month_name === month &&
+                                i.incident_type === type
+                            )
+                            .reduce((sum, i) => sum + i.incident_count, 0);
                         });
-                      })()
-                    }
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" angle={-45} textAnchor="end" height={60} />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
-                    {/* Render a Bar for each incident type */}
-                    {Array.from(new Set(incidentPerMonth.map(i => i.incident_type))).map((type, idx) => (
-                      <Bar
-                        key={type}
-                        dataKey={type}
-                        stackId="a"
-                        fill={
-                          [
-                            "#1976d2", // blue
-                            "#e57373", // red
-                            "#ffb300", // orange
-                            "#388e3c", // green
-                            "#8e24aa", // purple
-                            "#fbc02d", // yellow
-                            "#0288d1", // light blue
-                            "#c62828", // dark red
-                            "#43a047", // light green
-                          ][idx % 9]
-                        }
-                        name={type}
-                        barSize={12}
-                      />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
+                        return row;
+                      });
+                    })()
+                  }
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="month"
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  {/* Render a Bar for each incident type */}
+                  {Array.from(
+                    new Set(incidentPerMonth.map((i) => i.incident_type))
+                  ).map((type, idx) => (
+                    <Bar
+                      key={type}
+                      dataKey={type}
+                      stackId="a"
+                      fill={
+                        [
+                          "#1976d2", // blue
+                          "#e57373", // red
+                          "#ffb300", // orange
+                          "#388e3c", // green
+                          "#8e24aa", // purple
+                          "#fbc02d", // yellow
+                          "#0288d1", // light blue
+                          "#c62828", // dark red
+                          "#43a047", // light green
+                        ][idx % 9]
+                      }
+                      name={type}
+                      barSize={12}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
           </Paper>
           <Box
             sx={{

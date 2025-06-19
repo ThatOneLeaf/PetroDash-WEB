@@ -6,6 +6,7 @@ import {
   Button,
   Select,
   MenuItem,
+  Autocomplete,
   Box,
 } from "@mui/material";
 
@@ -14,6 +15,10 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import api from "../../services/api";
+
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+
+dayjs.extend(isSameOrAfter);
 
 function AddSafetyWorkDataModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -24,12 +29,39 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
     safetyManhours: "",
   });
 
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     setLoading(false);
   }, []);
+
+  // DATA -- CHANGE PER PAGE
+  const fetchSafetyWorkData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("hr/safety_workdata_records_by_status");
+      console.log("Safety Work Data from API:", response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching Safety data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSafetyWorkData();
+  }, []);
+
+  const uniqueOptions = (key) => {
+    return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
+      label: val,
+      value: val,
+    }));
+  };
 
   const handleChange = (field) => (event) => {
     const newFormData = {
@@ -48,6 +80,46 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
 
   const handleSubmit = async () => {
     console.log(formData);
+
+    /* VALIDATIONS */
+
+    const MIN_DATE = dayjs("1994-09-29");
+
+    const { contractor, date, safetyManpower, safetyManhours } = formData;
+
+    const isValidContractor = contractor.trim() !== "";
+
+    const isValidDate = date && dayjs(date).isSameOrAfter(MIN_DATE);
+
+    const isValidManpower =
+      safetyManpower !== "" &&
+      !isNaN(safetyManpower) &&
+      Number(safetyManpower) > 0;
+
+    const isValidManhours =
+      safetyManhours !== "" &&
+      !isNaN(safetyManhours) &&
+      Number(safetyManhours) > 0;
+
+    if (!isValidContractor) {
+      alert("Contractor is required.");
+      return;
+    }
+
+    if (!isValidDate) {
+      alert("Please select a valid Date.");
+      return;
+    }
+
+    if (!isValidManpower) {
+      alert("Safety Manpower must be a number greater than 0.");
+      return;
+    }
+
+    if (!isValidManhours) {
+      alert("Safety Manhours must be a number greater than 0.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -135,11 +207,19 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
           ))}
         </Select>*/}
 
-        <TextField
-          label="Contractor"
+        <Autocomplete
+          freeSolo
+          options={uniqueOptions("contractor")}
           value={formData.contractor}
-          onChange={handleChange("contractor")}
-          type="text"
+          onInputChange={(event, newInputValue) => {
+            setFormData((prev) => ({
+              ...prev,
+              contractor: newInputValue,
+            }));
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label="Contractor" fullWidth />
+          )}
         />
 
         <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -147,6 +227,8 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
             label="Date"
             value={formData.date}
             onChange={handleDateChange("date")}
+            minDate={dayjs("1994-09-29")}
+            disableFuture={true}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },
             }}
@@ -158,6 +240,7 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
           value={formData.safetyManpower}
           onChange={handleChange("safetyManpower")}
           type="number"
+          inputProps={{ min: 1 }}
         />
 
         <TextField
@@ -165,6 +248,7 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
           value={formData.safetyManhours}
           onChange={handleChange("safetyManhours")}
           type="number"
+          inputProps={{ min: 1 }}
         />
       </Box>
 
