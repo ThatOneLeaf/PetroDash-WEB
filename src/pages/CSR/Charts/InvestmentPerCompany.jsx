@@ -77,7 +77,7 @@ const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
         <XAxis
           dataKey="companyId"
           interval={0}
-          // angle={40}
+          angle={20}
           tick={{ fontSize: 10 }}
           // label={{
           //   value: "Company Name",

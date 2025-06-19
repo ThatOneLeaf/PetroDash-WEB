@@ -17,6 +17,7 @@ import InvestmentPerProjectChart from '../CSR/Charts/InvestmentPerProject';
 import InvestmentPerProgramChart from '../CSR/Charts/InvestmentPerProgram';
 import InvestmentPerCompanyChart from '../CSR/Charts/InvestmentPerCompany';
 import ZoomModal from '../../components/DashboardComponents/ZoomModal'; // Add this import
+import InvestmentKPI from '../CSR/Charts/InvestmentKPI'; // Add this import
 
 // KPI configuration for HELP dashboard
 const kpiConfig = [
@@ -731,221 +732,10 @@ export default function HELPDash() {
             </Box>
 
             {/* KPI Row - 3 columns */}
-            <Box sx={{ display: 'flex', gap: 2, width: '100%', mb: 3 }}>
-              {/* Health KPI */}
-              <Paper
-                elevation={0}
-                sx={{
-                  background: '#f8bcbc',
-                  border: '2px solid #f8bcbc',
-                  borderRadius: '14px',
-                  px: 3,
-                  py: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: 18,
-                  boxShadow: 'none',
-                  width: '100%',
-                  minWidth: 0,
-                  minHeight: 90,
-                  height: 90,
-                  textAlign: 'center',
-                  flex: 1
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 22, 
-                    fontWeight: 900,
-                    marginBottom: 2,
-                    textAlign: 'center',
-                    color: '#182959',
-                    letterSpacing: 0.5,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {investments.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#64748b',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                    letterSpacing: 0.2,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  Health
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: '#94a3b8',
-                    textAlign: 'center',
-                    marginTop: 2,
-                    width: '100%',
-                    fontStyle: 'italic',
-                    letterSpacing: 0.2,
-                    fontWeight: 400,
-                  }}
-                >
-                  {lastUpdated && (
-                    <>
-                      As of: {new Date(lastUpdated).toLocaleString('default', { month: 'long' })}, {new Date(lastUpdated).getFullYear()}
-                    </>
-                  )}
-                </div>
-              </Paper>
-              {/* Education KPI */}
-              <Paper
-                elevation={0}
-                sx={{
-                  background: '#b6d4f7',
-                  border: '2px solid #b6d4f7',
-                  borderRadius: '14px',
-                  px: 3,
-                  py: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: 18,
-                  boxShadow: 'none',
-                  width: '100%',
-                  minWidth: 0,
-                  minHeight: 90,
-                  height: 90,
-                  textAlign: 'center',
-                  flex: 1
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 900,
-                    marginBottom: 2,
-                    textAlign: 'center',
-                    color: '#182959',
-                    letterSpacing: 0.5,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {investments.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#64748b',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                    letterSpacing: 0.2,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  Education
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: '#94a3b8',
-                    textAlign: 'center',
-                    marginTop: 2,
-                    width: '100%',
-                    fontStyle: 'italic',
-                    letterSpacing: 0.2,
-                    fontWeight: 400,
-                  }}
-                >
-                  {lastUpdated && (
-                    <>
-                      As of: {new Date(lastUpdated).toLocaleString('default', { month: 'long' })}, {new Date(lastUpdated).getFullYear()}
-                    </>
-                  )}
-                </div>
-              </Paper>
-              {/* Livelihood KPI */}
-              <Paper
-                elevation={0}
-                sx={{
-                  background: '#fff3b0',
-                  border: '2px solid #fff3b0',
-                  borderRadius: '14px',
-                  px: 3,
-                  py: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: 18,
-                  boxShadow: 'none',
-                  width: '100%',
-                  minWidth: 0,
-                  minHeight: 90,
-                  height: 90,
-                  textAlign: 'center',
-                  flex: 1
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 900,
-                    marginBottom: 2,
-                    textAlign: 'center',
-                    color: '#182959',
-                    letterSpacing: 0.5,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {investments.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#64748b',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                    letterSpacing: 0.2,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  Livelihood
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: '#94a3b8',
-                    textAlign: 'center',
-                    marginTop: 2,
-                    width: '100%',
-                    fontStyle: 'italic',
-                    letterSpacing: 0.2,
-                    fontWeight: 400,
-                  }}
-                >
-                  {lastUpdated && (
-                    <>
-                      As of: {new Date(lastUpdated).toLocaleString('default', { month: 'long' })}, {new Date(lastUpdated).getFullYear()}
-                    </>
-                  )}
-                </div>
-              </Paper>
-            </Box>
+            <InvestmentKPI
+              year={filters.year}
+              companyId={filters.company}
+            />
 
             {/* Graph Containers Layout */}
             <Box
@@ -971,7 +761,8 @@ export default function HELPDash() {
                   borderRadius: '10px',
                   border: '1.5px solid #e2e8f0',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                  minWidth: 0,
+                  minWidth: '50%',
+                  maxWidth: '55%',
                   height: '100%',
                   minHeight: 0,
                   padding: '10px 10px 8px 10px',
@@ -1030,7 +821,6 @@ export default function HELPDash() {
                   minHeight: 0,
                 }}
               >
-                {console.log("company id: ", filters.company)}
                 {/* Investments per Programs */}
                 <Paper
                   elevation={0}
