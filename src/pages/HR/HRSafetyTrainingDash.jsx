@@ -17,6 +17,7 @@ import StatusChip from "../../components/StatusChip";
 import MultiSelectWithChips from "../../components/DashboardComponents/MultiSelectDropdown";
 import ClearButton from "../../components/DashboardComponents/ClearButton";
 import KPIIndicatorCard from "../../components/KPIIndicatorCard";
+import KPICard from "../../components/DashboardComponents/KPICard";
 
 import {
   LineChart,
@@ -326,28 +327,97 @@ const incidentPerMonth = [
   },
 ];
 
-function HRSafetyTrainingDash({}) {
+function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
   //INITIALIZE
 
-  const [filters, setFilters] = useState({
-    company_name: "",
-    gender: "",
-    position_id: "",
-    p_np: "",
-    employment_status: "",
-    status_id: "",
-  });
+  //INITIALIZE -DATA
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const companyOptions = [];
-  const genderOptions = [];
-  const positionOptions = [];
-  const employementCategoryOptions = [];
-  const employementStatusOptions = [];
+  const [totalSafetyManhours, setTotalSafetyManhours] = useState(null);
+  const [totalTrainingHours, setTotalTrainingHours] = useState(null);
 
-  const isFiltering = useMemo(() => {
-    return Object.values(filters).some((v) => v !== null && v !== "");
-  }, [filters]);
+  // FILTERING
+  const [companyFilter, setCompanyFilter] = useState([]);
+  const [positionFilter, setPositionFilter] = useState([]);
 
+  const clearAllFilters = () => {
+    setCompanyFilter([]);
+    setPositionFilter([]);
+  };
+
+  const showClearButton = companyFilter.length > 0 || positionFilter.length > 0;
+
+  //CHARTS
+  const [openModal, setOpenModal] = useState(false);
+  const [activeChart, setActiveChart] = useState(null);
+  const [chartText, setchartText] = useState(null);
+  const handleClose = () => setOpenModal(false);
+
+  const handleOpen = ({ chartKey, chartText }) => {
+    setActiveChart(chartKey);
+    setchartText(chartText);
+    setOpenModal(true);
+  };
+
+  useEffect(() => {
+    const fetchTrainingAndSafetyData = async () => {
+      try {
+        const params = {};
+        if (companyFilter.length > 0)
+          params.company_id = companyFilter.join(",");
+        if (positionFilter.length > 0)
+          params.position_id = positionFilter.join(",");
+
+        const [totalManHoursRes, totalTrainingHoursRes] = await Promise.all([
+          api.get("hr/total_safety_manhours", { params }),
+          api.get("hr/total_training_hours", { params }),
+        ]);
+
+        setTotalSafetyManhours(
+          totalManHoursRes.data[0]["total_safety_manhours"]
+        );
+
+        setTotalTrainingHours(
+          totalTrainingHoursRes.data[0]["total_training_hours"]
+        );
+      } catch (error) {
+        console.error("Failed to fetch totals:", error);
+        setTotalSafetyManhours("N/A");
+        setTotalTrainingHours("N/A");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrainingAndSafetyData();
+  }, [companyFilter, positionFilter, shouldReload]);
+
+  const fetchEmployabilityData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("hr/employability_records_by_status");
+      console.log("Employability Data from API:", response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching Employability data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployabilityData();
+  }, []);
+
+  const uniqueOptions = (key) => {
+    return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
+      label: val,
+      value: val,
+    }));
+  };
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
       <Box
@@ -358,7 +428,7 @@ function HRSafetyTrainingDash({}) {
           height: "100%",
         }}
       >
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+        <Box sx={{ px: 0, pb: 1, flexShrink: 0 }}>
           <Stack
             direction="row"
             spacing={1}
@@ -375,17 +445,17 @@ function HRSafetyTrainingDash({}) {
           >
             <MultiSelectWithChips
               label="Companies"
-              options={""}
-              selectedValues={""}
-              onChange={""}
+              options={uniqueOptions("company_id")}
+              selectedValues={companyFilter}
+              onChange={setCompanyFilter}
               placeholder="All Companies"
             />
 
             <MultiSelectWithChips
               label="Position"
-              options={""}
-              selectedValues={""}
-              onChange={""}
+              options={uniqueOptions("position_id")}
+              selectedValues={positionFilter}
+              onChange={setPositionFilter}
               placeholder="All Position"
             />
             <MultiSelectWithChips label="Start Date" placeholder="Start Date" />
@@ -396,21 +466,44 @@ function HRSafetyTrainingDash({}) {
             <Box sx={{ flexGrow: 1, minWidth: 10 }} />
           </Stack>
         </Box>
-        <Box sx={{ display: "flex", height: "120px", gap: 2, mb: 3 }}>
-          <KPIIndicatorCard
-            value="535765"
-            label="Total Safety manhours"
-            variant="outlined"
+
+        {/* KPI Cards */}
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "nowrap", pb: 2 }}>
+          <KPICard
+            loading={false}
+            value={totalSafetyManhours}
+            unit=""
+            title="Total Safety manhours"
+            colorScheme={{
+              backgroundColor: "#1E40AF",
+              textColor: "#FFFFFF",
+              iconColor: "#FFFFFF",
+            }}
+            style={{ flex: 1 }}
           />
-          <KPIIndicatorCard
-            value="1234"
-            label="Total manhours since last accident"
-            variant="filled"
+          <KPICard
+            loading={false}
+            value={"123"}
+            unit=""
+            title="Lost Time Accident"
+            colorScheme={{
+              backgroundColor: "#1E40AF",
+              textColor: "#FFFFFF",
+              iconColor: "#FFFFFF",
+            }}
+            style={{ flex: 1 }}
           />
-          <KPIIndicatorCard
-            value="968"
-            label="Total Training hours"
-            variant="outlined"
+          <KPICard
+            loading={false}
+            value={totalTrainingHours}
+            unit=""
+            title="Total Training hours"
+            colorScheme={{
+              backgroundColor: "#1E40AF",
+              textColor: "#FFFFFF",
+              iconColor: "#FFFFFF",
+            }}
+            style={{ flex: 1 }}
           />
         </Box>
 
