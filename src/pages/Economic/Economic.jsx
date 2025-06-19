@@ -325,7 +325,7 @@ function Economic() {
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pt: 2, flexShrink: 0 }}>
           <DashboardHeader
-            title="Economics"
+            title="Economic"
             lastUpdated={lastUpdated}
             formatDateTime={formatDateTime}
           />
@@ -470,7 +470,7 @@ function Economic() {
             <Grid size={{ xs: 12, lg: 6 }} sx={{ display: 'flex' }}>
               <ChartContainer 
                 chartRef={chart1Ref}
-                title="Economic Value Analysis"
+                title="Annual Economic Value Analysis"
                 fileName="economic_value_analysis"
                 modalContent={generateModalContent.economicAnalysis(flowData, retentionData, summaryData, firstChartTab, handleFirstChartTabChange)}
                 openZoomModal={openZoomModal}
@@ -488,7 +488,7 @@ function Economic() {
             <Grid size={{ xs: 12, lg: 6 }} sx={{ display: 'flex' }}>
               <ChartContainer 
                 chartRef={chart2Ref}
-                title="Economic Value Generated and Retained"
+                title="Annual Economic Value Generated and Retained"
                 fileName="economic_value_line_chart"
                 modalContent={generateModalContent.lineChart(flowData)}
                 openZoomModal={openZoomModal}

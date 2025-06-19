@@ -13,30 +13,61 @@ import {
   ComposedChart
 } from 'recharts';
 import api from '../services/api';
-import { Box, Button, Typography, Paper, CircularProgress } from "@mui/material";
+import { Box, Button, Typography, Paper, Card, CardContent, Grid, CircularProgress } from "@mui/material";
 import Sidebar from '../components/Sidebar';
 import { logout } from '../services/auth';
-import EnviOverview from '../components/DashboardComponents/EnviOverview'; // Import the EnviOverview component
+import EnviOverview from '../components/DashboardComponents/EnviOverview';
+import DashboardHeader from '../components/DashboardComponents/DashboardHeader';
+import { format } from 'date-fns';
 import HELPINvestments from './CSR/Charts/InvestmentKPI'
 
 function Dashboard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Economic data state
+  const [economicData, setEconomicData] = useState([]);
+  const [economicLoading, setEconomicLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
-  // Get current date and time
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    const options = { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit'
-    };
-    return now.toLocaleString('en-US', options).replace(',', '');
+  // Utils
+  const formatDateTime = (date) => format(date, "PPPpp");
+
+  // Calculate growth percentage
+  const calculateGrowth = (current, previous) => {
+    if (!previous || previous === 0) return 0;
+    return ((current - previous) / previous * 100).toFixed(1);
   };
+
+  // Fetch economic data
+  useEffect(() => {
+    const fetchEconomicData = async () => {
+      try {
+        setEconomicLoading(true);
+        const response = await api.get('/economic/dashboard/summary');
+        setEconomicData(response.data);
+        setEconomicLoading(false);
+        setLastUpdated(new Date());
+      } catch (err) {
+        console.error('Error fetching economic data:', err);
+        setEconomicLoading(false);
+      }
+    };
+    fetchEconomicData();
+  }, []);
+
+  // Calculate current and previous year metrics for economic data
+  const currentYearMetrics = economicData.length > 0 ? economicData[economicData.length - 1] : null;
+  const previousYearMetrics = economicData.length > 1 ? economicData[economicData.length - 2] : null;
+
+  // Prepare chart data for Economic Analysis chart
+  const flowData = economicData.map(item => ({
+    year: item.year,
+    economic_value_generated: item.totalGenerated,
+    economic_value_distributed: item.totalDistributed,
+    economic_value_retained: item.valueRetained
+  }));
 
   useEffect(() => {
     // Simulate loading for demonstration; replace with real API call
@@ -50,19 +81,16 @@ function Dashboard() {
       <Sidebar />
       <Box sx={{ flexGrow: 1, height: "100vh", overflow: "hidden", p: 3, backgroundColor: '#ffff' }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#333' }}>
-              OVERVIEW
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#666', mt: 0.5 }}>
-              AS OF {getCurrentDateTime().toUpperCase()}
-            </Typography>
-          </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1}}>
+          <DashboardHeader
+            title="Overview"
+            lastUpdated={lastUpdated}
+            formatDateTime={formatDateTime}
+          />
           <Button
             variant="outlined"
             onClick={logout}
-            sx={{ color: '#666', borderColor: '#666' }}
+            sx={{ color: '#666', borderColor: '#666', mt: "15px" }}
           >
             Logout
           </Button>
@@ -149,13 +177,109 @@ function Dashboard() {
                       color: '#333'
                     }}
                   >
-                    ECONOMICS
+                    ECONOMIC
                   </Typography>
-                  <Box sx={{ pt: 2, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Economics component will be inserted here
+                  <Box sx={{ pt: 0, height: '100%' }}>
+                {economicLoading ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Loading economic data...
                     </Typography>
                   </Box>
+                ) : (
+                  <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    {/* KPI Cards Row - 1/3 of height */}
+                    <Box sx={{ height: '25%', mb: 1 }}>
+                      <Grid container spacing={1} sx={{ height: '100%' }}>
+                        {/* Value Generated Card */}
+                        <Grid size={4}>
+                          <Card sx={{ borderRadius: 2, boxShadow: 1, height: '100%' }}>
+                            <CardContent sx={{ textAlign: 'center', py: 0.8, px: 1, '&:last-child': { pb: 0.8 } }}>
+                              <Typography variant="h5" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1rem' }}>
+                                {currentYearMetrics ? currentYearMetrics.totalGenerated.toLocaleString() : '0'}
+                              </Typography>
+                              <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.6rem' }}>
+                                Value Generated
+                              </Typography>
+                              {previousYearMetrics && (
+                                <Typography variant="caption" sx={{ color: '#2B8C37', fontSize: '0.5rem' }}>
+                                  ▲{calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated)}% from last year
+                                </Typography>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                        
+                        {/* Value Distributed Card */}
+                        <Grid size={4}>
+                          <Card sx={{ borderRadius: 2, boxShadow: 1, bgcolor: '#182959', height: '100%' }}>
+                            <CardContent sx={{ textAlign: 'center', py: 0.8, px: 1, '&:last-child': { pb: 0.8 } }}>
+                              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                                {currentYearMetrics ? currentYearMetrics.totalDistributed.toLocaleString() : '0'}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: 'white', fontSize: '0.6rem' }}>
+                                Value Distributed
+                              </Typography>
+                              {previousYearMetrics && (
+                                <Typography variant="caption" sx={{ color: 'white', fontSize: '0.5rem' }}>
+                                  ▲{calculateGrowth(currentYearMetrics?.totalDistributed, previousYearMetrics?.totalDistributed)}% from last year
+                                </Typography>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                        
+                        {/* Value Retained Card */}
+                        <Grid size={4}>
+                          <Card sx={{ borderRadius: 2, boxShadow: 1, height: '100%' }}>
+                            <CardContent sx={{ textAlign: 'center', py: 0.8, px: 1, '&:last-child': { pb: 0.8 } }}>
+                              <Typography variant="h5" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1rem' }}>
+                                {currentYearMetrics ? currentYearMetrics.valueRetained.toLocaleString() : '0'}
+                              </Typography>
+                              <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.6rem' }}>
+                                Value Retained
+                              </Typography>
+                              {previousYearMetrics && (
+                                <Typography variant="caption" sx={{ 
+                                  color: previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '#ff5722' : '#2B8C37', 
+                                  fontSize: '0.5rem' 
+                                }}>
+                                  {previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '▼' : '▲'}
+                                  {Math.abs(calculateGrowth(currentYearMetrics?.valueRetained, previousYearMetrics?.valueRetained))}% from last year
+                                </Typography>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                    
+                    {/* Chart Area - 2/3 of height */}
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ width: 4, height: 20, bgcolor: '#2B8C37', mr: 1 }} />
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          Annual Economic Value Analysis
+                            </Typography>
+                          </Box>
+                      <Box sx={{ height: 'calc(100% - 40px)' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart data={flowData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="year" tick={{ fontSize: 9 }} />
+                            <YAxis tick={{ fontSize: 9 }} />
+                            <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
+                            <Legend wrapperStyle={{ fontSize: '10px' }} />
+                            <Bar dataKey="economic_value_generated" fill="#182959" name="Value Generated" />
+                            <Bar dataKey="economic_value_distributed" fill="#2B8C37" name="Value Distributed" />
+                            <Bar dataKey="economic_value_retained" fill="#FF8042" name="Value Retained" />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
                 </Paper>
 
                 {/* Right Column - Environment and Social stacked */}
@@ -231,13 +355,7 @@ function Dashboard() {
                 </Box>
 
               </Box>
-
             </Box>
-
-            {/* Token expiry notice */}
-            <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>
-              Token will expire in 30 seconds and automatically redirect you to home page.
-            </Typography>
           </>
         )}
       </Box>

@@ -92,7 +92,7 @@ export const EconomicAnalysisChart = ({
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Box sx={{ width: 4, height: 20, bgcolor: '#2B8C37', mr: 1 }} />
         <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-          Economic Value Analysis
+          Annual Economic Value Analysis
         </Typography>
       </Box>
       <Box sx={{ 
@@ -204,7 +204,7 @@ export const EconomicAnalysisChart = ({
 export const EconomicLineChart = ({ flowData }) => (
   <>
     <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.9rem' }}>
-      Economic Value Generated and Retained
+      Annual Economic Value Generated and Retained
     </Typography>
     <Box sx={{ flex: 1, minHeight: 0 }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -272,6 +272,7 @@ export const GeneratedPieChart = ({ generatedDetails }) => {
 
 // Company Bar Chart Component
 export const CompanyBarChart = ({ companyDistribution }) => {
+  const currentYear = Math.max(...companyDistribution.map(d => d.year)) || 'Current Year';
   const renderChart = () => {
     if (!companyDistribution || companyDistribution.length === 0) {
       return (
@@ -337,9 +338,12 @@ export const CompanyBarChart = ({ companyDistribution }) => {
         />
         <Bar 
           dataKey="percentage" 
-          fill="#2B8C37" 
           name="Percentage"
-        />
+        >
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.color || '#2B8C37'} />
+          ))}
+        </Bar>
       </BarChart>
     );
   };
@@ -347,7 +351,7 @@ export const CompanyBarChart = ({ companyDistribution }) => {
   return (
     <>
       <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '0.85rem' }}>
-        Top 5 Companies - Economic Value Distribution
+        Top 5 Companies - Economic Value Distribution {currentYear}
       </Typography>
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -625,9 +629,12 @@ export const generateModalContent = {
             />
             <Bar 
               dataKey="percentage" 
-              fill="#2B8C37" 
               name="Percentage"
-            />
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color || '#2B8C37'} />
+              ))}
+            </Bar>
           </BarChart>
         );
       })()}
