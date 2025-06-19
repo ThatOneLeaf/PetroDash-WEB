@@ -15,7 +15,6 @@ import ZoomModal from "../../../components/DashboardComponents/ZoomModal";
 const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [year, setYear] = useState(yearProp || null);
   const [availableYears, setAvailableYears] = useState([]);
   const [zoomOpen, setZoomOpen] = useState(false);
 
@@ -53,19 +52,18 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
         ).filter(Boolean);
         years.sort((a, b) => b - a); // Descending
         setAvailableYears(years);
-        if (!yearProp && years.length > 0) setYear(years[0]);
       })
       .catch(() => setAvailableYears([]));
   }, [yearProp]);
 
   // Fetch data from API
   useEffect(() => {
-    if (!year && !yearProp) return;
+    // Use yearProp and companyId directly
     setLoading(true);
     api
       .get("/help/investments-per-project", {
         params: {
-          ...(year ? { year } : {}),
+          ...(yearProp ? { year: yearProp } : {}),
           ...(companyId ? { company_id: companyId } : {}),
         },
       })
@@ -76,7 +74,7 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
       })
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, [year, companyId, yearProp]);
+  }, [yearProp, companyId]);
 
   // Chart rendering logic as a function for reuse in modal
   const renderChart = (h = height || 350, w = width || "100%") => (
@@ -136,6 +134,39 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
         </Box>
       </Box>
     </Box>
+    // <ResponsiveContainer width={w} height={h}>
+    //   <BarChart
+    //     data={data}
+    //     layout="vertical"
+    //     margin={{ top: 16, right: 24, left: 8, bottom: 32 }}
+    //   >
+    //     <XAxis
+    //       type="number"
+    //       tickFormatter={(value) => `₱${value.toLocaleString()}`}
+    //       tick={{ fontSize: 10 }}
+    //     />
+    //     <YAxis
+    //       type="category"
+    //       dataKey="projectName"
+    //       width={120}
+    //       interval={0}
+    //       tick={{ fontSize: 11 }}
+    //       label={{
+    //         value: "Project Name",
+    //         angle: -90,
+    //         position: "insideleft",
+    //         offset: 0
+    //       }}
+    //     />
+    //     <Tooltip formatter={(value) => `₱${value.toLocaleString()}`} />
+    //     <Legend verticalAlign="middle" align="right" layout="vertical" />
+    //     <Bar
+    //       dataKey="projectExpenses"
+    //       name={getWrappedLegendName("Investment (₱)")}
+    //       fill="#1976d2"
+    //     />
+    //   </BarChart>
+    // </ResponsiveContainer>
   );
 
   return (

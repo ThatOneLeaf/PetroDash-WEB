@@ -40,16 +40,16 @@ function App() {
             <Route path="/economic/repository" element={<ProtectedRoute><EconomicRepository /></ProtectedRoute>} />
             
             {/* Protected Routes Environment */}
-            <Route path="/environment/energy" element={<ProtectedRoute><EnvironmentEnergy /></ProtectedRoute>} />
-            <Route path="/environment/water" element={<ProtectedRoute><EnvironmentWater /></ProtectedRoute>} />
-            <Route path="/environment/waste" element={<ProtectedRoute><EnvironmentWaste /></ProtectedRoute>} />
-            <Route path="/environment/air" element={<ProtectedRoute><EnvironmentAir /></ProtectedRoute>} />
-            <Route path="/environment/care" element={<ProtectedRoute><EnvironmentCare /></ProtectedRoute>} />
-            <Route path="/environment/water-dash" element={<ProtectedRoute><EnvironmentWaterDash /></ProtectedRoute>} />
-            <Route path="/environment/energy-dash" element={<ProtectedRoute><EnvironmentEnergyDash /></ProtectedRoute>} />
-            <Route path="/environment/waste-dash" element={<ProtectedRoute><EnvironmentWasteDash /></ProtectedRoute>} />
-            <Route path="/environment/air-dash" element={<ProtectedRoute><EnvironmentAirDash /></ProtectedRoute>} />
-            <Route path="/environment/care-dash" element={<ProtectedRoute><EnvironmentCareDash /></ProtectedRoute>} />
+            <Route path="/environment/energy" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentEnergy /></ProtectedRoute>} />
+            <Route path="/environment/water" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentWater /></ProtectedRoute>} />
+            <Route path="/environment/waste" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentWaste /></ProtectedRoute>} />
+            <Route path="/environment/air" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentAir /></ProtectedRoute>} />
+            <Route path="/environment/care" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentCare /></ProtectedRoute>} />
+            <Route path="/environment/water-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentWaterDash /></ProtectedRoute>} />
+            <Route path="/environment/energy-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentEnergyDash /></ProtectedRoute>} />
+            <Route path="/environment/waste-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentWasteDash /></ProtectedRoute>} />
+            <Route path="/environment/air-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentAirDash /></ProtectedRoute>} />
+            <Route path="/environment/care-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentCareDash /></ProtectedRoute>} />
 
             {/* Protected Routes */}
             <Route path="/economic" element={<ProtectedRoute requiredRoles={["R02", "R03"]}><Economic /></ProtectedRoute>} />
