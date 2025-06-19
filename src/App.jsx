@@ -23,7 +23,6 @@ import PowerDashboard from "./pages/Energy/PowerDashboard";
 import EnvironmentEnergyDash from "./pages/Envi/EnvironmentEnergyDash";
 import EnvironmentWasteDash from "./pages/Envi/EnvironmentWasteDash";
 import HELPDash from "./pages/CSR/HELPDash";
-import EnergyDashboard from "./pages/Energy/EnergyDashboard";
 import FundsDashboard from "./pages/Energy/FundsDashboard";
 
 function App() {
