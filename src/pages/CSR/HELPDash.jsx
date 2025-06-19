@@ -347,16 +347,8 @@ export default function HELPDash() {
     () => [...new Set(data.map(d => d.projectYear).filter(Boolean))].sort((a, b) => b - a),
     [data]
   );
-  // Company options now include both id and name
   const companyOptions = useMemo(
-    () =>
-      [
-        ...new Map(
-          data
-            .filter(d => d.companyId && d.companyName)
-            .map(d => [d.companyId, { id: d.companyId, name: d.companyName }])
-        ).values(),
-      ].sort((a, b) => a.name.localeCompare(b.name)),
+    () => [...new Set(data.map(d => d.companyName).filter(Boolean))].sort(),
     [data]
   );
 
@@ -364,7 +356,7 @@ export default function HELPDash() {
   const filteredData = useMemo(() => {
     return data.filter(row => {
       if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
-      if (filters.company && row.companyId !== filters.company) return false;
+      if (filters.company && row.companyName !== filters.company) return false;
       return true;
     });
   }, [data, filters]);
@@ -558,7 +550,7 @@ export default function HELPDash() {
               >
                 <option value="">All Companies</option>
                 {companyOptions.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
 
@@ -706,7 +698,7 @@ export default function HELPDash() {
               >
                 <option value="">All Companies</option>
                 {companyOptions.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
 
@@ -960,7 +952,7 @@ export default function HELPDash() {
                 // 64px header, 48px tabs/filters, 120px KPI, 48px margins (adjust as needed)
               }}
             >
-              {/* Investments per Projects */}
+              {/* Left: Large Chart Container (Investments per Projects) */}
               <Paper
                 elevation={0}
                 sx={{
@@ -980,7 +972,6 @@ export default function HELPDash() {
                   transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
                   '&:hover': {
                     boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
-                    borderColor: '#10B981',
                     transform: 'translateY(-2px) scale(1.01)'
                   }
                 }}
@@ -993,7 +984,7 @@ export default function HELPDash() {
                       width={900}
                       year={filters.year}
                       companyId={filters.company}
-                    />
+                    />  
                   )
                 }
               >
@@ -1019,6 +1010,7 @@ export default function HELPDash() {
                   </Box>
                 </Box>
               </Paper>
+              {/* Right: Stack of two charts */}
               <Box
                 sx={{
                   flex: 1,
@@ -1030,8 +1022,7 @@ export default function HELPDash() {
                   minHeight: 0,
                 }}
               >
-                {console.log("company id: ", filters.company)}
-                {/* Investments per Programs */}
+                {/* Top Right Chart */}
                 <Paper
                   elevation={0}
                   sx={{
@@ -1049,11 +1040,12 @@ export default function HELPDash() {
                     justifyContent: 'flex-start',
                     cursor: 'pointer',
                     transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
-                    '&:hover': {
-                      boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
-                      borderColor: '#10B981',
-                      transform: 'translateY(-2px) scale(1.01)'
-                    }
+                    // Removed green outline on hover
+                    // '&:hover': {
+                    //   boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
+                    //   borderColor: '#10B981',
+                    //   transform: 'translateY(-2px) scale(1.01)'
+                    // }
                   }}
                   onClick={() =>
                     openZoomModal(
@@ -1090,7 +1082,7 @@ export default function HELPDash() {
                     </Box>
                   </Box>
                 </Paper>
-                {/* Investments per Company */}
+                {/* Bottom Right Chart */}
                 <Paper
                   elevation={0}
                   sx={{
@@ -1108,11 +1100,12 @@ export default function HELPDash() {
                     justifyContent: 'flex-start',
                     cursor: 'pointer',
                     transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
-                    '&:hover': {
-                      boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
-                      borderColor: '#10B981',
-                      transform: 'translateY(-2px) scale(1.01)'
-                    }
+                    // Removed green outline on hover
+                    // '&:hover': {
+                    //   boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
+                    //   borderColor: '#10B981',
+                    //   transform: 'translateY(-2px) scale(1.01)'
+                    // }
                   }}
                   onClick={() =>
                     openZoomModal(
