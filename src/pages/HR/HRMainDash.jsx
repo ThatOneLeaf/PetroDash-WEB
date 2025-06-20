@@ -108,13 +108,13 @@ function HRMainDash() {
         </Box>
 
         {/* Tabs */}
-        <Box sx={{ px: 2, flexShrink: 0 }}>
+        {/* <Box sx={{ px: 2, flexShrink: 0 }}>
           <TabButtons
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
-        </Box>
+        </Box> */}
 
         {/* Page-specific content with controls inside */}
         <Box

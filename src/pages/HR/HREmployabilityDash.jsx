@@ -56,7 +56,6 @@ import ZoomInIcon from "@mui/icons-material/ZoomIn";
 const formatDateTime = (date) => format(date, "PPPpp");
 
 // Dashboard values
-
 const COLORS = [
   "#3B82F6",
   "#F97316",
@@ -72,24 +71,39 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [totalEmployees, setTotalEmployees] = useState(null);
-  const [avgTenure, setAvgTenure] = useState(null);
-  const [employeeCountByCompany, setEmployeeCountByCompany] = useState([]);
+  //KPIs
+  const [totalTrainingHours, setTotalTrainingHours] = useState(null);
+  const [totalManpower, setTotalManpower] = useState(null);
+  const [totalManhour, setTotalManhour] = useState(null);
+  const [noLostTime, setNoLostTime] = useState(null);
+
+  // CHARTS
   const [ageDistribution, setAgeDistribution] = useState([]);
-  const [leaveSeasons, setLeaveSeasons] = useState([]);
   const [genderDistribution, setGenderDistribution] = useState([]);
-  const [leaveTypes, setLeaveTypes] = useState([]);
+  const [employeeCountByCompany, setEmployeeCountByCompany] = useState([]);
+  const [incidentCount, setIncidentCount] = useState([]);
+  const [monthlyManpower, setMonthlyManpower] = useState([]);
+  const [monthlyManhour, setMonthlyManhour] = useState([]);
 
   // FILTERING
   const [companyFilter, setCompanyFilter] = useState([]);
-  const [positionFilter, setPositionFilter] = useState([]);
+  const [positionFilter, setPositionFilter] = useState([]); // REMOVE THIS
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   const clearAllFilters = () => {
     setCompanyFilter([]);
-    setPositionFilter([]);
+    setPositionFilter([]); // REMOVE THIS
+    setStartDate(null);
+    setEndDate(null); 
   };
 
-  const showClearButton = companyFilter.length > 0 || positionFilter.length > 0;
+  const showClearButton = 
+    companyFilter.length > 0 || 
+    positionFilter.length > 0 || //to be removed
+    startDate !== null ||
+    endDate !== null;
+
 
   const [zoomModal, setZoomModal] = useState({
     open: false,
@@ -108,7 +122,6 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   };
 
   //CHARTS
-
   useEffect(() => {
     console.log(companyFilter);
 
@@ -117,112 +130,163 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         const params = {};
         if (companyFilter.length > 0)
           params.company_id = companyFilter.join(",");
-        if (positionFilter.length > 0)
+        if (positionFilter.length > 0) // REMOVE THIS
           params.position_id = positionFilter.join(",");
+        // ADD START AND END DATE FILTER
 
         const [
-          totalEmpRes,
-          avgTenureRes,
+          totalManpowerRes,
+          totalManhoursRes, 
+          totalTrainingHoursRes,
+          noLostTimeRes,
           companyCountRes,
           ageDistRes,
-          leaveSeasonsRes,
           genderDistRes,
-          leaveTypesRes,
+          incidentCountRes,
+          monthlyManhourRes,
+          monthlyManpowerRes,
         ] = await Promise.all([
-          api.get("hr/total_active_employees", { params }),
-          api.get("hr/average_tenure_rate", { params }),
-          api.get("hr/employee_count_per_company", { params }),
+          //KPIS
+          api.get("hr/total_safety_manpower", { params }), 
+          api.get("hr/total_safety_manhours", { params }),
+          api.get("hr/total_training_hours", { params }),
+          api.get("hr/no_lost_time", { params }),
+
+          //CHART
+          api.get("hr/employee_count_per_company", { params }), 
+          api.get("hr/gender_distribution_per_position", { params }), 
           api.get("hr/age_distribution", { params }),
-          api.get("hr/peak_leave_seasons", { params }),
-          api.get("hr/gender_distribution_per_position", { params }),
-          api.get("hr/total_leave", { params }),
+          api.get("hr/incident_count_per_month", { params }),
+          api.get("hr/safety_manhours_per_month", { params }),
+          api.get("hr/safety_manpower_per_month", { params }),
+          
         ]);
 
-        setTotalEmployees(totalEmpRes.data[0]["total_active_employees"]);
-        setAvgTenure(avgTenureRes.data[0]["avg_tenure_rate"]);
+        setTotalManpower(totalManpowerRes.data[0]["total_safety_manpower"]);
+        setTotalManhour(totalManhoursRes.data[0]["total_safety_manhours"]);
+        setTotalTrainingHours(totalTrainingHoursRes.data[0]["total_training_hours"]);
+        setNoLostTime(noLostTimeRes.data[0]["lost_time_incidents"]);
 
         setEmployeeCountByCompany(
           companyCountRes.data.map((item) => ({
-            company: item.company_id,
-            count: item.employee_count,
+            company: item.company_name,
+            count: item.num_employees,
+          }))
+        );
+
+        setGenderDistribution(
+          genderDistRes.data.map((item) => ({
+            position: item.position,
+            Male: parseInt(item.male),
+            Female: parseInt(item.female),
           }))
         );
 
         setAgeDistribution(
           ageDistRes.data.map((item) => ({
             age_group: item.age_category,
-            count: parseInt(item.total_employees),
+            count: parseInt(item.employee_count),
           }))
         );
 
-        setLeaveSeasons(
-          leaveSeasonsRes.data.map((item) => ({
+        setIncidentCount(
+          incidentCountRes.data.map((item) => ({
+            company_name: item.company_name,
             year: item.year,
-            leave_count: parseInt(item.total_leave),
+            month_name: item.month_name,
+            incidents: parseInt(item.incidents)
           }))
         );
 
-        setLeaveTypes(
-          leaveTypesRes.data.map((item) => ({
+        setMonthlyManhour(
+          monthlyManhourRes.data.map((item) => ({
+            company_name: item.company_name,
             year: item.year,
-            leave_count: parseInt(item.total_leave),
+            month_name: item.month_name,
+            manhours: parseInt(item.manhours)
           }))
         );
 
-        const grouped = {};
-        genderDistRes.data.forEach(
-          ({ position_id, gender, employee_count }) => {
-            if (!grouped[position_id])
-              grouped[position_id] = {
-                position: position_id,
-                Male: 0,
-                Female: 0,
-              };
-            if (gender === "M") grouped[position_id].Male = employee_count;
-            if (gender === "F") grouped[position_id].Female = employee_count;
-          }
+        setMonthlyManpower(
+          monthlyManpowerRes.data.map((item) => ({
+            company_name: item.company_name,
+            year: item.year,
+            month_name: item.month_name,
+            total_monthly_safety_manpower: parseInt(item.total_monthly_safety_manpower)
+          }))
         );
-        setGenderDistribution(Object.values(grouped));
       } catch (error) {
         console.error("Failed to fetch HR data:", error);
-        setTotalEmployees("N/A");
-        setAvgTenure("N/A");
+        // KPIS
+        setTotalManpower("N/A");
+        setTotalManhour("N/A");
+        setTotalTrainingHours("N/A");
+        setNoLostTime("N/A");
+        // CHART
         setEmployeeCountByCompany([]);
-        setAgeDistribution([]);
-        setLeaveSeasons([]);
         setGenderDistribution([]);
-        setLeaveTypes([]);
+        setAgeDistribution([]);
+        setIncidentCount([]);
+        setMonthlyManhour([]);
+        setMonthlyManpower([])
       } finally {
         setLoading(false);
       }
     };
 
     fetchHRData();
-  }, [companyFilter, positionFilter, shouldReload]);
-
-  const fetchEmployabilityData = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("hr/employability_records_by_status");
-      console.log("Employability Data from API:", response.data);
-      setData(response.data);
-    } catch (error) {
-      console.error("Error fetching Employability data:", error);
-      setError("Error fetching data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEmployabilityData();
-  }, []);
+  }, [companyFilter, positionFilter, shouldReload]);// REMOVE POSITION FILTER, ADD START AND END DATE
 
   const uniqueOptions = (key) => {
     return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
       label: val,
       value: val,
     }));
+  };
+
+  //helper functions for charts TEMPORARY
+  const barColors = [
+    "#1976d2",
+    "#e57373",
+    "#ffb300",
+    "#388e3c",
+    "#8e24aa",
+    "#fbc02d",
+    "#0288d1",
+    "#c62828",
+    "#43a047",
+  ];
+
+  const getIncidentTypes = (data) => [
+    ...new Set(data.map((i) => i.incident_type)),
+  ];
+
+  const transformIncidentData = (data) => {
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const types = getIncidentTypes(data);
+
+    return months.map((month) => {
+      const row = { month };
+      types.forEach((type) => {
+        row[type] = data
+          .filter((i) => i.month_name === month && i.incident_type === type)
+          .reduce((sum, i) => sum + i.incident_count, 0);
+      });
+      return row;
+    });
   };
 
   return (
@@ -260,16 +324,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               placeholder="All Companies"
             />
 
-            <MultiSelectWithChips
-              label="Position"
-              options={uniqueOptions("position_id")}
-              selectedValues={positionFilter}
-              onChange={setPositionFilter}
-              placeholder="All Position"
-            />
-            <MultiSelectWithChips label="Start Date" placeholder="Start Date" />
-            <MultiSelectWithChips label="End Date" placeholder="End Date" />
-
+            <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+            
             {showClearButton && <ClearButton onClick={clearAllFilters} />}
 
             <Box sx={{ flexGrow: 1, minWidth: 10 }} />
@@ -280,9 +336,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         <Box sx={{ display: "flex", gap: 2, flexWrap: "nowrap", pb: 2 }}>
           <KPICard
             loading={false}
-            value={totalEmployees}
+            value={totalManpower}
             unit=""
-            title="Total Active Employees"
+            title="Total Safety Manpower"
             colorScheme={{
               backgroundColor: "#1E40AF",
               textColor: "#FFFFFF",
@@ -292,9 +348,33 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           />
           <KPICard
             loading={false}
-            value={avgTenure}
+            value={totalManhour}
             unit=""
-            title="Average Tenure Rate"
+            title="Total Safety Manhours"
+            colorScheme={{
+              backgroundColor: "#1E40AF",
+              textColor: "#FFFFFF",
+              iconColor: "#FFFFFF",
+            }}
+            style={{ flex: 1, minHeight: "100px", fontSize: "18px" }}
+          />
+          <KPICard
+            loading={false}
+            value={totalTrainingHours}
+            unit=""
+            title="Total Training hours"
+            colorScheme={{
+              backgroundColor: "#1E40AF",
+              textColor: "#FFFFFF",
+              iconColor: "#FFFFFF",
+            }}
+            style={{ flex: 1, minHeight: "100px" }}
+          />
+          <KPICard
+            loading={false}
+            value={noLostTime}
+            unit=""
+            title="No Lost Time"
             colorScheme={{
               backgroundColor: "#1E40AF",
               textColor: "#FFFFFF",
@@ -305,6 +385,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         </Box>
 
         {/* Charts */}
+        
         <Box
           sx={{
             display: "grid",
@@ -315,7 +396,485 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             height: 0,
           }}
         >
+        {/* Monthly Manpower */}
+        <Box
+          sx={{
+            backgroundColor: "white",
+            p: 1.5,
+            borderRadius: 2,
+            boxShadow: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            height: "100%",
+            width: "100%",
+            maxWidth: "800px",
+            cursor: "pointer",
+            transition: "box-shadow 0.2s",
+            overflow: "hidden",
+          }}
+          onClick={() =>
+            openZoomModal(
+              "Monthly Safety Manpower (per Company)",
+              "monthly-manpower-per-company",
+              () => (
+                <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                  <Box sx={{ flex: 1, minHeight: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={(() => {
+                          // Group by month, then for each company, add a line
+                          // Get all unique months in order
+                          const months = [
+                            "January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December"
+                          ];
+                          // Get all unique companies
+                          const companies = [
+                            ...new Set(monthlyManpower.map(item => item.company_name))
+                          ];
+                          // Group data by year and month
+                          const grouped = {};
+                          monthlyManpower.forEach(item => {
+                            const key = `${item.year}-${item.month_name}`;
+                            if (!grouped[key]) {
+                              grouped[key] = { year: item.year, month_name: item.month_name };
+                            }
+                            grouped[key][item.company_name] = item.total_monthly_safety_manpower;
+                          });
+                          // Sort by year and month
+                          const sorted = Object.values(grouped).sort((a, b) => {
+                            if (a.year !== b.year) return a.year - b.year;
+                            return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+                          });
+                          // Add a label for X axis
+                          return sorted.map(row => ({
+                            ...row,
+                            label: `${row.month_name} ${row.year}`,
+                          }));
+                        })()}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
+                        <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
+                        <Tooltip />
+                        <Legend />
+                        {[
+                          ...new Set(monthlyManpower.map(item => item.company_name))
+                        ].map((company, idx) => (
+                          <Line
+                            key={company}
+                            type="monotone"
+                            dataKey={company}
+                            stroke={COLORS[idx % COLORS.length]}
+                            dot={{ fill: COLORS[idx % COLORS.length] }}
+                            name={company}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </Box>
+              )
+            )
+          }
+          onMouseOver={e => {
+            e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+          }}
+          title="Click to enlarge"
+        >
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 600,
+              mb: 1,
+              color: "#1e293b",
+              flexShrink: 0,
+            }}
+          >
+            Monthly Safety Manpower (per Company)
+          </Typography>
+          {!monthlyManpower || monthlyManpower.length === 0 ? (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 4,
+                color: "#64748b",
+                backgroundColor: "#f8fafc",
+                borderRadius: 1,
+                fontSize: "12px",
+                flex: 1,
+              }}
+            >
+              No data available for selected filters
+            </Box>
+          ) : (
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={(() => {
+                    const months = [
+                      "January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"
+                    ];
+                    const companies = [
+                      ...new Set(monthlyManpower.map(item => item.company_name))
+                    ];
+                    const grouped = {};
+                    monthlyManpower.forEach(item => {
+                      const key = `${item.year}-${item.month_name}`;
+                      if (!grouped[key]) {
+                        grouped[key] = { year: item.year, month_name: item.month_name };
+                      }
+                      grouped[key][item.company_name] = item.total_monthly_safety_manpower;
+                    });
+                    const sorted = Object.values(grouped).sort((a, b) => {
+                      if (a.year !== b.year) return a.year - b.year;
+                      return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+                    });
+                    return sorted.map(row => ({
+                      ...row,
+                      label: `${row.month_name} ${row.year}`,
+                    }));
+                  })()}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
+                  <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
+                  <Tooltip />
+                  <Legend />
+                  {[
+                    ...new Set(monthlyManpower.map(item => item.company_name))
+                  ].map((company, idx) => (
+                    <Line
+                      key={company}
+                      type="monotone"
+                      dataKey={company}
+                      stroke={COLORS[idx % COLORS.length]}
+                      dot={{ fill: COLORS[idx % COLORS.length] }}
+                      name={company}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          )}
+        </Box>
+
+        {/* Monthly Manhour */}
+        <Box
+          sx={{
+            backgroundColor: "white",
+            p: 1.5,
+            borderRadius: 2,
+            boxShadow: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            height: "100%",
+            width: "100%",
+            maxWidth: "800px",
+            cursor: "pointer",
+            transition: "box-shadow 0.2s",
+            overflow: "hidden",
+          }}
+          onClick={() =>
+            openZoomModal(
+              "Monthly Safety Manhours (per Company)",
+              "monthly-manhour-per-company",
+              () => (
+                <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                  <Box sx={{ flex: 1, minHeight: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={(() => {
+                          // Prepare data: group by year and month, each company as a line
+                          const months = [
+                            "January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December"
+                          ];
+                          const companies = [
+                            ...new Set(monthlyManhour.map(item => item.company_name))
+                          ];
+                          const grouped = {};
+                          monthlyManhour.forEach(item => {
+                            const key = `${item.year}-${item.month_name}`;
+                            if (!grouped[key]) {
+                              grouped[key] = { year: item.year, month_name: item.month_name };
+                            }
+                            grouped[key][item.company_name] = item.manhours;
+                          });
+                          const sorted = Object.values(grouped).sort((a, b) => {
+                            if (a.year !== b.year) return a.year - b.year;
+                            return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+                          });
+                          return sorted.map(row => ({
+                            ...row,
+                            label: `${row.month_name} ${row.year}`,
+                          }));
+                        })()}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
+                        <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
+                        <Tooltip />
+                        <Legend />
+                        {[
+                          ...new Set(monthlyManhour.map(item => item.company_name))
+                        ].map((company, idx) => (
+                          <Line
+                            key={company}
+                            type="monotone"
+                            dataKey={company}
+                            stroke={COLORS[idx % COLORS.length]}
+                            dot={{ fill: COLORS[idx % COLORS.length] }}
+                            name={company}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </Box>
+              )
+            )
+          }
+          onMouseOver={e => {
+            e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+          }}
+          title="Click to enlarge"
+        >
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 600,
+              mb: 1,
+              color: "#1e293b",
+              flexShrink: 0,
+            }}
+          >
+            Monthly Safety Manhours (per Company)
+          </Typography>
+          {!monthlyManhour || monthlyManhour.length === 0 ? (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 4,
+                color: "#64748b",
+                backgroundColor: "#f8fafc",
+                borderRadius: 1,
+                fontSize: "12px",
+                flex: 1,
+              }}
+            >
+              No data available for selected filters
+            </Box>
+          ) : (
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={(() => {
+                    const months = [
+                      "January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"
+                    ];
+                    const companies = [
+                      ...new Set(monthlyManhour.map(item => item.company_name))
+                    ];
+                    const grouped = {};
+                    monthlyManhour.forEach(item => {
+                      const key = `${item.year}-${item.month_name}`;
+                      if (!grouped[key]) {
+                        grouped[key] = { year: item.year, month_name: item.month_name };
+                      }
+                      grouped[key][item.company_name] = item.manhours;
+                    });
+                    const sorted = Object.values(grouped).sort((a, b) => {
+                      if (a.year !== b.year) return a.year - b.year;
+                      return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+                    });
+                    return sorted.map(row => ({
+                      ...row,
+                      label: `${row.month_name} ${row.year}`,
+                    }));
+                  })()}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
+                  <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
+                  <Tooltip />
+                  <Legend />
+                  {[
+                    ...new Set(monthlyManhour.map(item => item.company_name))
+                  ].map((company, idx) => (
+                    <Line
+                      key={company}
+                      type="monotone"
+                      dataKey={company}
+                      stroke={COLORS[idx % COLORS.length]}
+                      dot={{ fill: COLORS[idx % COLORS.length] }}
+                      name={company}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          )}
+        </Box>
+
+        {/* Incident Count */}
+        <Box
+          sx={{
+            backgroundColor: "white",
+            p: 1.5,
+            borderRadius: 2,
+            boxShadow: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            height: "100%",
+            cursor: "pointer",
+            transition: "box-shadow 0.2s",
+            width: "100%",
+            maxWidth: "100%",
+            overflow: "hidden",
+          }}
+          onClick={() =>
+            openZoomModal(
+              "Incidents Count",
+              "incidents-count",
+              () => (
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Box sx={{ flex: 1, minHeight: 400 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={transformIncidentData(incidentCount)}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="month"
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis allowDecimals={false} domain={[0, "dataMax + 2"]} />
+                        <Tooltip />
+                        <Legend />
+                        {getIncidentTypes(incidentCount).map((type, idx) => (
+                          <Bar
+                            key={type}
+                            dataKey={type}
+                            stackId="a"
+                            fill={barColors[idx % barColors.length]}
+                            name={type}
+                            barSize={12}
+                          />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </Box>
+              )
+            )
+          }
+          onMouseOver={e => {
+            e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
+          }}
+          onMouseOut={e => {
+            e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+          }}
+          title="Click to enlarge"
+        >
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 600,
+              mb: 1,
+              color: "#1e293b",
+              flexShrink: 0,
+            }}
+          >
+            Incidents Count
+          </Typography>
+          {!incidentCount || incidentCount.length === 0 ? (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 4,
+                color: "#64748b",
+                backgroundColor: "#f8fafc",
+                borderRadius: 1,
+                fontSize: "12px",
+                flex: 1,
+              }}
+            >
+              No data available for selected filters
+            </Box>
+          ) : (
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={transformIncidentData(incidentCount)}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="month"
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis allowDecimals={false} domain={[0, "dataMax + 2"]} />
+                  <Tooltip />
+                  <Legend />
+                  {getIncidentTypes(incidentCount).map((type, idx) => (
+                    <Bar
+                      key={type}
+                      dataKey={type}
+                      stackId="a"
+                      fill={barColors[idx % barColors.length]}
+                      name={type}
+                      barSize={12}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
+          )}
+        </Box>
+
+          {/* Bottom charts: span all 3 columns */}
+          <Box
+            sx={{
+              gridColumn: "1 / span 3",
+              display: "flex",
+              justifyContent: "center",
+              gap: 2,
+              minHeight: 0,
+              height: "40vh",
+              mt: 2,
+            }}
+          >
+            
           {/* Gender Distribution */}
+          
           <Box
             sx={{
               backgroundColor: "white",
@@ -438,6 +997,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                             cx="50%"
                             cy="50%"
                             labelLine={false}
+                            label={({ name, percent }) =>
+                              `${name}: ${(percent * 100).toFixed(0)}%`
+                            }
                             outerRadius="80%"
                             innerRadius="40%"
                             fill="#8884d8"
@@ -505,6 +1067,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
+                      label={({ name, percent }) =>
+                        `${name}: ${(percent * 100).toFixed(0)}%`
+                      }
                       outerRadius="80%"
                       innerRadius="40%"
                       fill="#8884d8"
@@ -527,7 +1092,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             )}
           </Box>
 
-          {/* Types of Leaves Taken Per Year */}
+          
           <Box
             sx={{
               backgroundColor: "white",
@@ -538,117 +1103,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               flexDirection: "column",
               minHeight: 0,
               height: "100%",
-              cursor: "pointer",
-              transition: "box-shadow 0.2s",
               width: "100%",
-              maxWidth: "100%",
-              overflow: "hidden",
-            }}
-            onClick={() =>
-              openZoomModal(
-                "Types of Leaves Taken Per Year",
-                "leave-types",
-                () => (
-                  <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-                    <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={leaveTypes}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="year" />
-                          <YAxis />
-                          <Tooltip itemStyle={{ color: "#000" }} />
-                          <Legend iconType="square" />
-                          <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
-                          <Bar dataKey="Paternity" stackId="a" fill="#ffa726" name="Paternity" />
-                          <Bar dataKey="Maternity" stackId="a" fill="#66bb6a" name="Maternity" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
-                )
-              )
-            }
-            onMouseOver={e => {
-              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-            title="Click to enlarge"
-          >
-            <Typography
-              sx={{
-                fontSize: "13px",
-                fontWeight: 600,
-                mb: 1,
-                color: "#1e293b",
-                flexShrink: 0,
-              }}
-            >
-              Types of Leaves Taken Per Year
-            </Typography>
-            {!leaveTypes || leaveTypes.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 4,
-                  color: "#64748b",
-                  backgroundColor: "#f8fafc",
-                  borderRadius: 1,
-                  fontSize: "12px",
-                  flex: 1,
-                }}
-              >
-                No data available for selected filters
-              </Box>
-            ) : (
-              <Box sx={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={leaveTypes}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis />
-                    <Tooltip itemStyle={{ color: "#000" }} />
-                    <Legend iconType="square" />
-                    <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
-                    <Bar dataKey="Paternity" stackId="a" fill="#ffa726" name="Paternity" />
-                    <Bar dataKey="Maternity" stackId="a" fill="#66bb6a" name="Maternity" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
-          </Box>
-
-          {/* Bottom charts: span all 3 columns */}
-          <Box
-            sx={{
-              gridColumn: "1 / -1",
-              display: "flex",
-              justifyContent: "center",
-              gap: 2,
-              minHeight: 0,
-              height: "40vh",
-              mt: 2,
-            }}
-          >
-            {/* Employee Count Per Company */}
-            <Box
-              sx={{
-                backgroundColor: "white",
-                p: 1.5,
-                borderRadius: 2,
-                boxShadow: 1,
-                display: "flex",
-                flexDirection: "column",
-                minHeight: 0,
-                height: "100%",
-                width: "100%",
                 maxWidth: "800px",
                 cursor: "pointer",
                 transition: "box-shadow 0.2s",
@@ -740,114 +1195,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 </Box>
               )}
             </Box>
-
-            {/* Parental Leaves Per Year */}
-            <Box
-              sx={{
-                backgroundColor: "white",
-                p: 1.5,
-                borderRadius: 2,
-                boxShadow: 1,
-                display: "flex",
-                flexDirection: "column",
-                minHeight: 0,
-                height: "100%",
-                width: "100%",
-                maxWidth: "800px",
-                cursor: "pointer",
-                transition: "box-shadow 0.2s",
-                overflow: "hidden",
-              }}
-              onClick={() =>
-                openZoomModal(
-                  "Parental Leaves Per Year",
-                  "parental-leaves",
-                  () => (
-                    <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-                      <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={leaveSeasons}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="year" />
-                            <YAxis domain={[0, "auto"]} />
-                            <Tooltip formatter={value => `${value} leaves`} itemStyle={{ color: "#000" }} />
-                            <Legend />
-                            <Line
-                              type="monotone"
-                              dataKey="leave_count"
-                              stroke="#1976d2"
-                              dot={{ fill: "#1976d2" }}
-                              name="Leave Count"
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </Box>
-                  )
-                )
-              }
-              onMouseOver={e => {
-                e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
-              }}
-              onMouseOut={e => {
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-              }}
-              title="Click to enlarge"
-            >
-              <Typography
-                sx={{
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  mb: 1,
-                  color: "#1e293b",
-                  flexShrink: 0,
-                }}
-              >
-                Parental Leaves Per Year
-              </Typography>
-              {!leaveSeasons || leaveSeasons.length === 0 ? (
-                <Box
-                  sx={{
-                    textAlign: "center",
-                    py: 4,
-                    color: "#64748b",
-                    backgroundColor: "#f8fafc",
-                    borderRadius: 1,
-                    fontSize: "12px",
-                    flex: 1,
-                  }}
-                >
-                  No data available for selected filters
-                </Box>
-              ) : (
-                <Box sx={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={leaveSeasons}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="year" />
-                      <YAxis domain={[0, "auto"]} />
-                      <Tooltip formatter={value => `${value} leaves`} itemStyle={{ color: "#000" }} />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="leave_count"
-                        stroke="#1976d2"
-                        dot={{ fill: "#1976d2" }}
-                        name="Leave Count"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              )}
-            </Box>
           </Box>
-        </Box>
+        </Box> 
 
         <ZoomModal
           open={zoomModal.open}
@@ -862,617 +1211,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             ? zoomModal.content()
             : zoomModal.content}
         </ZoomModal>
-      </Box>
+      </Box> 
     </Box>
   );
-
-  // return (
-  //   <Box sx={{ display: "flex", height: "100vh" }}>
-  //     <Box
-  //       sx={{
-  //         flexGrow: 1,
-  //         display: "flex",
-  //         flexDirection: "column",
-  //         height: "100%",
-  //       }}
-  //     >
-  //       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-  //         <Filter
-  //           label="Company"
-  //           options={[{ label: "All Companies", value: "" }, ...companyOptions]}
-  //           value={filters.company_name}
-  //           onChange={(val) => {
-  //             setFilters((prev) => ({ ...prev, company_name: val }));
-  //             setPage(1);
-  //           }}
-  //           placeholder="Company"
-  //         />
-
-  //         <Filter
-  //           label="Gender"
-  //           options={[{ label: "All Genders", value: "" }, ...genderOptions]}
-  //           value={filters.gender}
-  //           onChange={(val) => {
-  //             setFilters((prev) => ({ ...prev, gender: val }));
-  //             setPage(1);
-  //           }}
-  //           placeholder="Gender"
-  //         />
-
-  //         <Filter
-  //           label="Position"
-  //           options={[{ label: "All Position", value: "" }, ...positionOptions]}
-  //           value={filters.position_id}
-  //           onChange={(val) => {
-  //             setFilters((prev) => ({ ...prev, position_id: val }));
-  //             setPage(1);
-  //           }}
-  //           placeholder="Position"
-  //         />
-
-  //         <Filter
-  //           label="Employement Category"
-  //           options={[
-  //             { label: "All Employement Category", value: "" },
-  //             ...employementCategoryOptions,
-  //           ]}
-  //           value={filters.p_np}
-  //           onChange={(val) => {
-  //             setFilters((prev) => ({ ...prev, p_np: val }));
-  //             setPage(1);
-  //           }}
-  //           placeholder="Employement Category"
-  //         />
-
-  //         <Filter
-  //           label="Employement Status"
-  //           options={[
-  //             { label: "All Employement Status", value: "" },
-  //             ...employementStatusOptions,
-  //           ]}
-  //           value={filters.employment_status}
-  //           onChange={(val) => {
-  //             setFilters((prev) => ({ ...prev, employment_status: val }));
-  //             setPage(1);
-  //           }}
-  //           placeholder="Employement Status"
-  //         />
-
-  //         {isFiltering && (
-  //           <Button
-  //             variant="outline"
-  //             startIcon={<ClearIcon />}
-  //             sx={{
-  //               color: "#182959",
-  //               borderRadius: "999px",
-  //               padding: "9px 18px",
-  //               fontSize: "0.85rem",
-  //               fontWeight: "bold",
-  //             }}
-  //             onClick={() => {
-  //               setFilters({
-  //                 company_name: "",
-  //                 gender: "",
-  //                 position_id: "",
-  //                 p_np: "",
-  //                 employment_status: "",
-  //                 status_id: "",
-  //               });
-  //               setPage(1);
-  //             }}
-  //           >
-  //             Clear Filters
-  //           </Button>
-  //         )}
-  //       </Box>
-  //       <Box sx={{ display: "flex", height: "120px", gap: 2, mb: 3 }}>
-  //         <KPIIndicatorCard
-  //           value={totalEmployees}
-  //           label="TOTAL ACTIVE WORKFORCE"
-  //           variant="outlined"
-  //         />
-  //         <KPIIndicatorCard
-  //           value={avgTenure}
-  //           label="AVERAGE TENURE RATE"
-  //           variant="filled"
-  //         />
-  //         {/* <KPIIndicatorCard
-  //           value={attritionRate} // get overall or latest year???
-  //           label="ATTRITION RATE"
-  //           variant="outlined"
-  //         /> */}
-  //       </Box>
-  //       <Modal open={openModal} onClose={handleClose}>
-  //         <Box
-  //           sx={{
-  //             position: "absolute",
-  //             top: "50%",
-  //             left: "50%",
-  //             transform: "translate(-50%, -50%)",
-  //             width: "90%",
-  //             maxWidth: 1000,
-  //             bgcolor: "#fff",
-  //             borderRadius: 3,
-  //             p: 3,
-
-  //             boxShadow: 24,
-  //             outline: "none",
-  //           }}
-  //         >
-  //           <Box
-  //             sx={{
-  //               display: "flex",
-  //               justifyContent: "space-between",
-  //               alignItems: "center",
-  //               mb: 2, // margin below the header
-  //             }}
-  //           >
-  //             <Box sx={{ flexGrow: 1, textAlign: "center" }}>
-  //               <Typography variant="h6" sx={{ color: "#000" }}>
-  //                 {chartText}
-  //               </Typography>
-  //             </Box>
-
-  //             <IconButton
-  //               onClick={handleClose}
-  //               sx={{
-  //                 position: "relative", // relative to Box, not absolute
-  //                 zIndex: 10,
-  //               }}
-  //             >
-  //               <CloseIcon />
-  //             </IconButton>
-  //           </Box>
-
-  //           {activeChart === "employeeCountChart" && (
-  //             <ResponsiveContainer width="100%" height={500}>
-  //               <BarChart data={employeeCountByCompany}>
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="company" />
-  //                 <YAxis />
-  //                 <Tooltip />
-  //                 <Legend />
-  //                 <Bar dataKey="count" name="Employee Count">
-  //                   {employeeCountByCompany.map((entry, index) => (
-  //                     <Cell
-  //                       key={`cell-${index}`}
-  //                       fill={COLORS[index % COLORS.length]}
-  //                     />
-  //                   ))}
-  //                 </Bar>
-  //               </BarChart>
-  //             </ResponsiveContainer>
-  //           )}
-
-  //           {activeChart === "ageDistributionChart" && (
-  //             <ResponsiveContainer width="100%" height={400}>
-  //               <PieChart>
-  //                 <Pie
-  //                   data={ageDistribution}
-  //                   dataKey="count"
-  //                   nameKey="age_group"
-  //                   cx="50%"
-  //                   cy="50%"
-  //                   labelLine={false}
-  //                   outerRadius="80%"
-  //                   innerRadius="40%"
-  //                   fill="#8884d8"
-  //                   paddingAngle={2}
-  //                   startAngle={90}
-  //                   endAngle={450}
-  //                 >
-  //                   {ageDistribution.map((entry, index) => (
-  //                     <Cell
-  //                       key={`cell-${index}`}
-  //                       fill={COLORS[index % COLORS.length]}
-  //                       className="recharts-sector"
-  //                     />
-  //                   ))}
-  //                 </Pie>
-  //                 <Legend iconType="square" />
-  //                 <Tooltip formatter={(value, name) => [`${value}`, name]} />
-  //               </PieChart>
-  //             </ResponsiveContainer>
-  //           )}
-
-  //           {activeChart === "parentalLeavePerYearChart" && (
-  //             <ResponsiveContainer width="100%" height={400}>
-  //               <LineChart
-  //                 data={leaveSeasons}
-  //                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-  //               >
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="year" />
-  //                 <YAxis domain={[0, "auto"]} />
-  //                 <Tooltip
-  //                   formatter={(value) => `${value} leaves`}
-  //                   itemStyle={{
-  //                     color: "#000",
-  //                   }}
-  //                 />
-  //                 <Legend />
-  //                 <Line
-  //                   type="monotone"
-  //                   dataKey="leave_count"
-  //                   stroke="#1976d2"
-  //                   dot={{ fill: "#1976d2" }}
-  //                   name="Leave Count"
-  //                 />
-  //               </LineChart>
-  //             </ResponsiveContainer>
-  //           )}
-
-  //           {/* {activeChart === "attrtitionRatePerYearChart" && (
-  //             <ResponsiveContainer width="100%" height={400}>
-  //               <LineChart
-  //                 data={attritionData}
-  //                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-  //               >
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="year" />
-  //                 <YAxis
-  //                   domain={[0, "auto"]}
-  //                   tickFormatter={(value) => `${value}%`}
-  //                 />
-  //                 <Tooltip
-  //                   formatter={(value) => `${value}%`}
-  //                   itemStyle={{
-  //                     color: "#000",
-  //                   }}
-  //                 />
-  //                 <Legend />
-  //                 <Line
-  //                   type="monotone"
-  //                   dataKey="attrition_rate_percent"
-  //                   stroke="#ff7300"
-  //                   dot={{ fill: "#ff7300" }}
-  //                   name="Attrition Rate (%)"
-  //                 />
-  //               </LineChart>
-  //             </ResponsiveContainer>
-  //           )} */}
-
-  //           {activeChart === "genderDistributionChart" && (
-  //             <ResponsiveContainer width="100%" height={300}>
-  //               <BarChart data={transformed}>
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="position" />
-  //                 <YAxis />
-  //                 <Tooltip
-  //                   itemStyle={{
-  //                     color: "#000",
-  //                   }}
-  //                 />
-  //                 <Legend />
-  //                 <Bar dataKey="Male" fill="#4285F4" />
-  //                 <Bar dataKey="Female" fill="#EA4335" />
-  //               </BarChart>
-  //             </ResponsiveContainer>
-  //           )}
-
-  //           {activeChart === "typesOfLeaveTakenPerYearChart" && (
-  //             <ResponsiveContainer width="100%" height={300}>
-  //               <BarChart
-  //                 data={leaveTypes}
-  //                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-  //               >
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="year" />
-  //                 <YAxis />
-  //                 <Tooltip
-  //                   itemStyle={{
-  //                     color: "#000",
-  //                   }}
-  //                 />
-  //                 <Legend iconType="square" />
-  //                 <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
-  //                 <Bar
-  //                   dataKey="Paternity"
-  //                   stackId="a"
-  //                   fill="#ffa726"
-  //                   name="Paternity"
-  //                 />
-  //                 <Bar
-  //                   dataKey="Maternity"
-  //                   stackId="a"
-  //                   fill="#66bb6a"
-  //                   name="Maternity"
-  //                 />
-  //               </BarChart>
-  //             </ResponsiveContainer>
-  //           )}
-  //         </Box>
-  //       </Modal>
-
-  //       <Box
-  //         sx={{
-  //           display: "grid",
-  //           gridTemplateColumns: "1fr 1fr 1fr",
-  //           gridAutoRows: "1fr",
-  //           gap: 2,
-  //           minHeight: 320,
-  //           flexGrow: 1,
-  //         }}
-  //       >
-  //         <Paper
-  //           sx={{
-  //             p: 1,
-  //             textAlign: "center",
-  //             cursor: "pointer",
-  //             color: "#fff",
-  //           }}
-  //           onClick={() =>
-  //             handleOpen({
-  //               chartKey: "employeeCountChart",
-  //               chartText: "Employee Count Per Company",
-  //             })
-  //           }
-  //         >
-  //           <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-  //             Employee Count Per Company
-  //           </Typography>
-  //           <Box sx={{ height: 250 }}>
-  //             <ResponsiveContainer width="100%" height="100%">
-  //               <BarChart data={employeeCountByCompany}>
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="company" />
-  //                 <YAxis />
-  //                 <Tooltip />
-  //                 <Bar dataKey="count" name="Employee Count">
-  //                   {employeeCountByCompany.map((entry, index) => (
-  //                     <Cell
-  //                       key={`cell-${index}`}
-  //                       fill={COLORS[index % COLORS.length]}
-  //                       className="recharts-sector"
-  //                     />
-  //                   ))}
-  //                 </Bar>
-  //               </BarChart>
-  //             </ResponsiveContainer>
-  //           </Box>
-  //         </Paper>
-
-  //         <Paper
-  //           sx={{
-  //             p: 1,
-  //             textAlign: "center",
-  //             color: "#fff",
-  //           }}
-  //           onClick={() =>
-  //             handleOpen({
-  //               chartKey: "ageDistributionChart",
-  //               chartText: "Age Group Distribution",
-  //             })
-  //           }
-  //         >
-  //           <>
-  //             <style>
-  //               {`
-  //     .recharts-sector {
-  //       outline: none;
-  //     }
-  //   `}
-  //             </style>
-  //           </>
-  //           {/* Title outside ResponsiveContainer */}
-  //           <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-  //             Age Group Distribution
-  //           </Typography>
-
-  //           {/* Set a fixed height for the chart wrapper */}
-  //           <Box sx={{ height: 250 }}>
-  //             <ResponsiveContainer width="100%" height="100%">
-  //               <PieChart>
-  //                 <Pie
-  //                   data={ageDistribution}
-  //                   dataKey="count"
-  //                   nameKey="age_group"
-  //                   cx="50%"
-  //                   cy="50%"
-  //                   labelLine={false}
-  //                   outerRadius="80%"
-  //                   innerRadius="40%"
-  //                   fill="#8884d8"
-  //                   paddingAngle={2}
-  //                   startAngle={90}
-  //                   endAngle={450}
-  //                 >
-  //                   {ageDistribution.map((entry, index) => (
-  //                     <Cell
-  //                       key={`cell-${index}`}
-  //                       fill={COLORS[index % COLORS.length]}
-  //                       className="recharts-sector"
-  //                     />
-  //                   ))}
-  //                 </Pie>
-  //                 <Legend iconType="square" />
-  //                 <Tooltip formatter={(value, name) => [`${value}`, name]} />
-  //               </PieChart>
-  //             </ResponsiveContainer>
-  //           </Box>
-  //         </Paper>
-  //         <Paper
-  //           sx={{
-  //             p: 1,
-  //             textAlign: "center",
-
-  //             color: "#fff",
-  //           }}
-  //           onClick={() =>
-  //             handleOpen({
-  //               chartKey: "parentalLeavePerYearChart",
-  //               chartText: "Pareantal Leave Per Year",
-  //             })
-  //           }
-  //         >
-  //           <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-  //             Parental Leaves Per Year
-  //           </Typography>
-  //           <Box sx={{ height: 250 }}>
-  //             <ResponsiveContainer>
-  //               <LineChart
-  //                 data={leaveSeasons}
-  //                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-  //               >
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="year" />
-  //                 <YAxis domain={[0, "auto"]} />
-  //                 <Tooltip
-  //                   formatter={(value) => `${value} leaves`}
-  //                   itemStyle={{
-  //                     color: "#000",
-  //                   }}
-  //                 />
-  //                 <Legend />
-  //                 <Line
-  //                   type="monotone"
-  //                   dataKey="leave_count"
-  //                   stroke="#1976d2"
-  //                   dot={{ fill: "#1976d2" }}
-  //                   name="Leave Count"
-  //                 />
-  //               </LineChart>
-  //             </ResponsiveContainer>
-  //           </Box>
-  //         </Paper>
-
-  //         <Paper
-  //           sx={{
-  //             p: 1,
-  //             textAlign: "center",
-
-  //             color: "#fff",
-  //           }}
-  //           onClick={() =>
-  //             handleOpen({
-  //               chartKey: "attrtitionRatePerYearChart",
-  //               chartText: "Attrition Rate Per Year",
-  //             })
-  //           }
-  //         >
-  //           {/* <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-  //             Attrition Rate Per Year
-  //           </Typography>
-  //           <Box sx={{ height: 250 }}>
-  //             <ResponsiveContainer>
-  //               <LineChart
-  //                 data={attritionData}
-  //                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-  //               >
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="year" />
-  //                 <YAxis
-  //                   domain={[0, "auto"]}
-  //                   tickFormatter={(value) => `${value}%`}
-  //                 />
-  //                 <Tooltip
-  //                   formatter={(value) => `${value}%`}
-  //                   itemStyle={{
-  //                     color: "#000",
-  //                   }}
-  //                 />
-  //                 <Legend />
-  //                 <Line
-  //                   type="monotone"
-  //                   dataKey="attrition_rate_percent"
-  //                   stroke="#ff7300"
-  //                   dot={{ fill: "#ff7300" }}
-  //                   name="Attrition Rate (%)"
-  //                 />
-  //               </LineChart>
-  //             </ResponsiveContainer>
-  //           </Box>
-  //         </Paper>
-
-  //         <Paper
-  //           sx={{
-  //             p: 1,
-  //             textAlign: "center",
-
-  //             color: "#fff",
-  //           }}
-  //           onClick={() =>
-  //             handleOpen({
-  //               chartKey: "genderDistributionChart",
-  //               chartText: "Gender Distribution by Position",
-  //             })
-  //           }
-  //         > */}
-  //           <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-  //             Gender Distribution by Position
-  //           </Typography>
-  //           <Box sx={{ height: 250 }}>
-  //             <ResponsiveContainer width="100%" height={300}>
-  //               <BarChart data={transformed}>
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="position" />
-  //                 <YAxis />
-  //                 <Tooltip
-  //                   itemStyle={{
-  //                     color: "#000",
-  //                   }}
-  //                 />
-  //                 <Legend />
-  //                 <Bar dataKey="Male" fill="#4285F4" />
-  //                 <Bar dataKey="Female" fill="#EA4335" />
-  //               </BarChart>
-  //             </ResponsiveContainer>
-  //           </Box>
-  //         </Paper>
-  //         <Paper
-  //           sx={{
-  //             p: 1,
-  //             textAlign: "center",
-
-  //             color: "#fff",
-  //           }}
-  //           onClick={() =>
-  //             handleOpen({
-  //               chartKey: "typesOfLeaveTakenPerYearChart",
-  //               chartText: "Types of Leaves Taken Per Year",
-  //             })
-  //           }
-  //         >
-  //           {" "}
-  //           <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-  //             Types of Leaves Taken Per Year
-  //           </Typography>
-  //           <Box sx={{ height: 250 }}>
-  //             <ResponsiveContainer width="100%" height={300}>
-  //               <BarChart
-  //                 data={leaveTypes}
-  //                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-  //               >
-  //                 <CartesianGrid strokeDasharray="3 3" />
-  //                 <XAxis dataKey="year" />
-  //                 <YAxis />
-  //                 <Tooltip
-  //                   itemStyle={{
-  //                     color: "#000",
-  //                   }}
-  //                 />
-  //                 <Legend iconType="square" />
-  //                 <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
-  //                 <Bar
-  //                   dataKey="Paternity"
-  //                   stackId="a"
-  //                   fill="#ffa726"
-  //                   name="Paternity"
-  //                 />
-  //                 <Bar
-  //                   dataKey="Maternity"
-  //                   stackId="a"
-  //                   fill="#66bb6a"
-  //                   name="Maternity"
-  //                 />
-  //               </BarChart>
-  //             </ResponsiveContainer>
-  //           </Box>
-  //         </Paper>
-  //       </Box>
-  //     </Box>
-  //   </Box>
-  // );
 }
 
 const tableStyle = {
