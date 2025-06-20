@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import { 
   BarChart, 
@@ -143,6 +143,37 @@ function EnvironmentWasteDash() {
       content 
     });
   };
+
+  const pieContainerRef = useRef(null);
+  const [pieSize, setPieSize] = useState(200); // Default size
+
+  useEffect(() => {
+    function handleResize() {
+      if (pieContainerRef.current) {
+        const { width, height } = pieContainerRef.current.getBoundingClientRect();
+        // Use the smaller dimension for the pie size, minus some padding
+        const size = Math.max(80, Math.min(width, height) / 2 - 20);
+        setPieSize(size);
+      }
+    }
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const scaleSteps = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0];
+  const colorScaleRef = useRef(null);
+  const [barHeight, setBarHeight] = useState(15); // default
+
+  useEffect(() => {
+    if (colorScaleRef.current) {
+      const totalHeight = colorScaleRef.current.offsetHeight;
+      // Subtract a little for borders/padding if needed
+      const availableHeight = totalHeight - 8; // adjust as needed
+      setBarHeight(Math.max(8, availableHeight / scaleSteps.length));
+    }
+  }, [colorScaleRef.current, scaleSteps.length]);
+
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -1980,10 +2011,7 @@ function EnvironmentWasteDash() {
           {/* Year Range Filters (keep as single select) */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <SingleSelectDropdown
-              options={[
-                { value: '', label: 'From Year' },
-                ...activeYears.map(year => ({ value: year, label: year.toString() }))
-              ]}
+              options={activeYears.map(year => ({ value: year, label: year.toString() }))}
               selectedValue={fromYear}
               onChange={(value) => setFromYear(value)}
             />
@@ -1991,20 +2019,17 @@ function EnvironmentWasteDash() {
             <span style={{ color: '#64748b', fontSize: '12px', fontWeight: '500' }}>to</span>
 
             <SingleSelectDropdown
-              options={[
-                { value: '', label: 'To Year' },
-                ...activeYears.filter(year => !fromYear || year >= parseInt(fromYear)).map(year => ({ value: year, label: year.toString() }))
-              ]}
+              options={activeYears.filter(year => !fromYear || year >= parseInt(fromYear)).map(year => ({ value: year, label: year.toString() }))}
               selectedValue={toYear}
               onChange={(value) => setToYear(value)}
             />
           </div>
 
-          {/* Clear All Filters Button */}
+          {/* Clear All Filters Button - Updated condition */}
           {((Array.isArray(companyId) && companyId.length > 0) || 
             (Array.isArray(quarter) && quarter.length > 0) || 
-            (fromYear !== activeYears[0]) || 
-            (toYear !== activeYears[activeYears.length - 1]) || 
+            (fromYear !== (activeYears[0] || '')) || 
+            (toYear !== (activeYears[activeYears.length - 1] || '')) || 
             (Array.isArray(wasteType) && wasteType.length > 0) || 
             (Array.isArray(metricsType) && metricsType.length > 0) || 
             (unit !== 'Kilogram')) && (
@@ -2098,99 +2123,294 @@ function EnvironmentWasteDash() {
           flex: 1,
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
-          gridTemplateRows: 'auto',
+          gridTemplateRows: activeTab === 'non_hazardous_generated' ? 'auto' : '1fr 1fr',
           gap: '15px',
           minHeight: 0,
           position: 'relative'
         }}>
+          {/* Distribution Pie Chart - Spans 2 rows in column 1 */}
+          <div style={{ 
+            gridColumn: '1',
+            gridRow: activeTab === 'non_hazardous_generated' ? '1 / 2' : '1 / 3',
+            backgroundColor: 'white', 
+            padding: '12px', 
+            borderRadius: '8px', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            minHeight: 0
+          }}>
+            {/* Zoom button */}
+            <IconButton
+              onClick={() => openZoomModal(
+                `Distribution of ${
+                  activeTab === 'hazardous_generated' ? 'Hazardous Generated' : 
+                  activeTab === 'hazardous_disposed' ? 'Hazardous Disposed' : 
+                  'Non-Hazardous Generated'
+                } Waste by Company (${unit})`,
+                `${activeTab}-distribution-pie-chart`,
+                <div style={{ width: '100%', height: '500px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ flex: 1, minHeight: 400 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={currentData.pieData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={180}
+                          innerRadius={60}
+                          fill="#8884d8"
+                          dataKey="value"
+                          paddingAngle={2}
+                          startAngle={90}
+                          endAngle={450}
+                        >
+                          {currentData.pieData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color || COLORS[index % COLORS.length]} 
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip content={renderCustomTooltip} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '12px',
+                    fontSize: '14px',
+                    marginTop: '20px',
+                    padding: '20px',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '8px'
+                  }}>
+                    {currentData.pieData.map((entry, index) => (
+                      <div
+                        key={index}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          padding: '8px',
+                          backgroundColor: 'white',
+                          borderRadius: '6px',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                        }}
+                      >
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          backgroundColor: entry.color || COLORS[index % COLORS.length],
+                          borderRadius: '3px',
+                          flexShrink: 0
+                        }}></div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '600', marginBottom: '2px' }}>{entry.label}</div>
+                          <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                            {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'} ({entry.percentage}%)
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+              size="small"
+            >
+              <ZoomInIcon fontSize="small" />
+            </IconButton>
+            <h3 style={{
+              fontSize: '13px',
+              fontWeight: '600',
+              marginBottom: '10px',
+              color: '#1e293b',
+              flexShrink: 0
+            }}>
+              Distribution of Hazardous Waste {
+                activeTab === 'hazardous_generated' ? 'Generated' : 
+                activeTab === 'hazardous_disposed' ? 'Disposed' : ''
+              } by Company ({unit})
+            </h3>
+
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              {/* Show loading state */}
+              {loading ? (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '200px',
+                  color: '#64748b',
+                  fontSize: '14px'
+                }}>
+                  Loading chart data...
+                </div>
+              ) : currentData.pieData.length === 0 ? (
+                // Show no data message
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '200px',
+                  color: '#64748b',
+                  fontSize: '14px',
+                  textAlign: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                    <div>No data available</div>
+                    <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                      Try adjusting your filters
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Show pie chart
+                <div ref={pieContainerRef} style={{ width: '100%', height: '100%' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={currentData.pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={pieSize}
+                        innerRadius={pieSize * 0.4}
+                        fill="#8884d8"
+                        dataKey="value"
+                        paddingAngle={2}
+                        startAngle={90}
+                        endAngle={450}
+                      >
+                        {currentData.pieData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color || COLORS[index % COLORS.length]} 
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip content={renderCustomTooltip} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Legend - only show if there's data */}
+              {!loading && currentData.pieData.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  fontSize: '10px',
+                  flexShrink: 0,
+                  marginTop: '8px'
+                }}>
+                  {currentData.pieData.map((entry, index) => (
+                    <div
+                      key={index}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px'
+                      }}
+                    >
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: entry.color || COLORS[index % COLORS.length],
+                        borderRadius: '1px',
+                        flexShrink: 0
+                      }}></div>
+                      <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                        {entry.label}: {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {activeTab !== 'non_hazardous_generated' && (
             <>
+              {/* Line Chart - Spans 2 columns in row 1 */}
               <div style={{ 
-                backgroundColor: 'white', 
-                padding: '12px', 
-                borderRadius: '8px', 
+                gridColumn: '2 / 4',
+                gridRow: '1',
+                backgroundColor: 'white',
+                padding: '12px',
+                borderRadius: '8px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
                 minHeight: 0
               }}>
-                {/* Zoom button */}
                 <IconButton
                   onClick={() => openZoomModal(
-                    `Distribution of ${
-                      activeTab === 'hazardous_generated' ? 'Hazardous Generated' : 
-                      activeTab === 'hazardous_disposed' ? 'Hazardous Disposed' : 
-                      'Non-Hazardous Generated'
-                    } Waste by Company (${unit})`,
-                    `${activeTab}-distribution-pie-chart`,
-                    <div style={{ width: '100%', height: '500px', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ flex: 1, minHeight: 400 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={currentData.pieData}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={180}
-                              innerRadius={60}
-                              fill="#8884d8"
-                              dataKey="value"
-                              paddingAngle={2}
-                              startAngle={90}
-                              endAngle={450}
-                            >
-                              {currentData.pieData.map((entry, index) => (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={entry.color || COLORS[index % COLORS.length]} 
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip content={renderCustomTooltip} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '12px',
-                        fontSize: '14px',
-                        marginTop: '20px',
-                        padding: '20px',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '8px'
-                      }}>
-                        {currentData.pieData.map((entry, index) => (
-                          <div
-                            key={index}
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '8px',
-                              padding: '8px',
-                              backgroundColor: 'white',
-                              borderRadius: '6px',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                    `${activeTab === 'hazardous_generated' ? 'Hazardous Generated' : 'Hazardous Disposed'} Waste Trends Over Time (${unit})`,
+                    `${activeTab}-trends-line-chart`,
+                    <div style={{ width: '100%', height: '500px', marginTop: 40  }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart 
+                          data={currentData.lineChartData}
+                          margin={{ top: 20, right: 100, left: 20, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="year" 
+                            tick={{ fontSize: 12, fill: '#64748b' }}
+                            padding={{ left: 20, right: 20, top: 20 }} // <-- Add horizontal space
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) {
+                                return `${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `${(value / 1000).toFixed(0)}K`;
+                              } else {
+                                return value.toString();
+                              }
                             }}
-                          >
-                            <div style={{
-                              width: '16px',
-                              height: '16px',
-                              backgroundColor: entry.color || COLORS[index % COLORS.length],
-                              borderRadius: '3px',
-                              flexShrink: 0
-                            }}></div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: '600', marginBottom: '2px' }}>{entry.label}</div>
-                              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'} ({entry.percentage}%)
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          />
+                          <Tooltip content={renderLineChartTooltip}/>
+                          <Legend
+                            layout="vertical"
+                            align="right"
+                            verticalAlign="middle"
+                            wrapperStyle={{
+                              fontSize: '16px',
+                              marginLeft: 24,
+                              paddingLeft: 24
+                            }}
+                          />
+                          {activeWasteType.map((wasteType, index) => (
+                            <Line
+                              key={wasteType}
+                              type="monotone"
+                              dataKey={wasteType}
+                              stroke={wasteTypeColors[wasteType] || COLORS[index % COLORS.length]}
+                              strokeWidth={3}
+                              dot={{ fill: wasteTypeColors[wasteType] || COLORS[index % COLORS.length], strokeWidth: 2, r: 5 }}
+                              name={wasteTypeShortNames[wasteType] || wasteType}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   )}
                   sx={{
@@ -2205,45 +2425,268 @@ function EnvironmentWasteDash() {
                 >
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
-                <h3 style={{
-                  fontSize: '13px',
-                  fontWeight: '600',
+                <h3 style={{ 
+                  fontSize: '13px', 
+                  fontWeight: '600', 
                   marginBottom: '10px',
                   color: '#1e293b',
                   flexShrink: 0
                 }}>
-                  Distribution of Hazardous Waste {
-                    activeTab === 'hazardous_generated' ? 'Generated' : 
-                    activeTab === 'hazardous_disposed' ? 'Disposed' : ''
-                  } by Company ({unit})
+                  Hazardous Waste {activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Over Time ({unit})
                 </h3>
-
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                  {/* Show loading state */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
                   {loading ? (
                     <div style={{
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      height: '200px',
+                      height: '100%',
                       color: '#64748b',
                       fontSize: '14px'
                     }}>
                       Loading chart data...
                     </div>
-                  ) : currentData.pieData.length === 0 ? (
-                    // Show no data message
+                  ) : currentData.lineChartData.length === 0 ? (
                     <div style={{
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      height: '200px',
+                      height: '100%',
                       color: '#64748b',
                       fontSize: '14px',
                       textAlign: 'center'
                     }}>
                       <div>
-                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+                        <div>No line chart data available</div>
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Try adjusting your filters
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ flex: 1, minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={currentData.lineChartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="year" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                            if (value >= 1000000) {
+                              return `${(value / 1000000).toFixed(1)}M`;
+                            } else if (value >= 1000) {
+                              return `${(value / 1000).toFixed(0)}K`;
+                            } else {
+                              return value.toString();
+                            }
+                          }}
+                          />
+                          <Tooltip content={renderLineChartTooltip}/>
+                          <Legend
+                            layout="vertical"
+                            align="right"
+                            verticalAlign="middle"
+                            wrapperStyle={{
+                              fontSize: '12px',
+                              marginLeft: 24,
+                              paddingLeft: 24
+                            }}
+                          />
+                          
+                          {/* Dynamically render lines based on available companies */}
+                          {activeWasteType.map((wasteType, index) => (
+                            <Line
+                              key={wasteType}
+                              type="monotone"
+                              dataKey={wasteType}
+                              stroke={wasteTypeColors[wasteType] || COLORS[index % COLORS.length]}
+                              strokeWidth={2}
+                              dot={{ fill: wasteTypeColors[wasteType] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
+                              name={wasteTypeShortNames[wasteType] || wasteType}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+
+              {/* Waste Type Pie Chart - Row 2, Column 2 */}
+              <div style={{
+                gridColumn: '2',
+                gridRow: '2',
+                backgroundColor: 'white',
+                padding: '12px',
+                borderRadius: '8px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                minHeight: 0
+              }}>
+                <IconButton
+                  onClick={() => openZoomModal(
+                    `Hazard Waste ${activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Composition by Type (${unit})`,
+                    `${activeTab}-waste-type-composition-pie-chart`,
+                    <div style={{ width: '100%', height: '500px', display: 'flex', alignItems: 'center', gap: '40px', marginTop: 30 }}>
+                      <div ref={pieContainerRef} style={{ width: '100%', height: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={currentData.pieTypeData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={250}
+                              innerRadius={100}
+                              fill="#8884d8"
+                              dataKey="value"
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
+                            >
+                              {currentData.pieTypeData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={entry.color || COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (!active || !payload || payload.length === 0) return null;
+                                const data = payload[0];
+                                const name = data.payload.name || 'Unknown';
+                                const value = data.payload.value || 0;
+                                const total = currentData.pieTypeData.reduce((sum, item) => sum + (item.value || 0), 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                return (
+                                  <div style={{
+                                    backgroundColor: 'white',
+                                    padding: '12px 16px',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '6px',
+                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                    fontSize: '14px'
+                                  }}>
+                                    <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{name}</p>
+                                    <p style={{ margin: 0, color: data.payload.color }}>
+                                      {value.toLocaleString()} {unit}
+                                    </p>
+                                    <p style={{ margin: 0, color: '#64748b', marginTop: '2px' }}>
+                                      {percentage}% of total
+                                    </p>
+                                  </div>
+                                );
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        minWidth: '300px',
+                        fontSize: '14px'
+                      }}>
+                        <h4 style={{ margin: 0, marginBottom: '8px', fontSize: '16px', fontWeight: '600' }}>Waste Type Breakdown</h4>
+                        {currentData.pieTypeData.map((entry, index) => {
+                          const total = currentData.pieTypeData.reduce((sum, item) => sum + (item.value || 0), 0);
+                          const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
+                          return (
+                            <div key={index} style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              backgroundColor: '#f9fafb',
+                              border: '1px solid #e5e7eb'
+                            }}>
+                              <div style={{
+                                width: '20px',
+                                height: '20px',
+                                backgroundColor: entry.color || COLORS[index % COLORS.length],
+                                borderRadius: '4px',
+                                flexShrink: 0
+                              }}></div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: '600', marginBottom: '4px' }}>{entry.name}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                  {(entry.value || 0).toLocaleString()} {unit} ({percentage}%)
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                  size="small"
+                >
+                  <ZoomInIcon fontSize="small" />
+                </IconButton>
+                <h3
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    marginBottom: '10px',
+                    color: '#1e293b',
+                    flexShrink: 0,
+                  }}
+                >
+                  Hazard Waste {activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Composition by Type ({unit})
+                </h3>
+
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
+                  {loading ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        width: '100%',
+                        color: '#64748b',
+                        fontSize: '14px',
+                      }}
+                    >
+                      Loading chart data...
+                    </div>
+                  ) : !currentData.pieTypeData || currentData.pieTypeData.length === 0 ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '250px',
+                        width: '100%',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>🥧</div>
                         <div>No data available</div>
                         <div style={{ fontSize: '12px', marginTop: '4px' }}>
                           Try adjusting your filters
@@ -2251,514 +2694,159 @@ function EnvironmentWasteDash() {
                       </div>
                     </div>
                   ) : (
-                    // Show pie chart
-                    <div style={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={currentData.pieData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={200}
-                            innerRadius={70}
-                            fill="#8884d8"
-                            dataKey="value"
-                            paddingAngle={2}
-                            startAngle={90}
-                            endAngle={450}
-                          >
-                            {currentData.pieData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={entry.color || COLORS[index % COLORS.length]} 
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip content={renderCustomTooltip} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
+                    <>
+                      {/* Pie Chart Container */}
+                      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={currentData.pieTypeData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={(pieSize * 0.9) - 65}
+                              innerRadius={pieSize * 0.25}
+                              fill="#8884d8"
+                              dataKey="value"
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
+                            >
+                              {currentData.pieTypeData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={entry.color || COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (!active || !payload || payload.length === 0) {
+                                  return null;
+                                }
 
-                  {/* Legend - only show if there's data */}
-                  {!loading && currentData.pieData.length > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                      fontSize: '10px',
-                      flexShrink: 0,
-                      marginTop: '8px'
-                    }}>
-                      {currentData.pieData.map((entry, index) => (
-                        <div
-                          key={index}
-                          style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '4px'
-                          }}
-                        >
-                          <div style={{
-                            width: '8px',
-                            height: '8px',
-                            backgroundColor: entry.color || COLORS[index % COLORS.length],
-                            borderRadius: '1px',
-                            flexShrink: 0
-                          }}></div>
-                          <span style={{ fontWeight: '500', fontSize: '9px' }}>
-                            {entry.label}: {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '15px',
-                minHeight: '300px',  // Ensure a visible minimum height
-                height: '100%'       // Allow the chart to scale with the container
-              }}>
-                <div
-                  style={{
-                    backgroundColor: 'white',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1,
-                    minHeight: 0,
-                    position: 'relative',
-                    height: '100%'
-                  }}
-                >
-                  <IconButton
-                    onClick={() => openZoomModal(
-                      `Hazard Waste ${activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Composition by Type (${unit})`,
-                      `${activeTab}-composition-pie-chart`,
-                      <div style={{ width: '100%', height: '500px', display: 'flex', alignItems: 'center', gap: '40px', marginTop: 30 }}>
-                        <div style={{ flex: 1, height: '100%' }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={currentData.pieTypeData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={250}
-                                innerRadius={100}
-                                fill="#8884d8"
-                                dataKey="value"
-                                paddingAngle={2}
-                                startAngle={90}
-                                endAngle={450}
-                              >
-                                {currentData.pieTypeData.map((entry, index) => (
-                                  <Cell
-                                    key={`cell-${index}`}
-                                    fill={entry.color || COLORS[index % COLORS.length]}
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip 
-                                content={({ active, payload }) => {
-                                  if (!active || !payload || payload.length === 0) return null;
+                                try {
                                   const data = payload[0];
+                                  if (!data || !data.payload) {
+                                    return null;
+                                  }
+
                                   const name = data.payload.name || 'Unknown';
                                   const value = data.payload.value || 0;
+                                  const color = data.payload.color || '#3B82F6';
+                                  
+                                  // Calculate percentage
                                   const total = currentData.pieTypeData.reduce((sum, item) => sum + (item.value || 0), 0);
                                   const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+
                                   return (
                                     <div style={{
                                       backgroundColor: 'white',
-                                      padding: '12px 16px',
+                                      padding: '8px 12px',
                                       border: '1px solid #ccc',
-                                      borderRadius: '6px',
-                                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                                      fontSize: '14px'
+                                      borderRadius: '4px',
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                      fontSize: '12px',
+                                      zIndex: 1000,
+                                      pointerEvents: 'none'
                                     }}>
-                                      <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{name}</p>
-                                      <p style={{ margin: 0, color: data.payload.color }}>
-                                        {value.toLocaleString()} {unit}
+                                      <p style={{ margin: 0, fontWeight: 'bold' }}>{name}</p>
+                                      <p style={{ margin: 0, color: color }}>
+                                        {value.toLocaleString()} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
                                       </p>
-                                      <p style={{ margin: 0, color: '#64748b', marginTop: '2px' }}>
+                                      <p style={{ margin: 0, color: '#64748b' }}>
                                         {percentage}% of total
                                       </p>
                                     </div>
                                   );
-                                }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div style={{
+                                } catch (error) {
+                                  console.error('Tooltip error:', error);
+                                  return null;
+                                }
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Legend on the right */}
+                      <div
+                        style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '12px',
-                          minWidth: '300px',
-                          fontSize: '14px'
-                        }}>
-                          <h4 style={{ margin: 0, marginBottom: '8px', fontSize: '16px', fontWeight: '600' }}>Waste Type Breakdown</h4>
-                          {currentData.pieTypeData.map((entry, index) => {
-                            const total = currentData.pieTypeData.reduce((sum, item) => sum + (item.value || 0), 0);
-                            const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
-                            return (
-                              <div key={index} style={{
+                          justifyContent: 'center',
+                          minWidth: '160px',
+                          maxWidth: '180px',
+                          flexShrink: 0,
+                          fontSize: '10px',
+                        }}
+                      >
+                        {currentData.pieTypeData.map((entry, index) => {
+                          const total = currentData.pieTypeData.reduce((sum, item) => sum + (item.value || 0), 0);
+                          const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
+                          
+                          return (
+                            <div
+                              key={index}
+                              style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '12px',
-                                padding: '12px',
-                                borderRadius: '8px',
-                                backgroundColor: '#f9fafb',
-                                border: '1px solid #e5e7eb'
-                              }}>
-                                <div style={{
-                                  width: '20px',
-                                  height: '20px',
-                                  backgroundColor: entry.color || COLORS[index % COLORS.length],
-                                  borderRadius: '4px',
-                                  flexShrink: 0
-                                }}></div>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontWeight: '600', marginBottom: '4px' }}>{entry.name}</div>
-                                  <div style={{ fontSize: '13px', color: '#64748b' }}>
-                                    {(entry.value || 0).toLocaleString()} {unit} ({percentage}%)
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                    size="small"
-                  >
-                    <ZoomInIcon fontSize="small" />
-                  </IconButton>
-                  <h3
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      marginBottom: '10px',
-                      color: '#1e293b',
-                      flexShrink: 0,
-                    }}
-                  >
-                    Hazard Waste {activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Composition by Type ({unit})
-                  </h3>
-
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
-                    {loading ? (
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          height: '250px',
-                          width: '100%',
-                          color: '#64748b',
-                          fontSize: '14px',
-                        }}
-                      >
-                        Loading chart data...
-                      </div>
-                    ) : !currentData.pieTypeData || currentData.pieTypeData.length === 0 ? (
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          height: '250px',
-                          width: '100%',
-                          color: '#64748b',
-                          fontSize: '14px',
-                          textAlign: 'center',
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>🥧</div>
-                          <div>No data available</div>
-                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                            Try adjusting your filters
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {/* Pie Chart Container */}
-                        <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={currentData.pieTypeData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={130}
-                                innerRadius={50}
-                                fill="#8884d8"
-                                dataKey="value"
-                                paddingAngle={2}
-                                startAngle={90}
-                                endAngle={450}
-                              >
-                                {currentData.pieTypeData.map((entry, index) => (
-                                  <Cell
-                                    key={`cell-${index}`}
-                                    fill={entry.color || COLORS[index % COLORS.length]}
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip 
-                                content={({ active, payload }) => {
-                                  if (!active || !payload || payload.length === 0) {
-                                    return null;
-                                  }
-
-                                  try {
-                                    const data = payload[0];
-                                    if (!data || !data.payload) {
-                                      return null;
-                                    }
-
-                                    const name = data.payload.name || 'Unknown';
-                                    const value = data.payload.value || 0;
-                                    const color = data.payload.color || '#3B82F6';
-                                    
-                                    // Calculate percentage
-                                    const total = currentData.pieTypeData.reduce((sum, item) => sum + (item.value || 0), 0);
-                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
-
-                                    return (
-                                      <div style={{
-                                        backgroundColor: 'white',
-                                        padding: '8px 12px',
-                                        border: '1px solid #ccc',
-                                        borderRadius: '4px',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                        fontSize: '12px',
-                                        zIndex: 1000,
-                                        pointerEvents: 'none'
-                                      }}>
-                                        <p style={{ margin: 0, fontWeight: 'bold' }}>{name}</p>
-                                        <p style={{ margin: 0, color: color }}>
-                                          {value.toLocaleString()} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
-                                        </p>
-                                        <p style={{ margin: 0, color: '#64748b' }}>
-                                          {percentage}% of total
-                                        </p>
-                                      </div>
-                                    );
-                                  } catch (error) {
-                                    console.error('Tooltip error:', error);
-                                    return null;
-                                  }
-                                }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-
-                        {/* Legend on the right */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            minWidth: '160px',
-                            maxWidth: '180px',
-                            flexShrink: 0,
-                            fontSize: '10px',
-                          }}
-                        >
-                          {currentData.pieTypeData.map((entry, index) => {
-                            const total = currentData.pieTypeData.reduce((sum, item) => sum + (item.value || 0), 0);
-                            const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
-                            
-                            return (
-                              <div
-                                key={index}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  marginBottom: '4px',
-                                  padding: '2px',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: entry.color || COLORS[index % COLORS.length],
-                                    borderRadius: '1px',
-                                    flexShrink: 0,
-                                  }}
-                                ></div>
-                                <span style={{ fontWeight: '500', fontSize: '12px', lineHeight: '1.2' }}>
-                                  {entry.name}: {(entry.value || 0).toLocaleString()}{' '}
-                                  {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'} ({percentage}%)
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {activeTab === 'hazardous_generated' ? (
-                
-                  <div style={{ 
-                    backgroundColor: 'white',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1,
-                    minHeight: 0,
-                    position: 'relative',
-                    height: '100%'
-                  }}>
-                    <IconButton
-                      onClick={() => openZoomModal(
-                        `Total Hazard Waste Generated by Waste Type (${unit})`,
-                        `${activeTab}-waste-type-bar-chart`,
-                        <div style={{ width: '100%', height: '500px', marginTop: 50  }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={[...currentData.barChartData].sort((a, b) => b.total_generate - a.total_generate)} // Sort descending
-                              layout="horizontal"
-                              margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+                                gap: '6px',
+                                marginBottom: '4px',
+                                padding: '2px',
+                                cursor: 'pointer'
+                              }}
                             >
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                type="category"
-                                dataKey="waste_type"
-                                tick={{ fontSize: 11, fill: '#64748b' }}
-                                tickFormatter={(wasteType) => wasteTypeShortNames[wasteType] || wasteType}
-                              />
-                              <YAxis 
-                                type="number"
-                                tick={{ fontSize: 10, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  if (value >= 1000000) {
-                                    return `${(value / 1000000).toFixed(1)}M`;
-                                  } else if (value >= 1000) {
-                                    return `${(value / 1000).toFixed(0)}K`;
-                                  } else {
-                                    return value.toString();
-                                  }
+                              <div
+                                style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  backgroundColor: entry.color || COLORS[index % COLORS.length],
+                                  borderRadius: '1px',
+                                  flexShrink: 0,
                                 }}
-                              />
-                              <Tooltip 
-                                formatter={(value) => `${Number(value).toLocaleString()} ${currentData.unit}`}
-                                labelFormatter={(label) => wasteTypeShortNames[label] || label}
-                              />
-                              <Bar
-                                dataKey={'total_generate'}
-                                fill="#3B82F6"
-                                label={{ position: 'top', fontSize: 12 }}
-                              >
-                                {currentData.barChartData.map((entry, index) => (
-                                  <Cell
-                                    key={`bar-cell-${index}`}
-                                    fill={barChartColors[entry.waste_type] || wasteTypeColors[entry.waste_type]}
-                                  />
-                                ))}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                      size="small"
-                    >
-                      <ZoomInIcon fontSize="small" />
-                    </IconButton>
-                    <h3 style={{ 
-                      fontSize: '13px', 
-                      fontWeight: '600', 
-                      marginBottom: '10px',
-                      color: '#1e293b',
-                      flexShrink: 0
-                    }}>
-                      Total Hazard Waste Generated by Waste Type ({unit})
-                    </h3>
-                    <div style={{ flex: 1, minHeight: 0}}>
-                      {loading ? (
-                      <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: '250px',
-                            color: '#64748b',
-                            fontSize: '14px',
-                          }}
-                        >
-                          Loading chart data...
-                        </div>
-                      ) : currentData.barChartData.length === 0 ? (
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          height: '100%',
-                          color: '#64748b',
-                          fontSize: '14px',
-                          textAlign: 'center'
-                        }}>
-                          <div>
-                            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                            <div>No waste type data available</div>
-                            <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                              Try adjusting your filters
+                              ></div>
+                              <span style={{ fontWeight: '500', fontSize: '10px', lineHeight: '1.2' }}>
+                                {entry.name}: {(entry.value || 0).toLocaleString()}{' '}
+                                {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'} ({percentage}%)
+                              </span>
                             </div>
-                          </div>
-                        </div>
-                      ) : (
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Bar Chart - Row 2, Column 3 */}
+              {activeTab === 'hazardous_generated' ? (
+                <div style={{ 
+                  gridColumn: '3',
+                  gridRow: '2',
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  minHeight: 0
+                }}>
+                  <IconButton
+                    onClick={() => openZoomModal(
+                      'Hazardous Waste Generated per Quarter by Waste Type',
+                      'hazardous-quarterly-bar-chart',
+                      <div style={{ width: '100%', height: '500px', marginTop: 30 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={[...currentData.barChartData].sort((a, b) => b.total_generate - a.total_generate)} // Sort descending
-                            layout="horizontal"
-                            margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
-                          >
+                          <BarChart data={currentData.barChartQrtrData || []}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                             <XAxis 
-                              type="category"
-                              dataKey="waste_type"
-                              tick={{ fontSize: 11, fill: '#64748b' }}
-                              tickFormatter={(wasteType) => wasteTypeShortNames[wasteType] || wasteType}
+                              dataKey="quarter"
+                              tick={{ fontSize: 12, fill: '#64748b' }}
                             />
                             <YAxis 
-                              type="number"
-                              tick={{ fontSize: 10, fill: '#64748b' }}
+                              tick={{ fontSize: 12, fill: '#64748b' }}
                               tickFormatter={(value) => {
                                 if (value >= 1000000) {
                                   return `${(value / 1000000).toFixed(1)}M`;
@@ -2769,192 +2857,158 @@ function EnvironmentWasteDash() {
                                 }
                               }}
                             />
-                            <Tooltip 
-                              formatter={(value) => `${Number(value).toLocaleString()} ${currentData.unit}`}
-                              labelFormatter={(label) => wasteTypeShortNames[label] || label}
+                            <Tooltip content={renderStackedBarTooltip} />
+                            <Legend
+                              layout="vertical"
+                              align="right"
+                              verticalAlign="middle"
+                              wrapperStyle={{
+                                fontSize: '16px',
+                                marginLeft: 24,
+                                paddingLeft: 24
+                              }}
                             />
-                            <Bar
-                              dataKey={'total_generate'}
-                              fill="#3B82F6"
-                              label={{ position: 'top', fontSize: 10 }}
-                            >
-                              {currentData.barChartData.map((entry, index) => (
-                                <Cell
-                                  key={`bar-cell-${index}`}
-                                  fill={barChartColors[entry.waste_type] || wasteTypeColors[entry.waste_type]}
+                            {Object.keys(currentData.barChartQrtrData[0] || {})
+                              .filter(key => key !== 'quarter')
+                              .map((wasteType, index) => (
+                                <Bar
+                                  key={wasteType}
+                                  dataKey={wasteType}
+                                  stackId="a"
+                                  fill={wasteTypeColors[wasteType] || COLORS[index % COLORS.length]}
+                                  name={wasteTypeShortNames[wasteType] || wasteType}
                                 />
-                              ))}
-                            </Bar>
+                            ))}
                           </BarChart>
                         </ResponsiveContainer>
-                      )}
-                    </div>
-                  </div>
-                  
-                ) : (
-
-                  <div style={{ 
-                    flex: 1,
-                    backgroundColor: 'white', 
-                    padding: '12px', 
-                    borderRadius: '8px', 
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    minHeight: 0
+                      </div>
+                    )}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      zIndex: 10,
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                    size="small"
+                  >
+                    <ZoomInIcon fontSize="small" />
+                  </IconButton>
+                  <h3 style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    marginBottom:  30,
+                    color: '#1e293b',
+                    flexShrink: 0
                   }}>
-                    <IconButton
-                      onClick={() => openZoomModal(
-                        `Hazardous Waste Disposed Yearly Comparison (${unit})`,
-                        `${activeTab}-waste-type-bar-chart`,
-                        <div style={{ width: '100%', height: '500px', marginTop: 40  }}>
-                          <ResponsiveContainer 
-                            width="100%" 
-                            height="100%" 
-                            key={`yearly-chart-${unit}-${activeTab}`}
-                          >
-                            <BarChart 
-                              data={currentData.barChartYearData.map(item => {
-                                // Clean the data to prevent floating point issues
-                                const cleanedItem = { ...item };
-                                Object.keys(cleanedItem).forEach(key => {
-                                  if (key !== 'year' && typeof cleanedItem[key] === 'number') {
-                                    // Round to 2 decimal places and convert back to number
-                                    cleanedItem[key] = Math.round(cleanedItem[key] * 100) / 100;
-                                  }
-                                });
-                                return cleanedItem;
-                              })}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                dataKey="year"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 10, fill: '#64748b' }}
-                              />
-                              <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 10, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  const numValue = Number(value);
-                                  if (!isFinite(numValue) || isNaN(numValue) || numValue === 0) return '0';
-                                  
-                                  if (numValue >= 1000000) {
-                                    return `${(numValue / 1000000).toFixed(1)}M`;
-                                  } else if (numValue >= 1000) {
-                                    return `${(numValue / 1000).toFixed(1)}K`;
-                                  } else if (numValue >= 1) {
-                                    return numValue.toFixed(0);
-                                  } else {
-                                    return numValue.toFixed(2);
-                                  }
-                                }}
-                              />
-                              <Tooltip 
-                                content={({ active, payload, label }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <div style={{
-                                        backgroundColor: 'white',
-                                        padding: '8px 12px',
-                                        border: '1px solid #ccc',
-                                        borderRadius: '4px',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                        fontSize: '12px'
-                                      }}>
-                                        <p style={{ margin: '0 0 4px 0', fontWeight: 'bold' }}>{label}</p>
-                                        {payload.map((entry, index) => {
-                                          const value = Number(entry.value);
-                                          const cleanValue = Math.round(value * 100) / 100;
-                                          return (
-                                            <p key={index} style={{ margin: 0, color: entry.color }}>
-                                              {entry.dataKey}: {cleanValue.toLocaleString(undefined, {
-                                                minimumFractionDigits: 0,
-                                                maximumFractionDigits: 2
-                                              })} {unit}
-                                            </p>
-                                          );
-                                        })}
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                }}
-                              />
-                              <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ marginLeft: 20, marginRigh: 20, fontSize: '16px' }} />
-                              {/* Only show companies that exist in the current data */}
-                              {currentData.barChartYearData.length > 0 &&
-                                Object.keys(currentData.barChartYearData[0])
-                                  .filter(key => key !== 'year')
-                                  .map((companyName, index) => (
-                                    <Bar
-                                      key={companyName}
-                                      dataKey={companyName}
-                                      stackId="a"
-                                      fill={currentData.colors && currentData.colors[companyName] ? currentData.colors[companyName] : COLORS[index % COLORS.length]}
-                                      name={companyName}
-                                    />
-                                  ))}
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                      size="small"
-                    >
-                      <ZoomInIcon fontSize="small" />
-                    </IconButton>
-                    <h3 style={{ 
-                      fontSize: '13px', 
-                      fontWeight: '600', 
-                      marginBottom: '10px',
-                      color: '#1e293b',
-                      flexShrink: 0
-                    }}>
-                      Hazardous Waste Disposed Yearly Comparison ({unit})
-                    </h3>
-                    
-                    <div style={{ flex: 1, minHeight: 0 }}>
-                      {loading ? (
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          height: '100%',
-                          color: '#64748b',
-                          fontSize: '14px'
-                        }}>
-                          Loading chart data...
-                        </div>
-                      ) : currentData.barChartYearData.length === 0 ? (
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          height: '100%',
-                          color: '#64748b',
-                          fontSize: '14px',
-                          textAlign: 'center'
-                        }}>
-                          <div>
-                            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                            <div>No yearly data available</div>
-                            <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                              Try adjusting your filters
-                            </div>
+                    Total Hazardous Waste Generated per Quarter by Waste Type
+                  </h3>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {loading ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px'
+                      }}>
+                        Loading chart data...
+                      </div>
+                    ) : !currentData.barChartQrtrData || currentData.barChartQrtrData.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '100%',
+                        color: '#64748b',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                          <div>No quarterly data available</div>
+                          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                            Try adjusting your filters
                           </div>
                         </div>
-                      ) : (
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={currentData.barChartQrtrData || []}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="quarter"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000000) {
+                                return `${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `${(value / 1000).toFixed(0)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip content={renderStackedBarTooltip} />
+                          <Legend
+                            layout="vertical"
+                            align="right"
+                            verticalAlign="middle"
+                            wrapperStyle={{
+                              fontSize: '12px',
+                              marginLeft: 24,
+                              paddingLeft: 24
+                            }}
+                          />
+                          {/* Render bars for each waste type */}
+                          {Object.keys(currentData.barChartQrtrData[0])
+                            .filter(key => key !== 'quarter')
+                            .map((wasteType, index) => (
+                              <Bar
+                                key={wasteType}
+                                dataKey={wasteType}
+                                stackId="a"
+                                fill={wasteTypeColors[wasteType] || COLORS[index % COLORS.length]}
+                                name={wasteTypeShortNames[wasteType] || wasteType}
+                                label={{ position: 'top', fontSize: 10 }}
+                              />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+                
+              ) : (
+
+                <div style={{ 
+                  gridColumn: '3',
+                  gridRow: '2',
+                  backgroundColor: 'white', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  minHeight: 0
+                }}>
+                  <IconButton
+                    onClick={() => openZoomModal(
+                      `Hazardous Waste Disposed Yearly Comparison (${unit})`,
+                      `${activeTab}-waste-type-bar-chart`,
+                      <div style={{ width: '100%', height: '500px', marginTop: 40  }}>
                         <ResponsiveContainer 
                           width="100%" 
                           height="100%" 
@@ -3030,7 +3084,7 @@ function EnvironmentWasteDash() {
                                 return null;
                               }}
                             />
-                            <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '12px' }} />
+                            <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ marginLeft: 20, marginRigh: 20, fontSize: '16px' }} />
                             {/* Only show companies that exist in the current data */}
                             {currentData.barChartYearData.length > 0 &&
                               Object.keys(currentData.barChartYearData[0])
@@ -3045,80 +3099,6 @@ function EnvironmentWasteDash() {
                                   />
                                 ))}
                           </BarChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </div>
-                )}        
-              </div>
-              <div style={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '15px',
-                minHeight: 0
-              }}>
-                <div style={{ 
-                  backgroundColor: 'white',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  flex: 1,
-                  minHeight: 0,
-                  position: 'relative',
-                  height: '100%'
-                }}>
-                  <IconButton
-                    onClick={() => openZoomModal(
-                      `${activeTab === 'hazardous_generated' ? 'Hazardous Generated' : 'Hazardous Disposed'} Waste Trends Over Time (${unit})`,
-                      `${activeTab}-trends-line-chart`,
-                      <div style={{ width: '100%', height: '500px', marginTop: 40  }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart 
-                            data={currentData.lineChartData}
-                            margin={{ top: 20, right: 100, left: 20, bottom: 20 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="year" 
-                              tick={{ fontSize: 12, fill: '#64748b' }}
-                            />
-                            <YAxis 
-                              tick={{ fontSize: 12, fill: '#64748b' }}
-                              tickFormatter={(value) => {
-                                if (value >= 1000000) {
-                                  return `${(value / 1000000).toFixed(1)}M`;
-                                } else if (value >= 1000) {
-                                  return `${(value / 1000).toFixed(0)}K`;
-                                } else {
-                                  return value.toString();
-                                }
-                              }}
-                            />
-                            <Tooltip content={renderLineChartTooltip}/>
-                            <Legend
-                              layout="vertical"
-                              align="right"
-                              verticalAlign="middle"
-                              wrapperStyle={{
-                                fontSize: '16px',
-                                marginLeft: 24, // Add space between chart and legend
-                                paddingLeft: 24 // Or use paddingLeft
-                              }}
-                            />
-                            {activeWasteType.map((wasteType, index) => (
-                              <Line
-                                key={wasteType}
-                                type="monotone"
-                                dataKey={wasteType}
-                                stroke={wasteTypeColors[wasteType] || COLORS[index % COLORS.length]}
-                                strokeWidth={3}
-                                dot={{ fill: wasteTypeColors[wasteType] || COLORS[index % COLORS.length], strokeWidth: 2, r: 5 }}
-                                name={wasteTypeShortNames[wasteType] || wasteType}
-                              />
-                            ))}
-                          </LineChart>
                         </ResponsiveContainer>
                       </div>
                     )}
@@ -3141,9 +3121,10 @@ function EnvironmentWasteDash() {
                     color: '#1e293b',
                     flexShrink: 0
                   }}>
-                    Hazardous Waste {activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Over Time ({unit})
+                    Hazardous Waste Disposed Yearly Comparison ({unit})
                   </h3>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
+                  
+                  <div style={{ flex: 1, minHeight: 0 }}>
                     {loading ? (
                       <div style={{
                         display: 'flex',
@@ -3155,7 +3136,7 @@ function EnvironmentWasteDash() {
                       }}>
                         Loading chart data...
                       </div>
-                    ) : currentData.lineChartData.length === 0 ? (
+                    ) : currentData.barChartYearData.length === 0 ? (
                       <div style={{
                         display: 'flex',
                         justifyContent: 'center',
@@ -3166,606 +3147,115 @@ function EnvironmentWasteDash() {
                         textAlign: 'center'
                       }}>
                         <div>
-                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
-                          <div>No line chart data available</div>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                          <div>No yearly data available</div>
                           <div style={{ fontSize: '12px', marginTop: '4px' }}>
                             Try adjusting your filters
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div style={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={currentData.lineChartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="year" 
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 10, fill: '#64748b' }}
-                            />
-                            <YAxis 
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 10, fill: '#64748b' }}
-                              tickFormatter={(value) => {
-                              if (value >= 1000000) {
-                                return `${(value / 1000000).toFixed(1)}M`;
-                              } else if (value >= 1000) {
-                                return `${(value / 1000).toFixed(0)}K`;
+                      <ResponsiveContainer 
+                        width="100%" 
+                        height="100%" 
+                        key={`yearly-chart-${unit}-${activeTab}`}
+                      >
+                        <BarChart 
+                          data={currentData.barChartYearData.map(item => {
+                            // Clean the data to prevent floating point issues
+                            const cleanedItem = { ...item };
+                            Object.keys(cleanedItem).forEach(key => {
+                              if (key !== 'year' && typeof cleanedItem[key] === 'number') {
+                                // Round to 2 decimal places and convert back to number
+                                cleanedItem[key] = Math.round(cleanedItem[key] * 100) / 100;
+                              }
+                            });
+                            return cleanedItem;
+                          })}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="year"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              const numValue = Number(value);
+                              if (!isFinite(numValue) || isNaN(numValue) || numValue === 0) return '0';
+                              
+                              if (numValue >= 1000000) {
+                                return `${(numValue / 1000000).toFixed(1)}M`;
+                              } else if (numValue >= 1000) {
+                                return `${(numValue / 1000).toFixed(1)}K`;
+                              } else if (numValue >= 1) {
+                                return numValue.toFixed(0);
                               } else {
-                                return value.toString();
+                                return numValue.toFixed(2);
                               }
                             }}
-                            />
-                            <Tooltip content={renderLineChartTooltip}/>
-                            <Legend
-                              layout="vertical"
-                              align="right"
-                              verticalAlign="middle"
-                              wrapperStyle={{
-                                fontSize: '12px',
-                                marginLeft: 24, // Add space between chart and legend
-                                paddingLeft: 24 // Or use paddingLeft
-                              }}
-                            />
-                            
-                            {/* Dynamically render lines based on available companies */}
-                            {activeWasteType.map((wasteType, index) => (
-                              <Line
-                                key={wasteType}
-                                type="monotone"
-                                dataKey={wasteType}
-                                stroke={wasteTypeColors[wasteType] || COLORS[index % COLORS.length]} // Use stored colors
-                                strokeWidth={2}
-                                dot={{ fill: wasteTypeColors[wasteType] || COLORS[index % COLORS.length], strokeWidth: 2, r: 3 }}
-                                name={wasteTypeShortNames[wasteType] || wasteType}
-                              />
-                            ))}
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
+                          />
+                          <Tooltip 
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div style={{
+                                    backgroundColor: 'white',
+                                    padding: '8px 12px',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '4px',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                    fontSize: '12px'
+                                  }}>
+                                    <p style={{ margin: '0 0 4px 0', fontWeight: 'bold' }}>{label}</p>
+                                    {payload.map((entry, index) => {
+                                      const value = Number(entry.value);
+                                      const cleanValue = Math.round(value * 100) / 100;
+                                      return (
+                                        <p key={index} style={{ margin: 0, color: entry.color }}>
+                                          {entry.dataKey}: {cleanValue.toLocaleString(undefined, {
+                                            minimumFractionDigits: 0,
+                                            maximumFractionDigits: 2
+                                          })} {unit}
+                                        </p>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '12px' }} />
+                          {/* Only show companies that exist in the current data */}
+                          {currentData.barChartYearData.length > 0 &&
+                            Object.keys(currentData.barChartYearData[0])
+                              .filter(key => key !== 'year')
+                              .map((companyName, index) => (
+                                <Bar
+                                  key={companyName}
+                                  dataKey={companyName}
+                                  stackId="a"
+                                  fill={currentData.colors && currentData.colors[companyName] ? currentData.colors[companyName] : COLORS[index % COLORS.length]}
+                                  name={companyName}
+                                />
+                              ))}
+                        </BarChart>
+                      </ResponsiveContainer>
                     )}
                   </div>
                 </div>
-
-                {activeTab === 'hazardous_generated' ? (
-
-                  <div style={{ 
-                    flex: 1,
-                    backgroundColor: 'white', 
-                    padding: '12px', 
-                    borderRadius: '8px', 
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    minHeight: 0
-                  }}>
-                    <IconButton
-                      onClick={() => openZoomModal(
-                        'Hazardous Waste Generated per Quarter by Waste Type',
-                        'hazardous-quarterly-bar-chart',
-                        <div style={{ width: '100%', height: '500px', marginTop: 30 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={currentData.barChartQrtrData || []}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                dataKey="quarter"
-                                tick={{ fontSize: 12, fill: '#64748b' }}
-                              />
-                              <YAxis 
-                                tick={{ fontSize: 12, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  if (value >= 1000000) {
-                                    return `${(value / 1000000).toFixed(1)}M`;
-                                  } else if (value >= 1000) {
-                                    return `${(value / 1000).toFixed(0)}K`;
-                                  } else {
-                                    return value.toString();
-                                  }
-                                }}
-                              />
-                              <Tooltip content={renderStackedBarTooltip} />
-                              <Legend
-                                layout="vertical"
-                                align="right"
-                                verticalAlign="middle"
-                                wrapperStyle={{
-                                  fontSize: '16px',
-                                  marginLeft: 24, // Add space between chart and legend
-                                  paddingLeft: 24 // Or use paddingLeft
-                                }}
-                              />
-                              {Object.keys(currentData.barChartQrtrData[0] || {})
-                                .filter(key => key !== 'quarter')
-                                .map((wasteType, index) => (
-                                  <Bar
-                                    key={wasteType}
-                                    dataKey={wasteType}
-                                    stackId="a"
-                                    fill={wasteTypeColors[wasteType] || COLORS[index % COLORS.length]}
-                                    name={wasteTypeShortNames[wasteType] || wasteType}
-                                  />
-                              ))}
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        zIndex: 10,
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                      size="small"
-                    >
-                      <ZoomInIcon fontSize="small" />
-                    </IconButton>
-                    <h3 style={{ 
-                      fontSize: '13px', 
-                      fontWeight: '600', 
-                      marginBottom: '10px',
-                      color: '#1e293b',
-                      flexShrink: 0
-                    }}>
-                      Total Hazardous Waste Generated per Quarter by Waste Type
-                    </h3>
-                    
-                    <div style={{ flex: 1, minHeight: 0 }}>
-                      {loading ? (
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          height: '100%',
-                          color: '#64748b',
-                          fontSize: '14px'
-                        }}>
-                          Loading chart data...
-                        </div>
-                      ) : !currentData.barChartQrtrData || currentData.barChartQrtrData.length === 0 ? (
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          height: '100%',
-                          color: '#64748b',
-                          fontSize: '14px',
-                          textAlign: 'center'
-                        }}>
-                          <div>
-                            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                            <div>No quarterly data available</div>
-                            <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                              Try adjusting your filters
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={currentData.barChartQrtrData || []}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="quarter"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 10, fill: '#64748b' }}
-                            />
-                            <YAxis 
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 10, fill: '#64748b' }}
-                              tickFormatter={(value) => {
-                                if (value >= 1000000) {
-                                  return `${(value / 1000000).toFixed(1)}M`;
-                                } else if (value >= 1000) {
-                                  return `${(value / 1000).toFixed(0)}K`;
-                                } else {
-                                  return value.toString();
-                                }
-                              }}
-                            />
-                            <Tooltip content={renderStackedBarTooltip} />
-                            <Legend
-                              layout="vertical"
-                              align="right"
-                              verticalAlign="middle"
-                              wrapperStyle={{
-                                fontSize: '12px',
-                                marginLeft: 24, // Add space between chart and legend
-                                paddingLeft: 24 // Or use paddingLeft
-                              }}
-                            />                          {/* Render bars for each waste type */}
-                            {Object.keys(currentData.barChartQrtrData[0])
-                              .filter(key => key !== 'quarter')
-                              .map((wasteType, index) => (
-                                <Bar
-                                  key={wasteType}
-                                  dataKey={wasteType}
-                                  stackId="a"
-                                  fill={wasteTypeColors[wasteType] || COLORS[index % COLORS.length]} // Use stored colors
-                                  name={wasteTypeShortNames[wasteType] || wasteType}
-                                  label={{ position: 'top', fontSize: 10 }}
-                                />
-                            ))}
-                          </BarChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ 
-                    backgroundColor: 'white',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1,
-                    minHeight: 0,
-                    position: 'relative',
-                    height: '100%'
-                  }}>
-                    <IconButton
-                      onClick={() => openZoomModal(
-                        `Total Hazard Waste Disposed by Waste Type (${unit})`,
-                        `${activeTab}-waste-type-bar-chart`,
-                        <div style={{ width: '100%', height: '500px', marginTop: 30 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={[...currentData.barChartData].sort((a, b) => {
-                                const field = activeTab === 'hazardous_generated' ? 'total_generate' : 'total_disposed';
-                                return b[field] - a[field];
-                              })}
-                              layout="horizontal"
-                              margin={{ top: 20, right: 50, left: 150, bottom: 20 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                type="category"
-                                dataKey="waste_type"
-                                tick={{ fontSize: 14, fill: '#64748b' }}
-                                angle={0}
-                                textAnchor="end"
-                                height={60}
-                              />
-                              <YAxis 
-                                type="number"
-                                tick={{ fontSize: 12, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  if (value >= 1000000) {
-                                    return `${(value / 1000000).toFixed(1)}M`;
-                                  } else if (value >= 1000) {
-                                    return `${(value / 1000).toFixed(0)}K`;
-                                  } else {
-                                    return value.toString();
-                                  }
-                                }}
-                              />
-                              <Tooltip 
-                                formatter={(value) => `${Number(value).toLocaleString()} ${unit}`}
-                                labelFormatter={(label) => wasteTypeShortNames[label] || label}
-                              />
-                              <Bar
-                                dataKey={activeTab === 'hazardous_generated' ? 'total_generate' : 'total_disposed'}
-                                fill="#3B82F6"
-                                radius={[4, 4, 0, 0]}
-                              >
-                                {currentData.barChartData.map((entry, index) => (
-                                  <Cell
-                                    key={`bar-cell-${index}`}
-                                    fill={wasteTypeColors[entry.waste_type] || COLORS[index % COLORS.length]}
-                                  />
-                                ))}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                      size="small"
-                    >
-                      <ZoomInIcon fontSize="small" />
-                    </IconButton>
-                    <h3 style={{ 
-                      fontSize: '13px', 
-                      fontWeight: '600', 
-                      marginBottom: '10px',
-                      color: '#1e293b',
-                      flexShrink: 0
-                    }}>
-                      Total Hazard Waste Disposed by Waste Type ({unit})
-                    </h3>
-                    <div style={{ flex: 1, minHeight: 0}}>
-                      {loading ? (
-                      <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: '250px',
-                            color: '#64748b',
-                            fontSize: '14px',
-                          }}
-                        >
-                          Loading chart data...
-                        </div>
-                      ) : currentData.barChartData.length === 0 ? (
-                        <div>No data available</div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={[...currentData.barChartData].sort((a, b) => {
-                              const field = activeTab === 'hazardous_generated' ? 'total_generate' : 'total_disposed';
-                              return b[field] - a[field];
-                            })}
-                            layout="horizontal"
-                            margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                            <XAxis
-                              type="category"
-                              dataKey="waste_type"
-                              tick={{ fontSize: 11, fill: '#64748b' }}
-                              tickFormatter={(wasteType) => wasteTypeShortNames[wasteType] || wasteType}
-                            />
-                            <YAxis
-                              type="number"
-                              tick={{ fontSize: 10, fill: '#64748b' }}
-                              tickFormatter={(value) => {
-                                if (value >= 1000000) {
-                                  return `${(value / 1000000).toFixed(1)}M`;
-                                } else if (value >= 1000) {
-                                  return `${(value / 1000).toFixed(0)}K`;
-                                } else {
-                                  return value.toString();
-                                }
-                              }}
-                            />
-                            <Tooltip
-                              formatter={(value) => `${Number(value).toLocaleString()} ${currentData.unit}`}
-                              labelFormatter={(label) => wasteTypeShortNames[label] || label}
-                            />
-                            <Bar
-                              dataKey={activeTab === 'hazardous_generated' ? 'total_generate' : 'total_disposed'}
-                              fill="#3B82F6"
-                              label={{ position: 'top', fontSize: 10 }}
-                            >
-                              {currentData.barChartData.map((entry, index) => (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={wasteTypeColors[entry.waste_type] || entry.color || COLORS[index % COLORS.length]} 
-                                />
-                              ))} 
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}        
             </>
           )}
 
           {activeTab === 'non_hazardous_generated' && (
             <>
-              <div style={{ 
-                backgroundColor: 'white', 
-                padding: '12px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-                minHeight: 0
-              }}>
-                <IconButton
-                  onClick={() => openZoomModal(
-                    `Distribution of Non Hazardous Waste Generated by Company(${unit})`,
-                    `${activeTab}-distribution-pie-chart`,
-                    <div style={{ width: '100%', height: '500px', display: 'flex', flexDirection: 'column',   marginTop: '2rem'}}>
-                      <div style={{ flex: 1, minHeight: 400 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={currentData.pieData}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={200}
-                              innerRadius={70}
-                              fill="#8884d8"
-                              dataKey="value"
-                              paddingAngle={2}
-                              startAngle={90}
-                              endAngle={450}
-                            >
-                              {currentData.pieData.map((entry, index) => (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={entry.color || COLORS[index % COLORS.length]} 
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip content={renderCustomTooltip} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '12px',
-                        fontSize: '14px',
-                        marginTop: '20px',
-                        padding: '20px',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '8px'
-                      }}>
-                        {currentData.pieData.map((entry, index) => (
-                          <div
-                            key={index}
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '8px',
-                              padding: '8px',
-                              backgroundColor: 'white',
-                              borderRadius: '6px',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                            }}
-                          >
-                            <div style={{
-                              width: '16px',
-                              height: '16px',
-                              backgroundColor: entry.color || COLORS[index % COLORS.length],
-                              borderRadius: '3px',
-                              flexShrink: 0
-                            }}></div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: '600', marginBottom: '2px' }}>{entry.label}</div>
-                              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'} ({entry.percentage}%)
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                  size="small"
-                >
-                  <ZoomInIcon fontSize="small" />
-                </IconButton>
-                <h3 style={{
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  marginBottom: '10px',
-                  color: '#1e293b',
-                  flexShrink: 0
-                }}>
-                  Distribution of Non Hazardous Waste Generated by Company ({unit})
-                </h3>
-
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                  {/* Show loading state */}
-                  {loading ? (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '200px',
-                      color: '#64748b',
-                      fontSize: '14px'
-                    }}>
-                      Loading chart data...
-                    </div>
-                  ) : currentData.pieData.length === 0 ? (
-                    // Show no data message
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '200px',
-                      color: '#64748b',
-                      fontSize: '14px',
-                      textAlign: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                        <div>No data available</div>
-                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                          Try adjusting your filters
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    // Show pie chart
-                    <div style={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={currentData.pieData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={200}
-                            innerRadius={70}
-                            fill="#8884d8"
-                            dataKey="value"
-                            paddingAngle={2}
-                            startAngle={90}
-                            endAngle={450}
-                          >
-                            {currentData.pieData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={entry.color || COLORS[index % COLORS.length]} 
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip content={renderCustomTooltip} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-
-                  {/* Legend - only show if there's data */}
-                  {!loading && currentData.pieData.length > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                      fontSize: '10px',
-                      flexShrink: 0,
-                      marginTop: '8px'
-                    }}>
-                      {currentData.pieData.map((entry, index) => (
-                        <div
-                          key={index}
-                          style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '4px'
-                          }}
-                        >
-                          <div style={{
-                            width: '8px',
-                            height: '8px',
-                            backgroundColor: entry.color || COLORS[index % COLORS.length],
-                            borderRadius: '1px',
-                            flexShrink: 0
-                          }}></div>
-                          <span style={{ fontWeight: '500', fontSize: '9px' }}>
-                            {entry.label}: {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
+              {/* Heatmap - Row 1, Column 1 */}
               <div style={{ 
                 display: 'flex',
                 flexDirection: 'column',
@@ -3801,9 +3291,10 @@ function EnvironmentWasteDash() {
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          minWidth: '20px'
+                          minWidth: '30px',
+                          marginRight: '5rem'
                         }}>
-                          <div style={{ fontSize: '12px', marginBottom: '8px', fontWeight: '600', textAlign: 'center' }}>
+                          <div style={{ fontSize: '12px', marginTop: '20rem', marginBottom: '1rem', fontWeight: '600', textAlign: 'center' }}>
                             Scale ({unit})
                           </div>
                           <div style={{ fontSize: '10px', marginBottom: '4px', fontWeight: '600' }}>
@@ -3820,8 +3311,8 @@ function EnvironmentWasteDash() {
                               <div
                                 key={intensity}
                                 style={{
-                                  width: '20px',
-                                  height: '20px',
+                                  width: '40px',
+                                  height: '40px',
                                   backgroundColor: getHeatmapColor(intensity)
                                 }}
                               />
@@ -3901,36 +3392,41 @@ function EnvironmentWasteDash() {
                         </div>
                         
                         {/* Color Scale Legend (Vertical on Right) */}
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          minWidth: '60px'
-                        }}>
-                          {/* Max value label */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            minWidth: '60px',
+                            height: '100%' // or a fixed height if you want
+                          }}
+                        >
                           <div style={{ fontSize: '10px', marginBottom: '4px', fontWeight: '600' }}>
                             {nonHazMetricsHeatmapData.scale.max_waste.toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
                           </div>
-                          {/* Color scale */}
-                          <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '2px',
-                            overflow: 'hidden'
-                          }}>
-                            {[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0].map((intensity, idx) => (
+                          <div
+                            ref={colorScaleRef}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '2px',
+                              overflow: 'hidden',
+                              height: '180px', // set this to your desired total height
+                              width: '20px'
+                            }}
+                          >
+                            {scaleSteps.map((intensity) => (
                               <div
                                 key={intensity}
                                 style={{
-                                  width: '20px',
-                                  height: '15px',
+                                  width: '100%',
+                                  height: `${barHeight}px`,
                                   backgroundColor: getHeatmapColor(intensity)
                                 }}
                               />
                             ))}
                           </div>
-                          {/* Min value label */}
                           <div style={{ fontSize: '10px', marginTop: '4px', fontWeight: '600' }}>
                             0
                           </div>
