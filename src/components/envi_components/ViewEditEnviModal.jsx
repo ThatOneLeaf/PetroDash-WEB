@@ -714,12 +714,12 @@ const handleStatusUpdate = async (action) => {
           ))}
         </Box>
 
-        {editedRecord.status !== 'Approved' && (
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            mt: 3
-          }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', mt: 3 }}>
+          {editedRecord.status !== 'Approved' && (
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'space-between'
+            }}>
             {/* Hide EDIT/SAVE if status is under review (site) or under review (head) */}
             {editedRecord.status !== 'Under review (site)' && editedRecord.status !== 'Under review (head level)' && (
               <Button
@@ -798,6 +798,23 @@ const handleStatusUpdate = async (action) => {
                 </Button>
               )}    
             </Box>
+            </Box>
+          )}
+        </Box>
+
+        {editedRecord.status === 'Approved' && (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            mt: 3
+          }}>
+            <Typography sx={{ 
+              fontSize: '0.9rem',
+              color: '#FF0000',
+              fontStyle: 'italic'
+            }}>
+              This record has been approved and cannot be edited.
+            </Typography>
           </Box>
         )}
 
