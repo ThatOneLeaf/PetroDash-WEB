@@ -772,9 +772,16 @@ function EnvironmentWaste() {
         {/* Custom Pagination Component */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
           {/* Row Count Display */}
-          <Typography sx={{ fontSize: '0.85rem'}}>
-            Showing {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
-          </Typography>
+          <Box>
+            <Typography sx={{ fontSize: '0.85rem'}}>
+              Total {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'}
+            </Typography>
+            {selectedRowIds.length > 0 && (
+              <Typography sx={{ fontSize: '0.85rem', color: '#2B8C37', fontWeight: 700 }}>
+                {selectedRowIds.length} selected record{selectedRowIds.length > 1 ? 's' : ''}
+              </Typography>
+            )}
+          </Box>
           <Pagination 
             page={page}
             count={totalPages}
