@@ -32,12 +32,18 @@ const ViewEditRecordModal = ({ source, table, title, record, updatePath, onClose
   const recordIdKey = Object.keys(record)[0];
   
   // Updated permanentlyReadOnlyFields to include metrics and unit for hazard tables
+  // Also include property and type for Diesel table
   const permanentlyReadOnlyFields = (() => {
     const baseFields = [Object.keys(record)[0], "company", "status"];
     
     // Add metrics and unit as read-only for hazard-related tables
     if (table === 'Hazard Generated' || table === 'Hazard Disposed' || table === 'Non-Hazard Generated') {
       return [...baseFields, "metrics", "unit"];
+    }
+    
+    // Add property and type as read-only for Diesel table
+    if (table === 'Diesel') {
+      return [...baseFields, "property", "type"];
     }
     
     return baseFields;
