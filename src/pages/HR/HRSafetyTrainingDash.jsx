@@ -498,6 +498,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
           display: "flex",
           flexDirection: "column",
           height: "100%",
+          zoom: "0.8",
         }}
       >
         <Box sx={{ px: 0, pb: 1, flexShrink: 0 }}>
@@ -544,7 +545,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1, minHeight: "100px" }}
+            style={{ flex: 1, minHeight: "100px", fontSize: "18px" }}
           />
           <KPICard
             loading={false}
@@ -556,7 +557,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1, minHeight: "100px" }}
+            style={{ flex: 1, minHeight: "100px", fontSize: "18px" }}
           />
           <KPICard
             loading={false}
@@ -568,7 +569,7 @@ function HRSafetyTrainingDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minHeight: "100px", fontSize: "18px" }}
           />
         </Box>
 

@@ -32,25 +32,28 @@ import api from "../../services/api";
 
 import { useFilteredData } from "../../components/hr_components/filtering";
 
+import { format } from "date-fns";
+
 import Table from "../../components/Table/Table";
 import Filter from "../../components/Filter/Filter";
 import Search from "../../components/Filter/Search";
 import Pagination from "../../components/Pagination/pagination";
 import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
+import SingleSelectDropdown from "../../components/DashboardComponents/SingleSelectDropdown";
 import MultiSelectWithChips from "../../components/DashboardComponents/MultiSelectDropdown";
 import MonthRangeSelect from "../../components/DashboardComponents/MonthRangeSelect";
 import KPICard from "../../components/DashboardComponents/KPICard";
+import BarChartComponent from "../../components/charts/BarChartComponent";
+import LineChartComponent from "../../components/charts/LineChartComponent";
+import PieChartComponent from "../../components/charts/PieChartComponent";
+import StackedBarChartComponent from "../../components/charts/StackedBarChartComponent";
 import ClearButton from "../../components/DashboardComponents/ClearButton";
 import MonthRangePicker from "../../components/Filter/MonthRangePicker";
 import ZoomModal from "../../components/DashboardComponents/ZoomModal"; // Adjust path as needed
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
-const leaveTypes = [
-  { year: 2019, SPL: 3, Paternity: 1, Maternity: 6 },
-  { year: 2020, SPL: 2, Paternity: 0, Maternity: 5 },
-  { year: 2021, SPL: 4, Paternity: 1, Maternity: 5 },
-  { year: 2022, SPL: 5, Paternity: 2, Maternity: 7 },
-];
+
+const formatDateTime = (date) => format(date, "PPPpp");
 
 // Dashboard values
 
@@ -68,12 +71,14 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [totalEmployees, setTotalEmployees] = useState(null);
   const [avgTenure, setAvgTenure] = useState(null);
   const [employeeCountByCompany, setEmployeeCountByCompany] = useState([]);
   const [ageDistribution, setAgeDistribution] = useState([]);
   const [leaveSeasons, setLeaveSeasons] = useState([]);
   const [genderDistribution, setGenderDistribution] = useState([]);
+  const [leaveTypes, setLeaveTypes] = useState([]);
 
   // FILTERING
   const [companyFilter, setCompanyFilter] = useState([]);
@@ -92,6 +97,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     title: "",
     fileName: "",
   });
+
   const openZoomModal = (title, fileName, content) => {
     setZoomModal({
       open: true,
@@ -121,6 +127,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           ageDistRes,
           leaveSeasonsRes,
           genderDistRes,
+          leaveTypesRes,
         ] = await Promise.all([
           api.get("hr/total_active_employees", { params }),
           api.get("hr/average_tenure_rate", { params }),
@@ -128,6 +135,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           api.get("hr/age_distribution", { params }),
           api.get("hr/peak_leave_seasons", { params }),
           api.get("hr/gender_distribution_per_position", { params }),
+          api.get("hr/total_leave", { params }),
         ]);
 
         setTotalEmployees(totalEmpRes.data[0]["total_active_employees"]);
@@ -149,6 +157,13 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
 
         setLeaveSeasons(
           leaveSeasonsRes.data.map((item) => ({
+            year: item.year,
+            leave_count: parseInt(item.total_leave),
+          }))
+        );
+
+        setLeaveTypes(
+          leaveTypesRes.data.map((item) => ({
             year: item.year,
             leave_count: parseInt(item.total_leave),
           }))
@@ -176,6 +191,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         setAgeDistribution([]);
         setLeaveSeasons([]);
         setGenderDistribution([]);
+        setLeaveTypes([]);
       } finally {
         setLoading(false);
       }
@@ -288,44 +304,41 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           />
         </Box>
 
+        {/* Charts */}
         <Box
           sx={{
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: 2,
-            minHeight: 320,
+            minHeight: 0,
             flexGrow: 1,
+            height: 0,
           }}
         >
-          <div
-            style={{
+          {/* Gender Distribution */}
+          <Box
+            sx={{
               backgroundColor: "white",
-              padding: "12px",
-              borderRadius: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              p: 1.5,
+              borderRadius: 2,
+              boxShadow: 1,
               display: "flex",
               flexDirection: "column",
-              height: "400px", // ✅ Match height
-              position: "relative",
+              minHeight: 0,
+              height: "100%",
               cursor: "pointer",
               transition: "box-shadow 0.2s",
               width: "100%",
-              maxWidth: "1000px",
+              maxWidth: "100%",
+              overflow: "hidden",
             }}
             onClick={() =>
               openZoomModal(
                 "Gender Distribution by Position",
                 "gender-distribution",
                 () => (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
+                  <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={genderDistribution}>
                           <CartesianGrid strokeDasharray="3 3" />
@@ -337,48 +350,46 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                           <Bar dataKey="Female" fill="#EA4335" />
                         </BarChart>
                       </ResponsiveContainer>
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                 )
               )
             }
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 4px 16px rgba(59,130,246,0.15)";
+            onMouseOver={e => {
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
             }}
-            onMouseOut={(e) => {
+            onMouseOut={e => {
               e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
             title="Click to enlarge"
           >
-            <h3
-              style={{
+            <Typography
+              sx={{
                 fontSize: "13px",
-                fontWeight: "600",
-                marginBottom: "10px",
+                fontWeight: 600,
+                mb: 1,
                 color: "#1e293b",
                 flexShrink: 0,
               }}
             >
               Gender Distribution by Position
-            </h3>
-
+            </Typography>
             {!genderDistribution || genderDistribution.length === 0 ? (
-              <div
-                style={{
+              <Box
+                sx={{
                   textAlign: "center",
-                  padding: "30px 15px",
+                  py: 4,
                   color: "#64748b",
                   backgroundColor: "#f8fafc",
-                  borderRadius: "6px",
+                  borderRadius: 1,
                   fontSize: "12px",
                   flex: 1,
                 }}
               >
                 No data available for selected filters
-              </div>
+              </Box>
             ) : (
-              <div style={{ flex: 1 }}>
+              <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={genderDistribution}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -390,76 +401,34 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     <Bar dataKey="Female" fill="#EA4335" />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </Box>
             )}
-          </div>
+          </Box>
 
-          {/*
-          <Paper
+          {/* Age Group Distribution */}
+          <Box
             sx={{
-              p: 1,
-              textAlign: "center",
-              flex: 1,
-              maxWidth: 600,
-
-              color: "#fff",
-            }}
-            onClick={() =>
-              handleOpen({
-                chartKey: "genderDistributionChart",
-                chartText: "Gender Distribution by Position",
-              })
-            }
-          >
-            <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-              Gender Distribution by Position
-            </Typography>
-            <Box sx={{ height: 250 }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={genderDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="position" />
-                  <YAxis />
-                  <Tooltip
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="Male" fill="#4285F4" />
-                  <Bar dataKey="Female" fill="#EA4335" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper> */}
-          <div
-            style={{
               backgroundColor: "white",
-              padding: "12px",
-              borderRadius: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              p: 1.5,
+              borderRadius: 2,
+              boxShadow: 1,
               display: "flex",
               flexDirection: "column",
-              height: "400px", // ✅ Consistent height
+              minHeight: 0,
+              height: "100%",
               cursor: "pointer",
               transition: "box-shadow 0.2s",
               width: "100%",
-              maxWidth: "1000px",
+              maxWidth: "100%",
+              overflow: "hidden",
             }}
             onClick={() =>
               openZoomModal(
                 "Age Group Distribution",
                 "age-distribution",
                 () => (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
+                  <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -483,54 +452,50 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                               />
                             ))}
                           </Pie>
-                          <Tooltip
-                            formatter={(value, name) => [`${value}`, name]}
-                          />
+                          <Tooltip formatter={(value, name) => [`${value}`, name]} />
                           <Legend iconType="square" />
                         </PieChart>
                       </ResponsiveContainer>
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                 )
               )
             }
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 4px 16px rgba(59,130,246,0.15)";
+            onMouseOver={e => {
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
             }}
-            onMouseOut={(e) => {
+            onMouseOut={e => {
               e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
             title="Click to enlarge"
           >
-            <h3
-              style={{
+            <Typography
+              sx={{
                 fontSize: "13px",
-                fontWeight: "600",
-                marginBottom: "10px",
+                fontWeight: 600,
+                mb: 1,
                 color: "#1e293b",
                 flexShrink: 0,
               }}
             >
               Age Group Distribution
-            </h3>
-
+            </Typography>
             {!ageDistribution || ageDistribution.length === 0 ? (
-              <div
-                style={{
+              <Box
+                sx={{
                   textAlign: "center",
-                  padding: "30px 15px",
+                  py: 4,
                   color: "#64748b",
                   backgroundColor: "#f8fafc",
-                  borderRadius: "6px",
+                  borderRadius: 1,
                   fontSize: "12px",
                   flex: 1,
                 }}
               >
                 No data available for selected filters
-              </div>
+              </Box>
             ) : (
-              <div style={{ flex: 1 }}>
+              <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -558,101 +523,34 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     <Legend iconType="square" />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
+              </Box>
             )}
-          </div>
+          </Box>
 
-          {/*
-
-          <Paper
+          {/* Types of Leaves Taken Per Year */}
+          <Box
             sx={{
-              p: 1,
-              textAlign: "center",
-              color: "#fff",
-            }}
-            onClick={() =>
-              handleOpen({
-                chartKey: "ageDistributionChart",
-                chartText: "Age Group Distribution",
-              })
-            }
-          >
-            <>
-              <style>
-                {`
-      .recharts-sector {
-        outline: none;
-      }
-    `}
-              </style>
-            </>
-           
-            <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-              Age Group Distribution
-            </Typography>
-
-          
-            <Box sx={{ height: 250 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={ageDistribution}
-                    dataKey="count"
-                    nameKey="age_group"
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius="80%"
-                    innerRadius="40%"
-                    fill="#8884d8"
-                    paddingAngle={2}
-                    startAngle={90}
-                    endAngle={450}
-                  >
-                    {ageDistribution.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                        className="recharts-sector"
-                      />
-                    ))}
-                  </Pie>
-                  <Legend iconType="square" />
-                  <Tooltip formatter={(value, name) => [`${value}`, name]} />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-
-          */}
-          <div
-            style={{
               backgroundColor: "white",
-              padding: "12px",
-              borderRadius: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              p: 1.5,
+              borderRadius: 2,
+              boxShadow: 1,
               display: "flex",
               flexDirection: "column",
-              height: "400px", // ✅ match height
+              minHeight: 0,
+              height: "100%",
               cursor: "pointer",
               transition: "box-shadow 0.2s",
               width: "100%",
-              maxWidth: "1000px", // optional limit
+              maxWidth: "100%",
+              overflow: "hidden",
             }}
             onClick={() =>
               openZoomModal(
                 "Types of Leaves Taken Per Year",
                 "leave-types",
                 () => (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
+                  <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={leaveTypes}
@@ -663,68 +561,51 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                           <YAxis />
                           <Tooltip itemStyle={{ color: "#000" }} />
                           <Legend iconType="square" />
-                          <Bar
-                            dataKey="SPL"
-                            stackId="a"
-                            fill="#1976d2"
-                            name="SPL"
-                          />
-                          <Bar
-                            dataKey="Paternity"
-                            stackId="a"
-                            fill="#ffa726"
-                            name="Paternity"
-                          />
-                          <Bar
-                            dataKey="Maternity"
-                            stackId="a"
-                            fill="#66bb6a"
-                            name="Maternity"
-                          />
+                          <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
+                          <Bar dataKey="Paternity" stackId="a" fill="#ffa726" name="Paternity" />
+                          <Bar dataKey="Maternity" stackId="a" fill="#66bb6a" name="Maternity" />
                         </BarChart>
                       </ResponsiveContainer>
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                 )
               )
             }
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 4px 16px rgba(59,130,246,0.15)";
+            onMouseOver={e => {
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
             }}
-            onMouseOut={(e) => {
+            onMouseOut={e => {
               e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
             title="Click to enlarge"
           >
-            <h3
-              style={{
+            <Typography
+              sx={{
                 fontSize: "13px",
-                fontWeight: "600",
-                marginBottom: "10px",
+                fontWeight: 600,
+                mb: 1,
                 color: "#1e293b",
                 flexShrink: 0,
               }}
             >
               Types of Leaves Taken Per Year
-            </h3>
-
+            </Typography>
             {!leaveTypes || leaveTypes.length === 0 ? (
-              <div
-                style={{
+              <Box
+                sx={{
                   textAlign: "center",
-                  padding: "30px 15px",
+                  py: 4,
                   color: "#64748b",
                   backgroundColor: "#f8fafc",
-                  borderRadius: "6px",
+                  borderRadius: 1,
                   fontSize: "12px",
                   flex: 1,
                 }}
               >
                 No data available for selected filters
-              </div>
+              </Box>
             ) : (
-              <div style={{ flex: 1 }}>
+              <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={leaveTypes}
@@ -736,161 +617,50 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     <Tooltip itemStyle={{ color: "#000" }} />
                     <Legend iconType="square" />
                     <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
-                    <Bar
-                      dataKey="Paternity"
-                      stackId="a"
-                      fill="#ffa726"
-                      name="Paternity"
-                    />
-                    <Bar
-                      dataKey="Maternity"
-                      stackId="a"
-                      fill="#66bb6a"
-                      name="Maternity"
-                    />
+                    <Bar dataKey="Paternity" stackId="a" fill="#ffa726" name="Paternity" />
+                    <Bar dataKey="Maternity" stackId="a" fill="#66bb6a" name="Maternity" />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </Box>
             )}
-          </div>
+          </Box>
 
-          {/*
-          <Paper
-            sx={{
-              p: 1,
-              textAlign: "center",
-
-              color: "#fff",
-            }}
-            onClick={() =>
-              handleOpen({
-                chartKey: "typesOfLeaveTakenPerYearChart",
-                chartText: "Types of Leaves Taken Per Year",
-              })
-            }
-          >
-            {" "}
-            <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-              Types of Leaves Taken Per Year
-            </Typography>
-            <Box sx={{ height: 250 }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={leaveTypes}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis />
-                  <Tooltip
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend iconType="square" />
-                  <Bar dataKey="SPL" stackId="a" fill="#1976d2" name="SPL" />
-                  <Bar
-                    dataKey="Paternity"
-                    stackId="a"
-                    fill="#ffa726"
-                    name="Paternity"
-                  />
-                  <Bar
-                    dataKey="Maternity"
-                    stackId="a"
-                    fill="#66bb6a"
-                    name="Maternity"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper> */}
-
-          {/* 
-          <Paper
-            sx={{
-              p: 1,
-              textAlign: "center",
-
-              color: "#fff",
-            }}
-            onClick={() =>
-              handleOpen({
-                chartKey: "attrtitionRatePerYearChart",
-                chartText: "Attrition Rate Per Year",
-              })
-            }
-          >
-             <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-              Attrition Rate Per Year
-            </Typography>
-            <Box sx={{ height: 250 }}>
-              <ResponsiveContainer>
-                <LineChart
-                  data={attritionData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis
-                    domain={[0, "auto"]}
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <Tooltip
-                    formatter={(value) => `${value}%`}
-                    itemStyle={{
-                      color: "#000",
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="attrition_rate_percent"
-                    stroke="#ff7300"
-                    dot={{ fill: "#ff7300" }}
-                    name="Attrition Rate (%)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>*/}
-
+          {/* Bottom charts: span all 3 columns */}
           <Box
             sx={{
-              gridColumn: "1 / -1", // span all 3 columns
+              gridColumn: "1 / -1",
               display: "flex",
               justifyContent: "center",
               gap: 2,
+              minHeight: 0,
+              height: "40vh",
+              mt: 2,
             }}
           >
-            <div
-              style={{
+            {/* Employee Count Per Company */}
+            <Box
+              sx={{
                 backgroundColor: "white",
-                padding: "12px",
-                borderRadius: "8px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                p: 1.5,
+                borderRadius: 2,
+                boxShadow: 1,
                 display: "flex",
                 flexDirection: "column",
-                height: "400px",
+                minHeight: 0,
+                height: "100%",
                 width: "100%",
                 maxWidth: "800px",
                 cursor: "pointer",
                 transition: "box-shadow 0.2s",
+                overflow: "hidden",
               }}
               onClick={() =>
                 openZoomModal(
                   "Employee Count Per Company",
                   "employee-count-company",
                   () => (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
+                    <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                      <Box sx={{ flex: 1, minHeight: 0 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={employeeCountByCompany}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -909,49 +679,46 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                             </Bar>
                           </BarChart>
                         </ResponsiveContainer>
-                      </div>
-                    </div>
+                      </Box>
+                    </Box>
                   )
                 )
               }
-              onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 4px 16px rgba(59,130,246,0.15)";
+              onMouseOver={e => {
+                e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
               }}
-              onMouseOut={(e) => {
+              onMouseOut={e => {
                 e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
               }}
               title="Click to enlarge"
             >
-              <h3
-                style={{
+              <Typography
+                sx={{
                   fontSize: "13px",
-                  fontWeight: "600",
-                  marginBottom: "10px",
+                  fontWeight: 600,
+                  mb: 1,
                   color: "#1e293b",
                   flexShrink: 0,
                 }}
               >
                 Employee Count Per Company
-              </h3>
-
-              {!employeeCountByCompany ||
-              employeeCountByCompany.length === 0 ? (
-                <div
-                  style={{
+              </Typography>
+              {!employeeCountByCompany || employeeCountByCompany.length === 0 ? (
+                <Box
+                  sx={{
                     textAlign: "center",
-                    padding: "30px 15px",
+                    py: 4,
                     color: "#64748b",
                     backgroundColor: "#f8fafc",
-                    borderRadius: "6px",
+                    borderRadius: 1,
                     fontSize: "12px",
                     flex: 1,
                   }}
                 >
                   No data available for selected filters
-                </div>
+                </Box>
               ) : (
-                <div style={{ flex: 1 }}>
+                <Box sx={{ flex: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={employeeCountByCompany}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -970,78 +737,34 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
+                </Box>
               )}
-            </div>
+            </Box>
 
-            {/* 
-            <Paper
+            {/* Parental Leaves Per Year */}
+            <Box
               sx={{
-                p: 1,
-                textAlign: "center",
-                flex: 1,
-                maxWidth: 600,
-                color: "#fff",
-              }}
-              onClick={() =>
-                handleOpen({
-                  chartKey: "employeeCountChart",
-                  chartText: "Employee Count Per Company",
-                })
-              }
-            >
-              <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-                Employee Count Per Company
-              </Typography>
-              <Box sx={{ height: 250 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={employeeCountByCompany}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="company" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" name="Employee Count">
-                      {employeeCountByCompany.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                          className="recharts-sector"
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>*/}
-
-            <div
-              style={{
                 backgroundColor: "white",
-                padding: "12px",
-                borderRadius: "8px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                p: 1.5,
+                borderRadius: 2,
+                boxShadow: 1,
                 display: "flex",
                 flexDirection: "column",
-                height: "400px", // ✅ Match height
+                minHeight: 0,
+                height: "100%",
                 width: "100%",
                 maxWidth: "800px",
                 cursor: "pointer",
                 transition: "box-shadow 0.2s",
+                overflow: "hidden",
               }}
               onClick={() =>
                 openZoomModal(
                   "Parental Leaves Per Year",
                   "parental-leaves",
                   () => (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <div style={{ flex: 1, minHeight: 400 }}>
+                    <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                      <Box sx={{ flex: 1, minHeight: 0 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart
                             data={leaveSeasons}
@@ -1050,10 +773,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="year" />
                             <YAxis domain={[0, "auto"]} />
-                            <Tooltip
-                              formatter={(value) => `${value} leaves`}
-                              itemStyle={{ color: "#000" }}
-                            />
+                            <Tooltip formatter={value => `${value} leaves`} itemStyle={{ color: "#000" }} />
                             <Legend />
                             <Line
                               type="monotone"
@@ -1064,128 +784,68 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                             />
                           </LineChart>
                         </ResponsiveContainer>
-                      </div>
-                    </div>
+                      </Box>
+                    </Box>
                   )
                 )
               }
-              onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 4px 16px rgba(59,130,246,0.15)";
+              onMouseOver={e => {
+                e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
               }}
-              onMouseOut={(e) => {
+              onMouseOut={e => {
                 e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
               }}
               title="Click to enlarge"
             >
-              <h3
-                style={{
+              <Typography
+                sx={{
                   fontSize: "13px",
-                  fontWeight: "600",
-                  marginBottom: "10px",
+                  fontWeight: 600,
+                  mb: 1,
                   color: "#1e293b",
                   flexShrink: 0,
                 }}
               >
                 Parental Leaves Per Year
-              </h3>
-
+              </Typography>
               {!leaveSeasons || leaveSeasons.length === 0 ? (
-                <div
-                  style={{
+                <Box
+                  sx={{
                     textAlign: "center",
-                    padding: "30px 15px",
+                    py: 4,
                     color: "#64748b",
                     backgroundColor: "#f8fafc",
-                    borderRadius: "6px",
+                    borderRadius: 1,
                     fontSize: "12px",
+                    flex: 1,
                   }}
                 >
                   No data available for selected filters
-                </div>
+                </Box>
               ) : (
-                <div
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: 0,
-                  }}
-                >
-                  <div style={{ flex: 1, minHeight: 0 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={leaveSeasons}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis domain={[0, "auto"]} />
-                        <Tooltip
-                          formatter={(value) => `${value} leaves`}
-                          itemStyle={{ color: "#000" }}
-                        />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="leave_count"
-                          stroke="#1976d2"
-                          dot={{ fill: "#1976d2" }}
-                          name="Leave Count"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                <Box sx={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={leaveSeasons}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="year" />
+                      <YAxis domain={[0, "auto"]} />
+                      <Tooltip formatter={value => `${value} leaves`} itemStyle={{ color: "#000" }} />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="leave_count"
+                        stroke="#1976d2"
+                        dot={{ fill: "#1976d2" }}
+                        name="Leave Count"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
               )}
-            </div>
-
-            {/* 
-            <Paper
-              sx={{
-                p: 1,
-                textAlign: "center",
-                flex: 1,
-                maxWidth: 600,
-                color: "#fff",
-              }}
-              onClick={() =>
-                handleOpen({
-                  chartKey: "parentalLeavePerYearChart",
-                  chartText: "Pareantal Leave Per Year",
-                })
-              }
-            >
-              <Typography variant="h6" sx={{ color: "#000", mb: 1 }}>
-                Parental Leaves Per Year
-              </Typography>
-              <Box sx={{ height: 250 }}>
-                <ResponsiveContainer>
-                  <LineChart
-                    data={leaveSeasons}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis domain={[0, "auto"]} />
-                    <Tooltip
-                      formatter={(value) => `${value} leaves`}
-                      itemStyle={{
-                        color: "#000",
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="leave_count"
-                      stroke="#1976d2"
-                      dot={{ fill: "#1976d2" }}
-                      name="Leave Count"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            </Paper>*/}
+            </Box>
           </Box>
         </Box>
 

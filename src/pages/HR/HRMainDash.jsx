@@ -54,7 +54,7 @@ function HRMainDash() {
   };
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", height: "100vh" }}>
       <Sidebar />
       <Box
         sx={{
@@ -62,6 +62,7 @@ function HRMainDash() {
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
+          height: "100vh",
         }}
       >
         {/* Header */}
@@ -116,9 +117,25 @@ function HRMainDash() {
         </Box>
 
         {/* Page-specific content with controls inside */}
-        <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
-          <Box mt={0} sx={{ width: "98%" }}>
-            {" "}
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "stretch",
+            width: "100%",
+            overflow: "auto",
+          }}
+        >
+          <Box
+            mt={0}
+            sx={{
+              width: "98%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             {renderPage()}
           </Box>
         </Box>
