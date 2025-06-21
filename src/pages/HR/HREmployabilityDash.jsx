@@ -87,20 +87,20 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
 
   // FILTERING
   const [companyFilter, setCompanyFilter] = useState([]);
-  const [positionFilter, setPositionFilter] = useState([]); // REMOVE THIS
+  //const [positionFilter, setPositionFilter] = useState([]); // REMOVE THIS
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
   const clearAllFilters = () => {
     setCompanyFilter([]);
-    setPositionFilter([]); // REMOVE THIS
+    //setPositionFilter([]); // REMOVE THIS
     setStartDate(null);
     setEndDate(null); 
   };
 
   const showClearButton = 
     companyFilter.length > 0 || 
-    positionFilter.length > 0 || //to be removed
+    //positionFilter.length > 0 || //to be removed
     startDate !== null ||
     endDate !== null;
 
@@ -128,10 +128,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     const fetchHRData = async () => {
       try {
         const params = {};
-        if (companyFilter.length > 0)
-          params.company_id = companyFilter.join(",");
-        if (positionFilter.length > 0) // REMOVE THIS
-          params.position_id = positionFilter.join(",");
+        // if (companyFilter.length > 0)
+        //   params.company_id = companyFilter.join(",");
+        // if (positionFilter.length > 0) // REMOVE THIS
+        //   params.position_id = positionFilter.join(",");
         // ADD START AND END DATE FILTER
 
         const [
@@ -154,13 +154,18 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
 
           //CHART
           api.get("hr/employee_count_per_company", { params }), 
-          api.get("hr/gender_distribution_per_position", { params }), 
           api.get("hr/age_distribution", { params }),
+          api.get("hr/gender_distribution_per_position", { params }), 
           api.get("hr/incident_count_per_month", { params }),
           api.get("hr/safety_manhours_per_month", { params }),
           api.get("hr/safety_manpower_per_month", { params }),
           
         ]);
+
+        console.log("genderDistRes.data", genderDistRes.data);
+        console.log("ageDistRes.data", ageDistRes.data);
+        console.log("incidentCountRes.data", incidentCountRes.data);
+
 
         setTotalManpower(totalManpowerRes.data[0]["total_safety_manpower"]);
         setTotalManhour(totalManhoursRes.data[0]["total_safety_manhours"]);
@@ -214,6 +219,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             month_name: item.month_name,
             total_monthly_safety_manpower: parseInt(item.total_monthly_safety_manpower)
           }))
+
+        
         );
       } catch (error) {
         console.error("Failed to fetch HR data:", error);
@@ -235,7 +242,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     };
 
     fetchHRData();
-  }, [companyFilter, positionFilter, shouldReload]);// REMOVE POSITION FILTER, ADD START AND END DATE
+  }, [companyFilter, shouldReload]);// REMOVE POSITION FILTER, ADD START AND END DATE
 
   const uniqueOptions = (key) => {
     return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
@@ -397,339 +404,343 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           }}
         >
         {/* Monthly Manpower */}
-        <Box
-          sx={{
-            backgroundColor: "white",
-            p: 1.5,
-            borderRadius: 2,
-            boxShadow: 1,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            height: "100%",
-            width: "100%",
-            maxWidth: "800px",
-            cursor: "pointer",
-            transition: "box-shadow 0.2s",
-            overflow: "hidden",
-          }}
-          onClick={() =>
-            openZoomModal(
-              "Monthly Safety Manpower (per Company)",
-              "monthly-manpower-per-company",
-              () => (
-                <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-                  <Box sx={{ flex: 1, minHeight: 0 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={(() => {
-                          // Group by month, then for each company, add a line
-                          // Get all unique months in order
-                          const months = [
-                            "January", "February", "March", "April", "May", "June",
-                            "July", "August", "September", "October", "November", "December"
-                          ];
-                          // Get all unique companies
-                          const companies = [
-                            ...new Set(monthlyManpower.map(item => item.company_name))
-                          ];
-                          // Group data by year and month
-                          const grouped = {};
-                          monthlyManpower.forEach(item => {
-                            const key = `${item.year}-${item.month_name}`;
-                            if (!grouped[key]) {
-                              grouped[key] = { year: item.year, month_name: item.month_name };
-                            }
-                            grouped[key][item.company_name] = item.total_monthly_safety_manpower;
-                          });
-                          // Sort by year and month
-                          const sorted = Object.values(grouped).sort((a, b) => {
-                            if (a.year !== b.year) return a.year - b.year;
-                            return months.indexOf(a.month_name) - months.indexOf(b.month_name);
-                          });
-                          // Add a label for X axis
-                          return sorted.map(row => ({
-                            ...row,
-                            label: `${row.month_name} ${row.year}`,
-                          }));
-                        })()}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
-                        <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
-                        <Tooltip />
-                        <Legend />
-                        {[
-                          ...new Set(monthlyManpower.map(item => item.company_name))
-                        ].map((company, idx) => (
-                          <Line
-                            key={company}
-                            type="monotone"
-                            dataKey={company}
-                            stroke={COLORS[idx % COLORS.length]}
-                            dot={{ fill: COLORS[idx % COLORS.length] }}
-                            name={company}
-                          />
-                        ))}
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
-              )
-            )
-          }
-          onMouseOver={e => {
-            e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
-          }}
-          onMouseOut={e => {
-            e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-          }}
-          title="Click to enlarge"
-        >
-          <Typography
+          <Box
             sx={{
-              fontSize: "13px",
-              fontWeight: 600,
-              mb: 1,
-              color: "#1e293b",
-              flexShrink: 0,
+              backgroundColor: "white",
+              p: 1.5,
+              borderRadius: 2,
+              boxShadow: 1,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              height: "100%",
+              width: "100%",
+              maxWidth: "800px",
+              cursor: "pointer",
+              transition: "box-shadow 0.2s",
+              overflow: "hidden",
             }}
+            onClick={() =>
+              openZoomModal(
+                "Monthly Safety Manpower (per Company)",
+                "monthly-manpower-per-company",
+                () => (
+            <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+              data={(() => {
+                // Group by month, then for each company, add a line
+                // Get all unique months in order
+                const months = [
+                  "January", "February", "March", "April", "May", "June",
+                  "July", "August", "September", "October", "November", "December"
+                ];
+                // Get all unique companies
+                const companies = [
+                  ...new Set(monthlyManpower.map(item => item.company_name))
+                ];
+                // Group data by year and month
+                const grouped = {};
+                monthlyManpower.forEach(item => {
+                  const key = `${item.year}-${item.month_name}`;
+                  if (!grouped[key]) {
+                    grouped[key] = { year: item.year, month_name: item.month_name };
+                  }
+                  grouped[key][item.company_name] = item.total_monthly_safety_manpower;
+                });
+                // Sort by year and month
+                const sorted = Object.values(grouped).sort((a, b) => {
+                  if (a.year !== b.year) return a.year - b.year;
+                  return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+                });
+                // Add a label for X axis
+                return sorted.map(row => ({
+                  ...row,
+                  label: `${row.month_name} ${row.year}`,
+                }));
+              })()}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
+              <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
+              <Tooltip />
+              <Legend />
+              {[
+                ...new Set(monthlyManpower.map(item => item.company_name))
+              ].map((company, idx) => (
+                <Line
+                  key={company}
+                  type="monotone"
+                  dataKey={company}
+                  stroke={COLORS[idx % COLORS.length]}
+                  dot={{ fill: COLORS[idx % COLORS.length] }}
+                  name={company}
+                  strokeWidth={4}
+                />
+              ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            </Box>
+                )
+              )
+            }
+            onMouseOver={e => {
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            }}
+            title="Click to enlarge"
           >
-            Monthly Safety Manpower (per Company)
-          </Typography>
-          {!monthlyManpower || monthlyManpower.length === 0 ? (
-            <Box
+            <Typography
               sx={{
-                textAlign: "center",
-                py: 4,
-                color: "#64748b",
-                backgroundColor: "#f8fafc",
-                borderRadius: 1,
-                fontSize: "12px",
-                flex: 1,
+                fontSize: "13px",
+                fontWeight: 600,
+                mb: 1,
+                color: "#1e293b",
+                flexShrink: 0,
               }}
             >
-              No data available for selected filters
-            </Box>
-          ) : (
-            <Box sx={{ flex: 1, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={(() => {
-                    const months = [
-                      "January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"
-                    ];
-                    const companies = [
-                      ...new Set(monthlyManpower.map(item => item.company_name))
-                    ];
-                    const grouped = {};
-                    monthlyManpower.forEach(item => {
-                      const key = `${item.year}-${item.month_name}`;
-                      if (!grouped[key]) {
-                        grouped[key] = { year: item.year, month_name: item.month_name };
-                      }
-                      grouped[key][item.company_name] = item.total_monthly_safety_manpower;
-                    });
-                    const sorted = Object.values(grouped).sort((a, b) => {
-                      if (a.year !== b.year) return a.year - b.year;
-                      return months.indexOf(a.month_name) - months.indexOf(b.month_name);
-                    });
-                    return sorted.map(row => ({
-                      ...row,
-                      label: `${row.month_name} ${row.year}`,
-                    }));
-                  })()}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
-                  <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
-                  <Tooltip />
-                  <Legend />
-                  {[
-                    ...new Set(monthlyManpower.map(item => item.company_name))
-                  ].map((company, idx) => (
-                    <Line
-                      key={company}
-                      type="monotone"
-                      dataKey={company}
-                      stroke={COLORS[idx % COLORS.length]}
-                      dot={{ fill: COLORS[idx % COLORS.length] }}
-                      name={company}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          )}
-        </Box>
+              Monthly Safety Manpower (per Company)
+            </Typography>
+            {!monthlyManpower || monthlyManpower.length === 0 ? (
+              <Box
+                sx={{
+            textAlign: "center",
+            py: 4,
+            color: "#64748b",
+            backgroundColor: "#f8fafc",
+            borderRadius: 1,
+            fontSize: "12px",
+            flex: 1,
+                }}
+              >
+                No data available for selected filters
+              </Box>
+            ) : (
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={(() => {
+                const months = [
+                  "January", "February", "March", "April", "May", "June",
+                  "July", "August", "September", "October", "November", "December"
+                ];
+                const companies = [
+                  ...new Set(monthlyManpower.map(item => item.company_name))
+                ];
+                const grouped = {};
+                monthlyManpower.forEach(item => {
+                  const key = `${item.year}-${item.month_name}`;
+                  if (!grouped[key]) {
+              grouped[key] = { year: item.year, month_name: item.month_name };
+                  }
+                  grouped[key][item.company_name] = item.total_monthly_safety_manpower;
+                });
+                const sorted = Object.values(grouped).sort((a, b) => {
+                  if (a.year !== b.year) return a.year - b.year;
+                  return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+                });
+                return sorted.map(row => ({
+                  ...row,
+                  label: `${row.month_name} ${row.year}`,
+                }));
+              })()}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
+              <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
+              <Tooltip />
+              <Legend />
+              {[
+                ...new Set(monthlyManpower.map(item => item.company_name))
+              ].map((company, idx) => (
+                <Line
+                  key={company}
+                  type="monotone"
+                  dataKey={company}
+                  stroke={COLORS[idx % COLORS.length]}
+                  dot={{ fill: COLORS[idx % COLORS.length] }}
+                  name={company}
+                  strokeWidth={4}
+                />
+              ))}
+            </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+          </Box>
 
-        {/* Monthly Manhour */}
-        <Box
-          sx={{
-            backgroundColor: "white",
-            p: 1.5,
-            borderRadius: 2,
-            boxShadow: 1,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            height: "100%",
-            width: "100%",
-            maxWidth: "800px",
-            cursor: "pointer",
-            transition: "box-shadow 0.2s",
-            overflow: "hidden",
-          }}
-          onClick={() =>
-            openZoomModal(
-              "Monthly Safety Manhours (per Company)",
-              "monthly-manhour-per-company",
-              () => (
-                <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-                  <Box sx={{ flex: 1, minHeight: 0 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={(() => {
-                          // Prepare data: group by year and month, each company as a line
-                          const months = [
-                            "January", "February", "March", "April", "May", "June",
-                            "July", "August", "September", "October", "November", "December"
-                          ];
-                          const companies = [
-                            ...new Set(monthlyManhour.map(item => item.company_name))
-                          ];
-                          const grouped = {};
-                          monthlyManhour.forEach(item => {
-                            const key = `${item.year}-${item.month_name}`;
-                            if (!grouped[key]) {
-                              grouped[key] = { year: item.year, month_name: item.month_name };
-                            }
-                            grouped[key][item.company_name] = item.manhours;
-                          });
-                          const sorted = Object.values(grouped).sort((a, b) => {
-                            if (a.year !== b.year) return a.year - b.year;
-                            return months.indexOf(a.month_name) - months.indexOf(b.month_name);
-                          });
-                          return sorted.map(row => ({
-                            ...row,
-                            label: `${row.month_name} ${row.year}`,
-                          }));
-                        })()}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
-                        <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
-                        <Tooltip />
-                        <Legend />
-                        {[
-                          ...new Set(monthlyManhour.map(item => item.company_name))
-                        ].map((company, idx) => (
-                          <Line
-                            key={company}
-                            type="monotone"
-                            dataKey={company}
-                            stroke={COLORS[idx % COLORS.length]}
-                            dot={{ fill: COLORS[idx % COLORS.length] }}
-                            name={company}
-                          />
-                        ))}
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
-              )
-            )
-          }
-          onMouseOver={e => {
-            e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
-          }}
-          onMouseOut={e => {
-            e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-          }}
-          title="Click to enlarge"
-        >
-          <Typography
+          {/* Monthly Manhour */}
+          <Box
             sx={{
-              fontSize: "13px",
-              fontWeight: 600,
-              mb: 1,
-              color: "#1e293b",
-              flexShrink: 0,
+              backgroundColor: "white",
+              p: 1.5,
+              borderRadius: 2,
+              boxShadow: 1,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              height: "100%",
+              width: "100%",
+              maxWidth: "800px",
+              cursor: "pointer",
+              transition: "box-shadow 0.2s",
+              overflow: "hidden",
             }}
+            onClick={() =>
+              openZoomModal(
+                "Monthly Safety Manhours (per Company)",
+                "monthly-manhour-per-company",
+                () => (
+            <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+              data={(() => {
+                // Prepare data: group by year and month, each company as a line
+                const months = [
+                  "January", "February", "March", "April", "May", "June",
+                  "July", "August", "September", "October", "November", "December"
+                ];
+                const companies = [
+                  ...new Set(monthlyManhour.map(item => item.company_name))
+                ];
+                const grouped = {};
+                monthlyManhour.forEach(item => {
+                  const key = `${item.year}-${item.month_name}`;
+                  if (!grouped[key]) {
+                    grouped[key] = { year: item.year, month_name: item.month_name };
+                  }
+                  grouped[key][item.company_name] = item.manhours;
+                });
+                const sorted = Object.values(grouped).sort((a, b) => {
+                  if (a.year !== b.year) return a.year - b.year;
+                  return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+                });
+                return sorted.map(row => ({
+                  ...row,
+                  label: `${row.month_name} ${row.year}`,
+                }));
+              })()}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
+              <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
+              <Tooltip />
+              <Legend />
+              {[
+                ...new Set(monthlyManhour.map(item => item.company_name))
+              ].map((company, idx) => (
+                <Line
+                  key={company}
+                  type="monotone"
+                  dataKey={company}
+                  stroke={COLORS[idx % COLORS.length]}
+                  dot={{ fill: COLORS[idx % COLORS.length] }}
+                  name={company}
+                  strokeWidth={4}
+                />
+              ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            </Box>
+                )
+              )
+            }
+            onMouseOver={e => {
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            }}
+            title="Click to enlarge"
           >
-            Monthly Safety Manhours (per Company)
-          </Typography>
-          {!monthlyManhour || monthlyManhour.length === 0 ? (
-            <Box
+            <Typography
               sx={{
-                textAlign: "center",
-                py: 4,
-                color: "#64748b",
-                backgroundColor: "#f8fafc",
-                borderRadius: 1,
-                fontSize: "12px",
-                flex: 1,
+                fontSize: "13px",
+                fontWeight: 600,
+                mb: 1,
+                color: "#1e293b",
+                flexShrink: 0,
               }}
             >
-              No data available for selected filters
-            </Box>
-          ) : (
-            <Box sx={{ flex: 1, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={(() => {
-                    const months = [
-                      "January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"
-                    ];
-                    const companies = [
-                      ...new Set(monthlyManhour.map(item => item.company_name))
-                    ];
-                    const grouped = {};
-                    monthlyManhour.forEach(item => {
-                      const key = `${item.year}-${item.month_name}`;
-                      if (!grouped[key]) {
-                        grouped[key] = { year: item.year, month_name: item.month_name };
-                      }
-                      grouped[key][item.company_name] = item.manhours;
-                    });
-                    const sorted = Object.values(grouped).sort((a, b) => {
-                      if (a.year !== b.year) return a.year - b.year;
-                      return months.indexOf(a.month_name) - months.indexOf(b.month_name);
-                    });
-                    return sorted.map(row => ({
-                      ...row,
-                      label: `${row.month_name} ${row.year}`,
-                    }));
-                  })()}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
-                  <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
-                  <Tooltip />
-                  <Legend />
-                  {[
-                    ...new Set(monthlyManhour.map(item => item.company_name))
-                  ].map((company, idx) => (
-                    <Line
-                      key={company}
-                      type="monotone"
-                      dataKey={company}
-                      stroke={COLORS[idx % COLORS.length]}
-                      dot={{ fill: COLORS[idx % COLORS.length] }}
-                      name={company}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
-          )}
-        </Box>
+              Monthly Safety Manhours (per Company)
+            </Typography>
+            {!monthlyManhour || monthlyManhour.length === 0 ? (
+              <Box
+                sx={{
+            textAlign: "center",
+            py: 4,
+            color: "#64748b",
+            backgroundColor: "#f8fafc",
+            borderRadius: 1,
+            fontSize: "12px",
+            flex: 1,
+                }}
+              >
+                No data available for selected filters
+              </Box>
+            ) : (
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={(() => {
+                const months = [
+                  "January", "February", "March", "April", "May", "June",
+                  "July", "August", "September", "October", "November", "December"
+                ];
+                const companies = [
+                  ...new Set(monthlyManhour.map(item => item.company_name))
+                ];
+                const grouped = {};
+                monthlyManhour.forEach(item => {
+                  const key = `${item.year}-${item.month_name}`;
+                  if (!grouped[key]) {
+              grouped[key] = { year: item.year, month_name: item.month_name };
+                  }
+                  grouped[key][item.company_name] = item.manhours;
+                });
+                const sorted = Object.values(grouped).sort((a, b) => {
+                  if (a.year !== b.year) return a.year - b.year;
+                  return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+                });
+                return sorted.map(row => ({
+                  ...row,
+                  label: `${row.month_name} ${row.year}`,
+                }));
+              })()}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
+              <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
+              <Tooltip />
+              <Legend />
+              {[
+                ...new Set(monthlyManhour.map(item => item.company_name))
+              ].map((company, idx) => (
+                <Line
+                  key={company}
+                  type="monotone"
+                  dataKey={company}
+                  stroke={COLORS[idx % COLORS.length]}
+                  dot={{ fill: COLORS[idx % COLORS.length] }}
+                  name={company}
+                  strokeWidth={4}
+                />
+              ))}
+            </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+          </Box>
 
         {/* Incident Count */}
         <Box
