@@ -148,6 +148,40 @@ function EnvironmentWasteDash() {
   const [pieSize, setPieSize] = useState(200); // Default size
 
   useEffect(() => {
+    // Only run if we have data loaded
+    if (hazGenWasteType.length === 0 && hazDisWasteType.length === 0 && nonHazMetrics.length === 0) {
+      return;
+    }
+
+    // Clear waste type/metrics selections when unit changes
+    // This ensures that only valid combinations are selected
+    if (activeTab !== 'non_hazardous_generated') {
+      // For hazardous tabs, clear waste type
+      const validWasteTypes = activeTab === 'hazardous_generated' 
+        ? hazGenWasteType.filter(item => item.unit === unit).map(item => item.waste_type)
+        : hazDisWasteType.filter(item => item.unit === unit).map(item => item.waste_type);
+      
+      // Keep only waste types that are valid for the selected unit
+      setWasteType(prevWasteType => 
+        Array.isArray(prevWasteType) 
+          ? prevWasteType.filter(type => validWasteTypes.includes(type))
+          : validWasteTypes.includes(prevWasteType) ? prevWasteType : []
+      );
+    } else {
+      // For non-hazardous tab, clear metrics
+      const validMetrics = nonHazMetrics
+        .filter(item => item.unit_of_measurement === unit)
+        .map(item => item.metrics);
+      
+      // Keep only metrics that are valid for the selected unit
+      setMetrics(prevMetrics => 
+        Array.isArray(prevMetrics) 
+          ? prevMetrics.filter(metric => validMetrics.includes(metric))
+          : validMetrics.includes(prevMetrics) ? prevMetrics : []
+      );
+    }
+  }, [unit, activeTab]);
+  useEffect(() => {
     function handleResize() {
       if (pieContainerRef.current) {
         const { width, height } = pieContainerRef.current.getBoundingClientRect();
@@ -201,7 +235,7 @@ function EnvironmentWasteDash() {
           api.get('/environment_dash/non-hazardous-waste-units'),
           api.get('/environment_dash/non-hazardous-metrics'),
         ]);
-   
+
         setCompanies(companiesResponse.data);
         setHazGenYears(hazGenYearsResponse.data.data || []);
         setHazGenWasteType(hazGenWasteTypeResponse.data.data || []);
@@ -233,26 +267,41 @@ function EnvironmentWasteDash() {
     fetchInitialData();
    }, []);
 
+  useEffect(() => {
+    console.log('Component state:', {
+      activeTab,
+      unit,
+      activeUnits,
+      hazGenWasteType: hazGenWasteType.length,
+      hazDisWasteType: hazDisWasteType.length,
+      nonHazMetrics: nonHazMetrics.length,
+      error
+    });
+  }, [activeTab, unit, activeUnits, hazGenWasteType, hazDisWasteType, nonHazMetrics, error]);
+
   // 2. Update active filters when tab or data changes
   useEffect(() => {
     switch (activeTab) {
       case 'hazardous_generated':
         setActiveYears(hazGenYears || []);
-        setActiveWasteType(hazGenWasteType || []);
-        setActiveMetrics(nonHazMetrics || []);
-        setActiveUnits(hazGenUnits || []);
+        setActiveWasteType(hazGenWasteType.map(item => item.waste_type) || []);
+        setActiveMetrics(nonHazMetrics.map(item => item.metrics) || []);
+        // Get unique units from hazGenWasteType
+        setActiveUnits([...new Set(hazGenWasteType.map(item => item.unit))] || []);
         break;
       case 'hazardous_disposed':
         setActiveYears(hazDisYears || []);
-        setActiveWasteType(hazDisWasteType || []);
-        setActiveMetrics(nonHazMetrics || []);
-        setActiveUnits(hazDisUnits || []);
+        setActiveWasteType(hazDisWasteType.map(item => item.waste_type) || []);
+        setActiveMetrics(nonHazMetrics.map(item => item.metrics) || []);
+        // Get unique units from hazDisWasteType
+        setActiveUnits([...new Set(hazDisWasteType.map(item => item.unit))] || []);
         break;
       case 'non_hazardous_generated':
         setActiveYears(nonHazYears || []);
-        setActiveWasteType(hazGenWasteType || []);
-        setActiveMetrics(nonHazMetrics || []);
-        setActiveUnits(nonHazUnits || []);
+        setActiveWasteType(hazGenWasteType.map(item => item.waste_type) || []);
+        setActiveMetrics(nonHazMetrics.map(item => item.metrics) || []);
+        // Get unique units from nonHazMetrics
+        setActiveUnits([...new Set(nonHazMetrics.map(item => item.unit_of_measurement))] || []);
         break;
       default:
         setActiveYears([]);
@@ -261,8 +310,12 @@ function EnvironmentWasteDash() {
         setActiveUnits([]);
         break;
     }
-    setFromYear(activeYears[0]);
-    setToYear(activeYears[activeYears.length - 1]);
+    
+    // Fix the year range setting to avoid accessing undefined arrays
+    if (activeYears && activeYears.length > 0) {
+      setFromYear(activeYears[0]);
+      setToYear(activeYears[activeYears.length - 1]);
+    }
   }, [
     activeTab,
     hazGenYears, hazGenWasteType, hazGenUnits,
@@ -1644,7 +1697,8 @@ function EnvironmentWasteDash() {
     setToYear(activeYears[activeYears.length - 1]);
     setWasteType([]);
     setMetrics([]);
-    setUnit('Kilogram');
+    // Reset to first available unit instead of hardcoded 'Kilogram'
+    setUnit(activeUnits.length > 0 ? activeUnits[0] : 'Kilogram');
   };
 
   useEffect(() => {
@@ -1695,20 +1749,48 @@ function EnvironmentWasteDash() {
     { value: 'Q4', label: 'Q4' }
   ];
 
-  const wasteTypeOptions = activeWasteType.map(type => ({
-    value: type,
-    label: type
-  }));
+  const wasteTypeOptions = (() => {
+    if (activeTab === 'hazardous_generated') {
+      return hazGenWasteType
+        .filter(item => item.unit === unit)
+        .map(item => ({
+          value: item.waste_type,
+          label: item.waste_type
+        }));
+    } else if (activeTab === 'hazardous_disposed') {
+      return hazDisWasteType
+        .filter(item => item.unit === unit)
+        .map(item => ({
+          value: item.waste_type,
+          label: item.waste_type
+        }));
+    }
+    return [];
+  })();
 
-  const metricsOptions = activeMetrics.map(metric => ({
-    value: metric,
-    label: metric
-  }));
+  const metricsOptions = (() => {
+    if (activeTab === 'non_hazardous_generated') {
+      return nonHazMetrics
+        .filter(item => item.unit_of_measurement === unit)
+        .map(item => ({
+          value: item.metrics,
+          label: item.metrics
+        }));
+    }
+    return [];
+  })();
 
   const unitOptions = activeUnits.map(unitItem => ({
     value: unitItem,
     label: unitItem
   }));
+
+  useEffect(() => {
+    // Set default unit when tab changes
+    if (activeUnits.length > 0 && !activeUnits.includes(unit)) {
+      setUnit(activeUnits[0]); // Set to first available unit
+    }
+  }, [activeTab, activeUnits]);
 
 
 // Helper function for year on year cumulative (keep original logic but handle arrays)
