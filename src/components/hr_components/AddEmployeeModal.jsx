@@ -11,6 +11,7 @@ import {
   Box,
 } from "@mui/material";
 
+import Overlay from "../../components/modal";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -20,6 +21,10 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 dayjs.extend(isSameOrAfter);
 
 import api from "../../services/api";
+
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+import ConfirmModal from "./ConfirmModal";
 
 function AddEmployeeModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -33,6 +38,37 @@ function AddEmployeeModal({ onClose, onSuccess }) {
     tenureStart: null,
     tenureEnded: null,
   });
+
+  const summaryData = [
+    { label: "Company ID", value: String(formData.companyId || "N/A") },
+    { label: "Employee ID", value: String(formData.employeeId || "N/A") },
+    { label: "Gender", value: String(formData.gender || "N/A") },
+    {
+      label: "Birthdate",
+      value: formData.birthdate
+        ? dayjs(formData.birthdate).format("YYYY-MM-DD")
+        : "N/A",
+    },
+    { label: "Position", value: String(formData.position || "N/A") },
+    { label: "Category", value: String(formData.employeeCategory || "N/A") },
+    { label: "Status", value: String(formData.employeeStatus || "N/A") },
+    {
+      label: "Tenure Start",
+      value: formData.tenureStart
+        ? dayjs(formData.tenureStart).format("YYYY-MM-DD")
+        : "N/A",
+    },
+    {
+      label: "Tenure End",
+      value: formData.tenureEnded
+        ? dayjs(formData.tenureEnded).format("YYYY-MM-DD")
+        : "N/A",
+    },
+  ];
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -125,46 +161,66 @@ function AddEmployeeModal({ onClose, onSuccess }) {
         dayjs(tenureEnded).isSameOrAfter(tenureStart));
 
     if (!isValidEmployeeId) {
-      alert("Employee ID is required.");
+      setErrorMessage("Employee ID is required");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidEmployeeIdExists) {
-      alert("Employee ID must be unique.");
+      setErrorMessage("Employee ID must be unique.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidGender) {
-      alert("Please select a valid Gender.");
+      setErrorMessage("Please select a valid Gender.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidPosition) {
-      alert("Please select a valid Position.");
+      setErrorMessage("Please select a valid Position.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
     if (!isValidBirthdate) {
-      alert("Please enter a valid Birthdate");
+      setErrorMessage("Please enter a valid Birthdate");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidCategory) {
-      alert("Please select a valid Employee Category.");
+      setErrorMessage("Please select a valid Employee Category.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidStatus) {
-      alert("Please select a valid Employee Status.");
+      setErrorMessage("Please select a valid Employee Status.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidTenureStart) {
-      alert("Tenure Start must be a valid date.");
+      setErrorMessage("Tenure Start must be a valid date.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidTenureEnded) {
-      alert("Tenure Ended must be the same as or after Tenure Start.");
+      setErrorMessage(
+        "Tenure Ended must be the same as or after Tenure Start."
+      );
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
@@ -189,9 +245,9 @@ function AddEmployeeModal({ onClose, onSuccess }) {
           : null,
       });
 
-      console.log("success  ");
+      setIsConfirmModalOpen(false);
+      setIsSuccessModalOpen(true);
       if (onSuccess) onSuccess();
-      onClose();
 
       setFormData({
         companyId: "",
@@ -431,10 +487,48 @@ function AddEmployeeModal({ onClose, onSuccess }) {
               backgroundColor: "#256d2f",
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => setIsConfirmModalOpen(true)}
         >
           ADD RECORD
         </Button>
+
+        {isConfirmModalOpen && (
+          <Overlay onClose={() => setIsConfirmModalOpen(false)}>
+            <ConfirmModal
+              open={isConfirmModalOpen}
+              title={"Confirm Record Addition"}
+              message={"Are you sure you want to add this employee record?"}
+              onConfirm={handleSubmit}
+              onCancel={() => setIsConfirmModalOpen(false)}
+              summaryData={summaryData}
+            />
+          </Overlay>
+        )}
+
+        {isErrorModalOpen && (
+          <Overlay onClose={() => setIsErrorModalOpen(false)}>
+            <ErrorModal
+              open={isErrorModalOpen}
+              errorMessage={errorMessage}
+              onClose={() => setIsErrorModalOpen(false)}
+            />
+          </Overlay>
+        )}
+
+        {isSuccessModalOpen && (
+          <Overlay onClose={() => setIsSuccessModalOpen(false)}>
+            <SuccessModal
+              open={isSuccessModalOpen}
+              successMessage={
+                "Your employee record has been successfully added to the repository."
+              }
+              onClose={() => {
+                setIsSuccessModalOpen(false);
+                onClose();
+              }}
+            />
+          </Overlay>
+        )}
       </Box>
     </Paper>
   );

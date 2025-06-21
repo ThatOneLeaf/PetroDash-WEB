@@ -95,15 +95,14 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     setCompanyFilter([]);
     //setPositionFilter([]); // REMOVE THIS
     setStartDate(null);
-    setEndDate(null); 
+    setEndDate(null);
   };
 
-  const showClearButton = 
-    companyFilter.length > 0 || 
+  const showClearButton =
+    companyFilter.length > 0 ||
     //positionFilter.length > 0 || //to be removed
     startDate !== null ||
     endDate !== null;
-
 
   const [zoomModal, setZoomModal] = useState({
     open: false,
@@ -123,20 +122,21 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
 
   //CHARTS
   useEffect(() => {
-    console.log(companyFilter);
+    console.log("thIS IS THE TIEM FRAME");
+    console.log(startDate);
+    console.log(endDate);
 
     const fetchHRData = async () => {
       try {
         const params = {};
-        // if (companyFilter.length > 0)
-        //   params.company_id = companyFilter.join(",");
-        // if (positionFilter.length > 0) // REMOVE THIS
-        //   params.position_id = positionFilter.join(",");
-        // ADD START AND END DATE FILTER
+        if (companyFilter.length > 0)
+          params.company_id = companyFilter.join(",");
+        if (startDate != null) params.start_date = startDate;
+        if (endDate != null) params.end_date = endDate;
 
         const [
           totalManpowerRes,
-          totalManhoursRes, 
+          totalManhoursRes,
           totalTrainingHoursRes,
           noLostTimeRes,
           companyCountRes,
@@ -147,29 +147,29 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           monthlyManpowerRes,
         ] = await Promise.all([
           //KPIS
-          api.get("hr/total_safety_manpower", { params }), 
+          api.get("hr/total_safety_manpower", { params }),
           api.get("hr/total_safety_manhours", { params }),
           api.get("hr/total_training_hours", { params }),
           api.get("hr/no_lost_time", { params }),
 
           //CHART
-          api.get("hr/employee_count_per_company", { params }), 
+          api.get("hr/employee_count_per_company", { params }),
           api.get("hr/age_distribution", { params }),
-          api.get("hr/gender_distribution_per_position", { params }), 
+          api.get("hr/gender_distribution_per_position", { params }),
           api.get("hr/incident_count_per_month", { params }),
           api.get("hr/safety_manhours_per_month", { params }),
           api.get("hr/safety_manpower_per_month", { params }),
-          
         ]);
 
         console.log("genderDistRes.data", genderDistRes.data);
         console.log("ageDistRes.data", ageDistRes.data);
         console.log("incidentCountRes.data", incidentCountRes.data);
 
-
         setTotalManpower(totalManpowerRes.data[0]["total_safety_manpower"]);
         setTotalManhour(totalManhoursRes.data[0]["total_safety_manhours"]);
-        setTotalTrainingHours(totalTrainingHoursRes.data[0]["total_training_hours"]);
+        setTotalTrainingHours(
+          totalTrainingHoursRes.data[0]["total_training_hours"]
+        );
         setNoLostTime(noLostTimeRes.data[0]["lost_time_incidents"]);
 
         setEmployeeCountByCompany(
@@ -199,7 +199,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             company_name: item.company_name,
             year: item.year,
             month_name: item.month_name,
-            incidents: parseInt(item.incidents)
+            incidents: parseInt(item.incidents),
           }))
         );
 
@@ -208,7 +208,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             company_name: item.company_name,
             year: item.year,
             month_name: item.month_name,
-            manhours: parseInt(item.manhours)
+            manhours: parseInt(item.manhours),
           }))
         );
 
@@ -217,10 +217,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             company_name: item.company_name,
             year: item.year,
             month_name: item.month_name,
-            total_monthly_safety_manpower: parseInt(item.total_monthly_safety_manpower)
+            total_monthly_safety_manpower: parseInt(
+              item.total_monthly_safety_manpower
+            ),
           }))
-
-        
         );
       } catch (error) {
         console.error("Failed to fetch HR data:", error);
@@ -235,15 +235,32 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         setAgeDistribution([]);
         setIncidentCount([]);
         setMonthlyManhour([]);
-        setMonthlyManpower([])
+        setMonthlyManpower([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchHRData();
-  }, [companyFilter, shouldReload]);// REMOVE POSITION FILTER, ADD START AND END DATE
+  }, [companyFilter, startDate, endDate, shouldReload]); // REMOVE POSITION FILTER, ADD START AND END DATE
 
+  const fetchEmployabilityData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("hr/employability_records_by_status");
+      console.log("Employability Data from API:", response.data);
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching Employability data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployabilityData();
+  }, []);
   const uniqueOptions = (key) => {
     return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
       label: val,
@@ -331,8 +348,14 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               placeholder="All Companies"
             />
 
-            <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
-            
+            <MonthRangeSelect
+              label="All Time"
+              startDate={startDate}
+              endDate={endDate}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
+            />
+
             {showClearButton && <ClearButton onClick={clearAllFilters} />}
 
             <Box sx={{ flexGrow: 1, minWidth: 10 }} />
@@ -392,7 +415,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         </Box>
 
         {/* Charts */}
-        
+
         <Box
           sx={{
             display: "grid",
@@ -403,7 +426,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             height: 0,
           }}
         >
-        {/* Monthly Manpower */}
+          {/* Monthly Manpower */}
           <Box
             sx={{
               backgroundColor: "white",
@@ -425,72 +448,111 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 "Monthly Safety Manpower (per Company)",
                 "monthly-manpower-per-company",
                 () => (
-            <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-              <Box sx={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-              data={(() => {
-                // Group by month, then for each company, add a line
-                // Get all unique months in order
-                const months = [
-                  "January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"
-                ];
-                // Get all unique companies
-                const companies = [
-                  ...new Set(monthlyManpower.map(item => item.company_name))
-                ];
-                // Group data by year and month
-                const grouped = {};
-                monthlyManpower.forEach(item => {
-                  const key = `${item.year}-${item.month_name}`;
-                  if (!grouped[key]) {
-                    grouped[key] = { year: item.year, month_name: item.month_name };
-                  }
-                  grouped[key][item.company_name] = item.total_monthly_safety_manpower;
-                });
-                // Sort by year and month
-                const sorted = Object.values(grouped).sort((a, b) => {
-                  if (a.year !== b.year) return a.year - b.year;
-                  return months.indexOf(a.month_name) - months.indexOf(b.month_name);
-                });
-                // Add a label for X axis
-                return sorted.map(row => ({
-                  ...row,
-                  label: `${row.month_name} ${row.year}`,
-                }));
-              })()}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  <Box
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
                   >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
-              <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
-              <Tooltip />
-              <Legend />
-              {[
-                ...new Set(monthlyManpower.map(item => item.company_name))
-              ].map((company, idx) => (
-                <Line
-                  key={company}
-                  type="monotone"
-                  dataKey={company}
-                  stroke={COLORS[idx % COLORS.length]}
-                  dot={{ fill: COLORS[idx % COLORS.length] }}
-                  name={company}
-                  strokeWidth={4}
-                />
-              ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            </Box>
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={(() => {
+                            // Group by month, then for each company, add a line
+                            // Get all unique months in order
+                            const months = [
+                              "January",
+                              "February",
+                              "March",
+                              "April",
+                              "May",
+                              "June",
+                              "July",
+                              "August",
+                              "September",
+                              "October",
+                              "November",
+                              "December",
+                            ];
+                            // Get all unique companies
+                            const companies = [
+                              ...new Set(
+                                monthlyManpower.map((item) => item.company_name)
+                              ),
+                            ];
+                            // Group data by year and month
+                            const grouped = {};
+                            monthlyManpower.forEach((item) => {
+                              const key = `${item.year}-${item.month_name}`;
+                              if (!grouped[key]) {
+                                grouped[key] = {
+                                  year: item.year,
+                                  month_name: item.month_name,
+                                };
+                              }
+                              grouped[key][item.company_name] =
+                                item.total_monthly_safety_manpower;
+                            });
+                            // Sort by year and month
+                            const sorted = Object.values(grouped).sort(
+                              (a, b) => {
+                                if (a.year !== b.year) return a.year - b.year;
+                                return (
+                                  months.indexOf(a.month_name) -
+                                  months.indexOf(b.month_name)
+                                );
+                              }
+                            );
+                            // Add a label for X axis
+                            return sorted.map((row) => ({
+                              ...row,
+                              label: `${row.month_name} ${row.year}`,
+                            }));
+                          })()}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="label"
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
+                          />
+                          <YAxis
+                            allowDecimals={false}
+                            domain={[0, "dataMax + 10"]}
+                          />
+                          <Tooltip />
+                          <Legend />
+                          {[
+                            ...new Set(
+                              monthlyManpower.map((item) => item.company_name)
+                            ),
+                          ].map((company, idx) => (
+                            <Line
+                              key={company}
+                              type="monotone"
+                              dataKey={company}
+                              stroke={COLORS[idx % COLORS.length]}
+                              dot={{ fill: COLORS[idx % COLORS.length] }}
+                              name={company}
+                              strokeWidth={4}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </Box>
                 )
               )
             }
-            onMouseOver={e => {
-              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 4px 16px rgba(59,130,246,0.15)";
             }}
-            onMouseOut={e => {
+            onMouseOut={(e) => {
               e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
             title="Click to enlarge"
@@ -509,13 +571,13 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             {!monthlyManpower || monthlyManpower.length === 0 ? (
               <Box
                 sx={{
-            textAlign: "center",
-            py: 4,
-            color: "#64748b",
-            backgroundColor: "#f8fafc",
-            borderRadius: 1,
-            fontSize: "12px",
-            flex: 1,
+                  textAlign: "center",
+                  py: 4,
+                  color: "#64748b",
+                  backgroundColor: "#f8fafc",
+                  borderRadius: 1,
+                  fontSize: "12px",
+                  flex: 1,
                 }}
               >
                 No data available for selected filters
@@ -523,53 +585,79 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             ) : (
               <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={(() => {
-                const months = [
-                  "January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"
-                ];
-                const companies = [
-                  ...new Set(monthlyManpower.map(item => item.company_name))
-                ];
-                const grouped = {};
-                monthlyManpower.forEach(item => {
-                  const key = `${item.year}-${item.month_name}`;
-                  if (!grouped[key]) {
-              grouped[key] = { year: item.year, month_name: item.month_name };
-                  }
-                  grouped[key][item.company_name] = item.total_monthly_safety_manpower;
-                });
-                const sorted = Object.values(grouped).sort((a, b) => {
-                  if (a.year !== b.year) return a.year - b.year;
-                  return months.indexOf(a.month_name) - months.indexOf(b.month_name);
-                });
-                return sorted.map(row => ({
-                  ...row,
-                  label: `${row.month_name} ${row.year}`,
-                }));
-              })()}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
-              <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
-              <Tooltip />
-              <Legend />
-              {[
-                ...new Set(monthlyManpower.map(item => item.company_name))
-              ].map((company, idx) => (
-                <Line
-                  key={company}
-                  type="monotone"
-                  dataKey={company}
-                  stroke={COLORS[idx % COLORS.length]}
-                  dot={{ fill: COLORS[idx % COLORS.length] }}
-                  name={company}
-                  strokeWidth={4}
-                />
-              ))}
-            </LineChart>
+                  <LineChart
+                    data={(() => {
+                      const months = [
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                      ];
+                      const companies = [
+                        ...new Set(
+                          monthlyManpower.map((item) => item.company_name)
+                        ),
+                      ];
+                      const grouped = {};
+                      monthlyManpower.forEach((item) => {
+                        const key = `${item.year}-${item.month_name}`;
+                        if (!grouped[key]) {
+                          grouped[key] = {
+                            year: item.year,
+                            month_name: item.month_name,
+                          };
+                        }
+                        grouped[key][item.company_name] =
+                          item.total_monthly_safety_manpower;
+                      });
+                      const sorted = Object.values(grouped).sort((a, b) => {
+                        if (a.year !== b.year) return a.year - b.year;
+                        return (
+                          months.indexOf(a.month_name) -
+                          months.indexOf(b.month_name)
+                        );
+                      });
+                      return sorted.map((row) => ({
+                        ...row,
+                        label: `${row.month_name} ${row.year}`,
+                      }));
+                    })()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="label"
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
+                    <Tooltip />
+                    <Legend />
+                    {[
+                      ...new Set(
+                        monthlyManpower.map((item) => item.company_name)
+                      ),
+                    ].map((company, idx) => (
+                      <Line
+                        key={company}
+                        type="monotone"
+                        dataKey={company}
+                        stroke={COLORS[idx % COLORS.length]}
+                        dot={{ fill: COLORS[idx % COLORS.length] }}
+                        name={company}
+                        strokeWidth={4}
+                      />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
               </Box>
             )}
@@ -597,67 +685,105 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 "Monthly Safety Manhours (per Company)",
                 "monthly-manhour-per-company",
                 () => (
-            <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-              <Box sx={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-              data={(() => {
-                // Prepare data: group by year and month, each company as a line
-                const months = [
-                  "January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"
-                ];
-                const companies = [
-                  ...new Set(monthlyManhour.map(item => item.company_name))
-                ];
-                const grouped = {};
-                monthlyManhour.forEach(item => {
-                  const key = `${item.year}-${item.month_name}`;
-                  if (!grouped[key]) {
-                    grouped[key] = { year: item.year, month_name: item.month_name };
-                  }
-                  grouped[key][item.company_name] = item.manhours;
-                });
-                const sorted = Object.values(grouped).sort((a, b) => {
-                  if (a.year !== b.year) return a.year - b.year;
-                  return months.indexOf(a.month_name) - months.indexOf(b.month_name);
-                });
-                return sorted.map(row => ({
-                  ...row,
-                  label: `${row.month_name} ${row.year}`,
-                }));
-              })()}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  <Box
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
                   >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
-              <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
-              <Tooltip />
-              <Legend />
-              {[
-                ...new Set(monthlyManhour.map(item => item.company_name))
-              ].map((company, idx) => (
-                <Line
-                  key={company}
-                  type="monotone"
-                  dataKey={company}
-                  stroke={COLORS[idx % COLORS.length]}
-                  dot={{ fill: COLORS[idx % COLORS.length] }}
-                  name={company}
-                  strokeWidth={4}
-                />
-              ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            </Box>
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={(() => {
+                            // Prepare data: group by year and month, each company as a line
+                            const months = [
+                              "January",
+                              "February",
+                              "March",
+                              "April",
+                              "May",
+                              "June",
+                              "July",
+                              "August",
+                              "September",
+                              "October",
+                              "November",
+                              "December",
+                            ];
+                            const companies = [
+                              ...new Set(
+                                monthlyManhour.map((item) => item.company_name)
+                              ),
+                            ];
+                            const grouped = {};
+                            monthlyManhour.forEach((item) => {
+                              const key = `${item.year}-${item.month_name}`;
+                              if (!grouped[key]) {
+                                grouped[key] = {
+                                  year: item.year,
+                                  month_name: item.month_name,
+                                };
+                              }
+                              grouped[key][item.company_name] = item.manhours;
+                            });
+                            const sorted = Object.values(grouped).sort(
+                              (a, b) => {
+                                if (a.year !== b.year) return a.year - b.year;
+                                return (
+                                  months.indexOf(a.month_name) -
+                                  months.indexOf(b.month_name)
+                                );
+                              }
+                            );
+                            return sorted.map((row) => ({
+                              ...row,
+                              label: `${row.month_name} ${row.year}`,
+                            }));
+                          })()}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="label"
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
+                          />
+                          <YAxis
+                            allowDecimals={false}
+                            domain={[0, "dataMax + 10000"]}
+                          />
+                          <Tooltip />
+                          <Legend />
+                          {[
+                            ...new Set(
+                              monthlyManhour.map((item) => item.company_name)
+                            ),
+                          ].map((company, idx) => (
+                            <Line
+                              key={company}
+                              type="monotone"
+                              dataKey={company}
+                              stroke={COLORS[idx % COLORS.length]}
+                              dot={{ fill: COLORS[idx % COLORS.length] }}
+                              name={company}
+                              strokeWidth={4}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </Box>
                 )
               )
             }
-            onMouseOver={e => {
-              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 4px 16px rgba(59,130,246,0.15)";
             }}
-            onMouseOut={e => {
+            onMouseOut={(e) => {
               e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
             title="Click to enlarge"
@@ -676,13 +802,13 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             {!monthlyManhour || monthlyManhour.length === 0 ? (
               <Box
                 sx={{
-            textAlign: "center",
-            py: 4,
-            color: "#64748b",
-            backgroundColor: "#f8fafc",
-            borderRadius: 1,
-            fontSize: "12px",
-            flex: 1,
+                  textAlign: "center",
+                  py: 4,
+                  color: "#64748b",
+                  backgroundColor: "#f8fafc",
+                  borderRadius: 1,
+                  fontSize: "12px",
+                  flex: 1,
                 }}
               >
                 No data available for selected filters
@@ -690,80 +816,105 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             ) : (
               <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={(() => {
-                const months = [
-                  "January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"
-                ];
-                const companies = [
-                  ...new Set(monthlyManhour.map(item => item.company_name))
-                ];
-                const grouped = {};
-                monthlyManhour.forEach(item => {
-                  const key = `${item.year}-${item.month_name}`;
-                  if (!grouped[key]) {
-              grouped[key] = { year: item.year, month_name: item.month_name };
-                  }
-                  grouped[key][item.company_name] = item.manhours;
-                });
-                const sorted = Object.values(grouped).sort((a, b) => {
-                  if (a.year !== b.year) return a.year - b.year;
-                  return months.indexOf(a.month_name) - months.indexOf(b.month_name);
-                });
-                return sorted.map(row => ({
-                  ...row,
-                  label: `${row.month_name} ${row.year}`,
-                }));
-              })()}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} />
-              <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
-              <Tooltip />
-              <Legend />
-              {[
-                ...new Set(monthlyManhour.map(item => item.company_name))
-              ].map((company, idx) => (
-                <Line
-                  key={company}
-                  type="monotone"
-                  dataKey={company}
-                  stroke={COLORS[idx % COLORS.length]}
-                  dot={{ fill: COLORS[idx % COLORS.length] }}
-                  name={company}
-                  strokeWidth={4}
-                />
-              ))}
-            </LineChart>
+                  <LineChart
+                    data={(() => {
+                      const months = [
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                      ];
+                      const companies = [
+                        ...new Set(
+                          monthlyManhour.map((item) => item.company_name)
+                        ),
+                      ];
+                      const grouped = {};
+                      monthlyManhour.forEach((item) => {
+                        const key = `${item.year}-${item.month_name}`;
+                        if (!grouped[key]) {
+                          grouped[key] = {
+                            year: item.year,
+                            month_name: item.month_name,
+                          };
+                        }
+                        grouped[key][item.company_name] = item.manhours;
+                      });
+                      const sorted = Object.values(grouped).sort((a, b) => {
+                        if (a.year !== b.year) return a.year - b.year;
+                        return (
+                          months.indexOf(a.month_name) -
+                          months.indexOf(b.month_name)
+                        );
+                      });
+                      return sorted.map((row) => ({
+                        ...row,
+                        label: `${row.month_name} ${row.year}`,
+                      }));
+                    })()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="label"
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      domain={[0, "dataMax + 10000"]}
+                    />
+                    <Tooltip />
+                    <Legend />
+                    {[
+                      ...new Set(
+                        monthlyManhour.map((item) => item.company_name)
+                      ),
+                    ].map((company, idx) => (
+                      <Line
+                        key={company}
+                        type="monotone"
+                        dataKey={company}
+                        stroke={COLORS[idx % COLORS.length]}
+                        dot={{ fill: COLORS[idx % COLORS.length] }}
+                        name={company}
+                        strokeWidth={4}
+                      />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
               </Box>
             )}
           </Box>
 
-        {/* Incident Count */}
-        <Box
-          sx={{
-            backgroundColor: "white",
-            p: 1.5,
-            borderRadius: 2,
-            boxShadow: 1,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            height: "100%",
-            cursor: "pointer",
-            transition: "box-shadow 0.2s",
-            width: "100%",
-            maxWidth: "100%",
-            overflow: "hidden",
-          }}
-          onClick={() =>
-            openZoomModal(
-              "Incidents Count",
-              "incidents-count",
-              () => (
+          {/* Incident Count */}
+          <Box
+            sx={{
+              backgroundColor: "white",
+              p: 1.5,
+              borderRadius: 2,
+              boxShadow: 1,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              height: "100%",
+              cursor: "pointer",
+              transition: "box-shadow 0.2s",
+              width: "100%",
+              maxWidth: "100%",
+              overflow: "hidden",
+            }}
+            onClick={() =>
+              openZoomModal("Incidents Count", "incidents-count", () => (
                 <Box
                   sx={{
                     width: "100%",
@@ -785,7 +936,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                           textAnchor="end"
                           height={60}
                         />
-                        <YAxis allowDecimals={false} domain={[0, "dataMax + 2"]} />
+                        <YAxis
+                          allowDecimals={false}
+                          domain={[0, "dataMax + 2"]}
+                        />
                         <Tooltip />
                         <Legend />
                         {getIncidentTypes(incidentCount).map((type, idx) => (
@@ -802,74 +956,74 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     </ResponsiveContainer>
                   </Box>
                 </Box>
-              )
-            )
-          }
-          onMouseOver={e => {
-            e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
-          }}
-          onMouseOut={e => {
-            e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-          }}
-          title="Click to enlarge"
-        >
-          <Typography
-            sx={{
-              fontSize: "13px",
-              fontWeight: 600,
-              mb: 1,
-              color: "#1e293b",
-              flexShrink: 0,
+              ))
+            }
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 4px 16px rgba(59,130,246,0.15)";
             }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            }}
+            title="Click to enlarge"
           >
-            Incidents Count
-          </Typography>
-          {!incidentCount || incidentCount.length === 0 ? (
-            <Box
+            <Typography
               sx={{
-                textAlign: "center",
-                py: 4,
-                color: "#64748b",
-                backgroundColor: "#f8fafc",
-                borderRadius: 1,
-                fontSize: "12px",
-                flex: 1,
+                fontSize: "13px",
+                fontWeight: 600,
+                mb: 1,
+                color: "#1e293b",
+                flexShrink: 0,
               }}
             >
-              No data available for selected filters
-            </Box>
-          ) : (
-            <Box sx={{ flex: 1, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={transformIncidentData(incidentCount)}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="month"
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis allowDecimals={false} domain={[0, "dataMax + 2"]} />
-                  <Tooltip />
-                  <Legend />
-                  {getIncidentTypes(incidentCount).map((type, idx) => (
-                    <Bar
-                      key={type}
-                      dataKey={type}
-                      stackId="a"
-                      fill={barColors[idx % barColors.length]}
-                      name={type}
-                      barSize={12}
+              Incidents Count
+            </Typography>
+            {!incidentCount || incidentCount.length === 0 ? (
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: 4,
+                  color: "#64748b",
+                  backgroundColor: "#f8fafc",
+                  borderRadius: 1,
+                  fontSize: "12px",
+                  flex: 1,
+                }}
+              >
+                No data available for selected filters
+              </Box>
+            ) : (
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={transformIncidentData(incidentCount)}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="month"
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
                     />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          )}
-        </Box>
+                    <YAxis allowDecimals={false} domain={[0, "dataMax + 2"]} />
+                    <Tooltip />
+                    <Legend />
+                    {getIncidentTypes(incidentCount).map((type, idx) => (
+                      <Bar
+                        key={type}
+                        dataKey={type}
+                        stackId="a"
+                        fill={barColors[idx % barColors.length]}
+                        name={type}
+                        barSize={12}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+          </Box>
 
           {/* Bottom charts: span all 3 columns */}
           <Box
@@ -883,238 +1037,256 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               mt: 2,
             }}
           >
-            
-          {/* Gender Distribution */}
-          
-          <Box
-            sx={{
-              backgroundColor: "white",
-              p: 1.5,
-              borderRadius: 2,
-              boxShadow: 1,
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 0,
-              height: "100%",
-              cursor: "pointer",
-              transition: "box-shadow 0.2s",
-              width: "100%",
-              maxWidth: "100%",
-              overflow: "hidden",
-            }}
-            onClick={() =>
-              openZoomModal(
-                "Gender Distribution by Position",
-                "gender-distribution",
-                () => (
-                  <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-                    <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={genderDistribution}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="position" />
-                          <YAxis />
-                          <Tooltip itemStyle={{ color: "#000" }} />
-                          <Legend />
-                          <Bar dataKey="Male" fill="#4285F4" />
-                          <Bar dataKey="Female" fill="#EA4335" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
-                )
-              )
-            }
-            onMouseOver={e => {
-              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-            title="Click to enlarge"
-          >
-            <Typography
-              sx={{
-                fontSize: "13px",
-                fontWeight: 600,
-                mb: 1,
-                color: "#1e293b",
-                flexShrink: 0,
-              }}
-            >
-              Gender Distribution by Position
-            </Typography>
-            {!genderDistribution || genderDistribution.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 4,
-                  color: "#64748b",
-                  backgroundColor: "#f8fafc",
-                  borderRadius: 1,
-                  fontSize: "12px",
-                  flex: 1,
-                }}
-              >
-                No data available for selected filters
-              </Box>
-            ) : (
-              <Box sx={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={genderDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="position" />
-                    <YAxis />
-                    <Tooltip itemStyle={{ color: "#000" }} />
-                    <Legend />
-                    <Bar dataKey="Male" fill="#4285F4" />
-                    <Bar dataKey="Female" fill="#EA4335" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
-          </Box>
+            {/* Gender Distribution */}
 
-          {/* Age Group Distribution */}
-          <Box
-            sx={{
-              backgroundColor: "white",
-              p: 1.5,
-              borderRadius: 2,
-              boxShadow: 1,
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 0,
-              height: "100%",
-              cursor: "pointer",
-              transition: "box-shadow 0.2s",
-              width: "100%",
-              maxWidth: "100%",
-              overflow: "hidden",
-            }}
-            onClick={() =>
-              openZoomModal(
-                "Age Group Distribution",
-                "age-distribution",
-                () => (
-                  <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
-                    <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={ageDistribution}
-                            dataKey="count"
-                            nameKey="age_group"
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) =>
-                              `${name}: ${(percent * 100).toFixed(0)}%`
-                            }
-                            outerRadius="80%"
-                            innerRadius="40%"
-                            fill="#8884d8"
-                            paddingAngle={2}
-                            startAngle={90}
-                            endAngle={450}
-                          >
-                            {ageDistribution.map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value, name) => [`${value}`, name]} />
-                          <Legend iconType="square" />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
-                )
-              )
-            }
-            onMouseOver={e => {
-              e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-            title="Click to enlarge"
-          >
-            <Typography
+            <Box
               sx={{
-                fontSize: "13px",
-                fontWeight: 600,
-                mb: 1,
-                color: "#1e293b",
-                flexShrink: 0,
+                backgroundColor: "white",
+                p: 1.5,
+                borderRadius: 2,
+                boxShadow: 1,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                height: "100%",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s",
+                width: "100%",
+                maxWidth: "100%",
+                overflow: "hidden",
               }}
-            >
-              Age Group Distribution
-            </Typography>
-            {!ageDistribution || ageDistribution.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 4,
-                  color: "#64748b",
-                  backgroundColor: "#f8fafc",
-                  borderRadius: 1,
-                  fontSize: "12px",
-                  flex: 1,
-                }}
-              >
-                No data available for selected filters
-              </Box>
-            ) : (
-              <Box sx={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={ageDistribution}
-                      dataKey="count"
-                      nameKey="age_group"
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) =>
-                        `${name}: ${(percent * 100).toFixed(0)}%`
-                      }
-                      outerRadius="80%"
-                      innerRadius="40%"
-                      fill="#8884d8"
-                      paddingAngle={2}
-                      startAngle={90}
-                      endAngle={450}
+              onClick={() =>
+                openZoomModal(
+                  "Gender Distribution by Position",
+                  "gender-distribution",
+                  () => (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
                     >
-                      {ageDistribution.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value, name) => [`${value}`, name]} />
-                    <Legend iconType="square" />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
-          </Box>
+                      <Box sx={{ flex: 1, minHeight: 0 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={genderDistribution}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="position" />
+                            <YAxis />
+                            <Tooltip itemStyle={{ color: "#000" }} />
+                            <Legend />
+                            <Bar dataKey="Male" fill="#4285F4" />
+                            <Bar dataKey="Female" fill="#EA4335" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </Box>
+                    </Box>
+                  )
+                )
+              }
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(59,130,246,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+              }}
+              title="Click to enlarge"
+            >
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  mb: 1,
+                  color: "#1e293b",
+                  flexShrink: 0,
+                }}
+              >
+                Gender Distribution by Position
+              </Typography>
+              {!genderDistribution || genderDistribution.length === 0 ? (
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 4,
+                    color: "#64748b",
+                    backgroundColor: "#f8fafc",
+                    borderRadius: 1,
+                    fontSize: "12px",
+                    flex: 1,
+                  }}
+                >
+                  No data available for selected filters
+                </Box>
+              ) : (
+                <Box sx={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={genderDistribution}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="position" />
+                      <YAxis />
+                      <Tooltip itemStyle={{ color: "#000" }} />
+                      <Legend />
+                      <Bar dataKey="Male" fill="#4285F4" />
+                      <Bar dataKey="Female" fill="#EA4335" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+            </Box>
 
-          
-          <Box
-            sx={{
-              backgroundColor: "white",
-              p: 1.5,
-              borderRadius: 2,
-              boxShadow: 1,
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 0,
-              height: "100%",
-              width: "100%",
+            {/* Age Group Distribution */}
+            <Box
+              sx={{
+                backgroundColor: "white",
+                p: 1.5,
+                borderRadius: 2,
+                boxShadow: 1,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                height: "100%",
+                cursor: "pointer",
+                transition: "box-shadow 0.2s",
+                width: "100%",
+                maxWidth: "100%",
+                overflow: "hidden",
+              }}
+              onClick={() =>
+                openZoomModal(
+                  "Age Group Distribution",
+                  "age-distribution",
+                  () => (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <Box sx={{ flex: 1, minHeight: 0 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={ageDistribution}
+                              dataKey="count"
+                              nameKey="age_group"
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent }) =>
+                                `${name}: ${(percent * 100).toFixed(0)}%`
+                              }
+                              outerRadius="80%"
+                              innerRadius="40%"
+                              fill="#8884d8"
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
+                            >
+                              {ageDistribution.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value, name) => [`${value}`, name]}
+                            />
+                            <Legend iconType="square" />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </Box>
+                    </Box>
+                  )
+                )
+              }
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(59,130,246,0.15)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+              }}
+              title="Click to enlarge"
+            >
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  mb: 1,
+                  color: "#1e293b",
+                  flexShrink: 0,
+                }}
+              >
+                Age Group Distribution
+              </Typography>
+              {!ageDistribution || ageDistribution.length === 0 ? (
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 4,
+                    color: "#64748b",
+                    backgroundColor: "#f8fafc",
+                    borderRadius: 1,
+                    fontSize: "12px",
+                    flex: 1,
+                  }}
+                >
+                  No data available for selected filters
+                </Box>
+              ) : (
+                <Box sx={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={ageDistribution}
+                        dataKey="count"
+                        nameKey="age_group"
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) =>
+                          `${name}: ${(percent * 100).toFixed(0)}%`
+                        }
+                        outerRadius="80%"
+                        innerRadius="40%"
+                        fill="#8884d8"
+                        paddingAngle={2}
+                        startAngle={90}
+                        endAngle={450}
+                      >
+                        {ageDistribution.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value, name) => [`${value}`, name]}
+                      />
+                      <Legend iconType="square" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                backgroundColor: "white",
+                p: 1.5,
+                borderRadius: 2,
+                boxShadow: 1,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                height: "100%",
+                width: "100%",
                 maxWidth: "800px",
                 cursor: "pointer",
                 transition: "box-shadow 0.2s",
@@ -1125,7 +1297,14 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   "Employee Count Per Company",
                   "employee-count-company",
                   () => (
-                    <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       <Box sx={{ flex: 1, minHeight: 0 }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={employeeCountByCompany}>
@@ -1150,10 +1329,11 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   )
                 )
               }
-              onMouseOver={e => {
-                e.currentTarget.style.boxShadow = "0 4px 16px rgba(59,130,246,0.15)";
+              onMouseOver={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(59,130,246,0.15)";
               }}
-              onMouseOut={e => {
+              onMouseOut={(e) => {
                 e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
               }}
               title="Click to enlarge"
@@ -1169,7 +1349,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               >
                 Employee Count Per Company
               </Typography>
-              {!employeeCountByCompany || employeeCountByCompany.length === 0 ? (
+              {!employeeCountByCompany ||
+              employeeCountByCompany.length === 0 ? (
                 <Box
                   sx={{
                     textAlign: "center",
@@ -1207,7 +1388,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               )}
             </Box>
           </Box>
-        </Box> 
+        </Box>
 
         <ZoomModal
           open={zoomModal.open}
@@ -1222,7 +1403,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             ? zoomModal.content()
             : zoomModal.content}
         </ZoomModal>
-      </Box> 
+      </Box>
     </Box>
   );
 }
