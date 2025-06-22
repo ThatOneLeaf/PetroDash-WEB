@@ -2420,6 +2420,19 @@ function EnvironmentEnergyDash() {
                     'electricity-distribution-pie',
                     () => (
                       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '16px'
+                        }}>
+                          Distribution of Electricity Consumption by Company
+                        </div>
+                        
                         <div style={{ flex: 1, minHeight: 400 }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -2495,7 +2508,7 @@ function EnvironmentEnergyDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{
-                  fontSize: '13px',
+                  fontSize: '20px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -2573,8 +2586,8 @@ function EnvironmentEnergyDash() {
                       display: 'flex',
                       justifyContent: 'center',
                       flexWrap: 'wrap',
-                      gap: '8px',
-                      fontSize: '10px',
+                      gap: '12px',
+                      fontSize: '12px',
                       flexShrink: 0,
                       marginTop: '8px'
                     }}>
@@ -2584,17 +2597,17 @@ function EnvironmentEnergyDash() {
                           style={{ 
                             display: 'flex', 
                             alignItems: 'center', 
-                            gap: '4px'
+                            gap: '6px'
                           }}
                         >
                           <div style={{
-                            width: '8px',
-                            height: '8px',
+                            width: '12px',
+                            height: '12px',
                             backgroundColor: entry.color || COLORS[index % COLORS.length],
-                            borderRadius: '1px',
+                            borderRadius: '2px',
                             flexShrink: 0
                           }}></div>
-                          <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                          <span style={{ fontWeight: '500', fontSize: '15px' }}>
                             {entry.label}: {(entry.value || 0).toLocaleString()}
                           </span>
                         </div>
@@ -2629,44 +2642,61 @@ function EnvironmentEnergyDash() {
                       'Electricity Consumption Over Years by Company', 
                       'electricity-consumption-over-time',
                       () => (
-                        <ResponsiveContainer width="100%" height={500}>
-                          <LineChart data={currentData.lineChartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="year" 
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 14, fill: '#64748b' }}
-                            />
-                            <YAxis 
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 14, fill: '#64748b' }}
-                              tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-                            />
-                            <Tooltip 
-                              formatter={(value, name) => [
-                                `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                                name.toUpperCase()
-                              ]}
-                              labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                              contentStyle={{ fontSize: '14px' }}
-                            />
-                            <Legend wrapperStyle={{ fontSize: '14px' }} />
-                            
-                            {Object.keys(lineChartColors).map((companyId, index) => (
-                              <Line 
-                                key={companyId}
-                                type="monotone" 
-                                dataKey={companyId} 
-                                stroke={lineChartColors[companyId] || COLORS[index % COLORS.length]} 
-                                strokeWidth={4}
-                                dot={{ fill: lineChartColors[companyId] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
-                                name={companyId}
-                              />
-                            ))}
-                          </LineChart>
-                        </ResponsiveContainer>
+                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                          {/* Add title at the top */}
+                          <div style={{
+                            textAlign: 'center',
+                            padding: '16px 0',
+                            fontSize: '18px',
+                            fontWeight: '700',
+                            color: '#1e293b',
+                            borderBottom: '1px solid #e2e8f0',
+                            marginBottom: '16px'
+                          }}>
+                            Electricity Consumption Over Years by Company
+                          </div>
+                          
+                          <div style={{ flex: 1, minHeight: 400 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={currentData.lineChartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                <XAxis 
+                                  dataKey="year" 
+                                  axisLine={false}
+                                  tickLine={false}
+                                  tick={{ fontSize: 14, fill: '#64748b' }}
+                                />
+                                <YAxis 
+                                  axisLine={false}
+                                  tickLine={false}
+                                  tick={{ fontSize: 14, fill: '#64748b' }}
+                                  tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                                />
+                                <Tooltip 
+                                  formatter={(value, name) => [
+                                    `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                                    name.toUpperCase()
+                                  ]}
+                                  labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                                  contentStyle={{ fontSize: '14px' }}
+                                />
+                                <Legend wrapperStyle={{ fontSize: '14px' }} />
+                                
+                                {Object.keys(lineChartColors).map((companyId, index) => (
+                                  <Line 
+                                    key={companyId}
+                                    type="monotone" 
+                                    dataKey={companyId} 
+                                    stroke={lineChartColors[companyId] || COLORS[index % COLORS.length]} 
+                                    strokeWidth={4}
+                                    dot={{ fill: lineChartColors[companyId] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
+                                    name={companyId}
+                                  />
+                                ))}
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
                       )
                     )}
                     sx={{
@@ -2682,7 +2712,7 @@ function EnvironmentEnergyDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '20px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -2745,7 +2775,7 @@ function EnvironmentEnergyDash() {
                             labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                             contentStyle={{ fontSize: '12px' }}
                           />
-                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          <Legend wrapperStyle={{ fontSize: '15px' }} />
                           
                           {/* Dynamically render lines based on available companies */}
                           {Object.keys(lineChartColors).map((companyId, index) => (
@@ -2784,8 +2814,21 @@ function EnvironmentEnergyDash() {
                       'total-electricity-consumption-per-company',
                       () => (
                         <div style={{ width: '100%', height: '100%', padding: '20px' }}>
+                          {/* Add title at the top */}
+                          <div style={{
+                            textAlign: 'center',
+                            padding: '16px 0',
+                            fontSize: '18px',
+                            fontWeight: '700',
+                            color: '#1e293b',
+                            borderBottom: '1px solid #e2e8f0',
+                            marginBottom: '20px'
+                          }}>
+                            Total Electricity Consumption per Company
+                          </div>
+                          
                           <div style={{ 
-                            height: '100%', 
+                            height: 'calc(100% - 60px)', 
                             display: 'flex', 
                             flexDirection: 'column', 
                             justifyContent: 'space-around'
@@ -2852,6 +2895,7 @@ function EnvironmentEnergyDash() {
                         </div>
                       )
                     )}
+
                     sx={{
                       position: 'absolute',
                       top: 8,
@@ -2866,7 +2910,7 @@ function EnvironmentEnergyDash() {
                   </IconButton>
 
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '20px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3004,60 +3048,77 @@ function EnvironmentEnergyDash() {
                 }}>
                   {/* Zoom button */}
                   <IconButton
-                    onClick={() => openZoomModal(
-                      'Total Electricity Consumption by Company and Source', 
-                      'electricity-consumption-by-source',
-                      () => (
-                        <ResponsiveContainer width="100%" height={500}>
-                          <BarChart 
-                            data={currentData.companySourceData}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="company"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 14, fill: '#64748b' }}
-                            />
-                            <YAxis 
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 14, fill: '#64748b' }}
-                              tickFormatter={(value) => {
-                                if (value >= 1000000) {
-                                  return `${(value / 1000000).toFixed(1)}M`;
-                                } else if (value >= 1000) {
-                                  return `${(value / 1000).toFixed(0)}K`;
-                                } else {
-                                  return value.toString();
-                                }
-                              }}
-                            />
-                            <Tooltip 
-                              formatter={(value, name) => [
-                                `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                                name
-                              ]}
-                              labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                              contentStyle={{ fontSize: '14px' }}
-                            />
-                            <Legend wrapperStyle={{ fontSize: '14px' }} />
-                            
-                            {Object.keys(sourceColors).map((source, index) => (
-                              <Bar 
-                                key={source}
-                                dataKey={source} 
-                                stackId="a" 
-                                fill={sourceColors[source] || COLORS[index % COLORS.length]}
-                                name={source}
-                                radius={index === Object.keys(sourceColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                  onClick={() => openZoomModal(
+                    'Total Electricity Consumption by Company and Source', 
+                    'electricity-consumption-by-source',
+                    () => (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '16px'
+                        }}>
+                          Total Electricity Consumption by Company and Source
+                        </div>
+                        
+                        <div style={{ flex: 1, minHeight: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart 
+                              data={currentData.companySourceData}
+                              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                              <XAxis 
+                                dataKey="company"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
                               />
-                            ))}
-                          </BarChart>
-                        </ResponsiveContainer>
-                      )
-                    )}
+                              <YAxis 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
+                                tickFormatter={(value) => {
+                                  if (value >= 1000000) {
+                                    return `${(value / 1000000).toFixed(1)}M`;
+                                  } else if (value >= 1000) {
+                                    return `${(value / 1000).toFixed(0)}K`;
+                                  } else {
+                                    return value.toString();
+                                  }
+                                }}
+                              />
+                              <Tooltip 
+                                formatter={(value, name) => [
+                                  `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                                  name
+                                ]}
+                                labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                                contentStyle={{ fontSize: '14px' }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: '14px' }} />
+                              
+                              {Object.keys(sourceColors).map((source, index) => (
+                                <Bar 
+                                  key={source}
+                                  dataKey={source} 
+                                  stackId="a" 
+                                  fill={sourceColors[source] || COLORS[index % COLORS.length]}
+                                  name={source}
+                                  radius={index === Object.keys(sourceColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                                />
+                              ))}
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )
+                  )}
                     sx={{
                       position: 'absolute',
                       top: 8,
@@ -3071,7 +3132,7 @@ function EnvironmentEnergyDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '20px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3145,7 +3206,7 @@ function EnvironmentEnergyDash() {
                             labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                             contentStyle={{ fontSize: '12px' }}
                           />
-                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          <Legend wrapperStyle={{ fontSize: '15px' }} />
                           
                           {/* Dynamically render bars for each source */}
                           {Object.keys(sourceColors).map((source, index) => (
@@ -3178,50 +3239,67 @@ function EnvironmentEnergyDash() {
                 }}>
                   {/* Zoom button */}
                   <IconButton
-                    onClick={() => openZoomModal(
-                      `Electricity Consumption per Quarter - ${fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}`, 
-                      'electricity-consumption-quarterly',
-                      () => (
-                        <ResponsiveContainer width="100%" height={500}>
-                          <BarChart data={currentData.stackedBarData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="quarter"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 14, fill: '#64748b' }}
-                            />
-                            <YAxis 
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 14, fill: '#64748b' }}
-                              tickFormatter={(value) => {
-                                if (value >= 1000000) {
-                                  return `${(value / 1000000).toFixed(1)}M`;
-                                } else if (value >= 1000) {
-                                  return `${(value / 1000).toFixed(0)}K`;
-                                } else {
-                                  return value.toString();
-                                }
-                              }}
-                            />
-                            <Tooltip content={renderStackedBarTooltip} />
-                            <Legend wrapperStyle={{ fontSize: '14px' }} />
-                            
-                            {Object.keys(quarterCompanyColors).map((company, index) => (
-                              <Bar 
-                                key={company}
-                                dataKey={company} 
-                                stackId="a" 
-                                fill={quarterCompanyColors[company] || COLORS[index % COLORS.length]}
-                                name={company}
-                                radius={index === Object.keys(quarterCompanyColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                  onClick={() => openZoomModal(
+                    `Electricity Consumption per Quarter - ${fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}`, 
+                    'electricity-consumption-quarterly',
+                    () => (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '16px'
+                        }}>
+                          Electricity Consumption per Quarter - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
+                        </div>
+                        
+                        <div style={{ flex: 1, minHeight: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={currentData.stackedBarData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                              <XAxis 
+                                dataKey="quarter"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
                               />
-                            ))}
-                          </BarChart>
-                        </ResponsiveContainer>
-                      )
-                    )}
+                              <YAxis 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
+                                tickFormatter={(value) => {
+                                  if (value >= 1000000) {
+                                    return `${(value / 1000000).toFixed(1)}M`;
+                                  } else if (value >= 1000) {
+                                    return `${(value / 1000).toFixed(0)}K`;
+                                  } else {
+                                    return value.toString();
+                                  }
+                                }}
+                              />
+                              <Tooltip content={renderStackedBarTooltip} />
+                              <Legend wrapperStyle={{ fontSize: '14px' }} />
+                              
+                              {Object.keys(quarterCompanyColors).map((company, index) => (
+                                <Bar 
+                                  key={company}
+                                  dataKey={company} 
+                                  stackId="a" 
+                                  fill={quarterCompanyColors[company] || COLORS[index % COLORS.length]}
+                                  name={company}
+                                  radius={index === Object.keys(quarterCompanyColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                                />
+                              ))}
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )
+                  )}
                     sx={{
                       position: 'absolute',
                       top: 8,
@@ -3235,7 +3313,7 @@ function EnvironmentEnergyDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '20px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3299,7 +3377,7 @@ function EnvironmentEnergyDash() {
                             }}
                           />
                           <Tooltip content={renderStackedBarTooltip} />
-                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          <Legend wrapperStyle={{ fontSize: '15px' }} />
                           
                           {/* Dynamically render bars for each company */}
                           {Object.keys(quarterCompanyColors).map((company, index) => (
@@ -3343,6 +3421,19 @@ function EnvironmentEnergyDash() {
                     'diesel-distribution-by-company',
                     () => (
                       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '16px'
+                        }}>
+                          Distribution of Diesel Consumption by Company
+                        </div>
+                        
                         <div style={{ flex: 1, minHeight: 400 }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -3405,7 +3496,7 @@ function EnvironmentEnergyDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{
-                  fontSize: '13px',
+                  fontSize: '20px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -3483,8 +3574,8 @@ function EnvironmentEnergyDash() {
                         display: 'flex',
                         justifyContent: 'center',
                         flexWrap: 'wrap',
-                        gap: '8px',
-                        fontSize: '10px',
+                        gap: '12px',
+                        fontSize: '12px',
                         flexShrink: 0,
                         marginTop: '8px'
                       }}>
@@ -3494,17 +3585,17 @@ function EnvironmentEnergyDash() {
                             style={{ 
                               display: 'flex', 
                               alignItems: 'center', 
-                              gap: '4px'
+                              gap: '6px'
                             }}
                           >
                             <div style={{
-                              width: '8px',
-                              height: '8px',
+                              width: '12px',
+                              height: '12px',
                               backgroundColor: entry.color || COLORS[index % COLORS.length],
-                              borderRadius: '1px',
+                              borderRadius: '2px',
                               flexShrink: 0
                             }}></div>
-                            <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                            <span style={{ fontWeight: '500', fontSize: '15px' }}>
                               {entry.label}: {(entry.value || 0).toLocaleString()} L
                             </span>
                           </div>
@@ -3531,8 +3622,21 @@ function EnvironmentEnergyDash() {
                     'diesel-consumption-property-type',
                     () => (
                       <div style={{ width: '100%', height: '100%', padding: '20px' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '20px'
+                        }}>
+                          Diesel Consumption by Property Type
+                        </div>
+                        
                         <div style={{ 
-                          height: '100%', 
+                          height: 'calc(100% - 60px)', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           justifyContent: 'space-around'
@@ -3597,7 +3701,7 @@ function EnvironmentEnergyDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{
-                  fontSize: '13px',
+                  fontSize: '20px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -3754,51 +3858,68 @@ function EnvironmentEnergyDash() {
                     'Diesel Consumption Over Time', 
                     'diesel-consumption-over-time',
                     () => (
-                      <ResponsiveContainer width="100%" height={500}>
-                        <LineChart data={currentData.lineChartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis 
-                            dataKey="year" 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                          />
-                          <YAxis 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                            tickFormatter={(value) => {
-                              if (value >= 1000) {
-                                return `${(value / 1000).toFixed(1)}K`;
-                              } else {
-                                return value.toString();
-                              }
-                            }}
-                          />
-                          <Tooltip 
-                            formatter={(value, name) => [
-                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                              name
-                            ]}
-                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                            contentStyle={{ fontSize: '14px' }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '14px' }} />
-                          
-                          {Object.keys(dieselLineColors).map((property, index) => (
-                            <Line 
-                              key={property}
-                              type="monotone" 
-                              dataKey={property} 
-                              stroke={dieselLineColors[property] || COLORS[index % COLORS.length]} 
-                              strokeWidth={4}
-                              dot={{ fill: dieselLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
-                              name={property}
-                              connectNulls={false}
-                            />
-                          ))}
-                        </LineChart>
-                      </ResponsiveContainer>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '16px'
+                        }}>
+                          Diesel Consumption Over Time
+                        </div>
+                        
+                        <div style={{ flex: 1, minHeight: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={currentData.lineChartData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                              <XAxis 
+                                dataKey="year" 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
+                              />
+                              <YAxis 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
+                                tickFormatter={(value) => {
+                                  if (value >= 1000) {
+                                    return `${(value / 1000).toFixed(1)}K`;
+                                  } else {
+                                    return value.toString();
+                                  }
+                                }}
+                              />
+                              <Tooltip 
+                                formatter={(value, name) => [
+                                  `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                                  name
+                                ]}
+                                labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                                contentStyle={{ fontSize: '14px' }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: '14px' }} />
+                              
+                              {Object.keys(dieselLineColors).map((property, index) => (
+                                <Line 
+                                  key={property}
+                                  type="monotone" 
+                                  dataKey={property} 
+                                  stroke={dieselLineColors[property] || COLORS[index % COLORS.length]} 
+                                  strokeWidth={4}
+                                  dot={{ fill: dieselLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
+                                  name={property}
+                                  connectNulls={false}
+                                />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
                     )
                   )}
                   sx={{
@@ -3811,7 +3932,7 @@ function EnvironmentEnergyDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{
-                  fontSize: '13px',
+                  fontSize: '20px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -3880,7 +4001,7 @@ function EnvironmentEnergyDash() {
                             labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                             contentStyle={{ fontSize: '12px' }}
                           />
-                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          <Legend wrapperStyle={{ fontSize: '15px' }} />
                           
                           {/* Dynamically render lines for each property */}
                           {Object.keys(dieselLineColors).map((property, index) => (
@@ -3921,6 +4042,19 @@ function EnvironmentEnergyDash() {
                     'diesel-consumption-by-property',
                     () => (
                       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '16px'
+                        }}>
+                          Diesel Consumption by Property
+                        </div>
+                        
                         <div style={{ flex: 1, minHeight: 400 }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -3948,7 +4082,6 @@ function EnvironmentEnergyDash() {
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
-                        {/* Enhanced Legend */}
                         <div style={{
                           display: 'flex',
                           justifyContent: 'center',
@@ -3997,7 +4130,7 @@ function EnvironmentEnergyDash() {
                 </IconButton>
 
                 <h3 style={{
-                  fontSize: '13px',
+                  fontSize: '20px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -4075,8 +4208,8 @@ function EnvironmentEnergyDash() {
                         display: 'flex',
                         justifyContent: 'center',
                         flexWrap: 'wrap',
-                        gap: '8px',
-                        fontSize: '10px',
+                        gap: '12px',
+                        fontSize: '12px',
                         flexShrink: 0,
                         marginTop: '8px'
                       }}>
@@ -4089,17 +4222,17 @@ function EnvironmentEnergyDash() {
                               style={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
-                                gap: '4px'
+                                gap: '6px'
                               }}
                             >
                               <div style={{
-                                width: '8px',
-                                height: '8px',
+                                width: '12px',
+                                height: '12px',
                                 backgroundColor: entry.color || COLORS[index % COLORS.length],
-                                borderRadius: '1px',
+                                borderRadius: '2px',
                                 flexShrink: 0
                               }}></div>
-                              <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                              <span style={{ fontWeight: '500', fontSize: '15px' }}>
                                 {propertyName}: {(entry.value || 0).toLocaleString()} L
                               </span>
                             </div>
@@ -4127,49 +4260,66 @@ function EnvironmentEnergyDash() {
                     `Diesel Consumption - ${fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}`, 
                     'diesel-consumption-quarterly',
                     () => (
-                      <ResponsiveContainer width="100%" height={500}>
-                        <BarChart data={currentData.quarterlyBarData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis 
-                            dataKey="quarter"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                          />
-                          <YAxis 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                            tickFormatter={(value) => {
-                              if (value >= 1000) {
-                                return `${(value / 1000).toFixed(1)}K`;
-                              } else {
-                                return value.toString();
-                              }
-                            }}
-                          />
-                          <Tooltip 
-                            formatter={(value, name) => [
-                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                              name
-                            ]}
-                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                            contentStyle={{ fontSize: '14px' }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '14px' }} />
-                          
-                          {Object.keys(dieselQuarterlyBarColors).map((property, index) => (
-                            <Bar 
-                              key={property}
-                              dataKey={property} 
-                              stackId="a" 
-                              fill={dieselQuarterlyBarColors[property] || COLORS[index % COLORS.length]}
-                              name={property}
-                              radius={index === Object.keys(dieselQuarterlyBarColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                            />
-                          ))}
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '16px'
+                        }}>
+                          Diesel Consumption - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
+                        </div>
+                        
+                        <div style={{ flex: 1, minHeight: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={currentData.quarterlyBarData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                              <XAxis 
+                                dataKey="quarter"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
+                              />
+                              <YAxis 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
+                                tickFormatter={(value) => {
+                                  if (value >= 1000) {
+                                    return `${(value / 1000).toFixed(1)}K`;
+                                  } else {
+                                    return value.toString();
+                                  }
+                                }}
+                              />
+                              <Tooltip 
+                                formatter={(value, name) => [
+                                  `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                                  name
+                                ]}
+                                labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                                contentStyle={{ fontSize: '14px' }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: '14px' }} />
+                              
+                              {Object.keys(dieselQuarterlyBarColors).map((property, index) => (
+                                <Bar 
+                                  key={property}
+                                  dataKey={property} 
+                                  stackId="a" 
+                                  fill={dieselQuarterlyBarColors[property] || COLORS[index % COLORS.length]}
+                                  name={property}
+                                  radius={index === Object.keys(dieselQuarterlyBarColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                                />
+                              ))}
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
                     )
                   )}
                   sx={{
@@ -4186,7 +4336,7 @@ function EnvironmentEnergyDash() {
                 </IconButton>
 
                 <h3 style={{
-                  fontSize: '13px',
+                  fontSize: '20px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -4255,7 +4405,7 @@ function EnvironmentEnergyDash() {
                           labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                           contentStyle={{ fontSize: '12px' }}
                         />
-                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Legend wrapperStyle={{ fontSize: '15px' }} />
                         
                         {/* Dynamically render bars for each property */}
                         {Object.keys(dieselQuarterlyBarColors).map((property, index) => (
@@ -4291,54 +4441,71 @@ function EnvironmentEnergyDash() {
                     `Diesel Consumption by Property (${fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'})`, 
                     'diesel-consumption-by-property-monthly',
                     () => (
-                      <ResponsiveContainer width="100%" height={500}>
-                        <LineChart data={currentData.monthlyLineData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis 
-                            dataKey="month" 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12, fill: '#64748b' }}
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                          />
-                          <YAxis 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 14, fill: '#64748b' }}
-                            tickFormatter={(value) => {
-                              if (value >= 1000) {
-                                return `${(value / 1000).toFixed(1)}K`;
-                              } else {
-                                return value.toString();
-                              }
-                            }}
-                          />
-                          <Tooltip 
-                            formatter={(value, name) => [
-                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                              name
-                            ]}
-                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                            contentStyle={{ fontSize: '14px' }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '14px' }} />
-                          
-                          {Object.keys(dieselMonthlyLineColors).map((property, index) => (
-                            <Line 
-                              key={property}
-                              type="monotone" 
-                              dataKey={property} 
-                              stroke={dieselMonthlyLineColors[property] || COLORS[index % COLORS.length]} 
-                              strokeWidth={4}
-                              dot={{ fill: dieselMonthlyLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
-                              name={property}
-                              connectNulls={false}
-                            />
-                          ))}
-                        </LineChart>
-                      </ResponsiveContainer>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* Add title at the top */}
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '16px 0',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: '#1e293b',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '16px'
+                        }}>
+                          Diesel Consumption by Property ({fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'})
+                        </div>
+                        
+                        <div style={{ flex: 1, minHeight: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={currentData.monthlyLineData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                              <XAxis 
+                                dataKey="month" 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 12, fill: '#64748b' }}
+                                angle={-45}
+                                textAnchor="end"
+                                height={80}
+                              />
+                              <YAxis 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 14, fill: '#64748b' }}
+                                tickFormatter={(value) => {
+                                  if (value >= 1000) {
+                                    return `${(value / 1000).toFixed(1)}K`;
+                                  } else {
+                                    return value.toString();
+                                  }
+                                }}
+                              />
+                              <Tooltip 
+                                formatter={(value, name) => [
+                                  `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                                  name
+                                ]}
+                                labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                                contentStyle={{ fontSize: '14px' }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: '14px' }} />
+                              
+                              {Object.keys(dieselMonthlyLineColors).map((property, index) => (
+                                <Line 
+                                  key={property}
+                                  type="monotone" 
+                                  dataKey={property} 
+                                  stroke={dieselMonthlyLineColors[property] || COLORS[index % COLORS.length]} 
+                                  strokeWidth={4}
+                                  dot={{ fill: dieselMonthlyLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
+                                  name={property}
+                                  connectNulls={false}
+                                />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
                     )
                   )}
                   sx={{
@@ -4355,7 +4522,7 @@ function EnvironmentEnergyDash() {
                 </IconButton>
 
                 <h3 style={{
-                  fontSize: '13px',
+                  fontSize: '20px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -4427,7 +4594,7 @@ function EnvironmentEnergyDash() {
                           labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                           contentStyle={{ fontSize: '12px' }}
                         />
-                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Legend wrapperStyle={{ fontSize: '15px' }} />
                         
                         {/* Dynamically render lines for each property */}
                         {Object.keys(dieselMonthlyLineColors).map((property, index) => (
