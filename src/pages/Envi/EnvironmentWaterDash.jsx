@@ -514,21 +514,27 @@ function EnvironmentWaterDash() {
               backgroundColor: '#1976d2',
               color: 'white',
               border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
+              padding: '12px 24px',
+              borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '10px',
               cursor: 'pointer',
-              fontSize: '13px',
+              fontSize: '16px',
               fontWeight: '700',
-              transition: 'background-color 0.2s ease',
+              transition: 'background-color 0.2s ease, color 0.2s ease',
               boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
             }}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#115293'}
-            onMouseOut={(e) => e.target.style.backgroundColor = '#1976d2'}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = '#115293';
+              e.target.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = '#1976d2';
+              e.target.style.color = 'white';
+            }}
           >
-            <RefreshIcon style={{ fontSize: '16px' }} />
+            <RefreshIcon style={{ fontSize: '20px', color: 'inherit' }} />
             Refresh
           </button>
         </div>
