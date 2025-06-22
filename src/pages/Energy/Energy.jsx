@@ -8,6 +8,8 @@ import {
   Button,
   Container,
   IconButton,
+  Paper,
+  TextField,
   Typography
 } from "@mui/material";
 import CircularProgress from '@mui/material/CircularProgress';
@@ -38,8 +40,18 @@ function Energy() {
   const [isAddEnergyModalOpen, setIsAddEnergyModalOpen] = useState(false);
   const [isImportEnergyModalOpen, setIsImportEnergyModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [modalType, setModalType] = useState(''); // 'approve' or 'revise'
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showApproveSuccessModal, setShowApproveSuccessModal] = useState(false);
+  const [showStatusErrorModal, setShowStatusErrorModal] = useState(false);
+  const [showBulkReviseModal, setShowBulkReviseModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [showRemarksRequiredModal, setShowRemarksRequiredModal] = useState(false);
+  const [remarks, setRemarks] = useState("");
+  const [selectedRecords, setSelectedRecords] = useState([]);
   const [selectedRowIds, setSelectedRowIds] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const listOfStatuses = ["URS","FRS","URH","FRH","APP"];
   const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({
     key: 'date',
@@ -246,7 +258,131 @@ function Energy() {
     setPage(newPage);
   };
 
+// ["URS","FRS","URH","FRH","APP"];
+  const fetchNextStatus = (action, currentStatus) => {
+    let newStatus = '';
+    if (action === 'approve') {
+      switch (currentStatus){
+        case 'FRS':
+          newStatus = listOfStatuses[0]; // "URS"
+          break;
+        case "URS":
+          newStatus = listOfStatuses[2]; // "URH"
+          break;
+        case 'FRH':
+          newStatus = listOfStatuses[2]; // "URH"
+          break;
+        case 'URH':
+          newStatus = listOfStatuses[4]; // "APP"
+          break;
+      }
+    } else if (action === 'revise') {
+      switch (currentStatus) {
+        case 'URS':
+          newStatus = listOfStatuses[1]; // "FRS"
+          break;
+        case 'URH':
+          newStatus = listOfStatuses[3]; // "FRH"
+          break;
+      }
+    }
+    return newStatus;
+  }
+  
+  const handleApproveConfirm = async () => {
+    setIsModalOpen(false);
+    let currentStatus = null;
+    if (selectedRowIds.length > 0) {
+      const firstRow = filteredData.find(row => row['energyId'] === selectedRowIds[0]);
+      currentStatus = firstRow?.status || null;
+    } else {
+      setShowStatusErrorModal(true);
+      return;
+    }
+    const newStatus = fetchNextStatus('approve', currentStatus);
+    if (!newStatus) {
+      alert('No matching status transition found.');
+      return;
+    }
+    try {
+      const payload = {
+        record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+      await api.post(
+        "/usable_apis/bulk_update_status",
+        payload
+      );
+      fetchEnergyData();
+      setSelectedRowIds([]);
+      setRemarks("");
+      setShowApproveSuccessModal(true);
+    } catch (error) {
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+      //alert(error)
+    }
+  };
 
+  const handleBulkStatusUpdate = async (action) => {
+    let currentStatus = null;
+    if (selectedRowIds.length > 0) {
+      const firstRow = filteredData.find(row => row['energyId'] === selectedRowIds[0]);
+      currentStatus = firstRow?.status || null;
+    } else {
+      setShowStatusErrorModal(true);
+      return;
+    }
+  
+    const newStatus = fetchNextStatus(action, currentStatus);
+
+    if (newStatus) {
+      console.log("Updated status to:", newStatus);
+    } else {
+      console.warn("No matching status transition found.");
+    }
+
+    try {
+      if (action === 'revise') {
+        if (!remarks){
+          setShowRemarksRequiredModal(true);
+          return;
+        }
+      } else {
+        const confirm = window.confirm('Are you sure you want to approve this record?');
+          if (!confirm) return;
+      }
+
+      const payload = {
+        record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+
+      console.log(payload);
+
+      const response = await api.post(
+        "/usable_apis/bulk_update_status",
+        payload
+      );
+
+      // Use the helper function to refresh data
+      fetchEnergyData();
+
+      setIsModalOpen(false);
+      setSelectedRowIds([]);
+      setRemarks("");
+
+      // Show bulk revise modal if action is revise
+      if (action === 'revise') {
+        setShowBulkReviseModal(true);
+      }
+    } catch (error) {
+      console.error("Error updating record status:", error);
+      //alert(error?.response?.data?.detail || "Update Status Failed.");
+      alert(error);
+    }  
+  };
 
 
   useEffect(() => {
@@ -375,10 +511,29 @@ function Energy() {
       label="Approve"
       rounded
       onClick={() => {
+        
         const record = data.find(r => r.energyId === selectedRowIds[0]);
+        
         if (record) {
-          console.log("Approving:", record);
           // your approve logic
+          const records = selectedRowIds
+            .map(id => data.find(r => r.energyId === id))
+            .filter(Boolean);
+
+          const statusList = records.map(record => record.status);
+
+          setSelectedRecords(records);
+          setStatuses(statusList);
+          const allSameStatus = statusList.every(status => status === statusList[0]);
+
+          if (allSameStatus && statusList[0] != "APP") {
+            setModalType('approve');
+            setIsModalOpen(true);
+          } else if (allSameStatus && statusList[0] === "APP") {
+            alert("Cannot proceed: Record is already Approved.");
+          } else {
+            setShowStatusErrorModal(true);
+          }
         }
       }}
       color="green"
@@ -390,8 +545,31 @@ function Energy() {
       onClick={() => {
         const record = data.find(r => r.energyId === selectedRowIds[0]);
         if (record) {
-          console.log("Revising:", record);
           // your revise logic
+          const records = selectedRowIds
+            .map(id => data.find(r => r.energyId === id))
+            .filter(Boolean);
+
+          const statusList = records.map(record => record.status);
+
+          setSelectedRecords(records);
+          setStatuses(statusList);
+          const allSameStatus = statusList.every(status => status === statusList[0]);
+
+          if (
+            allSameStatus &&
+            statusList[0] !== "APP" &&
+            !["FRS", "FRH"].includes(statusList[0])
+          ) {
+            setModalType('revise');
+            setIsModalOpen(true);
+          } else if (allSameStatus && ["FRS", "FRH"].includes(statusList[0])) {
+            alert("Cannot proceed: Record is already for Revision.");
+          } else if (allSameStatus && statusList[0] === "APP") {
+            alert("Cannot proceed: Record is already Approved.");
+          } else {
+            setShowStatusErrorModal(true);
+          }
         }
       }}
       color="blue"
@@ -517,6 +695,400 @@ function Energy() {
 
 
       {/* Modals */}
+      {isModalOpen && modalType === 'approve' && (
+        <Overlay onClose={() => setIsModalOpen(false)}>
+          <Paper
+            sx={{
+              p: 4,
+              width: "500px",
+              borderRadius: "16px",
+              bgcolor: "white",
+            }}
+          >
+            <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
+              Approval Confirmation
+            </Typography>
+            <Box sx={{
+              bgcolor: '#f5f5f5',
+              p: 2,
+              borderRadius: '8px',
+              width: '100%',
+              mb: 3
+            }}>
+              {selectedRowIds.map((id, idx) => (
+                <Typography key={id} sx={{ fontSize: '0.9rem', mb: 1 }}>
+                  <strong>ID:</strong> {id} | <strong>Status:</strong> {statuses[idx]}
+                </Typography>
+              ))}
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
+              <Button 
+                sx={{ 
+                  color: '#182959',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    color: '#0f1a3c',
+                  },
+                }}
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant='contained'
+                sx={{ 
+                  marginLeft: 1,
+                  backgroundColor: '#2B8C37',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#256d2f',
+                  },
+                }}
+                onClick={handleApproveConfirm}
+              >
+                Confirm
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      {isModalOpen && modalType === 'revise' && (
+        <Overlay onClose={() => setIsModalOpen(false)}>
+          <Paper
+            sx={{
+              p: 4,
+              width: "500px",
+              borderRadius: "16px",
+              bgcolor: "white",
+            }}
+          >
+            <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
+              Revision Request
+            </Typography>
+            <TextField
+              sx={{
+                mt: 2,
+                mb: 2
+              }}
+              label={<> Remarks <span style={{ color: 'red' }}>*</span> </>}
+              variant="outlined"
+              fullWidth
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              multiline
+            />
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
+              <Button 
+                sx={{ 
+                  color: '#182959',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    color: '#0f1a3c',
+                  },
+                }}
+                onClick={() => {setIsModalOpen(false); setRemarks("");}}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant='contained'
+                sx={{ 
+                  marginLeft: 1,
+                  backgroundColor: '#2B8C37',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#256d2f',
+                  },
+                }}
+                onClick={() => handleBulkStatusUpdate("revise")}
+              >
+                Confirm
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>          
+      )}
+      {showApproveSuccessModal && (
+        <Overlay onClose={() => setShowApproveSuccessModal(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Box sx={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: '#2B8C37',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2
+              }}>
+                <Typography sx={{ 
+                  color: 'white', 
+                  fontSize: '2rem',
+                  fontWeight: 'bold'
+                }}>
+                  ✓
+                </Typography>
+              </Box>
+              <Typography sx={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 800,
+                color: '#182959',
+                mb: 2
+              }}>
+                Record(s) Approved Successfully!
+              </Typography>
+              <Typography sx={{ 
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                The selected record(s) have been successfully approved.
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 3
+            }}>
+              <Button
+                variant="contained"
+                sx={{ 
+                  backgroundColor: '#2B8C37',
+                  borderRadius: '999px',
+                  padding: '10px 24px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#256d2f',
+                  },
+                }}
+                onClick={() => setShowApproveSuccessModal(false)}
+              >
+                OK
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      {showStatusErrorModal && (
+        <Overlay onClose={() => setShowStatusErrorModal(false)}>
+          <Paper
+            sx={{
+              p: 4,
+              width: "400px",
+              borderRadius: "16px",
+              bgcolor: "white",
+              outline: "none",
+              textAlign: "center"
+            }}
+          >
+            <Typography sx={{ fontSize: '1.5rem', color: '#b91c1c', fontWeight: 800, mb: 2 }}>
+              Error
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', color: '#333', mb: 3 }}>
+              Selected rows have different statuses. Please select rows with the same status to proceed.
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#b91c1c',
+                borderRadius: '999px',
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#991b1b',
+                },
+              }}
+              onClick={() => setShowStatusErrorModal(false)}
+            >
+              OK
+            </Button>
+          </Paper>
+        </Overlay>
+      )}
+      {showBulkReviseModal && (
+        <Overlay onClose={() => setShowBulkReviseModal(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Box sx={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: '#182959',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2
+              }}>
+                <Typography sx={{ 
+                  color: 'white', 
+                  fontSize: '2rem',
+                  fontWeight: 'bold'
+                }}>
+                  ✓
+                </Typography>
+              </Box>
+              <Typography sx={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 800,
+                color: '#182959',
+                mb: 2
+              }}>
+                Revision Requested!
+              </Typography>
+              <Typography sx={{ 
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                The selected record(s) have been sent for revision.
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 3
+            }}>
+              <Button
+                variant="contained"
+                sx={{ 
+                  backgroundColor: '#182959',
+                  borderRadius: '999px',
+                  padding: '10px 24px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#0f1a3c',
+                  },
+                }}
+                onClick={() => setShowBulkReviseModal(false)}
+              >
+                OK
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      {showRemarksRequiredModal && (
+        <Overlay onClose={() => setShowRemarksRequiredModal(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Box sx={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: '#f44336',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2
+              }}>
+                <Typography sx={{ 
+                  color: 'white', 
+                  fontSize: '2rem',
+                  fontWeight: 'bold'
+                }}>
+                  !
+                </Typography>
+              </Box>
+              <Typography sx={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 800,
+                color: '#182959',
+                mb: 2
+              }}>
+                Remarks Required
+              </Typography>
+              <Typography sx={{ 
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                Remarks is required for the status update.
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 3
+            }}>
+              <Button
+                variant="contained"
+                sx={{ 
+                  backgroundColor: '#f44336',
+                  borderRadius: '999px',
+                  padding: '10px 24px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#d32f2f',
+                  },
+                }}
+                onClick={() => setShowRemarksRequiredModal(false)}
+              >
+                OK
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
       {open && selectedRecord && (
         <Overlay onClose={handleClose}>
         <ViewEditEnergyModal
