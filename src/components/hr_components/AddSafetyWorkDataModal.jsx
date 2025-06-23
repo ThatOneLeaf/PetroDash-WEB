@@ -104,9 +104,11 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
@@ -168,7 +170,7 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
       await api.post("/hr/single_upload_safety_workdata_record", {
         company_id: userCompany,
         contractor: formData.contractor,
-        date: formData.date ? dayjs(formData.date).format("MM/DD/YYYY") : null,
+        date: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : null,
         manpower: formData.safetyManpower,
         manhours: formData.safetyManhours,
       });
@@ -266,7 +268,7 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date"
-            value={formData.date}
+            value={formData.date ? dayjs(formData.date) : null}
             onChange={handleDateChange("date")}
             minDate={dayjs("1994-09-29")}
             slotProps={{

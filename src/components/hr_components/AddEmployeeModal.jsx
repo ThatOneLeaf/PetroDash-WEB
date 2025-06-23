@@ -146,9 +146,11 @@ function AddEmployeeModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
@@ -421,7 +423,7 @@ function AddEmployeeModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Birthdate"
-            value={formData.birthdate}
+            value={formData.birthdate ? dayjs(formData.birthdate) : null}
             onChange={handleDateChange("birthdate")}
             open={openPicker === "birth"}
             onOpen={() => setOpenPicker("birth")}
@@ -474,7 +476,7 @@ function AddEmployeeModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Tenure Start"
-            value={formData.tenureStart}
+            value={formData.tenureStart ? dayjs(formData.tenureStart) : null}
             onChange={handleDateChange("tenureStart")}
             open={openPicker === "start"}
             onOpen={() => setOpenPicker("start")}
@@ -488,7 +490,7 @@ function AddEmployeeModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Tenure Ended"
-            value={formData.tenureEnded}
+            value={formData.tenureEnded ? dayjs(formData.tenureEnded) : null}
             onChange={handleDateChange("tenureEnded")}
             open={openPicker === "end"}
             onOpen={() => setOpenPicker("end")}

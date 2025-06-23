@@ -103,9 +103,10 @@ function AddTrainingModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
@@ -167,7 +168,7 @@ function AddTrainingModal({ onClose, onSuccess }) {
 
       await api.post("/hr/single_upload_training_record", {
         company_id: userCompany,
-        date: formData.date ? dayjs(formData.date).format("MM/DD/YYYY") : null,
+        date: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : null,
         training_title: formData.trainingName,
         training_hours: formData.trainingHours,
         number_of_participants: formData.numberOfParticipants,
@@ -265,7 +266,7 @@ function AddTrainingModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date"
-            value={formData.date}
+            value={formData.date ? dayjs(formData.date) : null}
             onChange={handleDateChange("date")}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },

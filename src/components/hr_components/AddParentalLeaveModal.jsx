@@ -106,9 +106,13 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
+    console.log(isoDate);
+
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
@@ -168,7 +172,7 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
         employee_id: formData.employeeId.toUpperCase(),
         type_of_leave: formData.typeOfLeave,
         date: formData.dateAvailed
-          ? dayjs(formData.dateAvailed).format("MM/DD/YYYY")
+          ? dayjs(formData.dateAvailed).format("YYYY-MM-DD")
           : null,
         days: formData.daysAvailed,
       });
@@ -289,7 +293,7 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date Availed"
-            value={formData.dateAvailed}
+            value={formData.dateAvailed ? dayjs(formData.dateAvailed) : null}
             onChange={handleDateChange("dateAvailed")}
             minDate={dayjs("1994-09-29")}
             slotProps={{
