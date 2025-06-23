@@ -36,23 +36,7 @@ function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<LoginPage />} />
 
-              {/* Protected Routes Economics */}
-              <Route
-                path="/economic"
-                element={
-                  <ProtectedRoute>
-                    <Economic />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/economic/repository"
-                element={
-                  <ProtectedRoute>
-                    <EconomicRepository />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Protected Routes Economics - Removed duplicates, proper roles defined below */}
 
               {/* Protected Routes Environment */}
               <Route
@@ -148,7 +132,7 @@ function App() {
               <Route
                 path="/economic/repository"
                 element={
-                  <ProtectedRoute requiredRoles={["R03"]}>
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
                     <EconomicRepository />
                   </ProtectedRoute>
                 }

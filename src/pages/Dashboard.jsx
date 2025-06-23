@@ -99,7 +99,8 @@ function Dashboard() {
           flexGrow: 1,
           height: "100vh",
           overflow: "hidden",
-          p: 3,
+          px: 3,
+          py: 1,
           backgroundColor: "#ffff",
         }}
       >

@@ -28,36 +28,37 @@ import {
 // Color schemes for charts
 const COLORS = ['#3B82F6', '#06B6D4', '#10B981', '#8B5CF6', '#6366F1', '#0EA5E9', '#14B8A6'];
 
-// Custom label function for pie charts with smart positioning
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name, index }) => {
+// Store label positions to prevent overlap
+let usedLabelPositions = [];
+
+// Custom label function with smart positioning, clipping prevention, and overlap avoidance
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name, index, data }) => {
   const RADIAN = Math.PI / 180;
   
-  // Calculate label position with more spacing
-  const radius = innerRadius + (outerRadius - innerRadius) * 1.8;
-  let x = cx + radius * Math.cos(-midAngle * RADIAN);
-  let y = cy + radius * Math.sin(-midAngle * RADIAN);
-  
-  // Adjust position based on quadrant to avoid overlap
-  const quadrant = Math.floor(((midAngle + 90) % 360) / 90);
-  switch (quadrant) {
-    case 0: // Top right
-      y -= 5;
-      break;
-    case 1: // Bottom right
-      y += 5;
-      break;
-    case 2: // Bottom left
-      y += 5;
-      break;
-    case 3: // Top left
-      y -= 5;
-      break;
+  // Reset positions array for first label
+  if (index === 0) {
+    usedLabelPositions = [];
   }
   
-  // Text wrapping with shorter lines for better spacing
+  // Calculate original pie edge position for line start
+  const pieEdgeRadius = outerRadius;
+  const pieEdgeX = cx + pieEdgeRadius * Math.cos(-midAngle * RADIAN);
+  const pieEdgeY = cy + pieEdgeRadius * Math.sin(-midAngle * RADIAN);
+  
+  // Calculate base position
+  const baseRadius = innerRadius + (outerRadius - innerRadius) * 1.6;
+  let x = cx + baseRadius * Math.cos(-midAngle * RADIAN);
+  let y = cy + baseRadius * Math.sin(-midAngle * RADIAN);
+  
+  // Chart boundaries with margin
+  const margin = 15;
+  const chartWidth = cx * 2;
+  const chartHeight = cy * 2;
+  
+  // Text processing
   const words = name.split(' ');
   const lines = [];
-  const maxCharsPerLine = 10; // Shorter lines to reduce overlap
+  const maxCharsPerLine = 11;
   
   let currentLine = '';
   words.forEach(word => {
@@ -71,33 +72,184 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
   });
   if (currentLine) lines.push(currentLine);
   
-  // Limit to maximum 2 lines
+  // Limit to 2 lines
   if (lines.length > 2) {
     lines[1] = lines.slice(1).join(' ');
     lines.splice(2);
   }
   
+  // Calculate text dimensions
+  const charWidth = 6;
+  const lineHeight = 12;
+  const textWidth = Math.max(...lines.map(line => line.length)) * charWidth;
+  const textHeight = lines.length * lineHeight + 12; // +12 for percentage
+  
+  // Store original position for comparison
+  const originalX = x;
+  const originalY = y;
+  
+  // Determine initial text anchor
+  let textAnchor = x > cx ? 'start' : 'end';
+  
+  // Adjust for boundary clipping
+  if (textAnchor === 'start' && x + textWidth > chartWidth - margin) {
+    x = chartWidth - textWidth - margin;
+  } else if (textAnchor === 'end' && x - textWidth < margin) {
+    x = margin + textWidth;
+    textAnchor = 'start';
+  }
+  
+  // Vertical boundary adjustment
+  if (y - textHeight/2 < margin) {
+    y = margin + textHeight/2;
+  } else if (y + textHeight/2 > chartHeight - margin) {
+    y = chartHeight - margin - textHeight/2;
+  }
+  
+  // Check for overlaps with existing labels
+  const currentBounds = {
+    left: textAnchor === 'end' ? x - textWidth : x,
+    right: textAnchor === 'end' ? x : x + textWidth,
+    top: y - textHeight/2,
+    bottom: y + textHeight/2
+  };
+  
+  // Find overlapping positions and adjust
+  let attempts = 0;
+  const maxAttempts = 8;
+  
+  while (attempts < maxAttempts) {
+    let hasOverlap = false;
+    
+    for (const usedPos of usedLabelPositions) {
+      if (!(currentBounds.right < usedPos.left || 
+            currentBounds.left > usedPos.right || 
+            currentBounds.bottom < usedPos.top || 
+            currentBounds.top > usedPos.bottom)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+    
+    if (!hasOverlap) break;
+    
+    // Adjust position to avoid overlap
+    const angleStep = 15; // degrees
+    const newAngle = midAngle + (attempts % 2 === 0 ? angleStep * Math.ceil(attempts/2) : -angleStep * Math.ceil(attempts/2));
+    const adjustedRadius = baseRadius + (attempts * 8); // Move further out if needed
+    
+    x = cx + adjustedRadius * Math.cos(-newAngle * RADIAN);
+    y = cy + adjustedRadius * Math.sin(-newAngle * RADIAN);
+    
+    // Re-apply boundary checks
+    textAnchor = x > cx ? 'start' : 'end';
+    
+    if (textAnchor === 'start' && x + textWidth > chartWidth - margin) {
+      x = chartWidth - textWidth - margin;
+    } else if (textAnchor === 'end' && x - textWidth < margin) {
+      x = margin + textWidth;
+      textAnchor = 'start';
+    }
+    
+    if (y - textHeight/2 < margin) {
+      y = margin + textHeight/2;
+    } else if (y + textHeight/2 > chartHeight - margin) {
+      y = chartHeight - margin - textHeight/2;
+    }
+    
+    // Update bounds for next check
+    currentBounds.left = textAnchor === 'end' ? x - textWidth : x;
+    currentBounds.right = textAnchor === 'end' ? x : x + textWidth;
+    currentBounds.top = y - textHeight/2;
+    currentBounds.bottom = y + textHeight/2;
+    
+    attempts++;
+  }
+  
+  // Store this label's position
+  usedLabelPositions.push(currentBounds);
+  
+  // For very small slices, use abbreviated text
+  let displayLines = lines;
+  let displayPercent = `${(percent * 100).toFixed(0)}%`;
+  
+  if (percent < 0.03) {
+    // Very small slice - show only percentage
+    displayLines = [name.split(' ')[0]]; // First word only
+  }
+  
   const percentage = `${(percent * 100).toFixed(0)}%`;
   
+  // Calculate line connection point (closer to text)
+  let lineEndX = x;
+  let lineEndY = y;
+  
+  // Adjust line end point based on text anchor
+  if (textAnchor === 'start') {
+    lineEndX = x - 5; // Line ends slightly before text starts
+  } else if (textAnchor === 'end') {
+    lineEndX = x + 5; // Line ends slightly after text ends
+  }
+  
+  // Determine if we should show a connecting line
+  // Show line if position was adjusted OR if label is far from pie edge
+  const distanceFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+  const positionChanged = Math.abs(x - originalX) > 5 || Math.abs(y - originalY) > 5;
+  const isFarFromPie = distanceFromCenter > outerRadius + 15;
+  const shouldShowLine = positionChanged || isFarFromPie;
+  
+  // Get the appropriate color for this slice
+  let sliceColor = '#999'; // fallback color
+  
+  // Try to determine color based on slice data
+  if (data && data[index]) {
+    // For distribution pie chart, use DISTRIBUTION_COLORS
+    if (DISTRIBUTION_COLORS[name]) {
+      sliceColor = DISTRIBUTION_COLORS[name];
+    } else {
+      // For other pie charts, use COLORS array
+      sliceColor = COLORS[index % COLORS.length];
+    }
+  } else {
+    // Fallback to COLORS array
+    sliceColor = COLORS[index % COLORS.length];
+  }
+  
   return (
-    <text 
-      x={x} 
-      y={y} 
-      fill="#1F2937" 
-      textAnchor={x > cx ? 'start' : 'end'} 
-      dominantBaseline="central"
-      fontSize="10px"
-      fontWeight="600"
-    >
-      {lines.map((line, lineIndex) => (
-        <tspan key={lineIndex} x={x} dy={lineIndex === 0 ? -6 : 12}>
-          {line}
+    <g>
+      {/* Custom label line */}
+      {shouldShowLine && (
+        <line
+          x1={pieEdgeX}
+          y1={pieEdgeY}
+          x2={lineEndX}
+          y2={lineEndY}
+          stroke={sliceColor}
+          strokeWidth={1.5}
+          opacity={0.8}
+        />
+      )}
+      
+      {/* Label text */}
+      <text 
+        x={x} 
+        y={y} 
+        fill="#1F2937" 
+        textAnchor={textAnchor} 
+        dominantBaseline="central"
+        fontSize="9px"
+        fontWeight="600"
+      >
+        {displayLines.map((line, lineIndex) => (
+          <tspan key={lineIndex} x={x} dy={lineIndex === 0 ? -displayLines.length * 5 : 10}>
+            {line}
+          </tspan>
+        ))}
+        <tspan x={x} dy="10" fontWeight="bold" fontSize="10px">
+          {percentage}
         </tspan>
-      ))}
-      <tspan x={x} dy="12" fontWeight="bold" fontSize="11px">
-        {percentage}
-      </tspan>
-    </text>
+      </text>
+    </g>
   );
 };
 
@@ -324,11 +476,11 @@ export const GeneratedPieChart = ({ generatedDetails }) => {
               data={pieData}
               cx="50%"
               cy="50%"
-              outerRadius={85}
+              outerRadius={75}
               fill="#8884d8"
               dataKey="value"
               label={renderCustomLabel}
-              labelLine={true}
+              labelLine={false}
             >
               {pieData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -447,11 +599,11 @@ export const DistributionPieChart = ({ distributedDetails, pieChartData }) => {
               data={pieChartData}
               cx="50%"
               cy="50%"
-              outerRadius={85}
+              outerRadius={75}
               fill="#8884d8"
               dataKey="value"
               label={renderCustomLabel}
-              labelLine={true}
+              labelLine={false}
             >
               {pieChartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={DISTRIBUTION_COLORS[entry.name] || COLORS[index % COLORS.length]} />
@@ -619,7 +771,7 @@ export const generateModalContent = {
             data={pieData}
             cx="50%"
             cy="50%"
-            outerRadius={140}
+            outerRadius={130}
             fill="#8884d8"
             dataKey="value"
             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
@@ -721,7 +873,7 @@ export const generateModalContent = {
             data={pieChartData}
             cx="50%"
             cy="50%"
-            outerRadius={140}
+            outerRadius={130}
             fill="#8884d8"
             dataKey="value"
             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}

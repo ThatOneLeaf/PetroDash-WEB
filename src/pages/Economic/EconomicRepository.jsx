@@ -16,6 +16,7 @@ import api from '../../services/api';
 import exportData from '../../services/export';
 import Overlay from '../../components/modal';
 import Sidebar from '../../components/Sidebar';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Generated modals
 import AddValueGeneratedModal from './modals/AddValueGeneratedModal';
@@ -49,6 +50,11 @@ export default function EconomicRepository() {
   const [selected, setSelected] = useState('generated');
   const [sidebarMode, setSidebarMode] = useState("repository");
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Check if user has R03 role (required for add/import/edit operations)
+  // R04 and R05 can view the repository but cannot modify data
+  const canAddOrImport = user?.roles?.includes('R03') || false;
   
   // Common state
   const [loading, setLoading] = useState(true);
@@ -438,22 +444,29 @@ export default function EconomicRepository() {
   const { yearOptions, typeOptions, companyOptions } = getFilterOptions();
 
   // Actions
-  const renderActions = (row) => (
-    <IconButton 
-      size="small" 
-      onClick={(e) => {
-        e.stopPropagation();
-        setSelectedEditRecord(row);
-        setIsEditModalOpen(true);
-      }}
-      sx={{ 
-        margin: '0 8px',
-        padding: '8px'
-      }}
-    >
-      <LaunchIcon />
-    </IconButton>
-  );
+  const renderActions = (row) => {
+    // Only show edit action for R03 users
+    if (!canAddOrImport) {
+      return null;
+    }
+    
+    return (
+      <IconButton 
+        size="small" 
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedEditRecord(row);
+          setIsEditModalOpen(true);
+        }}
+        sx={{ 
+          margin: '0 8px',
+          padding: '8px'
+        }}
+      >
+        <LaunchIcon />
+      </IconButton>
+    );
+  };
 
   // Pagination
   const totalPages = Math.ceil(processedData.length / rowsPerPage);
@@ -525,39 +538,43 @@ export default function EconomicRepository() {
               >
                 EXPORT DATA
               </Button>
-              <Button
-                variant="contained"
-                onClick={() => setIsImportModalOpen(true)}
-                sx={{
-                  backgroundColor: '#182959',
-                  borderRadius: '999px',
-                  padding: '9px 18px',
-                  fontSize: '0.85rem',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: '#0f1a3c',
-                  },
-                }}
-              >
-                IMPORT
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setIsAddModalOpen(true)}
-                sx={{
-                  backgroundColor: '#2B8C37',
-                  borderRadius: '999px',
-                  padding: '9px 18px',
-                  fontSize: '0.85rem',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    backgroundColor: '#256d2f',
-                  },
-                }}
-              >
-                ADD RECORD
-              </Button>
+              {canAddOrImport && (
+                <Button
+                  variant="contained"
+                  onClick={() => setIsImportModalOpen(true)}
+                  sx={{
+                    backgroundColor: '#182959',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#0f1a3c',
+                    },
+                  }}
+                >
+                  IMPORT
+                </Button>
+              )}
+              {canAddOrImport && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setIsAddModalOpen(true)}
+                  sx={{
+                    backgroundColor: '#2B8C37',
+                    borderRadius: '999px',
+                    padding: '9px 18px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: '#256d2f',
+                    },
+                  }}
+                >
+                  ADD RECORD
+                </Button>
+              )}
             </div>
           </div>
 
@@ -801,7 +818,7 @@ export default function EconomicRepository() {
               rowsPerPage={rowsPerPage}
               onPageChange={handlePageChange}
               initialSort={{ key: 'year', direction: 'desc' }}
-              actions={renderActions}
+              {...(canAddOrImport && { actions: renderActions })}
               emptyMessage="No data available."
               selectable={false}
             />
