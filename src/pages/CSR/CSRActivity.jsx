@@ -24,7 +24,6 @@ import api from '../../services/api';
 import ViewHelpRecordModal from '../../components/help_components/ViewHelpRecordModal'; 
 import exportData from '../../services/export';
 import ImportFileModal from '../../components/ImportFileModal'
-import ReviseModal from '../../components/help_components/ReviseModalHelp'
 import StatusChip from '../../components/StatusChip';
 
 function CSR() {  
