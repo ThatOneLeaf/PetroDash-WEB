@@ -87,20 +87,18 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
 
   // FILTERING
   const [companyFilter, setCompanyFilter] = useState([]);
-  //const [positionFilter, setPositionFilter] = useState([]); // REMOVE THIS
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [group, setGroup] = useState("monthly");
 
   const clearAllFilters = () => {
     setCompanyFilter([]);
-    //setPositionFilter([]); // REMOVE THIS
     setStartDate(null);
     setEndDate(null);
   };
 
   const showClearButton =
     companyFilter.length > 0 ||
-    //positionFilter.length > 0 || //to be removed
     startDate !== null ||
     endDate !== null;
 
@@ -122,13 +120,14 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
 
   //CHARTS
   useEffect(() => {
-    console.log("thIS IS THE TIEM FRAME");
+    console.log("THIS IS THE ITEM FRAME");
     console.log(startDate);
     console.log(endDate);
 
     const fetchHRData = async () => {
       try {
         const params = {};
+        if (group != null) params.grouping = group;
         if (companyFilter.length > 0)
           params.company_id = companyFilter.join(",");
         if (startDate != null) params.start_date = startDate;
@@ -170,7 +169,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         setTotalTrainingHours(
           totalTrainingHoursRes.data[0]["total_training_hours"]
         );
-        setNoLostTime(noLostTimeRes.data[0]["lost_time_incidents"]);
+        setNoLostTime(noLostTimeRes.data[0]["manhours_since_last_lti"]);
 
         setEmployeeCountByCompany(
           companyCountRes.data.map((item) => ({
@@ -242,7 +241,13 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     };
 
     fetchHRData();
-  }, [companyFilter, startDate, endDate, shouldReload]); // REMOVE POSITION FILTER, ADD START AND END DATE
+  }, [group, companyFilter, startDate, endDate, shouldReload]); // REMOVE POSITION FILTER, ADD START AND END DATE
+
+    const groupby = [
+    { label: "Monthly", value: "monthly" },
+    { label: "Quarterly", value: "quarterly" },
+    { label: "Yearly", value: "yearly" },
+  ];
 
   const fetchEmployabilityData = async () => {
     try {
@@ -325,7 +330,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         }}
       >
         {/* Filters */}
-        <Box sx={{ px: 0, pb: 1, flexShrink: 0 }}>
+        <Box sx={{ px: 2, pb: 1, flexShrink: 0 }}>
           <Stack
             direction="row"
             spacing={1}
@@ -333,7 +338,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             alignItems="flex-start"
             sx={{
               rowGap: 1,
-              columnGap: 0,
+              columnGap: 1,
               "@media (max-width: 600px)": {
                 flexDirection: "column",
                 alignItems: "stretch",
@@ -359,6 +364,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             {showClearButton && <ClearButton onClick={clearAllFilters} />}
 
             <Box sx={{ flexGrow: 1, minWidth: 10 }} />
+            <SingleSelectDropdown label="Group By" options={groupby} selectedValue={group} onChange={setGroup} />
           </Stack>
         </Box>
 
