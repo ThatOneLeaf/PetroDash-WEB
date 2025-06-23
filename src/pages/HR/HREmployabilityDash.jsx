@@ -94,13 +94,15 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   const clearAllFilters = () => {
     setCompanyFilter([]);
     setStartDate(null);
+    setGroup("monthly");
     setEndDate(null);
   };
 
   const showClearButton =
     companyFilter.length > 0 ||
     startDate !== null ||
-    endDate !== null;
+    endDate !== null ||
+    group != "monthly";
 
   const [zoomModal, setZoomModal] = useState({
     open: false,
@@ -124,11 +126,12 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     console.log(startDate);
     console.log(endDate);
     console.log(companyFilter);
+    console.log(group);
 
     const fetchHRData = async () => {
       try {
         const params = {};
-        if (group != null) params.grouping = group;
+        if (group != "monthly") params.grouping = group;
         if (companyFilter.length > 0)
           params.company_id = companyFilter.join(",");
         if (startDate != null) params.start_date = startDate;
@@ -244,7 +247,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     fetchHRData();
   }, [group, companyFilter, startDate, endDate, shouldReload]); // REMOVE POSITION FILTER, ADD START AND END DATE
 
-    const groupby = [
+  const groupby = [
     { label: "Monthly", value: "monthly" },
     { label: "Quarterly", value: "quarterly" },
     { label: "Yearly", value: "yearly" },
@@ -365,7 +368,12 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             {showClearButton && <ClearButton onClick={clearAllFilters} />}
 
             <Box sx={{ flexGrow: 1, minWidth: 10 }} />
-            <SingleSelectDropdown label="Group By" options={groupby} selectedValue={group} onChange={setGroup} />
+            <SingleSelectDropdown
+              label="Group By"
+              options={groupby}
+              selectedValue={group}
+              onChange={setGroup}
+            />
           </Stack>
         </Box>
 
@@ -464,92 +472,96 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     }}
                   >
                     <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={(() => {
-                            // Group by month, then for each company, add a line
-                            // Get all unique months in order
-                            const months = [
-                              "January",
-                              "February",
-                              "March",
-                              "April",
-                              "May",
-                              "June",
-                              "July",
-                              "August",
-                              "September",
-                              "October",
-                              "November",
-                              "December",
-                            ];
-                            // Get all unique companies
-                            const companies = [
+                      <Box sx={{ height: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={(() => {
+                              // Group by month, then for each company, add a line
+                              // Get all unique months in order
+                              const months = [
+                                "January",
+                                "February",
+                                "March",
+                                "April",
+                                "May",
+                                "June",
+                                "July",
+                                "August",
+                                "September",
+                                "October",
+                                "November",
+                                "December",
+                              ];
+                              // Get all unique companies
+                              const companies = [
+                                ...new Set(
+                                  monthlyManpower.map(
+                                    (item) => item.company_name
+                                  )
+                                ),
+                              ];
+                              // Group data by year and month
+                              const grouped = {};
+                              monthlyManpower.forEach((item) => {
+                                const key = `${item.year}-${item.month_name}`;
+                                if (!grouped[key]) {
+                                  grouped[key] = {
+                                    year: item.year,
+                                    month_name: item.month_name,
+                                  };
+                                }
+                                grouped[key][item.company_name] =
+                                  item.total_monthly_safety_manpower;
+                              });
+                              // Sort by year and month
+                              const sorted = Object.values(grouped).sort(
+                                (a, b) => {
+                                  if (a.year !== b.year) return a.year - b.year;
+                                  return (
+                                    months.indexOf(a.month_name) -
+                                    months.indexOf(b.month_name)
+                                  );
+                                }
+                              );
+                              // Add a label for X axis
+                              return sorted.map((row) => ({
+                                ...row,
+                                label: `${row.month_name} ${row.year}`,
+                              }));
+                            })()}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              dataKey="label"
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                            />
+                            <YAxis
+                              allowDecimals={false}
+                              domain={[0, "dataMax + 10"]}
+                            />
+                            <Tooltip />
+                            <Legend />
+                            {[
                               ...new Set(
                                 monthlyManpower.map((item) => item.company_name)
                               ),
-                            ];
-                            // Group data by year and month
-                            const grouped = {};
-                            monthlyManpower.forEach((item) => {
-                              const key = `${item.year}-${item.month_name}`;
-                              if (!grouped[key]) {
-                                grouped[key] = {
-                                  year: item.year,
-                                  month_name: item.month_name,
-                                };
-                              }
-                              grouped[key][item.company_name] =
-                                item.total_monthly_safety_manpower;
-                            });
-                            // Sort by year and month
-                            const sorted = Object.values(grouped).sort(
-                              (a, b) => {
-                                if (a.year !== b.year) return a.year - b.year;
-                                return (
-                                  months.indexOf(a.month_name) -
-                                  months.indexOf(b.month_name)
-                                );
-                              }
-                            );
-                            // Add a label for X axis
-                            return sorted.map((row) => ({
-                              ...row,
-                              label: `${row.month_name} ${row.year}`,
-                            }));
-                          })()}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="label"
-                            angle={-45}
-                            textAnchor="end"
-                            height={60}
-                          />
-                          <YAxis
-                            allowDecimals={false}
-                            domain={[0, "dataMax + 10"]}
-                          />
-                          <Tooltip />
-                          <Legend />
-                          {[
-                            ...new Set(
-                              monthlyManpower.map((item) => item.company_name)
-                            ),
-                          ].map((company, idx) => (
-                            <Line
-                              key={company}
-                              type="monotone"
-                              dataKey={company}
-                              stroke={COLORS[idx % COLORS.length]}
-                              dot={{ fill: COLORS[idx % COLORS.length] }}
-                              name={company}
-                              strokeWidth={4}
-                            />
-                          ))}
-                        </LineChart>
-                      </ResponsiveContainer>
+                            ].map((company, idx) => (
+                              <Line
+                                key={company}
+                                type="monotone"
+                                dataKey={company}
+                                stroke={COLORS[idx % COLORS.length]}
+                                dot={{ fill: COLORS[idx % COLORS.length] }}
+                                name={company}
+                                strokeWidth={4}
+                              />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </Box>
                     </Box>
                   </Box>
                 )
@@ -701,86 +713,90 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     }}
                   >
                     <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={(() => {
-                            // Prepare data: group by year and month, each company as a line
-                            const months = [
-                              "January",
-                              "February",
-                              "March",
-                              "April",
-                              "May",
-                              "June",
-                              "July",
-                              "August",
-                              "September",
-                              "October",
-                              "November",
-                              "December",
-                            ];
-                            const companies = [
+                      <Box sx={{ height: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={(() => {
+                              // Prepare data: group by year and month, each company as a line
+                              const months = [
+                                "January",
+                                "February",
+                                "March",
+                                "April",
+                                "May",
+                                "June",
+                                "July",
+                                "August",
+                                "September",
+                                "October",
+                                "November",
+                                "December",
+                              ];
+                              const companies = [
+                                ...new Set(
+                                  monthlyManhour.map(
+                                    (item) => item.company_name
+                                  )
+                                ),
+                              ];
+                              const grouped = {};
+                              monthlyManhour.forEach((item) => {
+                                const key = `${item.year}-${item.month_name}`;
+                                if (!grouped[key]) {
+                                  grouped[key] = {
+                                    year: item.year,
+                                    month_name: item.month_name,
+                                  };
+                                }
+                                grouped[key][item.company_name] = item.manhours;
+                              });
+                              const sorted = Object.values(grouped).sort(
+                                (a, b) => {
+                                  if (a.year !== b.year) return a.year - b.year;
+                                  return (
+                                    months.indexOf(a.month_name) -
+                                    months.indexOf(b.month_name)
+                                  );
+                                }
+                              );
+                              return sorted.map((row) => ({
+                                ...row,
+                                label: `${row.month_name} ${row.year}`,
+                              }));
+                            })()}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              dataKey="label"
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                            />
+                            <YAxis
+                              allowDecimals={false}
+                              domain={[0, "dataMax + 10000"]}
+                            />
+                            <Tooltip />
+                            <Legend />
+                            {[
                               ...new Set(
                                 monthlyManhour.map((item) => item.company_name)
                               ),
-                            ];
-                            const grouped = {};
-                            monthlyManhour.forEach((item) => {
-                              const key = `${item.year}-${item.month_name}`;
-                              if (!grouped[key]) {
-                                grouped[key] = {
-                                  year: item.year,
-                                  month_name: item.month_name,
-                                };
-                              }
-                              grouped[key][item.company_name] = item.manhours;
-                            });
-                            const sorted = Object.values(grouped).sort(
-                              (a, b) => {
-                                if (a.year !== b.year) return a.year - b.year;
-                                return (
-                                  months.indexOf(a.month_name) -
-                                  months.indexOf(b.month_name)
-                                );
-                              }
-                            );
-                            return sorted.map((row) => ({
-                              ...row,
-                              label: `${row.month_name} ${row.year}`,
-                            }));
-                          })()}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="label"
-                            angle={-45}
-                            textAnchor="end"
-                            height={60}
-                          />
-                          <YAxis
-                            allowDecimals={false}
-                            domain={[0, "dataMax + 10000"]}
-                          />
-                          <Tooltip />
-                          <Legend />
-                          {[
-                            ...new Set(
-                              monthlyManhour.map((item) => item.company_name)
-                            ),
-                          ].map((company, idx) => (
-                            <Line
-                              key={company}
-                              type="monotone"
-                              dataKey={company}
-                              stroke={COLORS[idx % COLORS.length]}
-                              dot={{ fill: COLORS[idx % COLORS.length] }}
-                              name={company}
-                              strokeWidth={4}
-                            />
-                          ))}
-                        </LineChart>
-                      </ResponsiveContainer>
+                            ].map((company, idx) => (
+                              <Line
+                                key={company}
+                                type="monotone"
+                                dataKey={company}
+                                stroke={COLORS[idx % COLORS.length]}
+                                dot={{ fill: COLORS[idx % COLORS.length] }}
+                                name={company}
+                                strokeWidth={4}
+                              />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </Box>
                     </Box>
                   </Box>
                 )
@@ -930,37 +946,39 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     flexDirection: "column",
                   }}
                 >
-                  <Box sx={{ flex: 1, minHeight: 400 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={transformIncidentData(incidentCount)}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="month"
-                          angle={-45}
-                          textAnchor="end"
-                          height={60}
-                        />
-                        <YAxis
-                          allowDecimals={false}
-                          domain={[0, "dataMax + 2"]}
-                        />
-                        <Tooltip />
-                        <Legend />
-                        {getIncidentTypes(incidentCount).map((type, idx) => (
-                          <Bar
-                            key={type}
-                            dataKey={type}
-                            stackId="a"
-                            fill={barColors[idx % barColors.length]}
-                            name={type}
-                            barSize={12}
+                  <Box sx={{ flex: 1, minHeight: 0 }}>
+                    <Box sx={{ height: 400 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={transformIncidentData(incidentCount)}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="month"
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
                           />
-                        ))}
-                      </BarChart>
-                    </ResponsiveContainer>
+                          <YAxis
+                            allowDecimals={false}
+                            domain={[0, "dataMax + 2"]}
+                          />
+                          <Tooltip />
+                          <Legend />
+                          {getIncidentTypes(incidentCount).map((type, idx) => (
+                            <Bar
+                              key={type}
+                              dataKey={type}
+                              stackId="a"
+                              fill={barColors[idx % barColors.length]}
+                              name={type}
+                              barSize={12}
+                            />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Box>
                   </Box>
                 </Box>
               ))
@@ -1076,17 +1094,19 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       }}
                     >
                       <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={genderDistribution}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="position" />
-                            <YAxis />
-                            <Tooltip itemStyle={{ color: "#000" }} />
-                            <Legend />
-                            <Bar dataKey="Male" fill="#4285F4" />
-                            <Bar dataKey="Female" fill="#EA4335" />
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <Box sx={{ height: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={genderDistribution}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="position" />
+                              <YAxis />
+                              <Tooltip itemStyle={{ color: "#000" }} />
+                              <Legend />
+                              <Bar dataKey="Male" fill="#4285F4" />
+                              <Bar dataKey="Female" fill="#EA4335" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </Box>
                       </Box>
                     </Box>
                   )
@@ -1174,38 +1194,40 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       }}
                     >
                       <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={ageDistribution}
-                              dataKey="count"
-                              nameKey="age_group"
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({ name, percent }) =>
-                                `${name}: ${(percent * 100).toFixed(0)}%`
-                              }
-                              outerRadius="80%"
-                              innerRadius="40%"
-                              fill="#8884d8"
-                              paddingAngle={2}
-                              startAngle={90}
-                              endAngle={450}
-                            >
-                              {ageDistribution.map((entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={COLORS[index % COLORS.length]}
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              formatter={(value, name) => [`${value}`, name]}
-                            />
-                            <Legend iconType="square" />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <Box sx={{ height: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={ageDistribution}
+                                dataKey="count"
+                                nameKey="age_group"
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) =>
+                                  `${name}: ${(percent * 100).toFixed(0)}%`
+                                }
+                                outerRadius="80%"
+                                innerRadius="40%"
+                                fill="#8884d8"
+                                paddingAngle={2}
+                                startAngle={90}
+                                endAngle={450}
+                              >
+                                {ageDistribution.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={COLORS[index % COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                formatter={(value, name) => [`${value}`, name]}
+                              />
+                              <Legend iconType="square" />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </Box>
                       </Box>
                     </Box>
                   )
@@ -1313,24 +1335,26 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       }}
                     >
                       <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={employeeCountByCompany}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="company" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="count" name="Employee Count">
-                              {employeeCountByCompany.map((entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={COLORS[index % COLORS.length]}
-                                  className="recharts-sector"
-                                />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <Box sx={{ height: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={employeeCountByCompany}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="company" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="count" name="Employee Count">
+                                {employeeCountByCompany.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={COLORS[index % COLORS.length]}
+                                    className="recharts-sector"
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </Box>
                       </Box>
                     </Box>
                   )
