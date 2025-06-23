@@ -2154,10 +2154,10 @@ function EnvironmentWasteDash() {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '3px' }}>
+            <div style={{ fontSize: '35px', fontWeight: 'bold', marginBottom: '3px' }}>
               {yearOnYearCumulative() ?? '--'} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
             </div>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '6px' }}>
               YEAR-ON-YEAR CUMULATIVE {activeTab === 'non_hazardous_generated' ? 'NON HAZARDOUS' : 'HAZARDOUS'} WASTE {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'}
             </div>
           </div>
@@ -2169,17 +2169,17 @@ function EnvironmentWasteDash() {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '6px' }}>
               MOST {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'} {activeTab === 'non_hazardous_generated' ? 'METRIC' : 'WASTE TYPE'}
             </div>
-            <div style={{ fontSize: '25px', fontWeight: 'bold', marginBottom: '3px' }}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '3px' }}>
               {keyMetrics?.combined?.most_generated_waste_type?.waste_type 
               ? keyMetrics?.combined?.most_generated_waste_type?.waste_type 
               : keyMetrics?.combined?.most_disposed_waste_type?.waste_type 
               ? keyMetrics?.combined?.most_disposed_waste_type?.waste_type 
               : keyMetrics?.combined?.most_generated_metrics?.metrics}
             </div>
-            <div style={{ fontSize: '9px', opacity: 0.8 }}>
+            <div style={{ fontSize: '12px', opacity: 0.8 }}>
               {keyMetrics?.combined?.most_generated_waste_type?.total_generated
                 ? `TOTAL: ${mostWasteType()}`
                 : `TOTAL: ${mostWasteType()}`} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
@@ -2193,14 +2193,14 @@ function EnvironmentWasteDash() {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '3px' }}>
+            <div style={{ fontSize: '35px', fontWeight: 'bold', marginBottom: '3px' }}>
               {(typeof keyMetrics?.combined?.average_per_year === 'number' && !isNaN(keyMetrics.combined.average_per_year))
               ? (unit === 'Pieces' || unit === 'Pcs'
                   ? Math.ceil(keyMetrics.combined.average_per_year).toLocaleString()
                   : keyMetrics.combined.average_per_year.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
                 ) : '--'} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
             </div>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '6px' }}>
               AVERAGE ANNUAL {activeTab === 'non_hazardous_generated' ? 'NON HAZARDOUS' : 'HAZARDOUS'} WASTE {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'}
             </div>
           </div>
@@ -2317,7 +2317,7 @@ function EnvironmentWasteDash() {
               <ZoomInIcon fontSize="small" />
             </IconButton>
             <h3 style={{
-              fontSize: '13px',
+              fontSize: '14px',
               fontWeight: '600',
               marginBottom: '10px',
               color: '#1e293b',
@@ -2399,9 +2399,7 @@ function EnvironmentWasteDash() {
                   justifyContent: 'center',
                   flexWrap: 'wrap',
                   gap: '8px',
-                  fontSize: '10px',
-                  flexShrink: 0,
-                  marginTop: '8px'
+                  fontSize: '12px',
                 }}>
                   {currentData.pieData.map((entry, index) => (
                     <div
@@ -2417,9 +2415,8 @@ function EnvironmentWasteDash() {
                         height: '8px',
                         backgroundColor: entry.color || COLORS[index % COLORS.length],
                         borderRadius: '1px',
-                        flexShrink: 0
                       }}></div>
-                      <span style={{ fontWeight: '500', fontSize: '9px' }}>
+                      <span style={{ fontWeight: '500', fontSize: '10px' }}>
                         {entry.label}: {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
                       </span>
                     </div>
@@ -2508,7 +2505,7 @@ function EnvironmentWasteDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{ 
-                  fontSize: '13px', 
+                  fontSize: '14px', 
                   fontWeight: '600', 
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -2547,7 +2544,7 @@ function EnvironmentWasteDash() {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ flex: 1, minHeight: 0 }}>
+                    <div style={{ flex: 1, minHeight: 0, marginTop: '1rem'}}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={currentData.lineChartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -2705,7 +2702,7 @@ function EnvironmentWasteDash() {
                               }}></div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontWeight: '600', marginBottom: '4px' }}>{entry.name}</div>
-                                <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                <div style={{ fontSize: '14px', color: '#64748b' }}>
                                   {(entry.value || 0).toLocaleString()} {unit} ({percentage}%)
                                 </div>
                               </div>
@@ -2726,7 +2723,7 @@ function EnvironmentWasteDash() {
                 </IconButton>
                 <h3
                   style={{
-                    fontSize: '13px',
+                    fontSize: '14px',
                     fontWeight: '600',
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -2974,7 +2971,7 @@ function EnvironmentWasteDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '14px', 
                     fontWeight: '600', 
                     marginBottom:  30,
                     color: '#1e293b',
@@ -3190,7 +3187,7 @@ function EnvironmentWasteDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '14px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3199,7 +3196,7 @@ function EnvironmentWasteDash() {
                     Hazardous Waste Disposed Yearly Comparison ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                   </h3>
                   
-                  <div style={{ flex: 1, minHeight: 0 }}>
+                  <div style={{ flex: 1, minHeight: 0, marginTop: '1rem' }}>
                     {loading ? (
                       <div style={{
                         display: 'flex',
@@ -3411,7 +3408,7 @@ function EnvironmentWasteDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '14px', 
                     fontWeight: '600', 
                     color: '#1e293b',
                     margin: '0 0 10px 0',
@@ -3586,7 +3583,7 @@ function EnvironmentWasteDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '14px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3765,7 +3762,7 @@ function EnvironmentWasteDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '14px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3774,7 +3771,7 @@ function EnvironmentWasteDash() {
                     Total Non-Hazardous Waste by Metrics Over Time ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                   </h3>
                   
-                  <div style={{ flex: 1, minHeight: 0 }}>
+                  <div style={{ flex: 1, minHeight: 0, marginTop: '1rem'}}>
                     {loading ? (
                       <div style={{
                         display: 'flex',
@@ -3805,7 +3802,7 @@ function EnvironmentWasteDash() {
                         </div>
                       </div>
                     ) : (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" >
                         <LineChart data={nonHazMetricsLineData.transformedData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                           <XAxis 
@@ -3939,7 +3936,7 @@ function EnvironmentWasteDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '13px', 
+                    fontSize: '14px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
