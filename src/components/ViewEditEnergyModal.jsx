@@ -32,6 +32,7 @@ const ViewEditEnergyModal = ({
   remarks,
   updateStatus,
   canEdit = true, // <-- new prop, default true
+  canApprove = true, // <-- new prop, default true
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [record, setRecord] = useState(null);
@@ -379,7 +380,7 @@ const handleRejectConfirm = async () => {
   </Box>
 
   {/* Right: Approve/Reject */}
-  {!isReadOnly  && !isEditing && (
+  {canApprove && !isReadOnly  && !isEditing && (
     <Box display="flex" gap={1}>
       <Button variant="outlined" color="success" onClick={handleApprove}>
         Approve
