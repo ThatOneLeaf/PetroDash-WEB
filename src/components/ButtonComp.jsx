@@ -1,6 +1,6 @@
 import { Button } from "@mui/material";
 
-function ButtonComp({ label, rounded, onClick, color, startIcon }) {
+function ButtonComp({ label, rounded, onClick, color, startIcon, fontsize}) {
   const getColor = () => {
     if (color === "green") return "#2B8C37";
     if (color === "blue") return "#182959";
@@ -19,7 +19,7 @@ function ButtonComp({ label, rounded, onClick, color, startIcon }) {
         cursor: 'pointer',
         fontFamily: 'Inter',
         fontWeight: 'bold',
-        fontSize: '0.85rem',
+        fontSize: fontsize ? fontsize : '0.95rem',
         textTransform: 'uppercase',
         letterSpacing: '0.5px',
         boxSizing: 'border-box',

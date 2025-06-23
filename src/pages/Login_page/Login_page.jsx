@@ -102,6 +102,7 @@ export default function LoginPage() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
+            alignItems: "center",
           }}
         >
           {/* Logo */}
@@ -110,7 +111,7 @@ export default function LoginPage() {
               component="img"
               src="src/assets/petrodashlogo.png"
               alt="PetroDash Logo"
-              sx={{ width: 200 }}
+              sx={{ width: 250 }}
             />
           </Box>
 
@@ -134,7 +135,7 @@ export default function LoginPage() {
               disabled={loading}
               sx={{ mb: 2, ...interFont }}
               InputProps={{
-                sx: { borderRadius: "8px", ...interFont },
+                sx: { borderRadius: "8px", ...interFont, fontSize: 16},
               }}
             />
 
@@ -148,7 +149,7 @@ export default function LoginPage() {
               disabled={loading}
               sx={{ mb: 1, ...interFont }}
               InputProps={{
-                sx: { borderRadius: "8px", ...interFont },
+                sx: { borderRadius: "8px", ...interFont, fontSize: 16},
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
@@ -164,26 +165,29 @@ export default function LoginPage() {
               }}
             />
 
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={showPassword}
-                onChange={() => setShowPassword((show) => !show)}
-                sx={{
-                  color: "#1e5b2e",
-                  "&.Mui-checked": { color: "#1e5b2e" },
-                }}
-              />
-            }
-            label={
-              <Typography sx={{ fontSize: 15, ...interFont }}>
-                Show Password
-              </Typography>
-            }
-            sx={{ mb: 1, ml: 0 }}
-          />
+          {/* Show Password Checkbox 
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={showPassword}
+                  onChange={() => setShowPassword((show) => !show)}
+                  sx={{
+                    color: "#1e5b2e",
+                    "&.Mui-checked": { color: "#1e5b2e" },
+                  }}
+                />
+              }
+              label={
+                <Typography sx={{ fontSize: 15, ...interFont }}>
+                  Show Password
+                </Typography>
+              }
+              sx={{ mb: 1, ml: 0 }}
+            />
+          */}
+          
 
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 3, mt: 3, display: "flex", alignItems: "center", justifyContent: "center"}}>
             <Link
               href="#"
               underline="hover"
@@ -196,28 +200,29 @@ export default function LoginPage() {
               Forgot Password?
             </Link>
           </Box>
-
+          <Box sx={{ marginLeft: 10, marginRight: 10, marginTop: 5}}> 
             <Button
               type="submit"
               variant="contained"
               fullWidth
               disabled={loading || !email || !password}
               sx={{
-                bgcolor: "#1e5b2e",
+                bgcolor: "#2B8C37",
                 color: "#fff",
                 fontWeight: 700,
                 borderRadius: "24px",
                 fontSize: 18,
-                py: 1.2,
+                margin: "0 auto",
                 textTransform: "none",
                 boxShadow: "none",
                 ...interFont,
-                "&:hover": { bgcolor: "#176c3c" },
+                "&:hover": { bgcolor: "#256d2f" },
                 "&:disabled": { bgcolor: "#ccc" },
               }}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : "LOGIN"}
             </Button>
+          </Box>
           </form>
         </Box>
       </Paper>
