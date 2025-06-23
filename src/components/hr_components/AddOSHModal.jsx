@@ -8,6 +8,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Autocomplete,
   Box,
 } from "@mui/material";
 import Overlay from "../../components/modal";
@@ -17,14 +18,13 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import api from "../../services/api";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 import SuccessModal from "../../components/hr_components/SuccessModal";
 import ErrorModal from "../../components/hr_components/ErrorModal";
 import ConfirmModal from "./ConfirmModal";
 
 function AddOSHModal({ onClose, onSuccess }) {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
     workforce_type: "",
@@ -34,16 +34,29 @@ function AddOSHModal({ onClose, onSuccess }) {
     incident_title: "",
     incident_count: "",
   });
+
+  const { getUserCompanyId } = useAuth();
+  const userCompany = getUserCompanyId();
+
   const summaryData = [
-    { label: "Company ID", value: String(formData.companyId || "N/A") },
+    { label: "Company ID", value: String(userCompany || "N/A") },
     {
       label: "Workforce Type",
       value: String(formData.workforce_type || "N/A"),
     },
-    { label: "Lost Time", value: String(formData.lost_time || "N/A") },
+    {
+      label: "Lost Time",
+      value: String(
+        formData.lost_time === "true"
+          ? "Yes"
+          : formData.lost_time === "false"
+          ? "No"
+          : "N/A"
+      ),
+    },
     {
       label: "Date",
-      value: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : "N/A",
+      value: formData.date ? dayjs(formData.date).format("MM/DD/YYYY") : "N/A",
     },
     { label: "Incident Type", value: String(formData.incident_type || "N/A") },
     {
@@ -60,6 +73,10 @@ function AddOSHModal({ onClose, onSuccess }) {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchOSHData = async () => {
     try {
@@ -104,20 +121,96 @@ function AddOSHModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
   const handleSubmit = async () => {
     console.log(formData);
 
+    /* VALIDATION */
+    const MIN_DATE = dayjs("1994-09-28");
+    const {
+      companyId,
+      workforce_type,
+      lost_time,
+      date,
+      incident_type,
+      incident_title,
+      incident_count,
+    } = formData;
+
+    const isInOptions = (value, key) =>
+      uniqueOptions(key).some((option) => option.value === value);
+
+    const isValidWorkforceType = workforce_type.trim() !== "";
+
+    const parseBoolean = (val) => {
+      if (val === "true") return true;
+      if (val === "false") return false;
+      return val;
+    };
+
+    const isValidLostTime = isInOptions(parseBoolean(lost_time), "lost_time");
+
+    const isValidDate =
+      date && dayjs(date).isValid() && dayjs(date).isAfter(MIN_DATE);
+    const isValidIncidentType = incident_type.trim() !== "";
+    const isValidIncidentTitle = incident_title.trim() !== "";
+    const isValidIncidentCount =
+      incident_count !== "" &&
+      !isNaN(incident_count) &&
+      Number(incident_count) > 0;
+
+    if (!isValidWorkforceType) {
+      setErrorMessage("Workforce Type is required");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidLostTime) {
+      setErrorMessage("Please select a valid Lost Time.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidDate) {
+      setErrorMessage("Please enter a valid Date.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidIncidentType) {
+      setErrorMessage("Incident Type is required.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
+      return;
+    }
+    if (!isValidIncidentTitle) {
+      setErrorMessage("Incident Title is required.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
+      return;
+    }
+    if (!isValidIncidentCount) {
+      setErrorMessage("Incident Count must be a number greater than 0.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
+      return;
+    }
+
     try {
       setLoading(true);
 
       await api.post("/hr/single_upload_occupational_safety_health_record", {
-        company_id: "PSC",
+        company_id: userCompany,
         workforce_type: formData.workforce_type,
         lost_time:
           formData.lost_time === "true" || formData.lost_time === true
@@ -207,11 +300,21 @@ function AddOSHModal({ onClose, onSuccess }) {
           ))}
         </Select>*/}
 
-        <TextField
-          label="Worforce Type"
-          value={formData.employeeId}
-          onChange={handleChange("workforce_type")}
-          type="text"
+        <Autocomplete
+          freeSolo
+          options={uniqueOptions("workforce_type").map(
+            (option) => option.value
+          )}
+          value={formData.workforce_type}
+          onInputChange={(event, newInputValue) => {
+            setFormData((prev) => ({
+              ...prev,
+              workforce_type: newInputValue,
+            }));
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label="Workforce Type" fullWidth />
+          )}
         />
 
         <FormControl sx={{ minWidth: 120 }}>
@@ -233,8 +336,9 @@ function AddOSHModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date"
-            value={formData.date}
+            value={formData.date ? dayjs(formData.date) : null}
             onChange={handleDateChange("date")}
+            minDate={dayjs("1994-09-29")}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },
             }}
@@ -248,43 +352,46 @@ function AddOSHModal({ onClose, onSuccess }) {
             gap: 2,
           }}
         >
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel>Incident Type</InputLabel>
-            <Select
-              value={formData.incident_type}
-              onChange={handleChange("incident_type")}
-              label="Incident Type"
-              sx={{ height: "55px" }}
-            >
-              {uniqueOptions("incident_type").map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            freeSolo
+            options={uniqueOptions("incident_type").map(
+              (option) => option.value
+            )}
+            value={formData.incident_type}
+            onInputChange={(event, newInputValue) => {
+              setFormData((prev) => ({
+                ...prev,
+                incident_type: newInputValue,
+              }));
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Incident Type" fullWidth />
+            )}
+          />
 
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel>Incident Title</InputLabel>
-            <Select
-              value={formData.incident_title}
-              onChange={handleChange("incident_title")}
-              label="Incident Title"
-              sx={{ height: "55px" }}
-            >
-              {uniqueOptions("incident_title").map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            freeSolo
+            options={uniqueOptions("incident_title").map(
+              (option) => option.value
+            )}
+            value={formData.incident_title}
+            onInputChange={(event, newInputValue) => {
+              setFormData((prev) => ({
+                ...prev,
+                incident_title: newInputValue,
+              }));
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Incident Title" fullWidth />
+            )}
+          />
         </Box>
 
         <TextField
           label="Incident Count"
           value={formData.incident_count}
           onChange={handleChange("incident_count")}
+          inputProps={{ min: 1 }}
           type="Number"
         />
       </Box>
@@ -309,7 +416,7 @@ function AddOSHModal({ onClose, onSuccess }) {
               backgroundColor: "#256d2f",
             },
           }}
-          onClick={() => setIsConfirmModalOpen(TRUE)}
+          onClick={() => setIsConfirmModalOpen(true)}
         >
           ADD RECORD
         </Button>

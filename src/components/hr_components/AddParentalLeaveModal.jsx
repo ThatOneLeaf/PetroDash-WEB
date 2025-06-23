@@ -19,6 +19,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 dayjs.extend(isSameOrAfter);
 
 import api from "../../services/api";
@@ -36,20 +38,20 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
   });
   const summaryData = [
     { label: "Employee ID", value: String(formData.employeeId || "N/A") },
+    { label: "Type of Leave", value: String(formData.typeOfLeave || "N/A") },
+    { label: "Days Availed", value: String(formData.daysAvailed || "N/A") },
     {
       label: "Date Availed",
       value: formData.dateAvailed
-        ? dayjs(formData.dateAvailed).format("YYYY-MM-DD")
+        ? dayjs(formData.dateAvailed).format("MM/DD/YYYY")
         : "N/A",
     },
-    { label: "Days Availed", value: String(formData.daysAvailed || "N/A") },
-    { label: "Type of Leave", value: String(formData.typeOfLeave || "N/A") },
   ];
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const MIN_DATE = dayjs("1994-09-29");
+  const MIN_DATE = dayjs("1994-09-28");
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -81,6 +83,9 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
     fetchData();
   }, []);
 
+  const { getUserCompanyId } = useAuth();
+  const userCompany = getUserCompanyId();
+
   const uniqueOptions = (key) => {
     return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
       label: val,
@@ -101,9 +106,13 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
+    console.log(isoDate);
+
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
@@ -135,8 +144,8 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
       return;
     }
 
-    if (!isValidDate) {
-      setErrorMessage("Please select a valid Date Availed");
+    if (!typeOfLeave || !isValidLeaveType) {
+      setErrorMessage("Please select a valid Type of Leave.");
       setIsConfirmModalOpen(false);
       setIsErrorModalOpen(true);
       return;
@@ -149,8 +158,8 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
       return;
     }
 
-    if (!typeOfLeave || !isValidLeaveType) {
-      setErrorMessage("Please select a valid Type of Leave.");
+    if (!isValidDate) {
+      setErrorMessage("Please select a valid Date Availed");
       setIsConfirmModalOpen(false);
       setIsErrorModalOpen(true);
       return;
@@ -284,7 +293,7 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date Availed"
-            value={formData.dateAvailed}
+            value={formData.dateAvailed ? dayjs(formData.dateAvailed) : null}
             onChange={handleDateChange("dateAvailed")}
             minDate={dayjs("1994-09-29")}
             slotProps={{

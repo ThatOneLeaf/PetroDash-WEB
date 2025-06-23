@@ -2,9 +2,12 @@ import { Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { Box } from '@mui/material';
+import image1 from '../assets/petroenergy_1.jpg';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import LoginIcon from '@mui/icons-material/Login';
 import Modal from '../components/modal'; 
 import LoginPage from './Login_page/Login_page';
 import Btn from '../components/ButtonComp'
@@ -99,18 +102,19 @@ const toggleModal = () => {
       
       <main className="landing-main" style={{
         display: 'flex',
-        padding: '6rem 4rem',
+        marginTop: '1.5rem',
+        padding: '5.5rem',
         gap: '4rem',
         flexWrap: 'wrap'
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{
-            fontSize: '3rem',
+            fontSize: '3.5rem',
             marginBottom: '2rem',
             fontStyle: 'italic',
             lineHeight: '1.2'
           }}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            <span style={{ fontWeight: 'bold' }}>PetroEnergy</span>, building a more sustainable and ethical future
           </h1>
           
           <p style={{
@@ -119,11 +123,16 @@ const toggleModal = () => {
             fontSize: '1.1rem',
             lineHeight: '1.6'
           }}>
-            Proin vel lectus condimentum, consequat leo a, euismod
-            mauris. Integer ac mauris nec ex elementum
-            pellentesque.
+            ESG is a vital framework that helps investors assess sustainability risks and guides businesses in operating responsibly for long-term impact.
           </p>
-          <Btn color="green" label="LOGIN" onClick={toggleModal} />
+          <Btn
+            color="green"
+            label="LOGIN"
+            startIcon={<LoginIcon />}
+            onClick={toggleModal}
+            rounded
+            fontsize="1.2rem"
+          />
         </div>
 
         {isLoginModal && (
@@ -131,105 +140,124 @@ const toggleModal = () => {
             <LoginPage />
           </Modal>
         )}
-
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
+          <Box
+            sx={{
+              bgcolor: "#7694c4",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              height: 400, // Use a fixed px value for reliable sizing
+              borderRadius: "24px",
+              overflow: "hidden", // Ensures no overflow
+              p: 0 // No padding
+            }}
+          >
+            <Box
+              component="img"
+              src={image1}
+              alt="Login"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                opacity: 0.825,
+                borderRadius: "24px",
+                display: "block", // Prevents extra space below
+                m: 0, // No margin
+                p: 0  // No padding
+              }}
+            />
+          </Box>
+        </div>
+      </main>
+      
+      { /* Additionaal sections 
+        <section ref={aboutRef} className="landing-section" style={{
+          backgroundColor: '#f5f5f5',
+          padding: '6rem 4rem',
+          textAlign: 'center'
+        }}>
+          <p style={{
+            maxWidth: '900px',
+            margin: '0 auto',
+            marginBottom: '4rem',
+            fontSize: '1.1rem',
+            lineHeight: '1.6',
+            color: '#444'
+          }}>
+            Proin vel lectus condimentum, consequat leo a, euismod mauris. Integer ac mauris nec ex
+            elementum pellentesque. Pellentesque habitant morbi tristique senectus et netus et malesuada
+            fames ac turpis egestas. Aliquam et iaculis felis. Mauris nec tellus tellus.
+          </p>
+
+          <div className="landing-about-images" style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '3rem'
+          }}>
+            {[1, 2, 3].map((index) => (
+              <div key={index} style={{
+                width: '300px',
+                height: '300px',
+                backgroundColor: index === 2 ? '#2E7D32' : '#1a237e',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white'
+              }}>
+                <p>Image {index} Placeholder</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section ref={disclosureRef} className="landing-disclosure" style={{
+          backgroundColor: '#2E7D32',
+          color: 'white',
+          padding: '6rem 4rem',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '4rem'
+        }}>
+          <div style={{ 
+            maxWidth: '600px',
+            flex: 1 
+          }}>
+            <h2 style={{ 
+              fontSize: '2rem',
+              marginBottom: '1.5rem'
+            }}>Disclosure</h2>
+            <p style={{
+              fontSize: '1.1rem',
+              lineHeight: '1.6',
+              marginBottom: '2rem'
+            }}>
+              Proin vel lectus condimentum, consequat leo a, euismod mauris. Integer ac mauris nec ex elementum
+              pellentesque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+              Aliquam et iaculis felis. Mauris nec tellus tellus.
+            </p>
+          </div>
+          <div className="disclosure-img" style={{
             backgroundColor: '#f0f0f0',
             borderRadius: '12px',
-            height: '500px',
+            height: '300px',
+            flex: 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#666',
-            width: '100%'
+            color: '#666'
           }}>
             <p>Image Placeholder</p>
           </div>
-        </div>
-      </main>
+        </section>
 
-      <section ref={aboutRef} className="landing-section" style={{
-        backgroundColor: '#f5f5f5',
-        padding: '6rem 4rem',
-        textAlign: 'center'
-      }}>
-        <p style={{
-          maxWidth: '900px',
-          margin: '0 auto',
-          marginBottom: '4rem',
-          fontSize: '1.1rem',
-          lineHeight: '1.6',
-          color: '#444'
-        }}>
-          Proin vel lectus condimentum, consequat leo a, euismod mauris. Integer ac mauris nec ex
-          elementum pellentesque. Pellentesque habitant morbi tristique senectus et netus et malesuada
-          fames ac turpis egestas. Aliquam et iaculis felis. Mauris nec tellus tellus.
-        </p>
-
-        <div className="landing-about-images" style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '3rem'
-        }}>
-          {[1, 2, 3].map((index) => (
-            <div key={index} style={{
-              width: '300px',
-              height: '300px',
-              backgroundColor: index === 2 ? '#2E7D32' : '#1a237e',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white'
-            }}>
-              <p>Image {index} Placeholder</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section ref={disclosureRef} className="landing-disclosure" style={{
-        backgroundColor: '#2E7D32',
-        color: 'white',
-        padding: '6rem 4rem',
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '4rem'
-      }}>
-        <div style={{ 
-          maxWidth: '600px',
-          flex: 1 
-        }}>
-          <h2 style={{ 
-            fontSize: '2rem',
-            marginBottom: '1.5rem'
-          }}>Disclosure</h2>
-          <p style={{
-            fontSize: '1.1rem',
-            lineHeight: '1.6',
-            marginBottom: '2rem'
-          }}>
-            Proin vel lectus condimentum, consequat leo a, euismod mauris. Integer ac mauris nec ex elementum
-            pellentesque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
-            Aliquam et iaculis felis. Mauris nec tellus tellus.
-          </p>
-        </div>
-        <div className="disclosure-img" style={{
-          backgroundColor: '#f0f0f0',
-          borderRadius: '12px',
-          height: '300px',
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#666'
-        }}>
-          <p>Image Placeholder</p>
-        </div>
-      </section>
-
+        
+      */}
       <Footer />
     </div>
   );

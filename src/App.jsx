@@ -33,50 +33,203 @@ function App() {
         <div className="app">
           <main>
             <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<LoginPage />} />
 
-            {/* Protected Routes Economics */}
-            <Route path="/economic" element={<ProtectedRoute><Economic /></ProtectedRoute>} />
-            <Route path="/economic/repository" element={<ProtectedRoute><EconomicRepository /></ProtectedRoute>} />
-            
-            {/* Protected Routes Environment */}
-            <Route path="/environment/energy" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentEnergy /></ProtectedRoute>} />
-            <Route path="/environment/water" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentWater /></ProtectedRoute>} />
-            <Route path="/environment/waste" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentWaste /></ProtectedRoute>} />
-            <Route path="/environment/air" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentAir /></ProtectedRoute>} />
-            <Route path="/environment/care" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03"]}><EnvironmentCare /></ProtectedRoute>} />
-            <Route path="/environment/water-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentWaterDash /></ProtectedRoute>} />
-            <Route path="/environment/energy-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentEnergyDash /></ProtectedRoute>} />
-            <Route path="/environment/waste-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentWasteDash /></ProtectedRoute>} />
-            <Route path="/environment/air-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentAirDash /></ProtectedRoute>} />
-            <Route path="/environment/care-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><EnvironmentCareDash /></ProtectedRoute>} />
+              {/* Protected Routes Economics */}
+              <Route
+                path="/economic"
+                element={
+                  <ProtectedRoute>
+                    <Economic />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/economic/repository"
+                element={
+                  <ProtectedRoute>
+                    <EconomicRepository />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Protected Routes */}
-            <Route path="/economic" element={<ProtectedRoute requiredRoles={["R02", "R03"]}><Economic /></ProtectedRoute>} />
-            <Route path="/economic/repository" element={<ProtectedRoute requiredRoles={["R03"]}><EconomicRepository /></ProtectedRoute>} />
+              {/* Protected Routes Environment */}
+              <Route
+                path="/environment/energy"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <EnvironmentEnergy />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/water"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <EnvironmentWater />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/waste"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <EnvironmentWaste />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/air"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <EnvironmentAir />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/care"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <EnvironmentCare />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/water-dash"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                    <EnvironmentWaterDash />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/energy-dash"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                    <EnvironmentEnergyDash />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/waste-dash"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                    <EnvironmentWasteDash />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/air-dash"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                    <EnvironmentAirDash />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/environment/care-dash"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                    <EnvironmentCareDash />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* CSV Routes */}
-            <Route path="/energy/power-generation" element={<ProtectedRoute requiredRoles={["R05","R04","R03"]}><Energy /></ProtectedRoute>} />
-            <Route path="/energy" element={<ProtectedRoute requiredRoles={["R04", "R03", "R02"]}><PowerDashboard /></ProtectedRoute>} />
-            <Route path="/social/er1-94" element={<ProtectedRoute requiredRoles={["R04", "R03", "R02"]}><FundsDashboard /></ProtectedRoute>}/>
+              {/* Protected Routes */}
+              <Route
+                path="/economic"
+                element={
+                  <ProtectedRoute requiredRoles={["R02", "R03"]}>
+                    <Economic />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/economic/repository"
+                element={
+                  <ProtectedRoute requiredRoles={["R03"]}>
+                    <EconomicRepository />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Environment Routes */}
-            
-            
-            {/* HELP Routes */}
-            <Route path="/social/help" element={<ProtectedRoute requiredRoles={["R05", "R04","R03"]}><CSR /></ProtectedRoute>} />
-            <Route path="/social/help-dash" element={<ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}><HELPDash /></ProtectedRoute>} />
+              {/* CSV Routes */}
+              <Route
+                path="/energy/power-generation"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <Energy />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/energy"
+                element={
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
+                    <PowerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/social/er1-94"
+                element={
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
+                    <FundsDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* HR Routes */}
-            <Route path="/social/hr" element={<HR />} />
-            <Route path="/social/hrdashboard" element={<HRDashboard />} />
+              {/* Environment Routes */}
 
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+              {/* HELP Routes */}
+              <Route
+                path="/social/help"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <CSR />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/social/help-dash"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                    <HELPDash />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* HR Routes */}
+              <Route
+                path="/social/hr"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <HR />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/social/hrdashboard"
+                element={
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                    <HRDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
+        </div>
+      </Router>
     </AuthProvider>
   );
 }

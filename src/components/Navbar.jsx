@@ -140,7 +140,7 @@ function Navbar({
             background: #182959;
             transform: scaleX(0);
             transition: transform 0.3s cubic-bezier(.4,0,.2,1);
-            transform-origin: left;
+            transform-origin: center;
           }
           .navbar-center-btn:hover::after,
           .navbar-center-btn:focus::after {
@@ -175,13 +175,13 @@ function Navbar({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '1rem 2rem',
+          padding: '2.5rem 2rem',
           position: isSticky ? 'fixed' : 'relative',
           top: 0,
           left: 0,
           right: 0,
           width: '100%',
-          height: '72px',
+          height: '82px',
           zIndex: 1000,
           boxSizing: 'border-box',
           ...navAnimStyle
@@ -190,12 +190,14 @@ function Navbar({
             <img
               src="src/assets/petrodashlogo.png"
               alt="PetroDash"
-              style={{ height: '60px' }}
+              style={{ height: '90px', padding: '1rem 0' }}
               className="navbar-logo"
             />
           </Link>
 
-          {/* Desktop Center Navigation */}
+          {/* Desktop Center Navigation 
+          
+          */}
           <div className="navbar-center-desktop" style={{ 
             display: 'flex',
             alignItems: 'center',
@@ -213,7 +215,7 @@ function Navbar({
                 color: '#333',
                 cursor: 'pointer',
                 fontFamily: 'Inter',
-                fontSize: '14px'
+                fontSize: '14px',
               }}
             >
               ABOUT
@@ -232,11 +234,24 @@ function Navbar({
             >
               DISCLOSURE
             </button>
+            <button 
+              className="navbar-center-btn"
+              style={{ 
+                background: 'none',
+                border: 'none',
+                color: '#333',
+                cursor: 'pointer',
+                fontFamily: 'Inter',
+                fontSize: '14px'
+              }}
+            >
+              HELP
+            </button>
           </div>
           
           {/* Desktop LOGIN button */}
           <div className="navbar-login-desktop" style={{ display: 'flex', alignItems: 'center', zIndex: 1202 }}>
-            <Btn color="green" label="LOGIN" onClick={toggleModal} />
+            <Btn color="green" label="LOGIN" onClick={toggleModal} rounded fontsize='0.8rem'/>
           </div>
 
           {/* Hamburger for mobile */}

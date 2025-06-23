@@ -17,6 +17,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import api from "../../services/api";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 
 import SuccessModal from "../../components/hr_components/SuccessModal";
@@ -34,12 +36,15 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
     safetyManhours: "",
   });
 
+  const { getUserCompanyId } = useAuth();
+  const userCompany = getUserCompanyId();
+
   const summaryData = [
-    { label: "Company ID", value: String(formData.companyId || "N/A") },
+    { label: "Company ID", value: String(userCompany || "N/A") },
     { label: "Contractor", value: String(formData.contractor || "N/A") },
     {
       label: "Date",
-      value: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : "N/A",
+      value: formData.date ? dayjs(formData.date).format("MM/DD/YYYY") : "N/A",
     },
     {
       label: "Safety Manpower",
@@ -99,9 +104,11 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
@@ -110,7 +117,7 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
 
     /* VALIDATIONS */
 
-    const MIN_DATE = dayjs("1994-09-29");
+    const MIN_DATE = dayjs("1994-09-28");
 
     const { contractor, date, safetyManpower, safetyManhours } = formData;
 
@@ -161,7 +168,7 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
       setLoading(true);
 
       await api.post("/hr/single_upload_safety_workdata_record", {
-        company_id: "PSC", //ADD COMPANY TO ADD RECORD
+        company_id: userCompany,
         contractor: formData.contractor,
         date: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : null,
         manpower: formData.safetyManpower,
@@ -261,10 +268,9 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date"
-            value={formData.date}
+            value={formData.date ? dayjs(formData.date) : null}
             onChange={handleDateChange("date")}
             minDate={dayjs("1994-09-29")}
-            disableFuture={true}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },
             }}

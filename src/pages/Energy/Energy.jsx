@@ -30,6 +30,8 @@ import Table from "../../components/Table/Table";
 import api from '../../services/api';
 import { exportExcelData } from "../../services/directExport";
 import ViewEditEnergyModal from "../../components/ViewEditEnergyModal";
+import { useAuth } from "../../contexts/AuthContext";
+import ImportPowerModal from "../../components/ImportPowerModal";
 
 function Energy() {
   const [data, setData] = useState([]);
@@ -87,26 +89,25 @@ function Energy() {
     setSelectedRecord(null);
   };
 
-  const handleSelectionChange = (selectedIds) => {
-  if (selectedIds.length > 0) {
-    setSelectedRowId(selectedIds[selectedIds.length - 1]); // Always pick the last selected
-  } else {
-    setSelectedRowId(null);
-  }
-};
-
 
 
   const [powerPlants, setPowerPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { getUserRole } = useAuth();
+  const {getUserCompanyId} = useAuth();
+  const{getUserPowerPlantId}=useAuth();
+  const role = getUserRole();
+  const companyId = getUserCompanyId();
+  const powerPlantId = getUserPowerPlantId();
 
-  // Placeholder for role-based permissions (currently all true)
-  const canEdit = true;      // user?.role === 'admin' || user?.role === 'editor';
-  const canApprove = true;   // user?.role === 'admin';
-  const canAdd = true;       // canEdit
-  const canImport = true;    // canEdit
-  const canExport = true;    // true for all users
+  // Role-based permissions
+  const canEdit = role === 'R05' || role === 'R03' || role === 'R04';
+  const canApprove = role === 'R03' || role === 'R04';
+  const canAdd = canEdit; 
+  const canImport = canEdit; 
+  const canExport = canApprove || canEdit;
+
 
 
   const fetchEnergyData = async () => {
@@ -186,27 +187,55 @@ function Energy() {
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
-  const filteredData = data.filter((item) => {
-    const itemDate = dayjs(item.date);
-    const searchMatch =
-      searchTerm === "" ||
-      Object.values(item).some(val =>
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  const filteredData = data
+    .filter((item) => {
+      // Fixed filters by role
+      if (role === 'R05') {
+        if (item.companyId !== companyId || item.powerPlant !== powerPlantId) return false;
+      } else if (role === 'R04') {
+        if (item.companyId !== companyId) return false;
+      }
+      return true;
+    })
+    .filter((item) => {
+      const itemDate = dayjs(item.date);
+      const searchMatch =
+        searchTerm === "" ||
+        Object.values(item).some(val =>
+          String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
-    if (!searchMatch) return false;
-    if (startDate && itemDate.isBefore(dayjs(startDate), "day")) return false;
-    if (endDate && itemDate.isAfter(dayjs(endDate), "day")) return false;
-    if (filters.company && item.companyName !== filters.company) return false;
-    if (filters.powerPlant && item.powerPlant !== filters.powerPlant) return false;
-    if (filters.generationSource && item.generationSource !== filters.generationSource) return false;
-    if (filters.province && item.province !== filters.province) return false;
-    if (filters.status && item.status !== filters.status) return false;
+      if (!searchMatch) return false;
+      if (startDate && itemDate.isBefore(dayjs(startDate), "day")) return false;
+      if (endDate && itemDate.isAfter(dayjs(endDate), "day")) return false;
+      if (filters.company && item.companyName !== filters.company) return false;
+      if (filters.powerPlant && item.powerPlant !== filters.powerPlant) return false;
+      if (filters.generationSource && item.generationSource !== filters.generationSource) return false;
+      if (filters.province && item.province !== filters.province) return false;
+      if (filters.status && item.status !== filters.status) return false;
 
-    return true;
+      return true;
+    });
+
+  // Sort the entire filteredData before paginating
+  const sortedData = [...filteredData].sort((a, b) => {
+    const { key, direction } = sortConfig;
+    if (key === 'date') {
+      const dateA = dayjs(a.date);
+      const dateB = dayjs(b.date);
+      if (dateA.isBefore(dateB)) return direction === 'asc' ? -1 : 1;
+      if (dateA.isAfter(dateB)) return direction === 'asc' ? 1 : -1;
+      return 0;
+    } else {
+      // Generic string/number sort
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    }
   });
 
-  const paginatedData = filteredData.slice(
+  // Only paginate after sorting the full data
+  const paginatedData = sortedData.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
@@ -359,7 +388,6 @@ function Energy() {
         remarks: remarks.trim(),
       };
 
-      console.log(payload);
 
       const response = await api.post(
         "/usable_apis/bulk_update_status",
@@ -484,7 +512,7 @@ function Energy() {
                   startIcon={<FileUploadIcon />}
                 />
               )}
-              {canImport && (
+              {canImport && !['R04', 'R03'].includes(role) && (
                 <ButtonComp
                   label="Import"
                   rounded
@@ -492,7 +520,7 @@ function Energy() {
                   color="blue"
                 />
               )}
-              {canAdd && (
+              {canAdd && !['R04', 'R03'].includes(role) && (
                 <ButtonComp
                   label="Add Record"
                   rounded
@@ -504,79 +532,85 @@ function Energy() {
             </>
           )}
 
-
-{selectedRowIds.length > 0 && canApprove && (
-  <>
-    <ButtonComp
-      label="Approve"
-      rounded
-      onClick={() => {
-        
-        const record = data.find(r => r.energyId === selectedRowIds[0]);
-        
-        if (record) {
-          // your approve logic
-          const records = selectedRowIds
-            .map(id => data.find(r => r.energyId === id))
-            .filter(Boolean);
-
-          const statusList = records.map(record => record.status);
-
-          setSelectedRecords(records);
-          setStatuses(statusList);
-          const allSameStatus = statusList.every(status => status === statusList[0]);
-
-          if (allSameStatus && statusList[0] != "APP") {
-            setModalType('approve');
-            setIsModalOpen(true);
-          } else if (allSameStatus && statusList[0] === "APP") {
-            alert("Cannot proceed: Record is already Approved.");
-          } else {
-            setShowStatusErrorModal(true);
-          }
-        }
-      }}
-      color="green"
-      startIcon={<CheckIcon />}
-    />
-    <ButtonComp
-      label="Revise"
-      rounded
-      onClick={() => {
-        const record = data.find(r => r.energyId === selectedRowIds[0]);
-        if (record) {
-          // your revise logic
-          const records = selectedRowIds
-            .map(id => data.find(r => r.energyId === id))
-            .filter(Boolean);
-
-          const statusList = records.map(record => record.status);
-
-          setSelectedRecords(records);
-          setStatuses(statusList);
-          const allSameStatus = statusList.every(status => status === statusList[0]);
-
-          if (
-            allSameStatus &&
-            statusList[0] !== "APP" &&
-            !["FRS", "FRH"].includes(statusList[0])
-          ) {
-            setModalType('revise');
-            setIsModalOpen(true);
-          } else if (allSameStatus && ["FRS", "FRH"].includes(statusList[0])) {
-            alert("Cannot proceed: Record is already for Revision.");
-          } else if (allSameStatus && statusList[0] === "APP") {
-            alert("Cannot proceed: Record is already Approved.");
-          } else {
-            setShowStatusErrorModal(true);
-          }
-        }
-      }}
-      color="blue"
-    />
-  </>
-)}
-
+          {/* Show Export, Approve, and Revise when rows are selected and user can approve/export */}
+          {selectedRowIds.length > 0 && (
+            <>
+              <Typography sx={{ fontWeight: 600, color: '#182959', fontSize: '1rem', mr: 2 }}>
+                {selectedRowIds.length} record{selectedRowIds.length > 1 ? 's' : ''} selected
+              </Typography>
+              {canExport && (
+                <ButtonComp
+                  label="Export Selected"
+                  rounded
+                  onClick={() => {
+                    const selectedData = filteredData.filter(row => selectedRowIds.includes(row.energyId));
+                    exportExcelData(selectedData, exportFields, "Selected Power Generated");
+                  }}
+                  color="blue"
+                  startIcon={<FileUploadIcon />}
+                />
+              )}
+              {canApprove && (
+                <>
+                  {(() => {
+                    // Role-based approve button visibility for selection
+                    const records = selectedRowIds.map(id => data.find(r => r.energyId === id)).filter(Boolean);
+                    const statusList = records.map(record => record.status);
+                    const allSameStatus = statusList.length > 0 && statusList.every(status => status === statusList[0]);
+                    let canShowApprove = false;
+                    if (role === 'R04') {
+                      canShowApprove = allSameStatus && ['URS', 'FRS'].includes(statusList[0]);
+                    } else if (role === 'R03') {
+                      canShowApprove = allSameStatus && ['URH', 'FRH'].includes(statusList[0]);
+                    } else {
+                      canShowApprove = canApprove && allSameStatus && statusList[0] !== 'APP';
+                    }
+                    return canShowApprove ? (
+                      <ButtonComp
+                        label="Approve"
+                        rounded
+                        onClick={() => {
+                          setSelectedRecords(records);
+                          setStatuses(statusList);
+                          setModalType('approve');
+                          setIsModalOpen(true);
+                        }}
+                        color="green"
+                        startIcon={<CheckIcon />}
+                      />
+                    ) : null;
+                  })()}
+                  {(() => {
+                    // Role-based revise button visibility for selection
+                    const records = selectedRowIds.map(id => data.find(r => r.energyId === id)).filter(Boolean);
+                    const statusList = records.map(record => record.status);
+                    const allSameStatus = statusList.length > 0 && statusList.every(status => status === statusList[0]);
+                    let canShowRevise = false;
+                    if (role === 'R04') {
+                      canShowRevise = allSameStatus && ['URS', 'FRS'].includes(statusList[0]);
+                    } else if (role === 'R03') {
+                      canShowRevise = allSameStatus && ['URH', 'FRH'].includes(statusList[0]);
+                    } else {
+                      canShowRevise = canApprove && allSameStatus && statusList[0] !== 'APP' && !['FRS', 'FRH'].includes(statusList[0]);
+                    }
+                    return canShowRevise ? (
+                      <ButtonComp
+                        label="Revise"
+                        rounded
+                        onClick={() => {
+                          setSelectedRecords(records);
+                          setStatuses(statusList);
+                          setModalType('revise');
+                          setIsModalOpen(true);
+                        }}
+                        color="blue"
+                      />
+                    ) : null;
+                  })()}
+                </>
+              )}
+            </>
+          )}
           </Box>
 
 
@@ -600,10 +634,20 @@ function Energy() {
                   ...data.map((row) => row.province).filter(Boolean),
                 ]),
               ]}
+              style={{ display: role === 'R03' ? 'block' : 'none' }}
             />
-            <Filter label="Company" placeholder="Company" options={[{ label: "All Companies", value: "" }, ...companyOptions]} value={filters.company} onChange={(val) => { setFilters((prev) => ({ ...prev, company: val })); setPage(1); }} />
-            <Filter label="Power Project" placeholder="Power Project" options={[{ label: "All Power Projects", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
-            <Filter label="Generation Source" placeholder="Source" options={[{ label: "All Sources", value: "" }, ...generationSourceOptions]} value={filters.generationSource} onChange={(val) => { setFilters((prev) => ({ ...prev, generationSource: val })); setPage(1); }} />
+            {role === 'R03' && (
+              <Filter label="Company" placeholder="Company" options={[{ label: "All Companies", value: "" }, ...companyOptions]} value={filters.company} onChange={(val) => { setFilters((prev) => ({ ...prev, company: val })); setPage(1); }} />
+            )}
+            {(role === 'R03' || role === 'R04') && (
+              <Filter label="Power Project" placeholder="Power Project" options={[{ label: "All Power Projects", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
+            )}
+            {role === 'R03' && (
+              <Filter label="Generation Source" placeholder="Source" options={[{ label: "All Sources", value: "" }, ...generationSourceOptions]} value={filters.generationSource} onChange={(val) => { setFilters((prev) => ({ ...prev, generationSource: val })); setPage(1); }} />
+            )}
+            {role === 'R03' && (
+              <Filter label="Province" placeholder="Province" options={[{ label: "All Provinces", value: "" }, ...provinceOptions]} value={filters.province} onChange={(val) => { setFilters((prev) => ({ ...prev, province: val })); setPage(1); }} />
+            )}
             <Filter label="Status" placeholder="Status" options={[{ label: "All Status", value: "" }, ...statusOptions]} value={filters.status} onChange={(val) => { setFilters((prev) => ({ ...prev, status: val })); setPage(1); }} />
             <DateRangePicker
               label="Date Range"
@@ -639,7 +683,6 @@ function Energy() {
                 Clear Filters
               </Button>
             )}
-  
           </Box>
 
           {/* Table */}
@@ -655,9 +698,8 @@ function Energy() {
                   setSelectedRowIds(selectedRows);
                 }, 0);
               }}
-
               columns={columns}
-              rows={paginatedData}
+              rows={sortedData}
               filteredData={filteredData}
               rowsPerPage={rowsPerPage}
               onSort={handleSort}
@@ -670,6 +712,7 @@ function Energy() {
                  <LaunchIcon />
                 </IconButton>
               )}
+              page={page}
             />
           )}
 
@@ -1096,13 +1139,29 @@ function Energy() {
           energyId={selectedRecord.energyId}
           powerplantId={selectedRecord.powerPlant}
           companyName={selectedRecord.companyName}  
-          status = {selectedRecord.status_name}
+          status={selectedRecord.status_name}
           remarks={selectedRecord.remarks}
           updatePath="/energy/edit"
           onClose={handleClose}
           updateStatus={(updated) => {
             if (updated) fetchEnergyData();
           }}
+          canEdit={
+            role === 'R05'
+              ? ['FRS', 'URS', 'FRH'].includes(selectedRecord.status)
+              : role === 'R04'
+                ? ['URH', 'FRH', 'URS'].includes(selectedRecord.status)
+                : role === 'R03'
+                  ? false
+                  : canEdit
+          }
+          canApprove={
+            role === 'R04'
+              ? ['URS', 'FRS'].includes(selectedRecord.status)
+              : role === 'R03'
+                ? ['URH', 'FRH'].includes(selectedRecord.status)
+                : canApprove
+          }
         />
         </Overlay>
       )}
@@ -1114,20 +1173,23 @@ function Energy() {
                 setIsAddEnergyModalOpen(false);
                 fetchEnergyData();
               }}
-              powerPlants={powerPlants}
+              companyId={companyId}
+              powerPlantId={powerPlantId}
             />
           </Overlay>
         )}
         {isImportEnergyModalOpen && (
           <Overlay onClose={() => setIsImportEnergyModalOpen(false)}>
-            <ImportFileModal
+            <ImportPowerModal
                   title="Daily Generation"
                   downloadPath="/energy/download_template"
-                  uploadPath="/energy/bulk_add"
+                  uploadPath="/energy/upload_energy_file"
                   onClose={() => {
                             setIsImportEnergyModalOpen(false);
                             fetchEnergyData();
                           }} 
+                  companyId={companyId}
+                  powerPlantId={powerPlantId}
                 />
           </Overlay>
         )}

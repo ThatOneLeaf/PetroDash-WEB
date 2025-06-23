@@ -83,6 +83,11 @@ function Demographics({
           : val,
     },
     {
+      key: "birthdate",
+      label: "Birthdate",
+      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
+    },
+    {
       key: "position_id",
       label: "Position",
       render: (val) =>
@@ -110,12 +115,12 @@ function Demographics({
     {
       key: "start_date",
       label: "Start Date",
-      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
     },
     {
       key: "end_date",
       label: "End Date",
-      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
     },
     {
       key: "status_id",

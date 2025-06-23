@@ -78,7 +78,7 @@ function Training({
     {
       key: "date",
       label: "Date",
-      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
     },
     { key: "training_hours", label: "Training Hours" },
     { key: "number_of_participants", label: "Number of Participants" },
@@ -315,7 +315,7 @@ function Training({
             onSelectionChange={(selectedRows) => {
               handleRowSelect(selectedRows);
             }}
-            emptyMessage="No demographics data found."
+            emptyMessage="No training data found."
             maxHeight="60vh"
             minHeight="300px"
             actions={renderActions}

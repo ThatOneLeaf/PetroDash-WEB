@@ -5,8 +5,6 @@ import {
   Typography,
   Button,
   Container,
-  Paper,
-  TextField,
   IconButton
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
@@ -33,14 +31,12 @@ function CSR() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  // const [modalKey, setModalKey] = useState(0);
+  const [modalKey, setModalKey] = useState(0);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [remarks, setRemarks] = useState('');
-  const [revisionRemarks, setRevisionRemarks] = useState("");
   const statuses = ["URS","FRS","URH","FRH","APP"];
 
   const [sortConfig, setSortConfig] = useState({
@@ -127,7 +123,6 @@ function CSR() {
   };
 
   const fetchNextStatus = (action, currentStatus) => {
-    console.log(currentStatus)
     // console.log("here at fectnextstatus: current status: ", currentStatus)
     let newStatus = '';
     if (action === 'approve') {
@@ -145,10 +140,10 @@ function CSR() {
       }
     } else if (action === 'revise') {
       switch (currentStatus) {
-        case 'Under Review (Site)':
+        case 'Under review (site)':
           newStatus = statuses[1]; // "FRS"
           break;
-        case 'Under Review (Head)': 
+        case 'Under review (head level)':
           newStatus = statuses[3]; // "FRH"
           break;
       }
@@ -161,17 +156,11 @@ function CSR() {
     //Check if the selected row ids status are the same
     const isSame = areSelectedStatusesSame();
     let currentStatus = null;
-
     if (isSame && selectedRowIds.length > 0) {
       // Get the status from the first selected row
       const firstRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
       currentStatus = firstRow?.statusId || null;
-      if (currentStatus === "Approved"){
-        alert("This record is already Approved.");
-        return;
-      }
-    } 
-    else {
+      } else {
       alert("Selected rows have different statuses.");
       return; // Optionally stop if not the same
     }
@@ -195,6 +184,7 @@ function CSR() {
           if (!confirm) return;
       }
 
+      console.log('new status: ', newStatus)
       const payload = {
         record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
         new_status: newStatus.trim(),
@@ -492,7 +482,7 @@ function CSR() {
                 >
                   Approve
                 </Button>
-                {(selectedRowIds.length > 0 && !isForRevision) && (
+                {/* {(selectedRowIds.length > 0 && !isForRevision) && (
                   <Button 
                     variant='contained'
                     sx={{ 
@@ -509,7 +499,7 @@ function CSR() {
                   >
                     Revise
                   </Button>
-                )}
+                )} */}
               </>
             ) : (
               <>
@@ -656,13 +646,12 @@ function CSR() {
             </Button>
           )}
         </Box>
-        
+
         {/* Table */}
         <Table
           columns={columns}
           rows={pagedData}
           idKey={idKey}
-          filteredData={filteredData}
           onSelectionChange={(selectedRows) => setSelectedRowIds(selectedRows)}
           onSort={handleSort}
           sortConfig={sortConfig}
@@ -740,111 +729,7 @@ function CSR() {
           </Overlay>
         )}
 
-        {/* Inline ReviseModalHelp component */}
-        {isModalOpen && (
-          <Overlay
-            onClose={() => {
-              setIsModalOpen(false);
-              setRemarks("");
-            }}
-          >
-            <Paper
-              sx={{
-                p: 4,
-                width: "500px",
-                borderRadius: "16px",
-                bgcolor: "white",
-              }}
-            >
-              <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
-                Revision Request
-              </Typography>
-              {(() => {
-                // Determine if remarks should be disabled and show message
-                const selectedRowsForModal = filteredData.filter(row => selectedRowIds.includes(row[idKey]));
-                const allStatuses = selectedRowsForModal.map(row => row.statusId);
-                const isForRevisionSite = allStatuses.every(status => status === 'For Revision (Site)');
-                const isForRevisionHeadLevel = allStatuses.every(status => status === 'For Revision (Head)');
-                const isOnlyApprove = isForRevisionSite || isForRevisionHeadLevel;
-                return (
-                  <>
-                    <TextField
-                      sx={{
-                        mt: 2,
-                        mb: 2
-                      }}
-                      label={<> Remarks <span style={{ color: 'red' }}>*</span> </>}
-                      variant="outlined"
-                      fullWidth
-                      value={remarks}
-                      onChange={(e) => setRemarks(e.target.value)}
-                      multiline
-                      disabled={isOnlyApprove}
-                      placeholder={isOnlyApprove ? "This record can only be approved." : undefined}
-                      InputProps={{
-                        style: isOnlyApprove
-                          ? { backgroundColor: '#f5f5f5', color: '#888' }
-                          : undefined
-                      }}
-                    />
-                    {isOnlyApprove && (
-                      <Typography sx={{ color: 'red', fontSize: '0.95em', mb: 1 }}>
-                        This record can only be approved.
-                      </Typography>
-                    )}
-                    <Box sx={{
-                      display: 'flex',
-                      justifyContent: 'flex-end'
-                    }}>
-                      <Button 
-                        sx={{ 
-                          color: '#182959',
-                          borderRadius: '999px',
-                          padding: '9px 18px',
-                          fontSize: '1rem',
-                          fontWeight: 'bold',
-                          '&:hover': {
-                            color: '#0f1a3c',
-                          },
-                        }}
-                        onClick={() => {
-                          setRemarks("");
-                          setIsModalOpen(false);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        variant='contained'
-                        sx={{ 
-                          marginLeft: 1,
-                          backgroundColor: '#2B8C37',
-                          borderRadius: '999px',
-                          padding: '9px 18px',
-                          fontSize: '1rem',
-                          fontWeight: 'bold',
-                          '&:hover': {
-                            backgroundColor: '#256d2f',
-                          },
-                        }}
-                        onClick={() => {
-                          if (isOnlyApprove) {
-                            handleBulkStatusUpdate("approve");
-                          } else {
-                            handleBulkStatusUpdate("revise");
-                          }
-                          setIsModalOpen(false);
-                        }}
-                      >
-                        {isOnlyApprove ? "Approve" : "Confirm"}
-                      </Button>
-                    </Box>
-                  </>
-                );
-              })()}
-            </Paper>
-          </Overlay>
-        )}
+        {/* revise modal */}
       </Container>
     </Box>
   );

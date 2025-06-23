@@ -74,7 +74,7 @@ function SafetyWorkData({
     {
       key: "date",
       label: "Date",
-      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
     },
     { key: "manpower", label: "Manpower" },
     { key: "manhours", label: "Manhours" },
@@ -288,7 +288,7 @@ function SafetyWorkData({
             onSelectionChange={(selectedRows) => {
               handleRowSelect(selectedRows);
             }}
-            emptyMessage="No demographics data found."
+            emptyMessage="No safety work data found."
             maxHeight="60vh"
             minHeight="300px"
             actions={renderActions}

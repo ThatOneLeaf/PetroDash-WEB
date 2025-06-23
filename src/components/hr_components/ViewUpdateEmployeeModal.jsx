@@ -55,6 +55,7 @@ const ViewUpdateEmployeeModal = ({
   const [nextStatus, setNextStatus] = useState("");
   const [remarks, setRemarks] = useState("");
   const recordIdKey = Object.keys(record)[0];
+  const [shouldReset, setShouldReset] = useState(false);
 
   const statusIdToName = {
     URH: "Under review (head level)",
@@ -71,12 +72,62 @@ const ViewUpdateEmployeeModal = ({
 
   const [editedRecord, setEditedRecord] = useState(getRecordWithStatus(record));
 
-  const summaryData = Object.entries(editedRecord)
-    .map(([key, value]) => ({
-      label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-      value: value ? String(value) : "N/A",
-    }))
-    .slice(0, -4);
+  const summaryData = [
+    { label: "Company ID", value: String(editedRecord.company_id || "N/A") },
+    { label: "Employee ID", value: String(editedRecord.employee_id || "N/A") },
+    {
+      label: "Gender",
+      value: String(
+        editedRecord.gender === "F"
+          ? "Female"
+          : editedRecord.gender === "M"
+          ? "Male"
+          : "N/A"
+      ),
+    },
+    {
+      label: "Position",
+      value: String(
+        editedRecord.position_id === "RF"
+          ? "Rank-and-File"
+          : editedRecord.position_id === "MM"
+          ? "Middle Management"
+          : editedRecord.position_id === "SM"
+          ? "Senior Management"
+          : "N/A"
+      ),
+    },
+    {
+      label: "Birthdate",
+      value: editedRecord.birthdate
+        ? dayjs(editedRecord.birthdate).format("MM/DD/YYYY")
+        : "N/A",
+    },
+
+    {
+      label: "Category",
+      value: String(
+        editedRecord.p_np === "P"
+          ? "Professional"
+          : editedRecord.p_np === "NP"
+          ? "Non-Professional"
+          : "N/A"
+      ),
+    },
+    { label: "Status", value: String(editedRecord.employment_status || "N/A") },
+    {
+      label: "Tenure Start",
+      value: editedRecord.start_date
+        ? dayjs(editedRecord.start_date).format("MM/DD/YYYY")
+        : "N/A",
+    },
+    {
+      label: "Tenure End",
+      value: editedRecord.end_date
+        ? dayjs(editedRecord.end_date).format("MM/DD/YYYY")
+        : "N/A",
+    },
+  ];
 
   // Initialize Data Options
   const fetchEmployabilityData = async () => {
@@ -121,6 +172,7 @@ const ViewUpdateEmployeeModal = ({
   };
 
   const handleSave = async () => {
+    console.log(editedRecord);
     /* VALIDATION */
     const MIN_DATE = dayjs("1994-09-29");
     const MIN_BIRTHDATE = dayjs("1900-01-01");
@@ -136,8 +188,8 @@ const ViewUpdateEmployeeModal = ({
       start_date,
       end_date,
     } = editedRecord;
-
-    console.log(birthdate);
+    console.log("start_date");
+    console.log(start_date);
 
     const isInOptions = (value, key) =>
       uniqueOptions(key).some((option) => option.value === value);
@@ -207,11 +259,6 @@ const ViewUpdateEmployeeModal = ({
 
     try {
       const response = await api.post("hr/edit_employability", editedRecord);
-      setIsEditing(false);
-
-      if (onSuccess) {
-        onSuccess();
-      }
 
       return true;
     } catch (error) {
@@ -630,7 +677,9 @@ const ViewUpdateEmployeeModal = ({
             variant="outlined"
             fullWidth
             value={
-              editedRecord.birthdate ? editedRecord.birthdate.split("T")[0] : ""
+              editedRecord.birthdate
+                ? dayjs(editedRecord.birthdate).format("MM/DD/YYYY")
+                : ""
             }
             onChange={(e) => handleChange("birthdate", e.target.value)}
             type="text"
@@ -822,7 +871,7 @@ const ViewUpdateEmployeeModal = ({
             fullWidth
             value={
               editedRecord.start_date
-                ? editedRecord.start_date.split("T")[0]
+                ? dayjs(editedRecord.start_date).format("MM/DD/YYYY")
                 : ""
             }
             onChange={(e) => handleChange("start_date", e.target.value)}
@@ -874,7 +923,7 @@ const ViewUpdateEmployeeModal = ({
             fullWidth
             value={
               editedRecord.end_date
-                ? editedRecord.end_date.split("T")[0]
+                ? dayjs(editedRecord.end_date).format("MM/DD/YYYY")
                 : "N/A"
             }
             onChange={(e) => handleChange("end_date", e.target.value)}
@@ -936,9 +985,9 @@ const ViewUpdateEmployeeModal = ({
                   }}
                   onClick={async () => {
                     if (isEditing) {
-                      console.log("🟡 isRecordUnchanged:", isRecordUnchanged());
                       if (!isRecordUnchanged()) {
                         const saveSuccess = await handleSave();
+
                         if (
                           saveSuccess &&
                           (editedRecord.status === "For Revision (Site)" ||
@@ -948,6 +997,7 @@ const ViewUpdateEmployeeModal = ({
                           setSuccessTitle(
                             "The record has been successfully updated."
                           );
+                          setShouldReset(true);
                           setIsSuccessModalOpen(true);
                         }
                       } else {
@@ -1149,6 +1199,10 @@ const ViewUpdateEmployeeModal = ({
               onClose={() => {
                 setIsSuccessModalOpen(false);
                 onClose();
+                if (shouldReset && onSuccess) {
+                  onSuccess();
+                  setShouldReset(false);
+                }
               }}
             />
           </Overlay>

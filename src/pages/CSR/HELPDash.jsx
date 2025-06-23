@@ -199,13 +199,12 @@ function aggregateInvestments(data) {
 
 // KPIBox: Displays a single KPI with icon, value, label, and last updated
 function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
-  // Remove dynamic label font size logic, use a fixed size
-  // let labelFontSize = 15;
-  // if (label.length > 35) labelFontSize = 11;
-  // else if (label.length > 28) labelFontSize = 12;
-  // else if (label.length > 22) labelFontSize = 13;
-  // else if (label.length > 16) labelFontSize = 14;
-  const labelFontSize = 14; // Fixed font size for all KPI labels
+  // Dynamically adjust font size based on label length to avoid wrapping
+  let labelFontSize = 15;
+  if (label.length > 35) labelFontSize = 11;
+  else if (label.length > 28) labelFontSize = 12;
+  else if (label.length > 22) labelFontSize = 13;
+  else if (label.length > 16) labelFontSize = 14;
 
   // Format last updated as "Month, Year"
   let asOfText = '';
@@ -224,8 +223,8 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
         boxShadow: 'none',
         width: '100%',
         minWidth: 0,
-        minHeight: 140, // Increased/fixed height for uniformity
-        height: 140,    // Fixed height for all KPI boxes
+        minHeight: 120,
+        height: '100%',
         padding: '18px 18px 14px 18px',
         display: 'flex',
         flexDirection: 'row',
@@ -314,7 +313,6 @@ function formatDateTime(date) {
 export default function HELPDash() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Remove initial value for year, will set after yearOptions is available
   const [filters, setFilters] = useState({ year: '', company: '' });
   const [lastUpdated, setLastUpdated] = useState(null);
   const [activeTab, setActiveTab] = useState('HELP'); // 'HELP' or 'Investments'
@@ -328,7 +326,7 @@ export default function HELPDash() {
   // Fetch HELP activities data from API
   const fetchData = () => {
     setLoading(true);
-    api.get('help/help-report')
+    api.get('help/activities')
       .then(res => {
         setData(res.data);
         setLastUpdated(new Date());
@@ -355,20 +353,6 @@ export default function HELPDash() {
     [data]
   );
 
-  // Set default year filter to most recent year when yearOptions changes and activeTab is HELP
-  useEffect(() => {
-    if (
-      activeTab === 'HELP' &&
-      yearOptions.length > 0 &&
-      filters.year !== String(yearOptions[0])
-    ) {
-      setFilters(f => ({
-        ...f,
-        year: String(yearOptions[0]),
-      }));
-    }
-  }, [yearOptions, activeTab]);
-
   // Filter data based on selected filters
   const filteredData = useMemo(() => {
     return data.filter(row => {
@@ -390,16 +374,8 @@ export default function HELPDash() {
     }));
   };
 
-  // Helper: get the default year (most recent)
-  const defaultYear = yearOptions[0] ? String(yearOptions[0]) : '';
-
-  // Clear filters: reset year to default and company to empty
-  const clearFilters = () => {
-    setFilters({
-      year: defaultYear,
-      company: ''
-    });
-  };
+  // Clear all filters
+  const clearFilters = () => setFilters({ year: '', company: '' });
 
   // Handle tab switch and clear filters
   const handleTabSwitch = (tab) => {
@@ -425,11 +401,7 @@ export default function HELPDash() {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', background: '#f4f6fb' }}>
       <Sidebar />
-      <Box sx={{ 
-        flexGrow: 1, 
-        p: { xs: 1, sm: 2, md: 4 },
-        zoom: 0.8
-      }}>
+      <Box sx={{ flexGrow: 1, p: { xs: 1, sm: 2, md: 4 } }}>
         {/* Header Row */}
         <Box sx={{
           display: 'flex',
@@ -541,7 +513,6 @@ export default function HELPDash() {
             >
               {/* Year Filter */}
               <select
-                defaultValue={defaultYear}
                 value={filters.year}
                 onChange={e => handleFilter('year', e.target.value)}
                 style={{
@@ -584,8 +555,7 @@ export default function HELPDash() {
                 ))}
               </select>
 
-              {/* Show Clear Filters if company is set or year is not default */}
-              {(filters.company || (filters.year && filters.year !== defaultYear)) && (
+              {(filters.year || filters.company) && (
                 <button
                   style={{
                     padding: '5px 8px',
@@ -605,75 +575,73 @@ export default function HELPDash() {
               )}
             </Box>
 
-            {/* Only render KPI grid if the year filter is set */}
-            {filters.year && (
-              <Box sx={{ width: '100%' }}>
-                {kpiConfig.map(section => (
-                  <Box
-                    key={section.category}
+            {/* KPI Grid */}
+            <Box sx={{ width: '100%' }}>
+              {kpiConfig.map(section => (
+                <Box
+                  key={section.category}
+                  sx={{
+                    mb: 3,
+                    width: '100%',
+                    maxWidth: '100%',
+                  }}
+                >
+                  <Typography
                     sx={{
-                      mb: 3,
-                      width: '100%',
-                      maxWidth: '100%',
+                      fontSize: 28, 
+                      fontWeight: 900,
+                      color: '#182959',
+                      mb: 1.2,
+                      letterSpacing: 1,
+                      textAlign: 'left',
+                      textTransform: 'uppercase',
+                      pl: { xs: 1, sm: 2 },
                     }}
                   >
-                    <Typography
-                      sx={{
-                        fontSize: 28, 
-                        fontWeight: 900,
-                        color: '#182959',
-                        mb: 1.2,
-                        letterSpacing: 1,
-                        textAlign: 'left',
-                        textTransform: 'uppercase',
-                        pl: { xs: 1, sm: 2 },
-                      }}
-                    >
-                      {section.category}
-                    </Typography>
-                    <Grid
-                      container
-                      spacing={1.5}
-                      sx={{
-                        width: '100%',
-                        margin: 0,
-                        px: { xs: 0, sm: 1 },
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {section.items.map(item => (
-                        <Grid
-                          item
-                          xs={12}
-                          sm={6}
-                          md={Math.max(12 / section.items.length, 3)}
-                          lg={Math.max(12 / section.items.length, 3)}
-                          key={item.key}
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            width: '100%',
-                            flexGrow: 1,
-                            flexBasis: 0,
-                          }}
-                        >
-                          <KPIBox
-                            icon={item.icon}
-                            label={item.label}
-                            value={loading ? <CircularProgress size={22} /> : kpi[item.key]}
-                            lastUpdated={lastUpdated}
-                            bgColor={item.bgColor}
-                          />
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </Box>
-                ))}
-              </Box>
-            )}
+                    {section.category}
+                  </Typography>
+                  <Grid
+                    container
+                    spacing={1.5}
+                    sx={{
+                      width: '100%',
+                      margin: 0,
+                      px: { xs: 0, sm: 1 },
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {section.items.map(item => (
+                      <Grid
+                        item
+                        xs={12}
+                        sm={6}
+                        md={Math.max(12 / section.items.length, 3)}
+                        lg={Math.max(12 / section.items.length, 3)}
+                        key={item.key}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          width: '100%',
+                          flexGrow: 1,
+                          flexBasis: 0,
+                        }}
+                      >
+                        <KPIBox
+                          icon={item.icon}
+                          label={item.label}
+                          value={loading ? <CircularProgress size={22} /> : kpi[item.key]}
+                          lastUpdated={lastUpdated}
+                          bgColor={item.bgColor}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              ))}
+            </Box>
           </>
         )}
 
@@ -770,8 +738,8 @@ export default function HELPDash() {
                 width: '100%',
                 alignItems: 'stretch',
                 minHeight: 0,
-                // Increase the height for taller graphs
-                height: `calc(100vh - 64px - 48px - 32px - 120px - 8px)`, // was -48px, now -8px for more space
+                height: `calc(100vh - 64px - 48px - 32px - 120px - 48px)`, // subtract header, tabs, filters, KPI, margins
+                // 64px header, 48px tabs/filters, 120px KPI, 48px margins (adjust as needed)
               }}
             >
               {/* Left: Large Chart Container (Investments per Projects) */}
@@ -785,9 +753,9 @@ export default function HELPDash() {
                   borderRadius: '10px',
                   border: '1.5px solid #e2e8f0',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                  minWidth: 0,
-                  // Increase height for taller graph
-                  height: { xs: 350, md: 600 },
+                  minWidth: '50%',
+                  maxWidth: '55%',
+                  height: '100%',
                   minHeight: 0,
                   padding: '10px 10px 8px 10px',
                   justifyContent: 'flex-start',
@@ -803,8 +771,8 @@ export default function HELPDash() {
                     'Investments per Project',
                     'investments_per_project',
                     <InvestmentPerProjectChart
-                      height={700}
-                      width={1000}
+                      height={500}
+                      width={900}
                       year={filters.year}
                       companyId={filters.company}
                     />  
@@ -823,9 +791,9 @@ export default function HELPDash() {
                   Investments per Project
                 </Typography>
                 <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <Box sx={{ width: '100%', height: 500 }}>
+                  <Box sx={{ width: '100%', height: '100%' }}>
                     <InvestmentPerProjectChart
-                      height={500}
+                      height="100%"
                       width="100%"
                       year={filters.year}
                       companyId={filters.company}
@@ -841,8 +809,7 @@ export default function HELPDash() {
                   flexDirection: 'column',
                   gap: 2,
                   minWidth: 0,
-                  // Increase height for taller right-side charts
-                  height: { xs: 350, md: 600 },
+                  height: '100%',
                   minHeight: 0,
                 }}
               >
@@ -858,21 +825,26 @@ export default function HELPDash() {
                     border: '1.5px solid #e2e8f0',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                     minWidth: 0,
-                    // Increase height for taller chart
-                    height: 290,
+                    height: '50%',
                     minHeight: 0,
                     padding: '10px 10px 8px 10px',
                     justifyContent: 'flex-start',
                     cursor: 'pointer',
                     transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
+                    // Removed green outline on hover
+                    // '&:hover': {
+                    //   boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
+                    //   borderColor: '#10B981',
+                    //   transform: 'translateY(-2px) scale(1.01)'
+                    // }
                   }}
                   onClick={() =>
                     openZoomModal(
                       'Investments per Program',
                       'investments_per_program',
                       <InvestmentPerProgramChart
-                        height={500}
-                        width={700}
+                        height={400}
+                        width={600}
                         year={filters.year}
                         companyId={filters.company}
                       />
@@ -891,9 +863,9 @@ export default function HELPDash() {
                     Investments per Program
                   </Typography>
                   <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <Box sx={{ width: '100%', height: 220 }}>
+                    <Box sx={{ width: '100%', height: '100%' }}>
                       <InvestmentPerProgramChart
-                        height={220}
+                        height="100%"
                         width="100%"
                         year={filters.year}
                         companyId={filters.company}
@@ -913,21 +885,26 @@ export default function HELPDash() {
                     border: '1.5px solid #e2e8f0',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                     minWidth: 0,
-                    // Increase height for taller chart
-                    height: 290,
+                    height: '50%',
                     minHeight: 0,
                     padding: '10px 10px 8px 10px',
                     justifyContent: 'flex-start',
                     cursor: 'pointer',
                     transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
+                    // Removed green outline on hover
+                    // '&:hover': {
+                    //   boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
+                    //   borderColor: '#10B981',
+                    //   transform: 'translateY(-2px) scale(1.01)'
+                    // }
                   }}
                   onClick={() =>
                     openZoomModal(
                       'Investments per Company',
                       'investments_per_company',
                       <InvestmentPerCompanyChart
-                        height={500}
-                        width={700}
+                        height={400}
+                        width={600}
                         year={filters.year}
                         companyId={filters.company}
                       />
@@ -946,9 +923,9 @@ export default function HELPDash() {
                     Investments per Company
                   </Typography>
                   <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <Box sx={{ width: '100%', height: 220 }}>
+                    <Box sx={{ width: '100%', height: '100%' }}>
                       <InvestmentPerCompanyChart
-                        height={220}
+                        height="100%"
                         width="100%"
                         year={filters.year}
                         companyId={filters.company}
@@ -966,6 +943,7 @@ export default function HELPDash() {
               downloadFileName={zoomModal.fileName}
               enableDownload={true}
               maxWidth="xl"
+              height={600}
             >
               <Box sx={{
                 padding: '20px',

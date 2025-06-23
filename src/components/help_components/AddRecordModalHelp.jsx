@@ -27,7 +27,6 @@ function AddRecordModalHelp({
   const [companyOptions, setCompanyOptions] = useState([]);
   const [programOptions, setProgramOptions] = useState([]);
   const [projectOptions, setProjectOptions] = useState([]);
-  const [message, setMessage] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -101,9 +100,18 @@ function AddRecordModalHelp({
       setYearError('');
     }
     setLoading(true);
-    
+
+    console.log(
+        company,
+        project,
+        Number(year),
+        Number(beneficiaries),
+        Number(amountInvested),
+        projectRemarks,
+    )
+
     try {
-      const response = await api.post('/help/activities-single', {
+      await api.post('/help/activities-single', {
         company_id: company,
         project_id: project,
         project_year: Number(year),
@@ -112,21 +120,20 @@ function AddRecordModalHelp({
         project_remarks: projectRemarks,
       });
 
-      if (response.data.success) {
-        alert("Data successfully uploaded.")
-        onClose();
-        setYear('');
-        setCompany('');
-        setProgram('');
-        setProject('');
-        setBeneficiaries('');
-        setAmountInvested('');
-        setYearError('');
-      } else {
-        alert(response.data.message)
-      }
-    } 
-    finally {
+      alert("Upload successful")
+
+      // if (onAdd) onAdd();
+      onClose();
+      setYear('');
+      setCompany('');
+      setProgram('');
+      setProject('');
+      setBeneficiaries('');
+      setAmountInvested('');
+      setYearError('');
+    } catch (err) {
+      alert("Add record failed: ", err)
+    } finally {
       setLoading(false);
     }
   };
@@ -317,7 +324,7 @@ function AddRecordModalHelp({
 
             {/* Row 5: Project Remarks */}
             <TextField
-              label="Project Remarks (Optional)"
+              label="Project Remarks"
               type="text"
               value={projectRemarks}
               onChange={e => setProjectRemarks(e.target.value)}

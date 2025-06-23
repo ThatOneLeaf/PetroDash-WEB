@@ -15,6 +15,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 
 dayjs.extend(isSameOrAfter);
@@ -34,12 +36,15 @@ function AddTrainingModal({ onClose, onSuccess }) {
     numberOfParticipants: "",
   });
 
+  const { getUserCompanyId } = useAuth();
+  const userCompany = getUserCompanyId();
+
   const summaryData = [
-    { label: "Company ID", value: String(formData.companyId || "N/A") },
+    { label: "Company ID", value: String(userCompany || "N/A") },
     { label: "Training Name", value: String(formData.trainingName || "N/A") },
     {
       label: "Date",
-      value: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : "N/A",
+      value: formData.date ? dayjs(formData.date).format("MM/DD/YYYY") : "N/A",
     },
     {
       label: "Training Hours",
@@ -98,9 +103,10 @@ function AddTrainingModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
@@ -108,7 +114,7 @@ function AddTrainingModal({ onClose, onSuccess }) {
     console.log(formData);
 
     /* VALIDATIONS */
-    const MIN_DATE = dayjs("1994-09-29");
+    const MIN_DATE = dayjs("1994-09-28");
 
     const { trainingName, date, trainingHours, numberOfParticipants } =
       formData;
@@ -161,7 +167,7 @@ function AddTrainingModal({ onClose, onSuccess }) {
       setLoading(true);
 
       await api.post("/hr/single_upload_training_record", {
-        company_id: "PSC", //ADD COMPANY TO ADD RECORD
+        company_id: userCompany,
         date: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : null,
         training_title: formData.trainingName,
         training_hours: formData.trainingHours,
@@ -260,7 +266,7 @@ function AddTrainingModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date"
-            value={formData.date}
+            value={formData.date ? dayjs(formData.date) : null}
             onChange={handleDateChange("date")}
             slotProps={{
               textField: { fullWidth: true, size: "medium" },

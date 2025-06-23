@@ -20,7 +20,16 @@ import dayjs from "dayjs";
 
 import ViewUpdateOSHModal from "../../components/hr_components/ViewUpdateOSHModal";
 
-function OSH({ onFilterChange, shouldReload, setShouldReload }) {
+import CustomTable from "../../components/Table/Table";
+
+function OSH({
+  onFilterChange,
+  shouldReload,
+  setShouldReload,
+  onSelectedRowIdsChange,
+  setFilteredData,
+  parentSelectedRowIds,
+}) {
   //INITIALIZE
 
   const [data, setData] = useState([]);
@@ -29,10 +38,9 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [isUpdateModal, setIsUpdateModal] = useState(false);
-  const [row, setRow] = useState([]);
-
   const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
+
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
 
   // DATA -- CHANGE PER PAGE
   const fetchOSHData = async () => {
@@ -75,7 +83,7 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
     {
       key: "date",
       label: "Date",
-      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
     },
     { key: "incident_type", label: "Incident Type" },
     { key: "incident_title", label: "Incident Title" },
@@ -148,10 +156,25 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
   const filteredData = useFilteredData(data, filters, searchQuery);
 
   useEffect(() => {
-    if (typeof onFilterChange === "function" && filteredData !== null) {
+    if (typeof onFilterChange === "function") {
       onFilterChange(filteredData);
     }
-  }, [filteredData, onFilterChange]);
+
+    if (typeof setFilteredData === "function") {
+      setFilteredData(filteredData);
+    }
+  }, [filteredData]);
+
+  const handleRowSelect = (newIds) => {
+    setSelectedRowIds(newIds);
+    if (typeof onSelectedRowIdsChange === "function") {
+      onSelectedRowIdsChange(newIds);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedRowIds(parentSelectedRowIds || []);
+  }, [parentSelectedRowIds]);
 
   //SEARCH
   const suggestions = useMemo(() => {
@@ -351,15 +374,19 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
 
         {/* Table or fallback */}
 
-        {
-          <Table
-            columns={columns}
-            rows={paginatedData}
-            actions={renderActions}
-            //onRowClick={showView}
-            emptyMessage="No records found for the selected filters."
-          />
-        }
+        <CustomTable
+          columns={columns}
+          rows={paginatedData}
+          filteredData={filteredData}
+          idKey={"osh_id"} // or "id", "recordId", etc. depending on the page
+          onSelectionChange={(selectedRows) => {
+            handleRowSelect(selectedRows);
+          }}
+          emptyMessage="No osh data found."
+          maxHeight="60vh"
+          minHeight="300px"
+          actions={renderActions}
+        />
 
         {/* Pagination */}
 
@@ -371,10 +398,22 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
           }}
         >
           {/* Row Count Display */}
-          <Typography sx={{ fontSize: "0.85rem" }}>
-            Showing {filteredData.length}{" "}
-            {filteredData.length === 1 ? "record" : "records"}
-          </Typography>
+
+          <Box>
+            <Typography sx={{ fontSize: "0.85rem" }}>
+              Total {filteredData.length}{" "}
+              {filteredData.length === 1 ? "record" : "records"}
+            </Typography>
+            {selectedRowIds.length > 0 && (
+              <Typography
+                sx={{ fontSize: "0.85rem", color: "#2B8C37", fontWeight: 700 }}
+              >
+                {selectedRowIds.length} selected record
+                {selectedRowIds.length > 1 ? "s" : ""}
+              </Typography>
+            )}
+          </Box>
+
           <Pagination
             page={page}
             count={Math.ceil(filteredData.length / rowsPerPage)}
@@ -402,12 +441,6 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
               />
             </Overlay>
           ))}
-
-        {isUpdateModal && (
-          <Overlay onClose={() => setIsUpdateModal(false)}>
-            <UpdateOSHModal onClose={() => setIsUpdateModal(false)} row={row} />
-          </Overlay>
-        )}
       </Box>
     </Box>
   );

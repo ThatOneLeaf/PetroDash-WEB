@@ -11,6 +11,8 @@ import {
   Box,
 } from "@mui/material";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 import Overlay from "../../components/modal";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -39,29 +41,62 @@ function AddEmployeeModal({ onClose, onSuccess }) {
     tenureEnded: null,
   });
 
+  const { getUserCompanyId } = useAuth();
+  const userCompany = getUserCompanyId();
+
   const summaryData = [
-    { label: "Company ID", value: String(formData.companyId || "N/A") },
+    { label: "Company ID", value: String(userCompany || "N/A") },
     { label: "Employee ID", value: String(formData.employeeId || "N/A") },
-    { label: "Gender", value: String(formData.gender || "N/A") },
+    {
+      label: "Gender",
+      value: String(
+        formData.gender === "F"
+          ? "Female"
+          : formData.gender === "M"
+          ? "Male"
+          : "N/A"
+      ),
+    },
+    {
+      label: "Position",
+      value: String(
+        formData.position === "RF"
+          ? "Rank-and-File"
+          : formData.position === "MM"
+          ? "Middle Management"
+          : formData.position === "SM"
+          ? "Senior Management"
+          : "N/A"
+      ),
+    },
     {
       label: "Birthdate",
       value: formData.birthdate
-        ? dayjs(formData.birthdate).format("YYYY-MM-DD")
+        ? dayjs(formData.birthdate).format("MM/DD/YYYY")
         : "N/A",
     },
-    { label: "Position", value: String(formData.position || "N/A") },
-    { label: "Category", value: String(formData.employeeCategory || "N/A") },
+
+    {
+      label: "Category",
+      value: String(
+        formData.employeeCategory === "P"
+          ? "Professional"
+          : formData.employeeCategory === "NP"
+          ? "Non-Professional"
+          : "N/A"
+      ),
+    },
     { label: "Status", value: String(formData.employeeStatus || "N/A") },
     {
       label: "Tenure Start",
       value: formData.tenureStart
-        ? dayjs(formData.tenureStart).format("YYYY-MM-DD")
+        ? dayjs(formData.tenureStart).format("MM/DD/YYYY")
         : "N/A",
     },
     {
       label: "Tenure End",
       value: formData.tenureEnded
-        ? dayjs(formData.tenureEnded).format("YYYY-MM-DD")
+        ? dayjs(formData.tenureEnded).format("MM/DD/YYYY")
         : "N/A",
     },
   ];
@@ -111,15 +146,16 @@ function AddEmployeeModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
   const handleSubmit = async () => {
-    /* VALIDATION */
-    const MIN_DATE = dayjs("1994-09-29");
+    const MIN_DATE = dayjs("1994-09-28");
     const MIN_BIRTHDATE = dayjs("1900-01-01");
     const today = dayjs();
 
@@ -228,7 +264,7 @@ function AddEmployeeModal({ onClose, onSuccess }) {
       setLoading(true);
 
       await api.post("/hr/single_upload_employability_record", {
-        company_id: "PSC",
+        company_id: userCompany,
         employee_id: formData.employeeId.toUpperCase(),
         gender: formData.gender.toUpperCase(),
         birthdate: formData.birthdate
@@ -387,7 +423,7 @@ function AddEmployeeModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Birthdate"
-            value={formData.birthdate}
+            value={formData.birthdate ? dayjs(formData.birthdate) : null}
             onChange={handleDateChange("birthdate")}
             open={openPicker === "birth"}
             onOpen={() => setOpenPicker("birth")}
@@ -440,7 +476,7 @@ function AddEmployeeModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Tenure Start"
-            value={formData.tenureStart}
+            value={formData.tenureStart ? dayjs(formData.tenureStart) : null}
             onChange={handleDateChange("tenureStart")}
             open={openPicker === "start"}
             onOpen={() => setOpenPicker("start")}
@@ -454,7 +490,7 @@ function AddEmployeeModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Tenure Ended"
-            value={formData.tenureEnded}
+            value={formData.tenureEnded ? dayjs(formData.tenureEnded) : null}
             onChange={handleDateChange("tenureEnded")}
             open={openPicker === "end"}
             onOpen={() => setOpenPicker("end")}
