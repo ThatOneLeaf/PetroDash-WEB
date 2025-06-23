@@ -25,6 +25,17 @@ import { IconButton } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981'];
+const getYearRangeText = (fromYear, toYear) => {
+  if (fromYear && toYear) {
+    return `${fromYear}-${toYear}`;
+  } else if (fromYear && !toYear) {
+    return `${fromYear} to Present`;
+  } else if (!fromYear && toYear) {
+    return `Up to ${toYear}`;
+  } else {
+    return 'All Years';
+  }
+};
 
 function EnvironmentWaterDash() {
   const [loading, setLoading] = useState(false);
@@ -1102,7 +1113,7 @@ function EnvironmentWaterDash() {
               {/* Zoom button */}
               <IconButton
                 onClick={() => openZoomModal(
-                  'Water Management by Quarter', 
+                  `Water Management by Quarter - ${getYearRangeText(fromYear, toYear)}`, 
                   'water-management-by-quarter',
                   <div style={{ width: '100%', height: '500px', paddingTop: '20px' }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -1176,7 +1187,7 @@ function EnvironmentWaterDash() {
                 color: '#1e293b',
                 flexShrink: 0
               }}>
-                Water Management by Quarter
+                Water Management by Quarter - {getYearRangeText(fromYear, toYear)}
               </h3>
               
               {/* Rest of your existing stacked bar chart code stays the same */}
