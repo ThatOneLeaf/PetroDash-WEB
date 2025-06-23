@@ -51,7 +51,6 @@ const ViewEditEnergyModal = ({
   const fetchPowerPlants = async () => {
     try {
       const response = await api.get('/reference/power_plants');
-      console.log('Loaded power plants:', response.data); // 👈 LOG HERE
       setPowerPlants(response.data);
     } catch (error) {
       alert('Failed to load power plants');

@@ -247,7 +247,6 @@ const getColorMapForGroupBy = (
     const rawKey = item.name; // <-- use `name` field instead of `item[groupByKey]`
 
     if (!rawKey) return;
-    console.log("🔎 Checking key:", rawKey);
 
     const key = typeof rawKey === 'string' ? rawKey.trim().toUpperCase() : rawKey;
 
@@ -265,16 +264,8 @@ const getColorMapForGroupBy = (
     }
   });
 
-  console.log(colorMap)
 
   
-  console.log('🧪 getColorMapForGroupBy inputs:', {
-  groupByKey,
-  sampleItem: dataItems,
-  plantColors,
-  plantMetadataLength: plantMetadata?.length,
-  generationSourceColors
-});
 
   return colorMap;
 };
@@ -351,9 +342,7 @@ const fetchData = async () => {
   };
 useEffect(() => {
   const loadColors = async () => {
-    console.log("🔍 Calling getPowerPlantColors...");
     const colors = await getPowerPlantColors();
-    console.log("✅ Colors loaded:", colors);
     setPlantColors(colors);
   };
 
@@ -369,7 +358,6 @@ useEffect(() => {
         const res = await api.get("/reference/pp_info");
         const data = res.data;
         setPlantMetadata(data);
-        console.log(data)
 
         const u = getUniqueOptions;
 

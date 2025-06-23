@@ -89,14 +89,6 @@ function Energy() {
     setSelectedRecord(null);
   };
 
-  const handleSelectionChange = (selectedIds) => {
-  if (selectedIds.length > 0) {
-    setSelectedRowId(selectedIds[selectedIds.length - 1]); // Always pick the last selected
-  } else {
-    setSelectedRowId(null);
-  }
-};
-
 
 
   const [powerPlants, setPowerPlants] = useState([]);
@@ -110,12 +102,12 @@ function Energy() {
   const powerPlantId = getUserPowerPlantId();
 
   // Role-based permissions
-  const canEdit = role === 'R05' || role === 'R03' || role === 'R04'; // Encoder
-  const canApprove = role === 'R03' || role === 'R04'; // Head Office/Checker
-  const canAdd = canEdit; // Only encoder can add
-  const canImport = canEdit; // Only encoder can import
-  const canExport = canApprove || canEdit; // Approver or encoder can export
-  console.log("User Role:", role);
+  const canEdit = role === 'R05' || role === 'R03' || role === 'R04';
+  const canApprove = role === 'R03' || role === 'R04';
+  const canAdd = canEdit; 
+  const canImport = canEdit; 
+  const canExport = canApprove || canEdit;
+
 
 
   const fetchEnergyData = async () => {
@@ -396,7 +388,6 @@ function Energy() {
         remarks: remarks.trim(),
       };
 
-      console.log(payload);
 
       const response = await api.post(
         "/usable_apis/bulk_update_status",

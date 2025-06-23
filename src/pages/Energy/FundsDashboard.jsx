@@ -326,12 +326,7 @@ const fetchData = async () => {
 
     const query = new URLSearchParams(params).toString();
     const response = await api.get(`/energy/fund_allocation_dashboard?${query}`);
-    const raw = await response.data; // ✅ json is defined here
-    console.log(raw.data?.funds_allocated_peso?.allocation?.total); // should not be undefined
-    console.log(raw.data?.funds_allocated_peso?.allocation); // should not be undefined
-    console.log(raw.data?.funds_allocated_peso?.allocation?.total); // should be 2170613.92
-    console.log(raw)
-    console.log("this data", data?.funds_allocated_peso?.allocation?.total)
+    const raw = await response.data;
     const energyData = raw.data || {};
     const rawData = energyData?.results || [];
 
@@ -341,7 +336,7 @@ const fetchData = async () => {
     setHousePowerData(raw?.house_powered || {});
     setStaticData(raw?.formula || {});
 
-    setLastUpdated(new Date());  // ✅ Update the last updated time here
+    setLastUpdated(new Date());
   } catch (error) {
     console.error("Error fetching data:", error);
     setData({});

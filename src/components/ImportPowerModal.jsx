@@ -93,7 +93,6 @@ function ImportPowerModal({
         const response = await api.post("/energy/read_template", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        console.log("Preview API response:", response.data);
         if (
           response.data &&
           Array.isArray(response.data.rows) &&
