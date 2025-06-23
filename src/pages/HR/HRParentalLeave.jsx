@@ -77,12 +77,12 @@ function ParentalLeave({
     {
       key: "date",
       label: "Date Availed",
-      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
     },
     {
       key: "end_date",
       label: "Date Ended",
-      render: (val) => (val ? dayjs(val).format("MM-DD-YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
     },
     { key: "type_of_leave", label: "Type Of Leave" },
     {
@@ -308,7 +308,7 @@ function ParentalLeave({
             onSelectionChange={(selectedRows) => {
               handleRowSelect(selectedRows);
             }}
-            emptyMessage="No demographics data found."
+            emptyMessage="No parental leave data found."
             maxHeight="60vh"
             minHeight="300px"
             actions={renderActions}

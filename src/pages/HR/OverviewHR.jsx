@@ -7,26 +7,32 @@ const HROverview = () => {
   const [error, setError] = useState(null);
 
   const [totalSafetyManhours, setTotalSafetyManhours] = useState(null);
+  const [totalSafetyPower, setTotalSafetyPower] = useState(null);
   const [totalTrainingHours, setTotalTrainingHours] = useState(null);
 
   useEffect(() => {
     const fetchTrainingAndSafetyData = async () => {
       try {
-        const [totalManHoursRes, totalTrainingHoursRes] = await Promise.all([
-          api.get("hr/total_safety_manhours"),
-          api.get("hr/total_training_hours"),
-        ]);
+        const [totalManHoursRes, totalSafetyPowerRes, totalTrainingHoursRes] =
+          await Promise.all([
+            api.get("hr/total_safety_manpower"),
+            api.get("hr/total_safety_manhours"),
+            api.get("hr/total_training_hours"),
+          ]);
 
-        setTotalSafetyManhours(
-          totalManHoursRes.data[0]["total_safety_manhours"]
+        setTotalSafetyPower(
+          Number(totalManHoursRes.data[0]?.total_safety_manpower ?? 0)
         );
-
+        setTotalSafetyManhours(
+          Number(totalSafetyPowerRes.data[0]?.total_safety_manhours ?? 0)
+        );
         setTotalTrainingHours(
-          totalTrainingHoursRes.data[0]["total_training_hours"]
+          Number(totalTrainingHoursRes.data[0]?.total_training_hours ?? 0)
         );
       } catch (error) {
         console.error("Failed to fetch totals:", error);
         setTotalSafetyManhours("N/A");
+        setTotalSafetyPower("N/A");
         setTotalTrainingHours("N/A");
       } finally {
         setLoading(false);
@@ -37,14 +43,10 @@ const HROverview = () => {
   }, []);
 
   const formatNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + "M";
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + "K";
-    }
-    return num.toLocaleString();
+    const parsed = Number(num);
+    if (isNaN(parsed)) return "N/A";
+    return parsed.toLocaleString();
   };
-
   const MetricCard = ({ title, value, unit, color }) => (
     <Paper
       elevation={0}
@@ -110,7 +112,11 @@ const HROverview = () => {
           value={totalSafetyManhours}
           color="#2E4057"
         />
-        <MetricCard title="Total Safety Manpower" value={0} color="#2E4057" />
+        <MetricCard
+          title="Total Safety Manpower"
+          value={totalSafetyPower}
+          color="#2E4057"
+        />
         <MetricCard
           title="Total Training Hours"
           value={totalTrainingHours}

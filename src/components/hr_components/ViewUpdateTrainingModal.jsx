@@ -55,6 +55,7 @@ const ViewUpdateTrainingModal = ({
   const [nextStatus, setNextStatus] = useState("");
   const [remarks, setRemarks] = useState("");
   const recordIdKey = Object.keys(record)[0];
+  const [shouldReset, setShouldReset] = useState(false);
 
   const statusIdToName = {
     URH: "Under review (head level)",
@@ -71,12 +72,27 @@ const ViewUpdateTrainingModal = ({
 
   const [editedRecord, setEditedRecord] = useState(getRecordWithStatus(record));
 
-  const summaryData = Object.entries(editedRecord)
-    .map(([key, value]) => ({
-      label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-      value: value ? String(value) : "N/A",
-    }))
-    .slice(0, -4);
+  const summaryData = [
+    { label: "Company ID", value: String(editedRecord.company_id || "N/A") },
+    {
+      label: "Training Name",
+      value: String(editedRecord.training_title || "N/A"),
+    },
+    {
+      label: "Date",
+      value: editedRecord.date
+        ? dayjs(editedRecord.date).format("MM/DD/YYYY")
+        : "N/A",
+    },
+    {
+      label: "Training Hours",
+      value: String(editedRecord.training_hours || "N/A"),
+    },
+    {
+      label: "Number of Participants",
+      value: String(editedRecord.number_of_participants || "N/A"),
+    },
+  ];
 
   // Initialize Data Options
   const fetchTrainingData = async () => {
@@ -162,9 +178,6 @@ const ViewUpdateTrainingModal = ({
     try {
       const response = await api.post("hr/edit_training", editedRecord);
       setIsEditing(false);
-      if (onSuccess) {
-        onSuccess();
-      }
 
       return true;
     } catch (error) {
@@ -426,7 +439,7 @@ const ViewUpdateTrainingModal = ({
             fullWidth
             value={
               editedRecord.date
-                ? dayjs(editedRecord.date).format("MM-DD-YYYY")
+                ? dayjs(editedRecord.date).format("MM/DD/YYYY")
                 : ""
             }
             onChange={(e) => handleChange("date", e.target.value)}
@@ -564,6 +577,7 @@ const ViewUpdateTrainingModal = ({
                           setSuccessTitle(
                             "The record has been successfully updated."
                           );
+                          setShouldReset(true);
                           setIsSuccessModalOpen(true);
                         }
                       } else {
@@ -736,7 +750,7 @@ const ViewUpdateTrainingModal = ({
             <ConfirmModal
               open={isModalOpen}
               title={"Approval Confirmation"}
-              message={"Are you sure you want to approve this employee record?"}
+              message={"Are you sure you want to approve this training record?"}
               onConfirm={handleApproveConfirm}
               onCancel={() => setIsModalOpen(false)}
               summaryData={summaryData}
@@ -765,6 +779,10 @@ const ViewUpdateTrainingModal = ({
               onClose={() => {
                 setIsSuccessModalOpen(false);
                 onClose();
+                if (shouldReset && onSuccess) {
+                  onSuccess();
+                  setShouldReset(false);
+                }
               }}
             />
           </Overlay>

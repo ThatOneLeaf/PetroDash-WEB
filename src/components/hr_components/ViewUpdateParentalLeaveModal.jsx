@@ -58,6 +58,7 @@ const ViewUpdateParentalLeaveModal = ({
   const [nextStatus, setNextStatus] = useState("");
   const [remarks, setRemarks] = useState("");
   const recordIdKey = Object.keys(record)[0];
+  const [shouldReset, setShouldReset] = useState(false);
 
   const statusIdToName = {
     URH: "Under review (head level)",
@@ -74,12 +75,20 @@ const ViewUpdateParentalLeaveModal = ({
 
   const [editedRecord, setEditedRecord] = useState(getRecordWithStatus(record));
 
-  const summaryData = Object.entries(editedRecord)
-    .map(([key, value]) => ({
-      label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-      value: value ? String(value) : "N/A",
-    }))
-    .slice(0, -4);
+  const summaryData = [
+    { label: "Employee ID", value: String(editedRecord.employee_id || "N/A") },
+    {
+      label: "Type of Leave",
+      value: String(editedRecord.type_of_leave || "N/A"),
+    },
+    { label: "Days Availed", value: String(editedRecord.days || "N/A") },
+    {
+      label: "Date Availed",
+      value: editedRecord.date
+        ? dayjs(editedRecord.date).format("MM/DD/YYYY")
+        : "N/A",
+    },
+  ];
 
   // Initialize Data Options
   const fetchParentalData = async () => {
@@ -140,8 +149,8 @@ const ViewUpdateParentalLeaveModal = ({
 
     const isValidDays = days !== "" && !isNaN(days) && Number(days) > 0;
 
-    if (!isValidDate) {
-      setErrorMessage("Please select a valid Date Availed.");
+    if (!type_of_leave || !isValidLeaveType) {
+      setErrorMessage("Please select a valid Type of Leave.");
       setIsErrorModalOpen(true);
       return;
     }
@@ -151,9 +160,8 @@ const ViewUpdateParentalLeaveModal = ({
       setIsErrorModalOpen(true);
       return;
     }
-
-    if (!type_of_leave || !isValidLeaveType) {
-      setErrorMessage("Please select a valid Type of Leave.");
+    if (!isValidDate) {
+      setErrorMessage("Please select a valid Date Availed.");
       setIsErrorModalOpen(true);
       return;
     }
@@ -161,10 +169,6 @@ const ViewUpdateParentalLeaveModal = ({
     try {
       const response = await api.post("hr/edit_parental_leave", editedRecord);
       setIsEditing(false);
-
-      if (onSuccess) {
-        onSuccess();
-      }
 
       return true;
     } catch (error) {
@@ -518,7 +522,11 @@ const ViewUpdateParentalLeaveModal = ({
             label="Date Availed"
             variant="outlined"
             fullWidth
-            value={editedRecord.date ? editedRecord.date.split("T")[0] : ""}
+            value={
+              editedRecord.date
+                ? dayjs(editedRecord.date).format("MM/DD/YYYY")
+                : ""
+            }
             onChange={(e) => handleChange("date", e.target.value)}
             type="text"
             InputProps={{
@@ -589,6 +597,7 @@ const ViewUpdateParentalLeaveModal = ({
                           setSuccessTitle(
                             "The record has been successfully updated."
                           );
+                          setShouldReset(true);
                           setIsSuccessModalOpen(true);
                         }
                       } else {
@@ -761,7 +770,9 @@ const ViewUpdateParentalLeaveModal = ({
             <ConfirmModal
               open={isModalOpen}
               title={"Approval Confirmation"}
-              message={"Are you sure you want to approve this employee record?"}
+              message={
+                "Are you sure you want to approve this parental leave record?"
+              }
               onConfirm={handleApproveConfirm}
               onCancel={() => setIsModalOpen(false)}
               summaryData={summaryData}
@@ -790,6 +801,10 @@ const ViewUpdateParentalLeaveModal = ({
               onClose={() => {
                 setIsSuccessModalOpen(false);
                 onClose();
+                if (shouldReset && onSuccess) {
+                  onSuccess();
+                  setShouldReset(false);
+                }
               }}
             />
           </Overlay>
