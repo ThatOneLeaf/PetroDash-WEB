@@ -25,6 +25,17 @@ import { IconButton } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B'];
+const getYearRangeText = (fromYear, toYear) => {
+  if (fromYear && toYear) {
+    return `${fromYear}-${toYear}`;
+  } else if (fromYear && !toYear) {
+    return `${fromYear} to Present`;
+  } else if (!fromYear && toYear) {
+    return `Up to ${toYear}`;
+  } else {
+    return 'All Years';
+  }
+};
 
 function EnvironmentEnergyDash() {
   const [activeTab, setActiveTab] = useState('electricity'); // 'electricity' or 'diesel'
@@ -1884,21 +1895,51 @@ function EnvironmentEnergyDash() {
   const renderCustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
-      return (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '8px 12px',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          fontSize: '12px'
-        }}>
-          <p style={{ margin: 0, fontWeight: 'bold' }}>{data.payload.label}</p>
-          <p style={{ margin: 0, color: data.payload.color }}>
-            {data.value.toLocaleString()} {currentData.unit}
-          </p>
-        </div>
-      );
+      
+      // Calculate percentage for electricity pie chart
+      if (activeTab === 'electricity') {
+        const total = electricityPieData.reduce((sum, item) => sum + (item.value || 0), 0);
+        const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : '0';
+        
+        return (
+          <div style={{
+            backgroundColor: 'white',
+            padding: '8px 12px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            fontSize: '12px'
+          }}>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>{data.payload.label}</p>
+            <p style={{ margin: 0, color: data.payload.color }}>
+              {data.value.toLocaleString()} {currentData.unit}
+            </p>
+            <p style={{ margin: 0, color: '#64748b' }}>
+              {percentage}% of total
+            </p>
+          </div>
+        );
+      } else {
+        // For diesel, use existing percentage from API
+        return (
+          <div style={{
+            backgroundColor: 'white',
+            padding: '8px 12px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            fontSize: '12px'
+          }}>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>{data.payload.label}</p>
+            <p style={{ margin: 0, color: data.payload.color }}>
+              {data.value.toLocaleString()} {currentData.unit}
+            </p>
+            <p style={{ margin: 0, color: '#64748b' }}>
+              {data.payload.percentage}% of total
+            </p>
+          </div>
+        );
+      }
     }
     return null;
   };
@@ -2424,82 +2465,108 @@ function EnvironmentEnergyDash() {
                   onClick={() => openZoomModal(
                     'Distribution of Electricity Consumption by Company', 
                     'electricity-distribution-pie',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* Add title at the top */}
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '16px'
-                        }}>
-                          Distribution of Electricity Consumption by Company
-                        </div>
-                        
-                        <div style={{ flex: 1, minHeight: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={currentData.pieData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={150}
-                                innerRadius={60}
-                                fill="#8884d8"
-                                dataKey="value"
-                                paddingAngle={2}
-                                startAngle={90}
-                                endAngle={450}
-                              >
-                                {currentData.pieData.map((entry, index) => (
-                                  <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={entry.color || COLORS[index % COLORS.length]} 
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip content={renderCustomTooltip} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                        {/* Enhanced Legend */}
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          flexWrap: 'wrap',
-                          gap: '12px',
-                          fontSize: '14px',
-                          marginTop: '16px',
-                          padding: '16px'
-                        }}>
-                          {currentData.pieData.map((entry, index) => (
-                            <div
-                              key={index}
-                              style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '8px'
-                              }}
+                    <div style={{ 
+                      width: '100%', 
+                      height: '600px', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      padding: '20px'
+                    }}>
+                      {/* Pie Chart Container */}
+                      <div style={{ 
+                        flex: 1, 
+                        minHeight: '400px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={currentData.pieData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={150}
+                              innerRadius={60}
+                              fill="#8884d8"
+                              dataKey="value"
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
                             >
-                              <div style={{
-                                width: '16px',
-                                height: '16px',
-                                backgroundColor: entry.color || COLORS[index % COLORS.length],
-                                borderRadius: '2px',
-                                flexShrink: 0
-                              }}></div>
-                              <span style={{ fontWeight: '500' }}>
-                                {entry.label}: {(entry.value || 0).toLocaleString()} {currentData.unit}
-                              </span>
-                            </div>
-                          ))}
+                              {currentData.pieData.map((entry, index) => (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={entry.color || COLORS[index % COLORS.length]} 
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip content={renderCustomTooltip} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      
+                      {/* Legend Section */}
+                      <div style={{
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        padding: '20px',
+                        marginTop: '20px',
+                        minHeight: '120px'
+                      }}>
+                        <h4 style={{ 
+                          margin: '0 0 16px 0', 
+                          fontSize: '16px', 
+                          fontWeight: '600',
+                          textAlign: 'center',
+                          color: '#1e293b'
+                        }}>
+                          Electricity Consumption Breakdown
+                        </h4>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                          gap: '12px',
+                          fontSize: '14px'
+                        }}>
+                          {currentData.pieData.map((entry, index) => {
+                            const total = currentData.pieData.reduce((sum, item) => sum + (item.value || 0), 0);
+                            const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
+                            return (
+                              <div
+                                key={index}
+                                style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  gap: '8px',
+                                  padding: '8px',
+                                  backgroundColor: 'white',
+                                  borderRadius: '6px',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                                }}
+                              >
+                                <div style={{
+                                  width: '16px',
+                                  height: '16px',
+                                  backgroundColor: entry.color || COLORS[index % COLORS.length],
+                                  borderRadius: '3px',
+                                  flexShrink: 0
+                                }}></div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: '600', marginBottom: '2px' }}>
+                                    {entry.label}
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                    {(entry.value || 0).toLocaleString()} {currentData.unit} ({percentage}%)
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    )
+                    </div>
                   )}
                   sx={{
                     position: 'absolute',
@@ -2647,63 +2714,46 @@ function EnvironmentEnergyDash() {
                     onClick={() => openZoomModal(
                       'Electricity Consumption Over Years by Company', 
                       'electricity-consumption-over-time',
-                      () => (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                          {/* Add title at the top */}
-                          <div style={{
-                            textAlign: 'center',
-                            padding: '16px 0',
-                            fontSize: '18px',
-                            fontWeight: '700',
-                            color: '#1e293b',
-                            borderBottom: '1px solid #e2e8f0',
-                            marginBottom: '16px'
-                          }}>
-                            Electricity Consumption Over Years by Company
-                          </div>
-                          
-                          <div style={{ flex: 1, minHeight: 400 }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={currentData.lineChartData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                <XAxis 
-                                  dataKey="year" 
-                                  axisLine={false}
-                                  tickLine={false}
-                                  tick={{ fontSize: 14, fill: '#64748b' }}
-                                />
-                                <YAxis 
-                                  axisLine={false}
-                                  tickLine={false}
-                                  tick={{ fontSize: 14, fill: '#64748b' }}
-                                  tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-                                />
-                                <Tooltip 
-                                  formatter={(value, name) => [
-                                    `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                                    name.toUpperCase()
-                                  ]}
-                                  labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                                  contentStyle={{ fontSize: '14px' }}
-                                />
-                                <Legend wrapperStyle={{ fontSize: '14px' }} />
-                                
-                                {Object.keys(lineChartColors).map((companyId, index) => (
-                                  <Line 
-                                    key={companyId}
-                                    type="monotone" 
-                                    dataKey={companyId} 
-                                    stroke={lineChartColors[companyId] || COLORS[index % COLORS.length]} 
-                                    strokeWidth={4}
-                                    dot={{ fill: lineChartColors[companyId] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
-                                    name={companyId}
-                                  />
-                                ))}
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </div>
-                      )
+                      <div style={{ width: '100%', height: '500px', paddingTop: '20px' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={currentData.lineChartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis 
+                              dataKey="year" 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 14, fill: '#64748b' }}
+                            />
+                            <YAxis 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 14, fill: '#64748b' }}
+                              tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                            />
+                            <Tooltip 
+                              formatter={(value, name) => [
+                                `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                                name.toUpperCase()
+                              ]}
+                              labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                              contentStyle={{ fontSize: '14px' }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '15px' }} />
+                            
+                            {Object.keys(lineChartColors).map((companyId, index) => (
+                              <Line 
+                                key={companyId}
+                                type="monotone" 
+                                dataKey={companyId} 
+                                stroke={lineChartColors[companyId] || COLORS[index % COLORS.length]} 
+                                strokeWidth={4}
+                                dot={{ fill: lineChartColors[companyId] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
+                                name={companyId}
+                              />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
                     )}
                     sx={{
                       position: 'absolute',
@@ -2818,90 +2868,74 @@ function EnvironmentEnergyDash() {
                     onClick={() => openZoomModal(
                       'Total Electricity Consumption per Company', 
                       'total-electricity-consumption-per-company',
-                      () => (
-                        <div style={{ width: '100%', height: '100%', padding: '20px' }}>
-                          {/* Add title at the top */}
-                          <div style={{
-                            textAlign: 'center',
-                            padding: '16px 0',
-                            fontSize: '18px',
-                            fontWeight: '700',
-                            color: '#1e293b',
-                            borderBottom: '1px solid #e2e8f0',
-                            marginBottom: '20px'
-                          }}>
-                            Total Electricity Consumption per Company
-                          </div>
-                          
-                          <div style={{ 
-                            height: 'calc(100% - 60px)', 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            justifyContent: 'space-around'
-                          }}>
-                            {currentData.barChartData.map((item, index) => {
-                              const maxValue = Math.max(...currentData.barChartData.map(d => d.consumption));
-                              const barWidth = (item.consumption / maxValue) * 75;
-                              const percentage = ((item.consumption / currentData.barChartData.reduce((sum, d) => sum + d.consumption, 0)) * 100);
-                              
-                              return (
-                                <div key={index} style={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  marginBottom: '25px'
+                      <div style={{ width: '100%', height: '500px', padding: '20px' }}>
+                        <div style={{ 
+                          height: 'calc(100% - 60px)', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          justifyContent: 'space-around'
+                        }}>
+                          {currentData.barChartData.map((item, index) => {
+                            const maxValue = Math.max(...currentData.barChartData.map(d => d.consumption));
+                            const barWidth = (item.consumption / maxValue) * 75;
+                            const percentage = ((item.consumption / currentData.barChartData.reduce((sum, d) => sum + d.consumption, 0)) * 100);
+                            
+                            return (
+                              <div key={index} style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                marginBottom: '25px'
+                              }}>
+                                <div style={{ 
+                                  width: '100px', 
+                                  fontSize: '16px', 
+                                  fontWeight: '500',
+                                  textAlign: 'right',
+                                  marginRight: '20px',
+                                  color: '#64748b'
                                 }}>
-                                  <div style={{ 
-                                    width: '100px', 
-                                    fontSize: '16px', 
-                                    fontWeight: '500',
-                                    textAlign: 'right',
-                                    marginRight: '20px',
-                                    color: '#64748b'
+                                  {item.company}
+                                </div>
+                                <div style={{ flex: 1, position: 'relative' }}>
+                                  <div style={{
+                                    height: '40px',
+                                    width: `${barWidth}%`,
+                                    backgroundColor: item.color,
+                                    borderRadius: '0 6px 6px 0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end',
+                                    paddingRight: '15px',
+                                    minWidth: '150px'
                                   }}>
-                                    {item.company}
+                                    <span style={{ 
+                                      color: 'white', 
+                                      fontSize: '14px', 
+                                      fontWeight: '600',
+                                      textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
+                                    }}>
+                                      {(item.consumption / 1000000).toFixed(1)}M {currentData.unit}
+                                    </span>
                                   </div>
-                                  <div style={{ flex: 1, position: 'relative' }}>
-                                    <div style={{
-                                      height: '40px',
-                                      width: `${barWidth}%`,
-                                      backgroundColor: item.color,
-                                      borderRadius: '0 6px 6px 0',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'flex-end',
-                                      paddingRight: '15px',
-                                      minWidth: '150px'
-                                    }}>
-                                      <span style={{ 
-                                        color: 'white', 
-                                        fontSize: '14px', 
-                                        fontWeight: '600',
-                                        textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
-                                      }}>
-                                        {(item.consumption / 1000000).toFixed(1)}M {currentData.unit}
-                                      </span>
-                                    </div>
-                                    {/* Percentage label */}
-                                    <div style={{
-                                      position: 'absolute',
-                                      left: `${barWidth + 2}%`,
-                                      top: '50%',
-                                      transform: 'translateY(-50%)',
-                                      fontSize: '12px',
-                                      color: '#64748b',
-                                      marginLeft: '8px'
-                                    }}>
-                                      {percentage.toFixed(1)}%
-                                    </div>
+                                  {/* Percentage label */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    left: `${barWidth + 2}%`,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    fontSize: '12px',
+                                    color: '#64748b',
+                                    marginLeft: '8px'
+                                  }}>
+                                    {percentage.toFixed(1)}%
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      )
+                      </div>
                     )}
-
                     sx={{
                       position: 'absolute',
                       top: 8,
@@ -3054,77 +3088,60 @@ function EnvironmentEnergyDash() {
                 }}>
                   {/* Zoom button */}
                   <IconButton
-                  onClick={() => openZoomModal(
-                    'Total Electricity Consumption by Company and Source', 
-                    'electricity-consumption-by-source',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* Add title at the top */}
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '16px'
-                        }}>
-                          Total Electricity Consumption by Company and Source
-                        </div>
-                        
-                        <div style={{ flex: 1, minHeight: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart 
-                              data={currentData.companySourceData}
-                              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                dataKey="company"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
+                    onClick={() => openZoomModal(
+                      'Total Electricity Consumption by Company and Source', 
+                      'electricity-consumption-by-source',
+                      <div style={{ width: '100%', height: '500px', paddingTop: '20px' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart 
+                            data={currentData.companySourceData}
+                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis 
+                              dataKey="company"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 14, fill: '#64748b' }}
+                            />
+                            <YAxis 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 14, fill: '#64748b' }}
+                              tickFormatter={(value) => {
+                                if (value >= 1000000) {
+                                  return `${(value / 1000000).toFixed(1)}M`;
+                                } else if (value >= 1000) {
+                                  return `${(value / 1000).toFixed(0)}K`;
+                                } else {
+                                  return value.toString();
+                                }
+                              }}
+                            />
+                            <Tooltip 
+                              formatter={(value, name) => [
+                                `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                                name
+                              ]}
+                              labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                              contentStyle={{ fontSize: '14px' }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '15px' }} />
+                            
+                            {Object.keys(sourceColors).map((source, index) => (
+                              <Bar 
+                                key={source}
+                                dataKey={source} 
+                                stackId="a" 
+                                fill={sourceColors[source] || COLORS[index % COLORS.length]}
+                                name={source}
+                                radius={index === Object.keys(sourceColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                               />
-                              <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  if (value >= 1000000) {
-                                    return `${(value / 1000000).toFixed(1)}M`;
-                                  } else if (value >= 1000) {
-                                    return `${(value / 1000).toFixed(0)}K`;
-                                  } else {
-                                    return value.toString();
-                                  }
-                                }}
-                              />
-                              <Tooltip 
-                                formatter={(value, name) => [
-                                  `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                                  name
-                                ]}
-                                labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                                contentStyle={{ fontSize: '14px' }}
-                              />
-                              <Legend wrapperStyle={{ fontSize: '14px' }} />
-                              
-                              {Object.keys(sourceColors).map((source, index) => (
-                                <Bar 
-                                  key={source}
-                                  dataKey={source} 
-                                  stackId="a" 
-                                  fill={sourceColors[source] || COLORS[index % COLORS.length]}
-                                  name={source}
-                                  radius={index === Object.keys(sourceColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                                />
-                              ))}
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
+                            ))}
+                          </BarChart>
+                        </ResponsiveContainer>
                       </div>
-                    )
-                  )}
+                    )}
                     sx={{
                       position: 'absolute',
                       top: 8,
@@ -3245,67 +3262,50 @@ function EnvironmentEnergyDash() {
                 }}>
                   {/* Zoom button */}
                   <IconButton
-                  onClick={() => openZoomModal(
-                    `Electricity Consumption per Quarter - ${fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}`, 
-                    'electricity-consumption-quarterly',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* Add title at the top */}
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '16px'
-                        }}>
-                          Electricity Consumption per Quarter - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
-                        </div>
-                        
-                        <div style={{ flex: 1, minHeight: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={currentData.stackedBarData}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                dataKey="quarter"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
+                    onClick={() => openZoomModal(
+                      `Electricity Consumption per Quarter - ${getYearRangeText(fromYear, toYear)}`, 
+                      'electricity-consumption-quarterly',
+                      <div style={{ width: '100%', height: '500px', paddingTop: '20px' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={currentData.stackedBarData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis 
+                              dataKey="quarter"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 14, fill: '#64748b' }}
+                            />
+                            <YAxis 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 14, fill: '#64748b' }}
+                              tickFormatter={(value) => {
+                                if (value >= 1000000) {
+                                  return `${(value / 1000000).toFixed(1)}M`;
+                                } else if (value >= 1000) {
+                                  return `${(value / 1000).toFixed(0)}K`;
+                                } else {
+                                  return value.toString();
+                                }
+                              }}
+                            />
+                            <Tooltip content={renderStackedBarTooltip} />
+                            <Legend wrapperStyle={{ fontSize: '15px' }} />
+                            
+                            {Object.keys(quarterCompanyColors).map((company, index) => (
+                              <Bar 
+                                key={company}
+                                dataKey={company} 
+                                stackId="a" 
+                                fill={quarterCompanyColors[company] || COLORS[index % COLORS.length]}
+                                name={company}
+                                radius={index === Object.keys(quarterCompanyColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                               />
-                              <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  if (value >= 1000000) {
-                                    return `${(value / 1000000).toFixed(1)}M`;
-                                  } else if (value >= 1000) {
-                                    return `${(value / 1000).toFixed(0)}K`;
-                                  } else {
-                                    return value.toString();
-                                  }
-                                }}
-                              />
-                              <Tooltip content={renderStackedBarTooltip} />
-                              <Legend wrapperStyle={{ fontSize: '14px' }} />
-                              
-                              {Object.keys(quarterCompanyColors).map((company, index) => (
-                                <Bar 
-                                  key={company}
-                                  dataKey={company} 
-                                  stackId="a" 
-                                  fill={quarterCompanyColors[company] || COLORS[index % COLORS.length]}
-                                  name={company}
-                                  radius={index === Object.keys(quarterCompanyColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                                />
-                              ))}
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
+                            ))}
+                          </BarChart>
+                        </ResponsiveContainer>
                       </div>
-                    )
-                  )}
+                    )}
                     sx={{
                       position: 'absolute',
                       top: 8,
@@ -3325,8 +3325,9 @@ function EnvironmentEnergyDash() {
                     color: '#1e293b',
                     flexShrink: 0
                   }}>
-                    Electricity Consumption per Quarter - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
+                    Electricity Consumption per Quarter - {getYearRangeText(fromYear, toYear)}
                   </h3>
+
                   
                   <div style={{ flex: 1, minHeight: 0 }}>
                     {loading ? (
@@ -3425,72 +3426,104 @@ function EnvironmentEnergyDash() {
                   onClick={() => openZoomModal(
                     'Distribution of Diesel Consumption by Company', 
                     'diesel-distribution-by-company',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* Add title at the top */}
-                        <div style={{
+                    <div style={{ 
+                      width: '100%', 
+                      height: '600px', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      padding: '20px'
+                    }}>
+                      {/* Pie Chart Container */}
+                      <div style={{ 
+                        flex: 1, 
+                        minHeight: '400px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={currentData.pieData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={150}
+                              innerRadius={60}
+                              fill="#8884d8"
+                              dataKey="value"
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
+                            >
+                              {currentData.pieData.map((entry, index) => (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={entry.color || COLORS[index % COLORS.length]} 
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip content={renderCustomTooltip} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      
+                      {/* Legend Section */}
+                      <div style={{
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        padding: '20px',
+                        marginTop: '20px',
+                        minHeight: '120px'
+                      }}>
+                        <h4 style={{ 
+                          margin: '0 0 16px 0', 
+                          fontSize: '16px', 
+                          fontWeight: '600',
                           textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '16px'
+                          color: '#1e293b'
                         }}>
-                          Distribution of Diesel Consumption by Company
-                        </div>
-                        
-                        <div style={{ flex: 1, minHeight: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={currentData.pieData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={150}
-                                innerRadius={60}
-                                fill="#8884d8"
-                                dataKey="value"
-                                paddingAngle={2}
-                                startAngle={90}
-                                endAngle={450}
-                              >
-                                {currentData.pieData.map((entry, index) => (
-                                  <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={entry.color || COLORS[index % COLORS.length]} 
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip content={renderCustomTooltip} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
+                          Diesel Consumption Breakdown
+                        </h4>
                         <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          flexWrap: 'wrap',
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                           gap: '12px',
-                          fontSize: '14px',
-                          marginTop: '16px',
-                          padding: '16px'
+                          fontSize: '14px'
                         }}>
                           {currentData.pieData.map((entry, index) => (
-                            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div
+                              key={index}
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '8px',
+                                padding: '8px',
+                                backgroundColor: 'white',
+                                borderRadius: '6px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                              }}
+                            >
                               <div style={{
-                                width: '16px', height: '16px',
+                                width: '16px',
+                                height: '16px',
                                 backgroundColor: entry.color || COLORS[index % COLORS.length],
-                                borderRadius: '2px'
+                                borderRadius: '3px',
+                                flexShrink: 0
                               }}></div>
-                              <span style={{ fontWeight: '500' }}>
-                                {entry.label}: {(entry.value || 0).toLocaleString()} {currentData.unit}
-                              </span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: '600', marginBottom: '2px' }}>
+                                  {entry.label}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                  {(entry.value || 0).toLocaleString()} {currentData.unit} ({entry.percentage}%)
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
-                    )
+                    </div>
                   )}
                   sx={{
                     position: 'absolute', top: 8, right: 8, zIndex: 10,
@@ -3626,76 +3659,72 @@ function EnvironmentEnergyDash() {
                   onClick={() => openZoomModal(
                     'Diesel Consumption by Property Type', 
                     'diesel-consumption-property-type',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', padding: '20px' }}>
-                        {/* Add title at the top */}
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '20px'
-                        }}>
-                          Diesel Consumption by Property Type
-                        </div>
-                        
-                        <div style={{ 
-                          height: 'calc(100% - 60px)', 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          justifyContent: 'space-around'
-                        }}>
-                          {currentData.propertyTypeData.map((item, index) => {
-                            const maxValue = Math.max(...currentData.propertyTypeData.map(d => d.value));
-                            const barWidth = (item.value / maxValue) * 80;
-                            const percentage = ((item.value / currentData.propertyTypeData.reduce((sum, d) => sum + d.value, 0)) * 100);
-                            
-                            return (
-                              <div key={index} style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                marginBottom: '20px'
+                    <div style={{ width: '100%', height: '500px', padding: '20px' }}>
+                      <div style={{ 
+                        height: 'calc(100% - 60px)', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'space-around'
+                      }}>
+                        {currentData.propertyTypeData.map((item, index) => {
+                          const maxValue = Math.max(...currentData.propertyTypeData.map(d => d.value));
+                          const barWidth = (item.value / maxValue) * 80;
+                          const percentage = ((item.value / currentData.propertyTypeData.reduce((sum, d) => sum + d.value, 0)) * 100);
+                          
+                          return (
+                            <div key={index} style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              marginBottom: '20px'
+                            }}>
+                              <div style={{ 
+                                width: '120px', 
+                                fontSize: '14px', 
+                                fontWeight: '500',
+                                textAlign: 'right',
+                                marginRight: '15px',
+                                color: '#64748b'
                               }}>
-                                <div style={{ 
-                                  width: '120px', 
-                                  fontSize: '14px', 
-                                  fontWeight: '500',
-                                  textAlign: 'right',
-                                  marginRight: '15px',
-                                  color: '#64748b'
+                                {item.label}
+                              </div>
+                              <div style={{ flex: 1, position: 'relative' }}>
+                                <div style={{
+                                  height: '35px',
+                                  width: `${barWidth}%`,
+                                  backgroundColor: item.color,
+                                  borderRadius: '0 6px 6px 0',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'flex-end',
+                                  paddingRight: '12px',
+                                  minWidth: '120px'
                                 }}>
-                                  {item.label}
-                                </div>
-                                <div style={{ flex: 1, position: 'relative' }}>
-                                  <div style={{
-                                    height: '35px',
-                                    width: `${barWidth}%`,
-                                    backgroundColor: item.color,
-                                    borderRadius: '0 6px 6px 0',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'flex-end',
-                                    paddingRight: '12px',
-                                    minWidth: '120px'
+                                  <span style={{ 
+                                    color: 'white', 
+                                    fontSize: '12px', 
+                                    fontWeight: '600',
+                                    textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
                                   }}>
-                                    <span style={{ 
-                                      color: 'white', 
-                                      fontSize: '12px', 
-                                      fontWeight: '600',
-                                      textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
-                                    }}>
-                                      {item.value >= 1000 ? `${(item.value / 1000).toFixed(1)}K` : item.value.toFixed(0)} L
-                                    </span>
-                                  </div>
+                                    {item.value >= 1000 ? `${(item.value / 1000).toFixed(1)}K` : item.value.toFixed(0)} L
+                                  </span>
+                                </div>
+                                <div style={{
+                                  position: 'absolute',
+                                  left: `${barWidth + 2}%`,
+                                  top: '50%',
+                                  transform: 'translateY(-50%)',
+                                  fontSize: '12px',
+                                  color: '#64748b',
+                                  marginLeft: '8px'
+                                }}>
+                                  {percentage.toFixed(1)}%
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    )
+                    </div>
                   )}
                   sx={{
                     position: 'absolute', top: 8, right: 8, zIndex: 10,
@@ -3863,70 +3892,53 @@ function EnvironmentEnergyDash() {
                   onClick={() => openZoomModal(
                     'Diesel Consumption Over Time', 
                     'diesel-consumption-over-time',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* Add title at the top */}
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '16px'
-                        }}>
-                          Diesel Consumption Over Time
-                        </div>
-                        
-                        <div style={{ flex: 1, minHeight: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={currentData.lineChartData}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                dataKey="year" 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
-                              />
-                              <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  if (value >= 1000) {
-                                    return `${(value / 1000).toFixed(1)}K`;
-                                  } else {
-                                    return value.toString();
-                                  }
-                                }}
-                              />
-                              <Tooltip 
-                                formatter={(value, name) => [
-                                  `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                                  name
-                                ]}
-                                labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                                contentStyle={{ fontSize: '14px' }}
-                              />
-                              <Legend wrapperStyle={{ fontSize: '14px' }} />
-                              
-                              {Object.keys(dieselLineColors).map((property, index) => (
-                                <Line 
-                                  key={property}
-                                  type="monotone" 
-                                  dataKey={property} 
-                                  stroke={dieselLineColors[property] || COLORS[index % COLORS.length]} 
-                                  strokeWidth={4}
-                                  dot={{ fill: dieselLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
-                                  name={property}
-                                  connectNulls={false}
-                                />
-                              ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-                    )
+                    <div style={{ width: '100%', height: '500px', paddingTop: '20px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={currentData.lineChartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="year" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000) {
+                                return `${(value / 1000).toFixed(1)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                              name
+                            ]}
+                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                            contentStyle={{ fontSize: '14px' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '15px' }} />
+                          
+                          {Object.keys(dieselLineColors).map((property, index) => (
+                            <Line 
+                              key={property}
+                              type="monotone" 
+                              dataKey={property} 
+                              stroke={dieselLineColors[property] || COLORS[index % COLORS.length]} 
+                              strokeWidth={4}
+                              dot={{ fill: dieselLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
+                              name={property}
+                              connectNulls={false}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
                   )}
                   sx={{
                     position: 'absolute', top: 8, right: 8, zIndex: 10,
@@ -4046,81 +4058,107 @@ function EnvironmentEnergyDash() {
                   onClick={() => openZoomModal(
                     'Diesel Consumption by Property', 
                     'diesel-consumption-by-property',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* Add title at the top */}
-                        <div style={{
+                    <div style={{ 
+                      width: '100%', 
+                      height: '600px', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      padding: '20px'
+                    }}>
+                      {/* Pie Chart Container */}
+                      <div style={{ 
+                        flex: 1, 
+                        minHeight: '400px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={currentData.propertyPieData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={150}
+                              innerRadius={60}
+                              fill="#8884d8"
+                              dataKey="value"
+                              paddingAngle={2}
+                              startAngle={90}
+                              endAngle={450}
+                            >
+                              {currentData.propertyPieData.map((entry, index) => (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={entry.color || COLORS[index % COLORS.length]} 
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip content={renderDieselPropertyTooltip} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      
+                      {/* Legend Section */}
+                      <div style={{
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        padding: '20px',
+                        marginTop: '20px',
+                        minHeight: '120px'
+                      }}>
+                        <h4 style={{ 
+                          margin: '0 0 16px 0', 
+                          fontSize: '16px', 
+                          fontWeight: '600',
                           textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '16px'
+                          color: '#1e293b'
                         }}>
-                          Diesel Consumption by Property
-                        </div>
-                        
-                        <div style={{ flex: 1, minHeight: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={currentData.propertyPieData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={150}
-                                innerRadius={60}
-                                fill="#8884d8"
-                                dataKey="value"
-                                paddingAngle={2}
-                                startAngle={90}
-                                endAngle={450}
-                              >
-                                {currentData.propertyPieData.map((entry, index) => (
-                                  <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={entry.color || COLORS[index % COLORS.length]} 
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip content={renderDieselPropertyTooltip} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
+                          Property Consumption Breakdown
+                        </h4>
                         <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          flexWrap: 'wrap',
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                           gap: '12px',
-                          fontSize: '14px',
-                          marginTop: '16px',
-                          padding: '16px'
+                          fontSize: '14px'
                         }}>
                           {currentData.propertyPieData.map((entry, index) => {
                             const propertyName = entry.label.split('\n')[0];
                             return (
-                              <div key={index} style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '8px'
-                              }}>
+                              <div
+                                key={index}
+                                style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  gap: '8px',
+                                  padding: '8px',
+                                  backgroundColor: 'white',
+                                  borderRadius: '6px',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                                }}
+                              >
                                 <div style={{
                                   width: '16px',
                                   height: '16px',
                                   backgroundColor: entry.color || COLORS[index % COLORS.length],
-                                  borderRadius: '2px',
+                                  borderRadius: '3px',
                                   flexShrink: 0
                                 }}></div>
-                                <span style={{ fontWeight: '500' }}>
-                                  {propertyName}: {(entry.value || 0).toLocaleString()} L
-                                </span>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: '600', marginBottom: '2px' }}>
+                                    {propertyName}
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                    {(entry.value || 0).toLocaleString()} L ({entry.percentage}%)
+                                  </div>
+                                </div>
                               </div>
                             );
                           })}
                         </div>
                       </div>
-                    )
+                    </div>
                   )}
                   sx={{
                     position: 'absolute',
@@ -4263,70 +4301,53 @@ function EnvironmentEnergyDash() {
                 {/* Zoom button */}
                 <IconButton
                   onClick={() => openZoomModal(
-                    `Diesel Consumption - ${fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}`, 
+                    `Diesel Consumption - ${getYearRangeText(fromYear, toYear)}`, 
                     'diesel-consumption-quarterly',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* Add title at the top */}
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '16px'
-                        }}>
-                          Diesel Consumption - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
-                        </div>
-                        
-                        <div style={{ flex: 1, minHeight: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={currentData.quarterlyBarData}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                dataKey="quarter"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
-                              />
-                              <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  if (value >= 1000) {
-                                    return `${(value / 1000).toFixed(1)}K`;
-                                  } else {
-                                    return value.toString();
-                                  }
-                                }}
-                              />
-                              <Tooltip 
-                                formatter={(value, name) => [
-                                  `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                                  name
-                                ]}
-                                labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                                contentStyle={{ fontSize: '14px' }}
-                              />
-                              <Legend wrapperStyle={{ fontSize: '14px' }} />
-                              
-                              {Object.keys(dieselQuarterlyBarColors).map((property, index) => (
-                                <Bar 
-                                  key={property}
-                                  dataKey={property} 
-                                  stackId="a" 
-                                  fill={dieselQuarterlyBarColors[property] || COLORS[index % COLORS.length]}
-                                  name={property}
-                                  radius={index === Object.keys(dieselQuarterlyBarColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                                />
-                              ))}
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-                    )
+                    <div style={{ width: '100%', height: '500px', paddingTop: '20px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={currentData.quarterlyBarData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="quarter"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000) {
+                                return `${(value / 1000).toFixed(1)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                              name
+                            ]}
+                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                            contentStyle={{ fontSize: '14px' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '15px' }} />
+                          
+                          {Object.keys(dieselQuarterlyBarColors).map((property, index) => (
+                            <Bar 
+                              key={property}
+                              dataKey={property} 
+                              stackId="a" 
+                              fill={dieselQuarterlyBarColors[property] || COLORS[index % COLORS.length]}
+                              name={property}
+                              radius={index === Object.keys(dieselQuarterlyBarColors).length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                            />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   )}
                   sx={{
                     position: 'absolute',
@@ -4348,7 +4369,7 @@ function EnvironmentEnergyDash() {
                   color: '#1e293b',
                   flexShrink: 0
                 }}>
-                  Diesel Consumption - {fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'}
+                  Diesel Consumption - {getYearRangeText(fromYear, toYear)}
                 </h3>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -4444,75 +4465,58 @@ function EnvironmentEnergyDash() {
                 {/* Zoom button */}
                 <IconButton
                   onClick={() => openZoomModal(
-                    `Diesel Consumption by Property (${fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'})`, 
+                    `Diesel Consumption by Property (${getYearRangeText(fromYear, toYear)})`, 
                     'diesel-consumption-by-property-monthly',
-                    () => (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* Add title at the top */}
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '16px 0',
-                          fontSize: '18px',
-                          fontWeight: '700',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #e2e8f0',
-                          marginBottom: '16px'
-                        }}>
-                          Diesel Consumption by Property ({fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'})
-                        </div>
-                        
-                        <div style={{ flex: 1, minHeight: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={currentData.monthlyLineData}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                              <XAxis 
-                                dataKey="month" 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 12, fill: '#64748b' }}
-                                angle={-45}
-                                textAnchor="end"
-                                height={80}
-                              />
-                              <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 14, fill: '#64748b' }}
-                                tickFormatter={(value) => {
-                                  if (value >= 1000) {
-                                    return `${(value / 1000).toFixed(1)}K`;
-                                  } else {
-                                    return value.toString();
-                                  }
-                                }}
-                              />
-                              <Tooltip 
-                                formatter={(value, name) => [
-                                  `${Number(value).toLocaleString()} ${currentData.unit}`, 
-                                  name
-                                ]}
-                                labelStyle={{ color: '#1e293b', fontSize: '16px' }}
-                                contentStyle={{ fontSize: '14px' }}
-                              />
-                              <Legend wrapperStyle={{ fontSize: '14px' }} />
-                              
-                              {Object.keys(dieselMonthlyLineColors).map((property, index) => (
-                                <Line 
-                                  key={property}
-                                  type="monotone" 
-                                  dataKey={property} 
-                                  stroke={dieselMonthlyLineColors[property] || COLORS[index % COLORS.length]} 
-                                  strokeWidth={4}
-                                  dot={{ fill: dieselMonthlyLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
-                                  name={property}
-                                  connectNulls={false}
-                                />
-                              ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-                    )
+                    <div style={{ width: '100%', height: '500px', paddingTop: '20px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={currentData.monthlyLineData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="month" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fill: '#64748b' }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={80}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 14, fill: '#64748b' }}
+                            tickFormatter={(value) => {
+                              if (value >= 1000) {
+                                return `${(value / 1000).toFixed(1)}K`;
+                              } else {
+                                return value.toString();
+                              }
+                            }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              `${Number(value).toLocaleString()} ${currentData.unit}`, 
+                              name
+                            ]}
+                            labelStyle={{ color: '#1e293b', fontSize: '16px' }}
+                            contentStyle={{ fontSize: '14px' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '15px' }} />
+                          
+                          {Object.keys(dieselMonthlyLineColors).map((property, index) => (
+                            <Line 
+                              key={property}
+                              type="monotone" 
+                              dataKey={property} 
+                              stroke={dieselMonthlyLineColors[property] || COLORS[index % COLORS.length]} 
+                              strokeWidth={4}
+                              dot={{ fill: dieselMonthlyLineColors[property] || COLORS[index % COLORS.length], strokeWidth: 3, r: 5 }}
+                              name={property}
+                              connectNulls={false}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
                   )}
                   sx={{
                     position: 'absolute',
@@ -4534,7 +4538,7 @@ function EnvironmentEnergyDash() {
                   color: '#1e293b',
                   flexShrink: 0
                 }}>
-                  Diesel Consumption by Property ({fromYear && toYear ? `${fromYear}-${toYear}` : toYear || fromYear || 'All Years'})
+                  Diesel Consumption by Property ({getYearRangeText(fromYear, toYear)})
                 </h3>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -4629,7 +4633,7 @@ function EnvironmentEnergyDash() {
           onClose={() => setZoomModal({ ...zoomModal, open: false })} 
           enableDownload 
           downloadFileName={zoomModal.fileName}
-          height={600}
+          height={700} // Increase height to accommodate legend
         >
           {zoomModal.content && typeof zoomModal.content === 'function' ? zoomModal.content() : zoomModal.content}
         </ZoomModal>
