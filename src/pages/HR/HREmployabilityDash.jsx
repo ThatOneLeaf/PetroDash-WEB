@@ -124,6 +124,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     console.log("THIS IS THE ITEM FRAME");
     console.log(startDate);
     console.log(endDate);
+    console.log(companyFilter);
 
     const fetchHRData = async () => {
       try {

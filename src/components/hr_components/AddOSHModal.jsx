@@ -10,12 +10,16 @@ import {
   InputLabel,
   Box,
 } from "@mui/material";
-
+import Overlay from "../../components/modal";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import api from "../../services/api";
+
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+import ConfirmModal from "./ConfirmModal";
 
 function AddOSHModal({ onClose, onSuccess }) {
   const [data, setData] = useState([]);
@@ -30,6 +34,32 @@ function AddOSHModal({ onClose, onSuccess }) {
     incident_title: "",
     incident_count: "",
   });
+  const summaryData = [
+    { label: "Company ID", value: String(formData.companyId || "N/A") },
+    {
+      label: "Workforce Type",
+      value: String(formData.workforce_type || "N/A"),
+    },
+    { label: "Lost Time", value: String(formData.lost_time || "N/A") },
+    {
+      label: "Date",
+      value: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : "N/A",
+    },
+    { label: "Incident Type", value: String(formData.incident_type || "N/A") },
+    {
+      label: "Incident Title",
+      value: String(formData.incident_title || "N/A"),
+    },
+    {
+      label: "Incident Count",
+      value: String(formData.incident_count || "N/A"),
+    },
+  ];
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const fetchOSHData = async () => {
     try {
@@ -99,9 +129,9 @@ function AddOSHModal({ onClose, onSuccess }) {
         incident_count: formData.incident_count,
       });
 
-      console.log("success  ");
+      setIsConfirmModalOpen(false);
+      setIsSuccessModalOpen(true);
       if (onSuccess) onSuccess();
-      onClose();
 
       setFormData({
         companyId: "", // get current  company of emp
@@ -279,10 +309,48 @@ function AddOSHModal({ onClose, onSuccess }) {
               backgroundColor: "#256d2f",
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => setIsConfirmModalOpen(TRUE)}
         >
           ADD RECORD
         </Button>
+
+        {isConfirmModalOpen && (
+          <Overlay onClose={() => setIsConfirmModalOpen(false)}>
+            <ConfirmModal
+              open={isConfirmModalOpen}
+              title={"Confirm Record Addition"}
+              message={"Are you sure you want to add this OSH record?"}
+              onConfirm={handleSubmit}
+              onCancel={() => setIsConfirmModalOpen(false)}
+              summaryData={summaryData}
+            />
+          </Overlay>
+        )}
+
+        {isErrorModalOpen && (
+          <Overlay onClose={() => setIsErrorModalOpen(false)}>
+            <ErrorModal
+              open={isErrorModalOpen}
+              errorMessage={errorMessage}
+              onClose={() => setIsErrorModalOpen(false)}
+            />
+          </Overlay>
+        )}
+
+        {isSuccessModalOpen && (
+          <Overlay onClose={() => setIsSuccessModalOpen(false)}>
+            <SuccessModal
+              open={isSuccessModalOpen}
+              successMessage={
+                "Your OSH record has been successfully added to the repository."
+              }
+              onClose={() => {
+                setIsSuccessModalOpen(false);
+                onClose();
+              }}
+            />
+          </Overlay>
+        )}
       </Box>
     </Paper>
   );

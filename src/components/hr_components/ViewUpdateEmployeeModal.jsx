@@ -26,23 +26,15 @@ import Overlay from "../../components/modal";
 import ConfirmModal from "./ConfirmModal";
 import SuccessModal from "../../components/hr_components/SuccessModal";
 import ErrorModal from "../../components/hr_components/ErrorModal";
-const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  //const [editedRecord, setEditedRecord] = useState(record || {});
-  /*
-  const [formData, setFormData] = useState({
-    company_id: "", // get current  company of emp
-    employee_id: "",
-    gender: "",
-    birthdate: null,
-    position_id: "",
-    p_np: "",
-    employeeStatus: "",
-    start_date: null,
-    end_date: null,
-    status_id: "",
-  });*/
 
+const ViewUpdateEmployeeModal = ({
+  title,
+  record,
+  onClose,
+  status,
+  onSuccess,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
   const permanentlyReadOnlyFields = ["employee_id", "company_id", "status"];
 
   const [data, setData] = useState([]);
@@ -59,16 +51,14 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [errorTitle, setErrorTitle] = useState("");
-  const statuses = ["URS", "FRS", "URH", "FRH", "APP"];
+  const statuses = ["URH", "FRH", "APP"];
   const [nextStatus, setNextStatus] = useState("");
   const [remarks, setRemarks] = useState("");
   const recordIdKey = Object.keys(record)[0];
 
   const statusIdToName = {
-    URS: "Under review (site)",
-    FRS: "For Revision (Site)",
     URH: "Under review (head level)",
-    FRH: "For Revision (Head) ",
+    FRH: "For Revision (Head)",
     APP: "Approved",
   };
 
@@ -105,9 +95,6 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
 
   useEffect(() => {
     fetchEmployabilityData();
-
-    console.log("THIS IS RECORD");
-    console.log(recordIdKey);
   }, []);
 
   const uniqueOptions = (key) => {
@@ -118,13 +105,6 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
   };
 
   const handleChange = (field) => (event) => {
-    /*
-    const newFormData = {
-      ...formData,
-      [field]: event.target.value,
-    };
-    setFormData(newFormData);*/
-
     setEditedRecord((prev) => ({
       ...prev,
       [field]: event.target.value,
@@ -132,26 +112,107 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
   };
 
   const handleDateChange = (field) => (newValue) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: newValue,
-    }));
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
 
     setEditedRecord((prev) => ({
       ...prev,
-      [field]: event.target.value,
+      [field]: isoDate,
     }));
   };
 
   const handleSave = async () => {
-    console.log("Old Data:", record);
-    console.log("Updated Data:", editedRecord);
+    /* VALIDATION */
+    const MIN_DATE = dayjs("1994-09-29");
+    const MIN_BIRTHDATE = dayjs("1900-01-01");
+    const today = dayjs();
+
+    const {
+      employee_id,
+      gender,
+      position_id,
+      birthdate,
+      p_np,
+      employment_status,
+      start_date,
+      end_date,
+    } = editedRecord;
+
+    console.log(birthdate);
+
+    const isInOptions = (value, key) =>
+      uniqueOptions(key).some((option) => option.value === value);
+
+    const isValidGender = isInOptions(gender, "gender");
+    const isValidPosition = isInOptions(position_id, "position_id");
+    const isValidBirthdate =
+      birthdate &&
+      dayjs(birthdate).isValid() &&
+      dayjs(birthdate).isBefore(today) &&
+      dayjs(birthdate).isAfter(MIN_BIRTHDATE);
+
+    const isValidCategory = isInOptions(p_np, "p_np");
+    const isValidStatus = isInOptions(employment_status, "employment_status");
+
+    const isValidTenureStart =
+      start_date &&
+      dayjs(start_date).isValid() &&
+      dayjs(start_date).isAfter(MIN_DATE);
+    const isValidTenureEnded =
+      !end_date ||
+      (dayjs(end_date).isValid() && dayjs(end_date).isSameOrAfter(start_date));
+
+    if (!isValidGender) {
+      setErrorMessage("Please select a valid Gender.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidPosition) {
+      setErrorMessage("Please select a valid Position.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidBirthdate) {
+      setErrorMessage("Please enter a valid Birthdate");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidCategory) {
+      setErrorMessage("Please select a valid Employee Category.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidStatus) {
+      setErrorMessage("Please select a valid Employee Status.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidTenureStart) {
+      setErrorMessage("Tenure Start must be a valid date.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidTenureEnded) {
+      setErrorMessage(
+        "Tenure Ended must be the same as or after Tenure Start."
+      );
+      setIsErrorModalOpen(true);
+      return;
+    }
 
     try {
       const response = await api.post("hr/edit_employability", editedRecord);
-      console.log(response);
-      alert(response.data.message || "Record saved successfully.");
       setIsEditing(false);
+
+      if (onSuccess) {
+        onSuccess();
+      }
+
       return true;
     } catch (error) {
       const errorMessage =
@@ -163,40 +224,33 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
     }
   };
 
-  const isRecordUnchanged =
-    JSON.stringify(record) === JSON.stringify(editedRecord);
-
+  //remove added status field for comparison
+  const stripStatus = (obj) => {
+    const { status, ...rest } = obj;
+    return rest;
+  };
+  const isRecordUnchanged = () =>
+    JSON.stringify(stripStatus(record)) ===
+    JSON.stringify(stripStatus(editedRecord));
   {
     /* ADDED */
   }
-
-  const handleApproveSuccessClose = () => {
-    setShowApproveSuccessModal(false);
-    status(false);
-  };
 
   const fetchNextStatus = (action) => {
     let newStatus = "";
     if (action === "approve") {
       switch (editedRecord.status) {
-        case "For Revision (Site)":
-          newStatus = statuses[0]; // "URS"
-          break;
-        case "Under review (site)":
         case "For Revision (Head)":
-          newStatus = statuses[2]; // "URH"
+          newStatus = statuses[0]; // "URH"
           break;
         case "Under review (head level)":
-          newStatus = statuses[4]; // "APP"
+          newStatus = statuses[2]; // "APP"
           break;
       }
     } else if (action === "revise") {
       switch (editedRecord.status) {
-        case "Under review (site)":
-          newStatus = statuses[1]; // "FRS"
-          break;
         case "Under review (head level)":
-          newStatus = statuses[3]; // "FRH"
+          newStatus = statuses[1]; // "FRH"
           break;
       }
     }
@@ -236,8 +290,6 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
         remarks: remarks.trim(),
       };
 
-      console.log(payload);
-
       const response = await api.post("/usable_apis/update_status", payload);
 
       // alert(response.data.message);
@@ -256,9 +308,14 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
           setSuccessColor("#182959");
           setIsSuccessModalOpen(true);
         }
+
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
-        console.log("ADD REFRESH");
-        //status(false);
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     } catch (error) {
       console.error("Error updating record status:", error);
@@ -281,6 +338,10 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
       setSuccessMessage("Record Approved Successfully!");
       setSuccessTitle("The record has been successfully approved.");
       setIsSuccessModalOpen(true);
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       alert(error?.response?.data?.detail || "Update Status Failed.");
     }
@@ -556,9 +617,8 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
               value={
                 editedRecord.birthdate ? dayjs(editedRecord.birthdate) : null
               }
-              onChange={(newValue) =>
-                handleChange("birthdate", newValue?.toISOString())
-              }
+              onChange={handleDateChange("birthdate")}
+              minDate={dayjs("1900-01-01")}
               slotProps={{
                 textField: { fullWidth: true, size: "medium" },
               }}
@@ -748,9 +808,8 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
               value={
                 editedRecord.start_date ? dayjs(editedRecord.start_date) : null
               }
-              onChange={(newValue) =>
-                handleChange("start_date", newValue?.toISOString())
-              }
+              minDate={dayjs("1994-09-29")}
+              onChange={handleDateChange("start_date")}
               slotProps={{
                 textField: { fullWidth: true, size: "medium" },
               }}
@@ -801,9 +860,8 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
               value={
                 editedRecord.end_date ? dayjs(editedRecord.end_date) : null
               }
-              onChange={(newValue) =>
-                handleChange("end_date", newValue?.toISOString())
-              }
+              onChange={handleDateChange("end_date")}
+              minDate={dayjs("1994-09-29")}
               slotProps={{
                 textField: { fullWidth: true, size: "medium" },
               }}
@@ -878,19 +936,23 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
                   }}
                   onClick={async () => {
                     if (isEditing) {
-                      if (!isRecordUnchanged) {
+                      console.log("🟡 isRecordUnchanged:", isRecordUnchanged());
+                      if (!isRecordUnchanged()) {
                         const saveSuccess = await handleSave();
                         if (
                           saveSuccess &&
                           (editedRecord.status === "For Revision (Site)" ||
                             editedRecord.status === "For Revision (Head)")
                         ) {
-                          handleEditSaveSuccess(
+                          setSuccessMessage("");
+                          setSuccessTitle(
                             "The record has been successfully updated."
                           );
+                          setIsSuccessModalOpen(true);
                         }
                       } else {
                         setIsEditing(false);
+
                         if (
                           editedRecord.status === "For Revision (Site)" ||
                           editedRecord.status === "For Revision (Head)"
@@ -1097,71 +1159,3 @@ const ViewUpdateEmployeeModal = ({ title, record, onClose, status }) => {
 };
 
 export default ViewUpdateEmployeeModal;
-{
-  /*OLD */
-}
-{
-  /*<Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          mt: 3,
-        }}
-      >
-        <Button
-          startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-          sx={{
-            color: isEditing ? "#1976d2" : "#FFA000",
-            borderRadius: "999px",
-            padding: "9px 18px",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            "&:hover": {
-              color: isEditing ? "#1565c0" : "#FB8C00",
-            },
-          }}
-          onClick={() => {
-            if (isEditing) {
-              if (!isRecordUnchanged) {
-                handleSave(); // only save if changed
-              } else {
-                alert("No changes were made");
-                setIsEditing(false);
-              }
-            } else {
-              setIsEditing(true);
-            }
-          }}
-        >
-          {isEditing ? "SAVE" : "EDIT"}
-        </Button>
-
-        <Button
-          variant="contained"
-          sx={{
-            backgroundColor: "#2B8C37",
-            borderRadius: "999px",
-            padding: "9px 18px",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            "&:hover": {
-              backgroundColor: "#256d2f",
-            },
-          }}
-          onClick={() => {
-            const isUnchanged =
-              JSON.stringify(record) === JSON.stringify(editedRecord);
-            if (isEditing && !isUnchanged) {
-              const confirmClose = window.confirm(
-                "You have unsaved changes. Are you sure you want to close without saving?"
-              );
-              if (!confirmClose) return; // do nothing if user cancels
-            }
-            status(isUnchanged);
-            onClose();
-          }}
-        >
-          CLOSE
-        </Button>
-      </Box> */
-}

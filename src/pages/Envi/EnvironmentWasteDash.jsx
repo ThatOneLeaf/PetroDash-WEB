@@ -73,10 +73,8 @@ function EnvironmentWasteDash() {
   const [hazGenPieData, setHazGenPieData] = useState([]);
   const [hazGenTypePieData, setHazGenTypePieData] = useState([]);
   const [hazGenLineData, setHazGenLineData] = useState([]);
-  const [lineChartColors, setLineChartColors] = useState([]);
   const [hazGenTypeBarData, setHazGenTypeBarData] = useState([]);
   const [hazGenQrtrBarData, setHazGenQrtrBarData] = useState([]);
-  const [barChartColors, setBarChartColors] = useState({});
   const [hazDisYearBarData, setHazDisYearBarData] = useState({
     chartData: [],
     companies: [],
@@ -957,13 +955,11 @@ function EnvironmentWasteDash() {
         console.log('Transformed line chart data:', transformedData);
         
         setHazGenLineData(transformedData);
-        setLineChartColors(wasteTypeColors);
         
       } catch (error) {
         console.error('Failed to fetch hazard generated line chart:', error);
         console.error('Error response:', error.response?.data);
         setHazGenLineData([]);
-        setLineChartColors({});
       }
     };
 
@@ -1026,9 +1022,7 @@ function EnvironmentWasteDash() {
           return;
         }
         
-        setHazGenTypeBarData(barChartResult.chartData);
-        setBarChartColors(barChartResult.colors); // Store colors separately
-        
+        setHazGenTypeBarData(barChartResult.chartData);        
       } catch (error) {
         console.error('Failed to fetch hazard generated bar chart:', error);
         console.error('Error response:', error.response?.data);
@@ -1953,21 +1947,27 @@ function EnvironmentWasteDash() {
               backgroundColor: '#1976d2',
               color: 'white',
               border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
+              padding: '12px 24px',
+              borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '10px',
               cursor: 'pointer',
-              fontSize: '18px',
+              fontSize: '16px',
               fontWeight: '700',
-              transition: 'background-color 0.2s ease',
+              transition: 'background-color 0.2s ease, color 0.2s ease',
               boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
             }}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#115293'}
-            onMouseOut={(e) => e.target.style.backgroundColor = '#1976d2'}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = '#115293';
+              e.target.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = '#1976d2';
+              e.target.style.color = 'white';
+            }}
           >
-            <RefreshIcon style={{ fontSize: '30px' }} />
+            <RefreshIcon style={{ fontSize: '20px', color: 'inherit' }} />
             Refresh
           </button>
         </div>
@@ -2155,7 +2155,7 @@ function EnvironmentWasteDash() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '3px' }}>
-              {yearOnYearCumulative() ?? '--'} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+              {yearOnYearCumulative() ?? '--'} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
             </div>
             <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
               YEAR-ON-YEAR CUMULATIVE {activeTab === 'non_hazardous_generated' ? 'NON HAZARDOUS' : 'HAZARDOUS'} WASTE {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'}
@@ -2182,7 +2182,7 @@ function EnvironmentWasteDash() {
             <div style={{ fontSize: '9px', opacity: 0.8 }}>
               {keyMetrics?.combined?.most_generated_waste_type?.total_generated
                 ? `TOTAL: ${mostWasteType()}`
-                : `TOTAL: ${mostWasteType()}`} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+                : `TOTAL: ${mostWasteType()}`} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
             </div>
           </div>
 
@@ -2198,7 +2198,7 @@ function EnvironmentWasteDash() {
               ? (unit === 'Pieces' || unit === 'Pcs'
                   ? Math.ceil(keyMetrics.combined.average_per_year).toLocaleString()
                   : keyMetrics.combined.average_per_year.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-                ) : '--'} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+                ) : '--'} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
             </div>
             <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
               AVERAGE ANNUAL {activeTab === 'non_hazardous_generated' ? 'NON HAZARDOUS' : 'HAZARDOUS'} WASTE {activeTab === 'hazardous_disposed' ? 'DISPOSED' : 'GENERATED'}
@@ -2299,7 +2299,7 @@ function EnvironmentWasteDash() {
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: '600', marginBottom: '2px' }}>{entry.label}</div>
                           <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                            {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'} ({entry.percentage}%)
+                            {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'} ({entry.percentage}%)
                           </div>
                         </div>
                       </div>
@@ -2311,9 +2311,6 @@ function EnvironmentWasteDash() {
                 position: 'absolute',
                 top: 8,
                 right: 8,
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
               }}
               size="small"
             >
@@ -2329,7 +2326,7 @@ function EnvironmentWasteDash() {
               Distribution of Hazardous Waste {
                 activeTab === 'hazardous_generated' ? 'Generated' : 
                 activeTab === 'hazardous_disposed' ? 'Disposed' : ''
-              } by Company ({unit})
+              } by Company ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
             </h3>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -2423,7 +2420,7 @@ function EnvironmentWasteDash() {
                         flexShrink: 0
                       }}></div>
                       <span style={{ fontWeight: '500', fontSize: '9px' }}>
-                        {entry.label}: {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+                        {entry.label}: {(entry.value || 0).toLocaleString()} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
                       </span>
                     </div>
                   ))}
@@ -2455,7 +2452,7 @@ function EnvironmentWasteDash() {
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart 
                           data={currentData.lineChartData}
-                          margin={{ top: 20, right: 100, left: 20, bottom: 20 }}
+                          margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                           <XAxis 
@@ -2505,9 +2502,6 @@ function EnvironmentWasteDash() {
                     position: 'absolute',
                     top: 8,
                     right: 8,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}
                   size="small"
                 >
@@ -2520,7 +2514,7 @@ function EnvironmentWasteDash() {
                   color: '#1e293b',
                   flexShrink: 0
                 }}>
-                  Hazardous Waste {activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Over Time ({unit})
+                  Hazardous Waste {activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Over Time ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                 </h3>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
                   {loading ? (
@@ -2725,9 +2719,6 @@ function EnvironmentWasteDash() {
                   position: 'absolute',
                   top: 8,
                   right: 8,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}
                   size="small"
                 >
@@ -2742,7 +2733,7 @@ function EnvironmentWasteDash() {
                     flexShrink: 0,
                   }}
                 >
-                  Hazard Waste {activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Composition by Type ({unit})
+                  Hazard Waste {activeTab === 'hazardous_generated' ? 'Generated' : 'Disposed'} Composition by Type ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                 </h3>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
@@ -2976,9 +2967,7 @@ function EnvironmentWasteDash() {
                       top: 8,
                       right: 8,
                       zIndex: 10,
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+
                     }}
                     size="small"
                   >
@@ -3194,9 +3183,7 @@ function EnvironmentWasteDash() {
                       position: 'absolute',
                       top: 8,
                       right: 8,
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+
                     }}
                     size="small"
                   >
@@ -3209,7 +3196,7 @@ function EnvironmentWasteDash() {
                     color: '#1e293b',
                     flexShrink: 0
                   }}>
-                    Hazardous Waste Disposed Yearly Comparison ({unit})
+                    Hazardous Waste Disposed Yearly Comparison ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                   </h3>
                   
                   <div style={{ flex: 1, minHeight: 0 }}>
@@ -3383,7 +3370,7 @@ function EnvironmentWasteDash() {
                           marginRight: '5rem'
                         }}>
                           <div style={{ fontSize: '12px', marginTop: '20rem', marginBottom: '1rem', fontWeight: '600', textAlign: 'center' }}>
-                            Scale ({unit})
+                            Scale ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                           </div>
                           <div style={{ fontSize: '10px', marginBottom: '4px', fontWeight: '600' }}>
                             {nonHazMetricsHeatmapData.scale.max_waste.toLocaleString()}
@@ -3417,9 +3404,7 @@ function EnvironmentWasteDash() {
                       top: 8,
                       right: 8,
                       zIndex: 10,
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+
                     }}
                     size="small"
                   >
@@ -3432,7 +3417,7 @@ function EnvironmentWasteDash() {
                     margin: '0 0 10px 0',
                     flexShrink: 0
                   }}>
-                    Non-Hazardous Waste by Year and Metric ({unit})
+                    Non-Hazardous Waste by Year and Metric ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                   </h3>
                   
                   <div style={{ flex: 1, minHeight: 0 }}>
@@ -3490,7 +3475,7 @@ function EnvironmentWasteDash() {
                           }}
                         >
                           <div style={{ fontSize: '10px', marginBottom: '4px', fontWeight: '600' }}>
-                            {nonHazMetricsHeatmapData.scale.max_waste.toLocaleString()} {unit === 'Kilogram' ? 'Kg' : unit === 'Liter' ? 'L' : 'Pcs'}
+                            {nonHazMetricsHeatmapData.scale.max_waste.toLocaleString()} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
                           </div>
                           <div
                             ref={colorScaleRef}
@@ -3594,9 +3579,7 @@ function EnvironmentWasteDash() {
                       top: 8,
                       right: 8,
                       zIndex: 10,
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+
                     }}
                     size="small"
                   >
@@ -3609,7 +3592,7 @@ function EnvironmentWasteDash() {
                     color: '#1e293b',
                     flexShrink: 0
                   }}>
-                    Total Non-Hazardous Waste by Company per Metrics ({unit})
+                    Total Non-Hazardous Waste by Company per Metrics ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                   </h3>
                   
                   <div style={{ flex: 1, minHeight: 0 }}>
@@ -3775,9 +3758,7 @@ function EnvironmentWasteDash() {
                       position: 'absolute',
                       top: 8,
                       right: 8,
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+
                     }}
                     size="small"
                   >
@@ -3790,7 +3771,7 @@ function EnvironmentWasteDash() {
                     color: '#1e293b',
                     flexShrink: 0
                   }}>
-                    Total Non-Hazardous Waste by Metrics Over Time ({unit})
+                    Total Non-Hazardous Waste by Metrics Over Time ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                   </h3>
                   
                   <div style={{ flex: 1, minHeight: 0 }}>
@@ -3952,9 +3933,6 @@ function EnvironmentWasteDash() {
                       position: 'absolute',
                       top: 8,
                       right: 8,
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                     size="small"
                   >
@@ -3967,7 +3945,7 @@ function EnvironmentWasteDash() {
                     color: '#1e293b',
                     flexShrink: 0
                   }}>
-                    Non-Hazardous Waste by Quarter ({unit})
+                    Non-Hazardous Waste by Quarter ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
                   </h3>
                   
                   <div style={{ flex: 1, minHeight: 0 }}>

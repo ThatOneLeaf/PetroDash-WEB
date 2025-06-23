@@ -18,24 +18,67 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import StatusChip from "../../components/StatusChip";
 
-const ViewUpdateOSHModal = ({ title, record, onClose, status }) => {
+//added
+import Overlay from "../../components/modal";
+
+import ConfirmModal from "./ConfirmModal";
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+
+const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedRecord, setEditedRecord] = useState(record || {});
-
   const permanentlyReadOnlyFields = ["company_id", "status"];
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  //added
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successTitle, setSuccessTitle] = useState("");
+  const [successColor, setSuccessColor] = useState("#2B8C37");
+  const [modalType, setModalType] = useState("");
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorTitle, setErrorTitle] = useState("");
+  const statuses = ["URH", "FRH", "APP"];
+  const [nextStatus, setNextStatus] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const recordIdKey = Object.keys(record)[0];
+
+  const statusIdToName = {
+    URH: "Under review (head level)",
+    FRH: "For Revision (Head)",
+    APP: "Approved",
+  };
+
   if (!record) return null;
+
+  const getRecordWithStatus = (record) => ({
+    ...record,
+    status: statusIdToName[record?.status_id] || record?.status || "",
+  });
+
+  const [editedRecord, setEditedRecord] = useState(getRecordWithStatus(record));
+
+  const summaryData = Object.entries(editedRecord)
+    .map(([key, value]) => ({
+      label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+      value: value ? String(value) : "N/A",
+    }))
+    .slice(0, -4);
 
   // Initialize Data Options
   const fetchOSHData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("hr/occupational_safety_health_records_by_status");
+      const response = await api.get(
+        "hr/occupational_safety_health_records_by_status"
+      );
       console.log("OSH data from API:", response.data);
       setData(response.data);
     } catch (error) {
@@ -194,7 +237,8 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status }) => {
 
         <TextField
           label={
-            isEditing && !permanentlyReadOnlyFields.includes("workforce_type") ? (
+            isEditing &&
+            !permanentlyReadOnlyFields.includes("workforce_type") ? (
               <>
                 Company <span style={{ color: "red" }}>*</span>
               </>
@@ -209,7 +253,8 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status }) => {
           type="text"
           InputProps={{
             readOnly:
-              !isEditing || permanentlyReadOnlyFields.includes("workforce_type"),
+              !isEditing ||
+              permanentlyReadOnlyFields.includes("workforce_type"),
             sx: {
               color: isEditing ? "black" : "#182959",
             },
@@ -222,79 +267,79 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status }) => {
         />
 
         {isEditing ? (
-            <FormControl fullWidth sx={{ minWidth: 120 }}>
-              <InputLabel>
-                {isEditing && !permanentlyReadOnlyFields.includes("lost_time") ? (
+          <FormControl fullWidth sx={{ minWidth: 120 }}>
+            <InputLabel>
+              {isEditing && !permanentlyReadOnlyFields.includes("lost_time") ? (
+                <>
+                  <span style={{ color: isEditing ? "#182959" : "grey" }}>
+                    Lost Time
+                  </span>
+                  <span style={{ color: "red" }}>*</span>
+                </>
+              ) : (
+                "Lost Time"
+              )}
+            </InputLabel>
+            <Select
+              label={
+                isEditing &&
+                !permanentlyReadOnlyFields.includes("lost_time") ? (
                   <>
                     <span style={{ color: isEditing ? "#182959" : "grey" }}>
-                    Lost Time
+                      Lost Time
                     </span>
                     <span style={{ color: "red" }}>*</span>
                   </>
                 ) : (
                   "Lost Time"
-                )}
-              </InputLabel>
-              <Select
-                label={
-                  isEditing && !permanentlyReadOnlyFields.includes("lost_time") ? (
-                    <>
-                      <span style={{ color: isEditing ? "#182959" : "grey" }}>
-                        Lost Time
-                      </span>
-                      <span style={{ color: "red" }}>*</span>
-                    </>
-                  ) : (
-                    "Lost Time"
-                  )
-                  }
-                  value={editedRecord.lost_time ?? ""}
-                  onChange={(e) => handleChange("lost_time")(e)}
-                  sx={{ height: "55px" }}
-                  fullWidth
-                >
-                  {uniqueOptions("lost_time").map((option) => {
-                    let label = option.label;
-                    if (option.value === true) label = "Yes";
-                    else if (option.value === false) label = "No";
-        
-                    return (
-                      <MenuItem key={option.value} value={option.value}>
-                        {label}
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
-            ) : (
-              <TextField
-                label="Lost Time"
-                variant="outlined"
-                fullWidth
-                value={
-                  editedRecord.lost_time === true
-                    ? "Yes"
-                    : editedRecord.lost_time === false
-                    ? "No"
-                    : editedRecord.lost_time
-                }
-                onChange={(e) => handleChange("gender", e.target.value)}
-                type="text"
-                InputProps={{
-                  readOnly:
-                    !isEditing || permanentlyReadOnlyFields.includes("gender"),
-                  sx: {
-                    color: isEditing ? "black" : "#182959",
-                  },
-                }}
-                InputLabelProps={{
-                  sx: {
-                    color: isEditing ? "#182959" : "grey",
-                  },
-                }}
-              />
-            )}
+                )
+              }
+              value={editedRecord.lost_time ?? ""}
+              onChange={(e) => handleChange("lost_time")(e)}
+              sx={{ height: "55px" }}
+              fullWidth
+            >
+              {uniqueOptions("lost_time").map((option) => {
+                let label = option.label;
+                if (option.value === true) label = "Yes";
+                else if (option.value === false) label = "No";
 
+                return (
+                  <MenuItem key={option.value} value={option.value}>
+                    {label}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        ) : (
+          <TextField
+            label="Lost Time"
+            variant="outlined"
+            fullWidth
+            value={
+              editedRecord.lost_time === true
+                ? "Yes"
+                : editedRecord.lost_time === false
+                ? "No"
+                : editedRecord.lost_time
+            }
+            onChange={(e) => handleChange("gender", e.target.value)}
+            type="text"
+            InputProps={{
+              readOnly:
+                !isEditing || permanentlyReadOnlyFields.includes("gender"),
+              sx: {
+                color: isEditing ? "black" : "#182959",
+              },
+            }}
+            InputLabelProps={{
+              sx: {
+                color: isEditing ? "#182959" : "grey",
+              },
+            }}
+          />
+        )}
 
         {isEditing ? (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -365,8 +410,7 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status }) => {
           InputProps={{
             min: 0,
             readOnly:
-              !isEditing ||
-              permanentlyReadOnlyFields.includes("incident_type"),
+              !isEditing || permanentlyReadOnlyFields.includes("incident_type"),
             sx: {
               color: isEditing ? "black" : "#182959",
             },

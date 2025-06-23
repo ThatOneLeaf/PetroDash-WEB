@@ -121,6 +121,11 @@ function Economic() {
         if (filters.companies) queryParams.append('companies', filters.companies);
         if (filters.types) queryParams.append('types', filters.types);
         
+        // Create query params without year filter for charts that should show all years
+        const queryParamsNoYear = new URLSearchParams();
+        if (filters.companies) queryParamsNoYear.append('companies', filters.companies);
+        if (filters.types) queryParamsNoYear.append('types', filters.types);
+        
         // Fetch all data in parallel
         const [
           summaryResponse,
@@ -129,7 +134,8 @@ function Economic() {
           companyResponse,
           expenditureResponse
         ] = await Promise.all([
-          api.get(`/economic/dashboard/summary?${queryParams}`),
+          // Summary and retention data should not be affected by year filters (for chart 1 & 2)
+          api.get(`/economic/dashboard/summary?${queryParamsNoYear}`),
           api.get(`/economic/dashboard/generated-details?${queryParams}`),
           api.get(`/economic/dashboard/distributed-details?${queryParams}`),
           api.get(`/economic/dashboard/company-distribution?${queryParams}`),
@@ -142,7 +148,7 @@ function Economic() {
         setCompanyDistribution(companyResponse.data);
         setExpenditureData(expenditureResponse.data);
         
-        // Fetch retention data
+        // Fetch retention data (should not be affected by year filters)
         await fetchRetentionData();
         
         setLastUpdated(new Date());
@@ -415,25 +421,29 @@ function Economic() {
           {/* Metrics Cards */}
           <div ref={kpiRef}>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'nowrap', pb: 0, flexShrink: 0 }}>
-                              <Card sx={{ borderRadius: 2, boxShadow: 2, flex: 1, minHeight: 60 }}>
+                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#182959', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
-                    <Typography variant="h5" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1rem' }}>
-                      {currentYearMetrics ? currentYearMetrics.totalGenerated.toLocaleString() : '0'}
+                    <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                      {currentYearMetrics ? `₱${currentYearMetrics.totalGenerated.toLocaleString()}` : '₱0'}
                     </Typography>
-                    <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.6rem' }}>
+                    <Typography variant="body2" sx={{ color: 'white', fontSize: '0.6rem' }}>
                       Value Generated
                     </Typography>
                     {previousYearMetrics && (
-                      <Typography variant="caption" sx={{ color: '#2B8C37', fontSize: '0.5rem' }}>
-                        ▲{calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated)}% from last year
+                      <Typography variant="caption" sx={{ 
+                        color: calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '#4CAF50' : '#F44336', 
+                        fontSize: '0.5rem' 
+                      }}>
+                        {calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '▲' : '▼'}
+                        {Math.abs(calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated))}% from last year
                       </Typography>
                     )}
                   </CardContent>
                 </Card>
-                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#182959', flex: 1, minHeight: 60 }}>
+                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#2B8C37', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                      {currentYearMetrics ? currentYearMetrics.totalDistributed.toLocaleString() : '0'}
+                      {currentYearMetrics ? `₱${currentYearMetrics.totalDistributed.toLocaleString()}` : '₱0'}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'white', fontSize: '0.6rem' }}>
                       Value Distributed
@@ -445,20 +455,34 @@ function Economic() {
                     )}
                   </CardContent>
                 </Card>
-                              <Card sx={{ borderRadius: 2, boxShadow: 2, flex: 1, minHeight: 60 }}>
+                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#FF8042', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
-                    <Typography variant="h5" sx={{ color: '#182959', fontWeight: 'bold', fontSize: '1rem' }}>
-                      {currentYearMetrics ? currentYearMetrics.valueRetained.toLocaleString() : '0'}
+                    <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+                      {currentYearMetrics ? `₱${currentYearMetrics.valueRetained.toLocaleString()}` : '₱0'}
                     </Typography>
-                    <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.6rem' }}>
+                    <Typography variant="body2" sx={{ color: 'white', fontSize: '0.6rem' }}>
                       Value Retained
                     </Typography>
-                    {previousYearMetrics && (
-                      <Typography variant="caption" sx={{ color: previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '#ff5722' : '#2B8C37', fontSize: '0.5rem' }}>
-                        {previousYearMetrics.valueRetained > currentYearMetrics?.valueRetained ? '▼' : '▲'}
-                        {Math.abs(calculateGrowth(currentYearMetrics?.valueRetained, previousYearMetrics?.valueRetained))}% from last year
-                      </Typography>
-                    )}
+                    {previousYearMetrics && (() => {
+                      const currentValue = currentYearMetrics?.valueRetained || 0;
+                      const previousValue = previousYearMetrics?.valueRetained || 0;
+                      const growthRate = calculateGrowth(currentValue, previousValue);
+                      
+                      // For Value Retained, we need to consider the context:
+                      // - If current is better than previous (higher retention), show green up
+                      // - If current is worse than previous (lower retention), show red down
+                      const isImprovement = currentValue > previousValue;
+                      
+                      return (
+                        <Typography variant="caption" sx={{ 
+                          color: isImprovement ? '#4CAF50' : '#F44336', 
+                          fontSize: '0.5rem' 
+                        }}>
+                          {isImprovement ? '▲' : '▼'}
+                          {Math.abs(growthRate)}% from last year
+                        </Typography>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
             </Box>

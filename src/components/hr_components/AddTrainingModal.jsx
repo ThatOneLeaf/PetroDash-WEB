@@ -9,7 +9,7 @@ import {
   Autocomplete,
   Box,
 } from "@mui/material";
-
+import Overlay from "../../components/modal";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -21,6 +21,10 @@ dayjs.extend(isSameOrAfter);
 
 import api from "../../services/api";
 
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+import ConfirmModal from "./ConfirmModal";
+
 function AddTrainingModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     companyId: "", // get current  company of emp
@@ -30,9 +34,31 @@ function AddTrainingModal({ onClose, onSuccess }) {
     numberOfParticipants: "",
   });
 
+  const summaryData = [
+    { label: "Company ID", value: String(formData.companyId || "N/A") },
+    { label: "Training Name", value: String(formData.trainingName || "N/A") },
+    {
+      label: "Date",
+      value: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : "N/A",
+    },
+    {
+      label: "Training Hours",
+      value: String(formData.trainingHours || "N/A"),
+    },
+    {
+      label: "Number of Participants",
+      value: String(formData.numberOfParticipants || "N/A"),
+    },
+  ];
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     setLoading(false);
@@ -102,22 +128,32 @@ function AddTrainingModal({ onClose, onSuccess }) {
       Number(numberOfParticipants) > 0;
 
     if (!isValidTrainingName) {
-      alert("Training Name is required.");
+      setErrorMessage("Training Name is required.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidDate) {
-      alert("Please select a valid Date.");
+      setErrorMessage("Please select a valid Date.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidTrainingHours) {
-      alert("Training Hours must be a number greater than 0.");
+      setErrorMessage("Training Hours must be a number greater than 0.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidParticipants) {
-      alert("Number of Participants must be a number greater than 0.");
+      setErrorMessage(
+        "Number of Participants must be a number greater than 0."
+      );
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
@@ -132,9 +168,9 @@ function AddTrainingModal({ onClose, onSuccess }) {
         number_of_participants: formData.numberOfParticipants,
       });
 
-      console.log("success  ");
+      setIsConfirmModalOpen(false);
+      setIsSuccessModalOpen(true);
       if (onSuccess) onSuccess();
-      onClose();
 
       setFormData({
         companyId: "", // get current  company of emp
@@ -269,10 +305,47 @@ function AddTrainingModal({ onClose, onSuccess }) {
               backgroundColor: "#256d2f",
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => setIsConfirmModalOpen(true)}
         >
           ADD RECORD
         </Button>
+        {isConfirmModalOpen && (
+          <Overlay onClose={() => setIsConfirmModalOpen(false)}>
+            <ConfirmModal
+              open={isConfirmModalOpen}
+              title={"Confirm Record Addition"}
+              message={"Are you sure you want to add this training record?"}
+              onConfirm={handleSubmit}
+              onCancel={() => setIsConfirmModalOpen(false)}
+              summaryData={summaryData}
+            />
+          </Overlay>
+        )}
+
+        {isErrorModalOpen && (
+          <Overlay onClose={() => setIsErrorModalOpen(false)}>
+            <ErrorModal
+              open={isErrorModalOpen}
+              errorMessage={errorMessage}
+              onClose={() => setIsErrorModalOpen(false)}
+            />
+          </Overlay>
+        )}
+
+        {isSuccessModalOpen && (
+          <Overlay onClose={() => setIsSuccessModalOpen(false)}>
+            <SuccessModal
+              open={isSuccessModalOpen}
+              successMessage={
+                "Your training record has been successfully added to the repository."
+              }
+              onClose={() => {
+                setIsSuccessModalOpen(false);
+                onClose();
+              }}
+            />
+          </Overlay>
+        )}
       </Box>
     </Paper>
   );

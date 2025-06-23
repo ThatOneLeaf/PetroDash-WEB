@@ -129,24 +129,18 @@ const ZoomModal = ({
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers>
+                <DialogContent>
                     <Box
                         ref={chartRef}
                         sx={{
                             width: '100%',
-                            height,
                             overflow: 'hidden',
-                            bgcolor: '#ffffff',
                             position: 'relative',
                             // Ensure fonts are loaded and styles are applied
                             fontFamily: 'inherit',
                             fontSize: 'inherit',
                             // Force hardware acceleration for better rendering
                             transform: 'translateZ(0)',
-                            // Ensure all child elements are properly contained
-                            '& *': {
-                                boxSizing: 'border-box',
-                            }
                         }}
                     >
                         {/* Title inside the image area */}
@@ -156,39 +150,28 @@ const ZoomModal = ({
                                 textAlign: 'center',
                                 fontWeight: 700,
                                 fontSize: 22,
-                                mb: 2,
+                                mb: 1,
                                 mt: 1,
                                 color: '#222',
                                 fontFamily: 'inherit',
                                 letterSpacing: 0.2,
-                                userSelect: 'none',
                             }}
                         >
                             {title}
                         </Box>
-                        {/* Enhanced time overlay */}
+                        {/* Date and time below the title */}
                         <Box
                             data-zoom-modal-time
                             sx={{
-                                position: 'absolute',
-                                top: 12,
-                                right: 16,
-                                background: 'rgba(0,0,0,0.15)',
-                                color: '#fff',
-                                fontSize: 13,
-                                px: 1.5,
-                                py: 0.5,
-                                borderRadius: 2,
-                                zIndex: 1000, // Higher z-index to ensure visibility
-                                pointerEvents: 'none',
+                                width: '100%',
+                                textAlign: 'center',
+                                color: '#555',
+                                fontSize: 14,
+                                mb: 2,
                                 fontFamily: 'inherit',
                                 fontWeight: 400,
                                 letterSpacing: 0.1,
                                 userSelect: 'none',
-                                transition: 'all 0.2s',
-                                // Ensure this element is properly rendered
-                                willChange: 'transform',
-                                transform: 'translateZ(0)',
                             }}
                         >
                             {now.toLocaleString()}
