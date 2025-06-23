@@ -204,13 +204,15 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   const clearAllFilters = () => {
     setCompanyFilter([]);
     setStartDate(null);
+    setGroup("monthly");
     setEndDate(null);
   };
 
   const showClearButton =
     companyFilter.length > 0 ||
     startDate !== null ||
-    endDate !== null;
+    endDate !== null ||
+    group != "monthly";
 
   const [zoomModal, setZoomModal] = useState({
     open: false,
@@ -234,11 +236,12 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     console.log(startDate);
     console.log(endDate);
     console.log(companyFilter);
+    console.log(group);
 
     const fetchHRData = async () => {
       try {
         const params = {};
-        if (group != null) params.grouping = group;
+        if (group != "monthly") params.grouping = group;
         if (companyFilter.length > 0)
           params.company_id = companyFilter.join(",");
         if (startDate != null) params.start_date = startDate;
@@ -347,15 +350,17 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
         );
 
         const colorMap = {};
-        [...monthlyManpowerRes.data, ...monthlyManhourRes.data, 
-          ...incidentCountRes.data, ...companyCountRes.data].
-          forEach(item => {
+        [
+          ...monthlyManpowerRes.data,
+          ...monthlyManhourRes.data,
+          ...incidentCountRes.data,
+          ...companyCountRes.data,
+        ].forEach((item) => {
           if (item.company_name && item.color) {
             colorMap[item.company_name] = item.color;
           }
         });
-      setCompanyColors(colorMap);
-
+        setCompanyColors(colorMap);
       } catch (error) {
         console.error("Failed to fetch HR data:", error);
         // KPIS
@@ -378,7 +383,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     fetchHRData();
   }, [group, companyFilter, startDate, endDate, shouldReload]); // REMOVE POSITION FILTER, ADD START AND END DATE
 
-    const groupby = [
+  const groupby = [
     { label: "Monthly", value: "monthly" },
     { label: "Quarterly", value: "quarterly" },
     { label: "Yearly", value: "yearly" },
@@ -471,7 +476,12 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             {showClearButton && <ClearButton onClick={clearAllFilters} />}
 
             <Box sx={{ flexGrow: 1, minWidth: 10 }} />
-            <SingleSelectDropdown label="Group By" options={groupby} selectedValue={group} onChange={setGroup} />
+            <SingleSelectDropdown
+              label="Group By"
+              options={groupby}
+              selectedValue={group}
+              onChange={setGroup}
+            />
           </Stack>
         </Box>
 
@@ -953,17 +963,19 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       }}
                     >
                       <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={genderDistribution}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="position" />
-                            <YAxis />
-                            <Tooltip itemStyle={{ color: "#000" }} />
-                            <Legend />
-                            <Bar dataKey="Male" fill="#4285F4" />
-                            <Bar dataKey="Female" fill="#EA4335" />
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <Box sx={{ height: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={genderDistribution}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="position" />
+                              <YAxis />
+                              <Tooltip itemStyle={{ color: "#000" }} />
+                              <Legend />
+                              <Bar dataKey="Male" fill="#4285F4" />
+                              <Bar dataKey="Female" fill="#EA4335" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </Box>
                       </Box>
                     </Box>
                   )
@@ -1051,38 +1063,40 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       }}
                     >
                       <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={ageDistribution}
-                              dataKey="count"
-                              nameKey="age_group"
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({ name, percent }) =>
-                                `${name}: ${(percent * 100).toFixed(0)}%`
-                              }
-                              outerRadius="80%"
-                              innerRadius="40%"
-                              fill="#8884d8"
-                              paddingAngle={2}
-                              startAngle={90}
-                              endAngle={450}
-                            >
-                              {ageDistribution.map((entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={COLORS[index % COLORS.length]}
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              formatter={(value, name) => [`${value}`, name]}
-                            />
-                            <Legend iconType="square" />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <Box sx={{ height: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={ageDistribution}
+                                dataKey="count"
+                                nameKey="age_group"
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) =>
+                                  `${name}: ${(percent * 100).toFixed(0)}%`
+                                }
+                                outerRadius="80%"
+                                innerRadius="40%"
+                                fill="#8884d8"
+                                paddingAngle={2}
+                                startAngle={90}
+                                endAngle={450}
+                              >
+                                {ageDistribution.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={COLORS[index % COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                formatter={(value, name) => [`${value}`, name]}
+                              />
+                              <Legend iconType="square" />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </Box>
                       </Box>
                     </Box>
                   )
@@ -1191,24 +1205,26 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       }}
                     >
                       <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={employeeCountByCompany}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="company" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="count" name="Employee Count">
-                              {employeeCountByCompany.map((entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={companyColors[entry.company] || COLORS[index % COLORS.length]}
-                                  className="recharts-sector"
-                                />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <Box sx={{ height: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={employeeCountByCompany}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="company" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="count" name="Employee Count">
+                                {employeeCountByCompany.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={COLORS[index % COLORS.length]}
+                                    className="recharts-sector"
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </Box>
                       </Box>
                     </Box>
                   )
@@ -1262,7 +1278,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                         {employeeCountByCompany.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={companyColors[entry.company] || COLORS[index % COLORS.length]}
+                            fill={
+                              companyColors[entry.company] ||
+                              COLORS[index % COLORS.length]
+                            }
                             className="recharts-sector"
                           />
                         ))}

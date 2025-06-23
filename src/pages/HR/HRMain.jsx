@@ -270,7 +270,14 @@ function HRMain() {
   //create api for export
   const exportToExcel = async () => {
     try {
-      const response = await api.post("hr/export_excel", filteredExportData, {
+      const dataToExport =
+        selectedRowIds.length > 0
+          ? filteredExportData.filter((row) =>
+              selectedRowIds.includes(row[idKey])
+            )
+          : filteredExportData;
+
+      const response = await api.post("hr/export_excel", dataToExport, {
         responseType: "blob",
       });
 
