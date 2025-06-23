@@ -115,7 +115,6 @@ const ZoomModal = ({
         <>
             <Dialog open={open} onClose={onClose} maxWidth={maxWidth} fullWidth>
                 <DialogTitle sx={{ pr: 6 }}>
-                    {title}
                     <IconButton
                         aria-label="close"
                         onClick={onClose}
@@ -150,6 +149,23 @@ const ZoomModal = ({
                             }
                         }}
                     >
+                        {/* Title inside the image area */}
+                        <Box
+                            sx={{
+                                width: '100%',
+                                textAlign: 'center',
+                                fontWeight: 700,
+                                fontSize: 22,
+                                mb: 2,
+                                mt: 1,
+                                color: '#222',
+                                fontFamily: 'inherit',
+                                letterSpacing: 0.2,
+                                userSelect: 'none',
+                            }}
+                        >
+                            {title}
+                        </Box>
                         {/* Enhanced time overlay */}
                         <Box
                             data-zoom-modal-time

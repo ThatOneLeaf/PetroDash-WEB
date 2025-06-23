@@ -22,6 +22,7 @@ import Sidebar from '../../components/Sidebar';
 import MultiSelectWithChips from '../../components/DashboardComponents/MultiSelectDropdown'; // Import the component
 import SingleSelectDropdown from '../../components/DashboardComponents/SingleSelectDropdown';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import StyledSelect from "../../components/DashboardComponents/StyledSelect";
 import ZoomModal from "../../components/DashboardComponents/ZoomModal";
 import { IconButton } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
@@ -309,12 +310,6 @@ function EnvironmentWasteDash() {
         setActiveMetrics([]);
         setActiveUnits([]);
         break;
-    }
-    
-    // Fix the year range setting to avoid accessing undefined arrays
-    if (activeYears && activeYears.length > 0) {
-      setFromYear(activeYears[0]);
-      setToYear(activeYears[activeYears.length - 1]);
     }
   }, [
     activeTab,
@@ -1693,8 +1688,8 @@ function EnvironmentWasteDash() {
   const clearAllFilters = () => {
     setCompanyId([]);
     setQuarter([]);
-    setFromYear(activeYears[0]);
-    setToYear(activeYears[activeYears.length - 1]);
+    setFromYear('');
+    setToYear('');
     setWasteType([]);
     setMetrics([]);
     // Reset to first available unit instead of hardcoded 'Kilogram'
@@ -1964,7 +1959,7 @@ function EnvironmentWasteDash() {
               alignItems: 'center',
               gap: '8px',
               cursor: 'pointer',
-              fontSize: '13px',
+              fontSize: '18px',
               fontWeight: '700',
               transition: 'background-color 0.2s ease',
               boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
@@ -1972,7 +1967,7 @@ function EnvironmentWasteDash() {
             onMouseOver={(e) => e.target.style.backgroundColor = '#115293'}
             onMouseOut={(e) => e.target.style.backgroundColor = '#1976d2'}
           >
-            <RefreshIcon style={{ fontSize: '16px' }} />
+            <RefreshIcon style={{ fontSize: '30px' }} />
             Refresh
           </button>
         </div>
@@ -2092,26 +2087,37 @@ function EnvironmentWasteDash() {
 
           {/* Year Range Filters (keep as single select) */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <SingleSelectDropdown
-              options={activeYears.map(year => ({ value: year, label: year.toString() }))}
-              selectedValue={fromYear}
+            <StyledSelect
+              value={fromYear}
               onChange={(value) => setFromYear(value)}
+              options={activeYears.map(year => ({ value: year, label: year.toString() }))}
+              placeholder="From Year"
+              style={{ minWidth: '85px', width: 'auto', maxWidth: '120px' }}
             />
-
-            <span style={{ color: '#64748b', fontSize: '12px', fontWeight: '500' }}>to</span>
-
-            <SingleSelectDropdown
-              options={activeYears.filter(year => !fromYear || year >= parseInt(fromYear)).map(year => ({ value: year, label: year.toString() }))}
-              selectedValue={toYear}
+            <span style={{
+              color: '#64748b',
+              fontSize: '12px',
+              fontWeight: '500'
+            }}>
+              to
+            </span>
+            <StyledSelect
+              value={toYear}
               onChange={(value) => setToYear(value)}
+              options={activeYears
+                .filter(year => !fromYear || year >= parseInt(fromYear))
+                .map(year => ({ value: year, label: year.toString() }))
+              }
+              placeholder="To Year"
+              style={{ minWidth: '85px', width: 'auto', maxWidth: '120px' }}
             />
           </div>
 
           {/* Clear All Filters Button - Updated condition */}
           {((Array.isArray(companyId) && companyId.length > 0) || 
             (Array.isArray(quarter) && quarter.length > 0) || 
-            (fromYear !== (activeYears[0] || '')) || 
-            (toYear !== (activeYears[activeYears.length - 1] || '')) || 
+            (fromYear) || 
+            (toYear) || 
             (Array.isArray(wasteType) && wasteType.length > 0) || 
             (Array.isArray(metricsType) && metricsType.length > 0) || 
             (unit !== 'Kilogram')) && (
