@@ -90,6 +90,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [group, setGroup] = useState("monthly");
+  const [companyColors, setCompanyColors] = useState({});
 
   const clearAllFilters = () => {
     setCompanyFilter([]);
@@ -179,6 +180,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           companyCountRes.data.map((item) => ({
             company: item.company_name,
             count: item.num_employees,
+            color: item.color,
           }))
         );
 
@@ -203,6 +205,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             year: item.year,
             month_name: item.month_name,
             incidents: parseInt(item.incidents),
+            incident_title: item.incident_title,
+            color: item.color,
           }))
         );
 
@@ -212,6 +216,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             year: item.year,
             month_name: item.month_name,
             manhours: parseInt(item.manhours),
+            color: item.color,
           }))
         );
 
@@ -223,8 +228,22 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             total_monthly_safety_manpower: parseInt(
               item.total_monthly_safety_manpower
             ),
+            color: item.color,
           }))
         );
+
+        const colorMap = {};
+        [
+          ...monthlyManpowerRes.data,
+          ...monthlyManhourRes.data,
+          ...incidentCountRes.data,
+          ...companyCountRes.data,
+        ].forEach((item) => {
+          if (item.company_name && item.color) {
+            colorMap[item.company_name] = item.color;
+          }
+        });
+        setCompanyColors(colorMap);
       } catch (error) {
         console.error("Failed to fetch HR data:", error);
         // KPIS
@@ -291,23 +310,23 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   ];
 
   const getIncidentTypes = (data) => [
-    ...new Set(data.map((i) => i.incident_type)),
+    ...new Set(data.map((i) => i.incident_title)),
   ];
 
   const transformIncidentData = (data) => {
     const months = [
-      "January",
-      "February",
-      "March",
-      "April",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
       "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
     const types = getIncidentTypes(data);
 
@@ -315,8 +334,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
       const row = { month };
       types.forEach((type) => {
         row[type] = data
-          .filter((i) => i.month_name === month && i.incident_type === type)
-          .reduce((sum, i) => sum + i.incident_count, 0);
+          .filter((i) => i.month_name === month && i.incident_title === type)
+          .reduce((sum, i) => sum + (i.incidents || 0), 0);
       });
       return row;
     });
@@ -607,18 +626,18 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   <LineChart
                     data={(() => {
                       const months = [
-                        "January",
-                        "February",
-                        "March",
-                        "April",
+                        "Jan",
+                        "Feb",
+                        "Mar",
+                        "Apr",
                         "May",
-                        "June",
-                        "July",
-                        "August",
-                        "September",
-                        "October",
-                        "November",
-                        "December",
+                        "Jun",
+                        "Jul",
+                        "Aug",
+                        "Sep",
+                        "Oct",
+                        "Nov",
+                        "Dec",
                       ];
                       const companies = [
                         ...new Set(
@@ -665,13 +684,19 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       ...new Set(
                         monthlyManpower.map((item) => item.company_name)
                       ),
-                    ].map((company, idx) => (
+                    ].map((company) => (
                       <Line
                         key={company}
                         type="monotone"
                         dataKey={company}
-                        stroke={COLORS[idx % COLORS.length]}
-                        dot={{ fill: COLORS[idx % COLORS.length] }}
+                        stroke={
+                          companyColors[company] || COLORS[idx % COLORS.length]
+                        }
+                        dot={{
+                          fill:
+                            companyColors[company] ||
+                            COLORS[idx % COLORS.length],
+                        }}
                         name={company}
                         strokeWidth={4}
                       />
@@ -842,18 +867,18 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   <LineChart
                     data={(() => {
                       const months = [
-                        "January",
-                        "February",
-                        "March",
-                        "April",
+                        "Jan",
+                        "Feb",
+                        "Mar",
+                        "Apr",
                         "May",
-                        "June",
-                        "July",
-                        "August",
-                        "September",
-                        "October",
-                        "November",
-                        "December",
+                        "Jun",
+                        "Jul",
+                        "Aug",
+                        "Sep",
+                        "Oct",
+                        "Nov",
+                        "Dec",
                       ];
                       const companies = [
                         ...new Set(
@@ -902,13 +927,19 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                       ...new Set(
                         monthlyManhour.map((item) => item.company_name)
                       ),
-                    ].map((company, idx) => (
+                    ].map((company) => (
                       <Line
                         key={company}
                         type="monotone"
                         dataKey={company}
-                        stroke={COLORS[idx % COLORS.length]}
-                        dot={{ fill: COLORS[idx % COLORS.length] }}
+                        stroke={
+                          companyColors[company] || COLORS[idx % COLORS.length]
+                        }
+                        dot={{
+                          fill:
+                            companyColors[company] ||
+                            COLORS[idx % COLORS.length],
+                        }}
                         name={company}
                         strokeWidth={4}
                       />
@@ -1408,7 +1439,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                         {employeeCountByCompany.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
+                            fill={
+                              companyColors[entry.company] ||
+                              COLORS[index % COLORS.length]
+                            }
                             className="recharts-sector"
                           />
                         ))}
