@@ -195,25 +195,35 @@ function Energy() {
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
-  const filteredData = data.filter((item) => {
-    const itemDate = dayjs(item.date);
-    const searchMatch =
-      searchTerm === "" ||
-      Object.values(item).some(val =>
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  const filteredData = data
+    .filter((item) => {
+      // Fixed filters by role
+      if (role === 'R05') {
+        if (item.companyId !== companyId || item.powerPlant !== powerPlantId) return false;
+      } else if (role === 'R04') {
+        if (item.companyId !== companyId) return false;
+      }
+      return true;
+    })
+    .filter((item) => {
+      const itemDate = dayjs(item.date);
+      const searchMatch =
+        searchTerm === "" ||
+        Object.values(item).some(val =>
+          String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
-    if (!searchMatch) return false;
-    if (startDate && itemDate.isBefore(dayjs(startDate), "day")) return false;
-    if (endDate && itemDate.isAfter(dayjs(endDate), "day")) return false;
-    if (filters.company && item.companyName !== filters.company) return false;
-    if (filters.powerPlant && item.powerPlant !== filters.powerPlant) return false;
-    if (filters.generationSource && item.generationSource !== filters.generationSource) return false;
-    if (filters.province && item.province !== filters.province) return false;
-    if (filters.status && item.status !== filters.status) return false;
+      if (!searchMatch) return false;
+      if (startDate && itemDate.isBefore(dayjs(startDate), "day")) return false;
+      if (endDate && itemDate.isAfter(dayjs(endDate), "day")) return false;
+      if (filters.company && item.companyName !== filters.company) return false;
+      if (filters.powerPlant && item.powerPlant !== filters.powerPlant) return false;
+      if (filters.generationSource && item.generationSource !== filters.generationSource) return false;
+      if (filters.province && item.province !== filters.province) return false;
+      if (filters.status && item.status !== filters.status) return false;
 
-    return true;
-  });
+      return true;
+    });
 
   const paginatedData = filteredData.slice(
     (page - 1) * rowsPerPage,
@@ -516,6 +526,9 @@ function Energy() {
           {/* Show Export, Approve, and Revise when rows are selected and user can approve/export */}
           {selectedRowIds.length > 0 && (
             <>
+              <Typography sx={{ fontWeight: 600, color: '#182959', fontSize: '1rem', mr: 2 }}>
+                {selectedRowIds.length} record{selectedRowIds.length > 1 ? 's' : ''} selected
+              </Typography>
               {canExport && (
                 <ButtonComp
                   label="Export Selected"
