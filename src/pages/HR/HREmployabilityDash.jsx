@@ -94,8 +94,12 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
 
   // Helper: Get x-axis label based on group
   function getXAxisLabel(item, group) {
-    if (group === "monthly") return item.month_name ? `${item.month_name} ${item.year}` : `${item.year}`;
-    if (group === "quarterly") return item.quarter ? `${item.quarter} ${item.year}` : `${item.year}`;
+    if (group === "monthly")
+      return item.month_name
+        ? `${item.month_name} ${item.year}`
+        : `${item.year}`;
+    if (group === "quarterly")
+      return item.quarter ? `${item.quarter} ${item.year}` : `${item.year}`;
     return `${item.year}`;
   }
 
@@ -105,15 +109,27 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     let labels;
     if (group === "monthly") {
       const months = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
       ];
       labels = [
         ...new Set(
           data
             .sort((a, b) => {
               if (a.year !== b.year) return a.year - b.year;
-              return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+              return (
+                months.indexOf(a.month_name) - months.indexOf(b.month_name)
+              );
             })
             .map((item) => getXAxisLabel(item, group))
         ),
@@ -157,15 +173,27 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     let labels;
     if (group === "monthly") {
       const months = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
       ];
       labels = [
         ...new Set(
           data
             .sort((a, b) => {
               if (a.year !== b.year) return a.year - b.year;
-              return months.indexOf(a.month_name) - months.indexOf(b.month_name);
+              return (
+                months.indexOf(a.month_name) - months.indexOf(b.month_name)
+              );
             })
             .map((item) => getXAxisLabel(item, group))
         ),
@@ -186,26 +214,25 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
       labels = [...new Set(data.map((item) => getXAxisLabel(item, group)))];
     }
 
-  return labels.map((label) => {
-    const row = { label };
-    types.forEach((type) => {
-      row[type] = data
-        .filter(
-          (i) =>
-            getXAxisLabel(i, group) === label &&
-            i.incident_title === type
-        )
-        .reduce((sum, i) => sum + (i.incidents || 0), 0);
+    return labels.map((label) => {
+      const row = { label };
+      types.forEach((type) => {
+        row[type] = data
+          .filter(
+            (i) =>
+              getXAxisLabel(i, group) === label && i.incident_title === type
+          )
+          .reduce((sum, i) => sum + (i.incidents || 0), 0);
+      });
+      return row;
     });
-    return row;
-  });
-}
+  }
 
   const clearAllFilters = () => {
     setCompanyFilter([]);
     setStartDate(null);
-    setGroup("monthly");
     setEndDate(null);
+    setGroup("monthly");
   };
 
   const showClearButton =
@@ -236,12 +263,11 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     console.log(startDate);
     console.log(endDate);
     console.log(companyFilter);
-    console.log(group);
 
     const fetchHRData = async () => {
       try {
         const params = {};
-        if (group != "monthly") params.grouping = group;
+        if (group != null) params.grouping = group;
         if (companyFilter.length > 0)
           params.company_id = companyFilter.join(",");
         if (startDate != null) params.start_date = startDate;
@@ -280,7 +306,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
 
         setTotalManpower(totalManpowerRes.data[0]["total_safety_manpower"]);
         setTotalManhour(totalManhoursRes.data[0]["total_safety_manhours"]);
-        setTotalTrainingHours(totalTrainingHoursRes.data[0]["total_training_hours"]);
+        setTotalTrainingHours(
+          totalTrainingHoursRes.data[0]["total_training_hours"]
+        );
         setNoLostTime(noLostTimeRes.data[0]["manhours_since_last_lti"]);
 
         setEmployeeCountByCompany(
@@ -315,8 +343,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               incident_title: item.incident_title,
               color: item.color,
             };
-            if (group === "monthly" && item.month_name) base.month_name = item.month_name;
-            if (group === "quarterly" && item.quarter) base.quarter = item.quarter;
+            if (group === "monthly" && item.month_name)
+              base.month_name = item.month_name;
+            if (group === "quarterly" && item.quarter)
+              base.quarter = item.quarter;
             return base;
           })
         );
@@ -329,8 +359,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               manhours: parseInt(item.manhours),
               color: item.color,
             };
-            if (group === "monthly" && item.month_name) base.month_name = item.month_name;
-            if (group === "quarterly" && item.quarter) base.quarter = item.quarter;
+            if (group === "monthly" && item.month_name)
+              base.month_name = item.month_name;
+            if (group === "quarterly" && item.quarter)
+              base.quarter = item.quarter;
             return base;
           })
         );
@@ -340,11 +372,15 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             const base = {
               company_name: item.company_name,
               year: item.year,
-              total_monthly_safety_manpower: parseInt(item.total_monthly_safety_manpower),
+              total_monthly_safety_manpower: parseInt(
+                item.total_monthly_safety_manpower
+              ),
               color: item.color,
             };
-            if (group === "monthly" && item.month_name) base.month_name = item.month_name;
-            if (group === "quarterly" && item.quarter) base.quarter = item.quarter;
+            if (group === "monthly" && item.month_name)
+              base.month_name = item.month_name;
+            if (group === "quarterly" && item.quarter)
+              base.quarter = item.quarter;
             return base;
           })
         );
@@ -579,31 +615,54 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     }}
                   >
                     <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={transformCompanySeries(monthlyManpower, group, "total_monthly_safety_manpower")}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="label" angle={0} textAnchor="middle" height={40} />
-                          <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
-                          <Tooltip />
-                          <Legend />
-                          {[...new Set(monthlyManpower.map((item) => item.company_name))].map(
-                            (company, idx) => (
+                      <Box sx={{ height: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={transformCompanySeries(
+                              monthlyManpower,
+                              group,
+                              "total_monthly_safety_manpower"
+                            )}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              dataKey="label"
+                              angle={0}
+                              textAnchor="middle"
+                              height={40}
+                            />
+                            <YAxis
+                              allowDecimals={false}
+                              domain={[0, "dataMax + 10"]}
+                            />
+                            <Tooltip />
+                            <Legend />
+                            {[
+                              ...new Set(
+                                monthlyManpower.map((item) => item.company_name)
+                              ),
+                            ].map((company, idx) => (
                               <Line
                                 key={company}
                                 type="monotone"
                                 dataKey={company}
-                                stroke={companyColors[company] || COLORS[idx % COLORS.length]}
-                                dot={{ fill: companyColors[company] || COLORS[idx % COLORS.length] }}
+                                stroke={
+                                  companyColors[company] ||
+                                  COLORS[idx % COLORS.length]
+                                }
+                                dot={{
+                                  fill:
+                                    companyColors[company] ||
+                                    COLORS[idx % COLORS.length],
+                                }}
                                 name={company}
                                 strokeWidth={4}
                               />
-                            )
-                          )}
-                        </LineChart>
-                      </ResponsiveContainer>
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </Box>
                     </Box>
                   </Box>
                 )
@@ -647,27 +706,44 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={transformCompanySeries(monthlyManpower, group, "total_monthly_safety_manpower")}
+                    data={transformCompanySeries(
+                      monthlyManpower,
+                      group,
+                      "total_monthly_safety_manpower"
+                    )}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" angle={0} textAnchor="middle" height={40} />
+                    <XAxis
+                      dataKey="label"
+                      angle={0}
+                      textAnchor="middle"
+                      height={40}
+                    />
                     <YAxis allowDecimals={false} domain={[0, "dataMax + 10"]} />
                     <Tooltip />
                     <Legend />
-                    {[...new Set(monthlyManpower.map((item) => item.company_name))].map(
-                      (company, idx) => (
-                        <Line
-                          key={company}
-                          type="monotone"
-                          dataKey={company}
-                          stroke={companyColors[company] || COLORS[idx % COLORS.length]}
-                          dot={{ fill: companyColors[company] || COLORS[idx % COLORS.length] }}
-                          name={company}
-                          strokeWidth={4}
-                        />
-                      )
-                    )}
+                    {[
+                      ...new Set(
+                        monthlyManpower.map((item) => item.company_name)
+                      ),
+                    ].map((company, idx) => (
+                      <Line
+                        key={company}
+                        type="monotone"
+                        dataKey={company}
+                        stroke={
+                          companyColors[company] || COLORS[idx % COLORS.length]
+                        }
+                        dot={{
+                          fill:
+                            companyColors[company] ||
+                            COLORS[idx % COLORS.length],
+                        }}
+                        name={company}
+                        strokeWidth={4}
+                      />
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
@@ -705,31 +781,54 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     }}
                   >
                     <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={transformCompanySeries(monthlyManhour, group, "manhours")}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="label" angle={0} textAnchor="middle" height={40} />
-                          <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
-                          <Tooltip />
-                          <Legend />
-                          {[...new Set(monthlyManhour.map((item) => item.company_name))].map(
-                            (company, idx) => (
+                      <Box sx={{ height: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={transformCompanySeries(
+                              monthlyManhour,
+                              group,
+                              "manhours"
+                            )}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              dataKey="label"
+                              angle={0}
+                              textAnchor="middle"
+                              height={40}
+                            />
+                            <YAxis
+                              allowDecimals={false}
+                              domain={[0, "dataMax + 10000"]}
+                            />
+                            <Tooltip />
+                            <Legend />
+                            {[
+                              ...new Set(
+                                monthlyManhour.map((item) => item.company_name)
+                              ),
+                            ].map((company, idx) => (
                               <Line
                                 key={company}
                                 type="monotone"
                                 dataKey={company}
-                                stroke={companyColors[company] || COLORS[idx % COLORS.length]}
-                                dot={{ fill: companyColors[company] || COLORS[idx % COLORS.length] }}
+                                stroke={
+                                  companyColors[company] ||
+                                  COLORS[idx % COLORS.length]
+                                }
+                                dot={{
+                                  fill:
+                                    companyColors[company] ||
+                                    COLORS[idx % COLORS.length],
+                                }}
                                 name={company}
                                 strokeWidth={4}
                               />
-                            )
-                          )}
-                        </LineChart>
-                      </ResponsiveContainer>
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </Box>
                     </Box>
                   </Box>
                 )
@@ -773,27 +872,47 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={transformCompanySeries(monthlyManhour, group, "manhours")}
+                    data={transformCompanySeries(
+                      monthlyManhour,
+                      group,
+                      "manhours"
+                    )}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" angle={0} textAnchor="middle" height={40} />
-                    <YAxis allowDecimals={false} domain={[0, "dataMax + 10000"]} />
+                    <XAxis
+                      dataKey="label"
+                      angle={0}
+                      textAnchor="middle"
+                      height={40}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      domain={[0, "dataMax + 10000"]}
+                    />
                     <Tooltip />
                     <Legend />
-                    {[...new Set(monthlyManhour.map((item) => item.company_name))].map(
-                      (company, idx) => (
-                        <Line
-                          key={company}
-                          type="monotone"
-                          dataKey={company}
-                          stroke={companyColors[company] || COLORS[idx % COLORS.length]}
-                          dot={{ fill: companyColors[company] || COLORS[idx % COLORS.length] }}
-                          name={company}
-                          strokeWidth={4}
-                        />
-                      )
-                    )}
+                    {[
+                      ...new Set(
+                        monthlyManhour.map((item) => item.company_name)
+                      ),
+                    ].map((company, idx) => (
+                      <Line
+                        key={company}
+                        type="monotone"
+                        dataKey={company}
+                        stroke={
+                          companyColors[company] || COLORS[idx % COLORS.length]
+                        }
+                        dot={{
+                          fill:
+                            companyColors[company] ||
+                            COLORS[idx % COLORS.length],
+                        }}
+                        name={company}
+                        strokeWidth={4}
+                      />
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
@@ -827,19 +946,31 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     flexDirection: "column",
                   }}
                 >
-                  <Box sx={{ flex: 1, minHeight: 400 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={transformIncidentData(incidentCount, group)}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" angle={0} textAnchor="middle" height={40} />
-                        <YAxis allowDecimals={false} domain={[0, "dataMax + 2"]} />
-                        <Tooltip />
-                        <Legend />
-                        {[...new Set(incidentCount.map((i) => i.incident_title))].map(
-                          (type, idx) => (
+                  <Box sx={{ flex: 1, minHeight: 0 }}>
+                    <Box sx={{ height: 400 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={transformIncidentData(incidentCount, group)}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="label"
+                            angle={0}
+                            textAnchor="middle"
+                            height={40}
+                          />
+                          <YAxis
+                            allowDecimals={false}
+                            domain={[0, "dataMax + 2"]}
+                          />
+                          <Tooltip />
+                          <Legend />
+                          {[
+                            ...new Set(
+                              incidentCount.map((i) => i.incident_title)
+                            ),
+                          ].map((type, idx) => (
                             <Bar
                               key={type}
                               dataKey={type}
@@ -848,10 +979,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                               name={type}
                               barSize={12}
                             />
-                          )
-                        )}
-                      </BarChart>
-                    </ResponsiveContainer>
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Box>
                   </Box>
                 </Box>
               ))
@@ -898,22 +1029,27 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" angle={0} textAnchor="middle" height={40} />
+                    <XAxis
+                      dataKey="label"
+                      angle={0}
+                      textAnchor="middle"
+                      height={40}
+                    />
                     <YAxis allowDecimals={false} domain={[0, "dataMax + 2"]} />
                     <Tooltip />
                     <Legend />
-                    {[...new Set(incidentCount.map((i) => i.incident_title))].map(
-                      (type, idx) => (
-                        <Bar
-                          key={type}
-                          dataKey={type}
-                          stackId="a"
-                          fill={barColors[idx % barColors.length]}
-                          name={type}
-                          barSize={12}
-                        />
-                      )
-                    )}
+                    {[
+                      ...new Set(incidentCount.map((i) => i.incident_title)),
+                    ].map((type, idx) => (
+                      <Bar
+                        key={type}
+                        dataKey={type}
+                        stackId="a"
+                        fill={barColors[idx % barColors.length]}
+                        name={type}
+                        barSize={12}
+                      />
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
@@ -1217,7 +1353,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                                 {employeeCountByCompany.map((entry, index) => (
                                   <Cell
                                     key={`cell-${index}`}
-                                    fill={COLORS[index % COLORS.length]}
+                                    fill={
+                                      companyColors[entry.company] ||
+                                      COLORS[index % COLORS.length]
+                                    }
                                     className="recharts-sector"
                                   />
                                 ))}
