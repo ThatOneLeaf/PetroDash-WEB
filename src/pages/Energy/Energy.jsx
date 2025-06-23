@@ -225,7 +225,25 @@ function Energy() {
       return true;
     });
 
-  const paginatedData = filteredData.slice(
+  // Sort the entire filteredData before paginating
+  const sortedData = [...filteredData].sort((a, b) => {
+    const { key, direction } = sortConfig;
+    if (key === 'date') {
+      const dateA = dayjs(a.date);
+      const dateB = dayjs(b.date);
+      if (dateA.isBefore(dateB)) return direction === 'asc' ? -1 : 1;
+      if (dateA.isAfter(dateB)) return direction === 'asc' ? 1 : -1;
+      return 0;
+    } else {
+      // Generic string/number sort
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    }
+  });
+
+  // Only paginate after sorting the full data
+  const paginatedData = sortedData.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
@@ -680,9 +698,8 @@ function Energy() {
                   setSelectedRowIds(selectedRows);
                 }, 0);
               }}
-
               columns={columns}
-              rows={paginatedData}
+              rows={sortedData}
               filteredData={filteredData}
               rowsPerPage={rowsPerPage}
               onSort={handleSort}
@@ -695,6 +712,7 @@ function Energy() {
                  <LaunchIcon />
                 </IconButton>
               )}
+              page={page}
             />
           )}
 
