@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
+import LaunchIcon from '@mui/icons-material/Launch';
 import api from '../../services/api';
 import exportData from '../../services/export';
 import Overlay from '../../components/modal';
@@ -446,8 +446,12 @@ export default function EconomicRepository() {
         setSelectedEditRecord(row);
         setIsEditModalOpen(true);
       }}
+      sx={{ 
+        margin: '0 8px',
+        padding: '8px'
+      }}
     >
-      <EditIcon />
+      <LaunchIcon />
     </IconButton>
   );
 
@@ -778,17 +782,30 @@ export default function EconomicRepository() {
           </Box>
 
           {/* Table */}
-          <Table
-            columns={getColumns()}
-            rows={processedData}
-            page={page}
-            rowsPerPage={rowsPerPage}
-            onPageChange={handlePageChange}
-            initialSort={{ key: 'year', direction: 'desc' }}
-            actions={renderActions}
-            emptyMessage="No data available."
-            selectable={false}
-          />
+          <Box sx={{
+            width: '100%',
+            overflowX: 'auto',
+            '& .MuiTableContainer-root': {
+              minWidth: '1200px'
+            },
+            '& .MuiTableCell-root:last-child': {
+              width: '120px !important',
+              minWidth: '120px !important',
+              maxWidth: '120px !important'
+            }
+          }}>
+            <Table
+              columns={getColumns()}
+              rows={processedData}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              onPageChange={handlePageChange}
+              initialSort={{ key: 'year', direction: 'desc' }}
+              actions={renderActions}
+              emptyMessage="No data available."
+              selectable={false}
+            />
+          </Box>
 
           {/* Pagination */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>

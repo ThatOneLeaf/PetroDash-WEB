@@ -26,18 +26,91 @@ import {
 } from '@mui/material';
 
 // Color schemes for charts
-const COLORS = ['#182959', '#2B8C37', '#FF8042', '#FFBB28', '#8884D8', '#82CA9D', '#FFC658'];
+const COLORS = ['#3B82F6', '#06B6D4', '#10B981', '#8B5CF6', '#6366F1', '#0EA5E9', '#14B8A6'];
+
+// Custom label function for pie charts with smart positioning
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name, index }) => {
+  const RADIAN = Math.PI / 180;
+  
+  // Calculate label position with more spacing
+  const radius = innerRadius + (outerRadius - innerRadius) * 1.8;
+  let x = cx + radius * Math.cos(-midAngle * RADIAN);
+  let y = cy + radius * Math.sin(-midAngle * RADIAN);
+  
+  // Adjust position based on quadrant to avoid overlap
+  const quadrant = Math.floor(((midAngle + 90) % 360) / 90);
+  switch (quadrant) {
+    case 0: // Top right
+      y -= 5;
+      break;
+    case 1: // Bottom right
+      y += 5;
+      break;
+    case 2: // Bottom left
+      y += 5;
+      break;
+    case 3: // Top left
+      y -= 5;
+      break;
+  }
+  
+  // Text wrapping with shorter lines for better spacing
+  const words = name.split(' ');
+  const lines = [];
+  const maxCharsPerLine = 10; // Shorter lines to reduce overlap
+  
+  let currentLine = '';
+  words.forEach(word => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= maxCharsPerLine) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+  
+  // Limit to maximum 2 lines
+  if (lines.length > 2) {
+    lines[1] = lines.slice(1).join(' ');
+    lines.splice(2);
+  }
+  
+  const percentage = `${(percent * 100).toFixed(0)}%`;
+  
+  return (
+    <text 
+      x={x} 
+      y={y} 
+      fill="#1F2937" 
+      textAnchor={x > cx ? 'start' : 'end'} 
+      dominantBaseline="central"
+      fontSize="10px"
+      fontWeight="600"
+    >
+      {lines.map((line, lineIndex) => (
+        <tspan key={lineIndex} x={x} dy={lineIndex === 0 ? -6 : 12}>
+          {line}
+        </tspan>
+      ))}
+      <tspan x={x} dy="12" fontWeight="bold" fontSize="11px">
+        {percentage}
+      </tspan>
+    </text>
+  );
+};
 
 const DISTRIBUTION_COLORS = {
-  'Government Payments': '#182959',
-  'Local Supplier Spending': '#2B8C37',
-  'Foreign Supplier Spending': '#FF8042',
-  'Employee Wages & Benefits': '#FFBB28',
-  'Community Investments': '#8884D8',
-  'Capital Provider Payments': '#82CA9D',
-  'Depreciation': '#FFC658',
-  'Depletion': '#FF6699',
-  'Other Expenditures': '#999999'
+  'Government Payments': '#3B82F6',
+  'Local Supplier Spending': '#06B6D4',
+  'Foreign Supplier Spending': '#10B981',
+  'Employee Wages & Benefits': '#8B5CF6',
+  'Community Investments': '#6366F1',
+  'Capital Provider Payments': '#0EA5E9',
+  'Depreciation': '#14B8A6',
+  'Depletion': '#1D4ED8',
+  'Other Expenditures': '#0891B2'
 };
 
 // Reusable chart container with hover effects and click handler
@@ -251,12 +324,11 @@ export const GeneratedPieChart = ({ generatedDetails }) => {
               data={pieData}
               cx="50%"
               cy="50%"
-              outerRadius={70}
+              outerRadius={85}
               fill="#8884d8"
               dataKey="value"
-              label={({ name, percent }) => `${name.split(' ')[0]}: ${(percent * 100).toFixed(0)}%`}
-              labelLine={false}
-              style={{ fontSize: '10px' }}
+              label={renderCustomLabel}
+              labelLine={true}
             >
               {pieData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -302,10 +374,7 @@ export const CompanyBarChart = ({ companyDistribution }) => {
     }
     
     const sortedData = filteredData.sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
-    const chartData = sortedData.slice(0, 5).map(item => ({
-      ...item,
-      shortName: item.companyName.split(' ')[0]
-    }));
+    const chartData = sortedData.slice(0, 5);
     
     return (
       <BarChart 
@@ -314,10 +383,10 @@ export const CompanyBarChart = ({ companyDistribution }) => {
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 
-          dataKey="shortName" 
-          tick={{ fontSize: 9 }}
-          angle={-30}
-          textAnchor="end"
+          dataKey="companyId" 
+          tick={{ fontSize: 10 }}
+          angle={0}
+          textAnchor="middle"
           height={40}
           interval={0}
         />
@@ -327,12 +396,12 @@ export const CompanyBarChart = ({ companyDistribution }) => {
           label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft', style: { fontSize: '10px' } }}
         />
         <Tooltip 
-          formatter={(value, name) => [
-            `${value.toFixed(1)}%`, 
-            'Percentage of Total Distribution'
+          formatter={(value, name, props) => [
+            `₱ ${props.payload.totalDistributed.toLocaleString()}`, 
+            'Total Distributed Value'
           ]}
           labelFormatter={(label) => {
-            const fullCompany = chartData.find(item => item.shortName === label);
+            const fullCompany = chartData.find(item => item.companyId === label);
             return `Company: ${fullCompany ? fullCompany.companyName : label}`;
           }}
         />
@@ -378,12 +447,11 @@ export const DistributionPieChart = ({ distributedDetails, pieChartData }) => {
               data={pieChartData}
               cx="50%"
               cy="50%"
-              outerRadius={70}
+              outerRadius={85}
               fill="#8884d8"
               dataKey="value"
-              label={({ name, percent }) => `${name.split(' ')[0]}: ${(percent * 100).toFixed(0)}%`}
-              labelLine={false}
-              style={{ fontSize: '10px' }}
+              label={renderCustomLabel}
+              labelLine={true}
             >
               {pieChartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={DISTRIBUTION_COLORS[entry.name] || COLORS[index % COLORS.length]} />
@@ -551,7 +619,7 @@ export const generateModalContent = {
             data={pieData}
             cx="50%"
             cy="50%"
-            outerRadius={120}
+            outerRadius={140}
             fill="#8884d8"
             dataKey="value"
             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
@@ -608,11 +676,11 @@ export const generateModalContent = {
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
-              dataKey="companyName" 
+              dataKey="companyId" 
               tick={{ fontSize: 12 }}
-              angle={-45}
-              textAnchor="end"
-              height={100}
+              angle={0}
+              textAnchor="middle"
+              height={60}
               interval={0}
             />
             <YAxis 
@@ -621,11 +689,14 @@ export const generateModalContent = {
               label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }}
             />
             <Tooltip 
-              formatter={(value, name) => [
-                `${value.toFixed(1)}%`, 
-                'Percentage of Total Distribution'
+              formatter={(value, name, props) => [
+                `₱ ${props.payload.totalDistributed.toLocaleString()}`, 
+                'Total Distributed Value'
               ]}
-              labelFormatter={(label) => `Company: ${label}`}
+              labelFormatter={(label) => {
+                const fullCompany = chartData.find(item => item.companyId === label);
+                return `Company: ${fullCompany ? fullCompany.companyName : label}`;
+              }}
             />
             <Bar 
               dataKey="percentage" 
@@ -650,7 +721,7 @@ export const generateModalContent = {
             data={pieChartData}
             cx="50%"
             cy="50%"
-            outerRadius={120}
+            outerRadius={140}
             fill="#8884d8"
             dataKey="value"
             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
