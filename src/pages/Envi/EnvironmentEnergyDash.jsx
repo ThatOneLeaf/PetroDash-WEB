@@ -2514,7 +2514,7 @@ function EnvironmentEnergyDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{
-                  fontSize: '20px',
+                  fontSize: '15px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -2613,7 +2613,7 @@ function EnvironmentEnergyDash() {
                             borderRadius: '2px',
                             flexShrink: 0
                           }}></div>
-                          <span style={{ fontWeight: '500', fontSize: '15px' }}>
+                          <span style={{ fontWeight: '500', fontSize: '12px' }}>
                             {entry.label}: {(entry.value || 0).toLocaleString()}
                           </span>
                         </div>
@@ -2718,7 +2718,7 @@ function EnvironmentEnergyDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '20px', 
+                    fontSize: '15px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -2781,7 +2781,7 @@ function EnvironmentEnergyDash() {
                             labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                             contentStyle={{ fontSize: '12px' }}
                           />
-                          <Legend wrapperStyle={{ fontSize: '15px' }} />
+                          <Legend wrapperStyle={{ fontSize: '12px' }} />
                           
                           {/* Dynamically render lines based on available companies */}
                           {Object.keys(lineChartColors).map((companyId, index) => (
@@ -2916,7 +2916,7 @@ function EnvironmentEnergyDash() {
                   </IconButton>
 
                   <h3 style={{ 
-                    fontSize: '20px', 
+                    fontSize: '15px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3138,7 +3138,7 @@ function EnvironmentEnergyDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '20px', 
+                    fontSize: '15px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3212,7 +3212,7 @@ function EnvironmentEnergyDash() {
                             labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                             contentStyle={{ fontSize: '12px' }}
                           />
-                          <Legend wrapperStyle={{ fontSize: '15px' }} />
+                          <Legend wrapperStyle={{ fontSize: '12px' }} />
                           
                           {/* Dynamically render bars for each source */}
                           {Object.keys(sourceColors).map((source, index) => (
@@ -3319,7 +3319,7 @@ function EnvironmentEnergyDash() {
                     <ZoomInIcon fontSize="small" />
                   </IconButton>
                   <h3 style={{ 
-                    fontSize: '20px', 
+                    fontSize: '15px', 
                     fontWeight: '600', 
                     marginBottom: '10px',
                     color: '#1e293b',
@@ -3383,7 +3383,7 @@ function EnvironmentEnergyDash() {
                             }}
                           />
                           <Tooltip content={renderStackedBarTooltip} />
-                          <Legend wrapperStyle={{ fontSize: '15px' }} />
+                          <Legend wrapperStyle={{ fontSize: '12px' }} />
                           
                           {/* Dynamically render bars for each company */}
                           {Object.keys(quarterCompanyColors).map((company, index) => (
@@ -3502,7 +3502,7 @@ function EnvironmentEnergyDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{
-                  fontSize: '20px',
+                  fontSize: '15px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -3601,7 +3601,7 @@ function EnvironmentEnergyDash() {
                               borderRadius: '2px',
                               flexShrink: 0
                             }}></div>
-                            <span style={{ fontWeight: '500', fontSize: '15px' }}>
+                            <span style={{ fontWeight: '500', fontSize: '12px' }}>
                               {entry.label}: {(entry.value || 0).toLocaleString()} L
                             </span>
                           </div>
@@ -3707,7 +3707,7 @@ function EnvironmentEnergyDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{
-                  fontSize: '20px',
+                  fontSize: '15px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -3938,7 +3938,7 @@ function EnvironmentEnergyDash() {
                   <ZoomInIcon fontSize="small" />
                 </IconButton>
                 <h3 style={{
-                  fontSize: '20px',
+                  fontSize: '15px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -4007,7 +4007,7 @@ function EnvironmentEnergyDash() {
                             labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                             contentStyle={{ fontSize: '12px' }}
                           />
-                          <Legend wrapperStyle={{ fontSize: '15px' }} />
+                          <Legend wrapperStyle={{ fontSize: '12px' }} />
                           
                           {/* Dynamically render lines for each property */}
                           {Object.keys(dieselLineColors).map((property, index) => (
@@ -4136,7 +4136,7 @@ function EnvironmentEnergyDash() {
                 </IconButton>
 
                 <h3 style={{
-                  fontSize: '20px',
+                  fontSize: '15px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -4238,7 +4238,7 @@ function EnvironmentEnergyDash() {
                                 borderRadius: '2px',
                                 flexShrink: 0
                               }}></div>
-                              <span style={{ fontWeight: '500', fontSize: '15px' }}>
+                              <span style={{ fontWeight: '500', fontSize: '12px' }}>
                                 {propertyName}: {(entry.value || 0).toLocaleString()} L
                               </span>
                             </div>
@@ -4342,7 +4342,7 @@ function EnvironmentEnergyDash() {
                 </IconButton>
 
                 <h3 style={{
-                  fontSize: '20px',
+                  fontSize: '15px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -4411,7 +4411,7 @@ function EnvironmentEnergyDash() {
                           labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                           contentStyle={{ fontSize: '12px' }}
                         />
-                        <Legend wrapperStyle={{ fontSize: '15px' }} />
+                        <Legend wrapperStyle={{ fontSize: '12px' }} />
                         
                         {/* Dynamically render bars for each property */}
                         {Object.keys(dieselQuarterlyBarColors).map((property, index) => (
@@ -4528,7 +4528,7 @@ function EnvironmentEnergyDash() {
                 </IconButton>
 
                 <h3 style={{
-                  fontSize: '20px',
+                  fontSize: '15px',
                   fontWeight: '600',
                   marginBottom: '10px',
                   color: '#1e293b',
@@ -4600,7 +4600,7 @@ function EnvironmentEnergyDash() {
                           labelStyle={{ color: '#1e293b', fontSize: '12px' }}
                           contentStyle={{ fontSize: '12px' }}
                         />
-                        <Legend wrapperStyle={{ fontSize: '15px' }} />
+                        <Legend wrapperStyle={{ fontSize: '12px' }} />
                         
                         {/* Dynamically render lines for each property */}
                         {Object.keys(dieselMonthlyLineColors).map((property, index) => (
