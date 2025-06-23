@@ -121,9 +121,11 @@ function AddOSHModal({ onClose, onSuccess }) {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
     setFormData((prev) => ({
       ...prev,
-      [field]: newValue,
+      [field]: isoDate,
     }));
   };
 
@@ -214,7 +216,7 @@ function AddOSHModal({ onClose, onSuccess }) {
           formData.lost_time === "true" || formData.lost_time === true
             ? "TRUE"
             : "FALSE",
-        date: formData.date ? dayjs(formData.date).format("MM/DD/YYYY") : null,
+        date: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : null,
         incident_type: formData.incident_type,
         incident_title: formData.incident_title,
         incident_count: formData.incident_count,
@@ -334,7 +336,7 @@ function AddOSHModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date"
-            value={formData.date}
+            value={formData.date ? dayjs(formData.date) : null}
             onChange={handleDateChange("date")}
             minDate={dayjs("1994-09-29")}
             slotProps={{

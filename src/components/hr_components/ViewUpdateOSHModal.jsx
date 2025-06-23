@@ -225,7 +225,18 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
     }
 
     try {
-      const response = await api.post("hr/edit_osh", editedRecord);
+      const payload = {
+        osh_id: editedRecord.osh_id,
+        company_id: editedRecord.company_id,
+        workforce_type: editedRecord.workforce_type,
+        lost_time: editedRecord.lost_time,
+        date: editedRecord.date,
+        incident_type: editedRecord.incident_type,
+        incident_title: editedRecord.incident_title,
+        incident_count: Number(editedRecord.incident_count),
+      };
+
+      const response = await api.post("hr/edit_osh", payload);
       setIsEditing(false);
 
       return true;
