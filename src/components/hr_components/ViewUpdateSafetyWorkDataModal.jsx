@@ -19,26 +19,65 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 
-const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
+import StatusChip from "../../components/StatusChip";
+
+//added
+import Overlay from "../../components/modal";
+
+import ConfirmModal from "./ConfirmModal";
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+
+const ViewUpdateSafetyWorkDataModal = ({
+  title,
+  record,
+  onClose,
+  status,
+  onSuccess,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedRecord, setEditedRecord] = useState(record || {});
-
-  const [formData, setFormData] = useState({
-    company_id: "",
-    contractor: "",
-    date: null,
-    manpower: "",
-    manhours: "",
-    status_id: "",
-  });
-
   const permanentlyReadOnlyFields = ["contractor", "company_id", "status"];
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  //added
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successTitle, setSuccessTitle] = useState("");
+  const [successColor, setSuccessColor] = useState("#2B8C37");
+  const [modalType, setModalType] = useState("");
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorTitle, setErrorTitle] = useState("");
+  const statuses = ["URH", "FRH", "APP"];
+  const [nextStatus, setNextStatus] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const recordIdKey = Object.keys(record)[0];
+
+  const statusIdToName = {
+    URH: "Under review (head level)",
+    FRH: "For Revision (Head)",
+    APP: "Approved",
+  };
+
   if (!record) return null;
+
+  const getRecordWithStatus = (record) => ({
+    ...record,
+    status: statusIdToName[record?.status_id] || record?.status || "",
+  });
+
+  const [editedRecord, setEditedRecord] = useState(getRecordWithStatus(record));
+
+  const summaryData = Object.entries(editedRecord)
+    .map(([key, value]) => ({
+      label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+      value: value ? String(value) : "N/A",
+    }))
+    .slice(0, -4);
 
   // Initialize Data Options
   const fetchSafetyWorkData = async () => {
@@ -59,10 +98,6 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
     fetchSafetyWorkData();
   }, []);
 
-  useEffect(() => {
-    setFormData(record);
-  }, [record]);
-
   const uniqueOptions = (key) => {
     return Array.from(new Set(data.map((item) => item[key]))).map((val) => ({
       label: val,
@@ -71,12 +106,6 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
   };
 
   const handleChange = (field) => (event) => {
-    const newFormData = {
-      ...formData,
-      [field]: event.target.value,
-    };
-    setFormData(newFormData);
-
     setEditedRecord((prev) => ({
       ...prev,
       [field]: event.target.value,
@@ -84,39 +113,187 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
   };
 
   const handleDateChange = (field) => (newValue) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: newValue,
-    }));
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
 
     setEditedRecord((prev) => ({
       ...prev,
-      [field]: event.target.value,
+      [field]: isoDate,
     }));
   };
 
   const handleSave = async () => {
-    console.log("Updated Data:", editedRecord);
+    /* VALIDATIONS */
+
+    const MIN_DATE = dayjs("1994-09-29");
+
+    const { contractor, date, manpower, manhours } = editedRecord;
+
+    const isValidDate = date && dayjs(date).isSameOrAfter(MIN_DATE);
+
+    const isValidManpower =
+      manpower !== "" && !isNaN(manpower) && Number(manpower) > 0;
+
+    const isValidManhours =
+      manhours !== "" && !isNaN(manhours) && Number(manhours) > 0;
+
+    if (!isValidDate) {
+      setErrorMessage("Please select a valid Date.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidManpower) {
+      setErrorMessage("Safety Manpower must be a number greater than 0.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidManhours) {
+      setErrorMessage("Safety Manhours must be a number greater than 0.");
+      setIsErrorModalOpen(true);
+      return;
+    }
 
     try {
-      let response;
-
-      // For EnvironmentEnergy, use POST
-      //response = await api.post(`${source}${updatePath}`, editedRecord);
-
-      alert(response.data.message || "Record saved successfully.");
+      const response = await api.post("hr/edit_safety_workdata", editedRecord);
       setIsEditing(false);
+
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      return true;
     } catch (error) {
       const errorMessage =
         error.response?.data?.detail ||
         error.message ||
         "Unknown error occurred";
-      alert(`Failed to save record: ${errorMessage}`);
+      return false;
     }
   };
 
-  const isRecordUnchanged =
-    JSON.stringify(record) === JSON.stringify(editedRecord);
+  //remove added status field for comparison
+  const stripStatus = (obj) => {
+    const { status, ...rest } = obj;
+    return rest;
+  };
+  const isRecordUnchanged = () =>
+    JSON.stringify(stripStatus(record)) ===
+    JSON.stringify(stripStatus(editedRecord));
+  {
+    /* ADDED */
+  }
+
+  const fetchNextStatus = (action) => {
+    let newStatus = "";
+    if (action === "approve") {
+      switch (editedRecord.status) {
+        case "For Revision (Head)":
+          newStatus = statuses[0]; // "URH"
+          break;
+        case "Under review (head level)":
+          newStatus = statuses[2]; // "APP"
+          break;
+      }
+    } else if (action === "revise") {
+      switch (editedRecord.status) {
+        case "Under review (head level)":
+          newStatus = statuses[1]; // "FRH"
+          break;
+      }
+    }
+    return newStatus;
+  };
+
+  //statuses = ["URS","FRS","URH","FRH","APP"]
+
+  const handleStatusUpdate = async (action) => {
+    const newStatus = fetchNextStatus(action);
+
+    if (newStatus) {
+      setNextStatus(newStatus);
+      console.log("Updated status to:", newStatus);
+    } else {
+      console.warn("No matching status transition found.");
+    }
+
+    try {
+      if (action === "revise") {
+        if (!remarks) {
+          setErrorTitle("Remarks Required");
+          setErrorMessage("Remarks is required for the status update");
+          setIsErrorModalOpen(true);
+          return;
+        }
+      } else {
+        const confirm = window.confirm(
+          "Are you sure you want to approve this record?"
+        );
+        if (!confirm) return; // Fixed: changed 'confirmed' to 'confirm'
+      }
+
+      const payload = {
+        record_id: record[recordIdKey]?.toString().trim(),
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+
+      const response = await api.post("/usable_apis/update_status", payload);
+
+      // alert(response.data.message);
+      // status(false);
+
+      // Show appropriate modal for revision
+      if (action === "revise") {
+        if (newStatus === "FRS") {
+          setSuccessMessage("Revision (Site) Requested!");
+          setSuccessTitle("The record has been sent for revision (site).");
+          setSuccessColor("#FFA000");
+          setIsSuccessModalOpen(true);
+        } else if (newStatus === "FRH") {
+          setSuccessMessage("Revision (Head) Requested!");
+          setSuccessTitle("The record has been sent for revision (head).");
+          setSuccessColor("#182959");
+          setIsSuccessModalOpen(true);
+        }
+
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        if (onSuccess) {
+          onSuccess();
+        }
+      }
+    } catch (error) {
+      console.error("Error updating record status:", error);
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }
+  };
+
+  const handleApproveConfirm = async () => {
+    setIsModalOpen(false);
+    const newStatus = fetchNextStatus("approve");
+    try {
+      const payload = {
+        record_id: record[recordIdKey]?.toString().trim(),
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+      const response = await api.post("/usable_apis/update_status", payload);
+      console.log(payload);
+
+      setSuccessMessage("Record Approved Successfully!");
+      setSuccessTitle("The record has been successfully approved.");
+      setIsSuccessModalOpen(true);
+
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }
+  };
 
   return (
     <Paper
@@ -170,7 +347,7 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
           }
           variant="outlined"
           fullWidth
-          value={formData.contractor ?? ""}
+          value={editedRecord.contractor ?? ""}
           onChange={(e) => handleChange("contractor", e.target.value)}
           type="text"
           InputProps={{
@@ -199,7 +376,7 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
           }
           variant="outlined"
           fullWidth
-          value={formData.company_id ?? ""}
+          value={editedRecord.company_id ?? ""}
           onChange={(e) => handleChange("company_id", e.target.value)}
           type="text"
           InputProps={{
@@ -231,10 +408,9 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
                   "Date"
                 )
               }
-              value={formData.date ? dayjs(formData.date) : null}
-              onChange={(newValue) =>
-                handleChange("date", newValue?.toISOString())
-              }
+              value={editedRecord.date ? dayjs(editedRecord.date) : null}
+              onChange={handleDateChange("date")}
+              minDate={dayjs("1994-09-29")}
               slotProps={{
                 textField: { fullWidth: true, size: "medium" },
               }}
@@ -245,7 +421,7 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
             label="Date"
             variant="outlined"
             fullWidth
-            value={formData.date ? formData.date.split("T")[0] : ""}
+            value={editedRecord.date ? editedRecord.date.split("T")[0] : ""}
             onChange={(e) => handleChange("date", e.target.value)}
             type="text"
             InputProps={{
@@ -276,9 +452,10 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
           }
           variant="outlined"
           fullWidth
-          value={formData.manpower ?? ""}
+          value={editedRecord.manpower ?? ""}
           onChange={handleChange("manpower")}
           type="number"
+          inputProps={{ min: 1 }}
           InputProps={{
             min: 0,
             readOnly:
@@ -306,8 +483,9 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
           }
           variant="outlined"
           fullWidth
-          value={formData.manhours ?? ""}
+          value={editedRecord.manhours ?? ""}
           onChange={handleChange("manhours")}
+          inputProps={{ min: 1 }}
           type="number"
           InputProps={{
             min: 0,
@@ -323,93 +501,264 @@ const ViewUpdateSafetyWorkDataModal = ({ title, record, onClose, status }) => {
             },
           }}
         />
-
-        <TextField
-          label="Status"
-          variant="outlined"
-          fullWidth
-          value={formData.status_id}
-          onChange={(e) => handleChange("status_id", e.target.value)}
-          type="text"
-          InputProps={{
-            readOnly:
-              !isEditing || permanentlyReadOnlyFields.includes("status_id"),
-            sx: {
-              color: isEditing ? "black" : "#182959",
-            },
+        <Box
+          sx={{
+            p: 0.5,
           }}
-          InputLabelProps={{
-            sx: {
-              color: isEditing ? "#182959" : "grey",
-            },
-          }}
-        />
+        >
+          <Typography
+            sx={{
+              fontSize: "0.85rem",
+              color: "grey",
+            }}
+          >
+            Status:
+          </Typography>
+          <StatusChip status={record.status_id} />
+        </Box>
 
         <Box />
       </Box>
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          mt: 3,
-        }}
-      >
-        <Button
-          startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-          sx={{
-            color: isEditing ? "#1976d2" : "#FFA000",
-            borderRadius: "999px",
-            padding: "9px 18px",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            "&:hover": {
-              color: isEditing ? "#1565c0" : "#FB8C00",
-            },
-          }}
-          onClick={() => {
-            if (isEditing) {
-              if (!isRecordUnchanged) {
-                handleSave(); // only save if changed
-              } else {
-                alert("No changes were made");
-                setIsEditing(false);
-              }
-            } else {
-              setIsEditing(true);
-            }
-          }}
-        >
-          {isEditing ? "SAVE" : "EDIT"}
-        </Button>
+      {/*added */}
 
-        <Button
-          variant="contained"
-          sx={{
-            backgroundColor: "#2B8C37",
-            borderRadius: "999px",
-            padding: "9px 18px",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            "&:hover": {
-              backgroundColor: "#256d2f",
-            },
-          }}
-          onClick={() => {
-            const isUnchanged =
-              JSON.stringify(record) === JSON.stringify(editedRecord);
-            if (isEditing && !isUnchanged) {
-              const confirmClose = window.confirm(
-                "You have unsaved changes. Are you sure you want to close without saving?"
-              );
-              if (!confirmClose) return; // do nothing if user cancels
-            }
-            status(isUnchanged);
-            onClose();
-          }}
-        >
-          CLOSE
-        </Button>
+      <Box sx={{ display: "flex", flexDirection: "column", mt: 3 }}>
+        {editedRecord.status !== "Approved" && (
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            {/* EDIT/SAVE button - Hidden if Under Review */}
+            {editedRecord.status !== "Under review (site)" &&
+              editedRecord.status !== "Under review (head level)" && (
+                <Button
+                  startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
+                  sx={{
+                    color: isEditing ? "#1976d2" : "#FFA000",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      color: isEditing ? "#1565c0" : "#FB8C00",
+                    },
+                  }}
+                  onClick={async () => {
+                    if (isEditing) {
+                      console.log("🟡 isRecordUnchanged:", isRecordUnchanged());
+                      if (!isRecordUnchanged()) {
+                        const saveSuccess = await handleSave();
+                        if (
+                          saveSuccess &&
+                          (editedRecord.status === "For Revision (Site)" ||
+                            editedRecord.status === "For Revision (Head)")
+                        ) {
+                          setSuccessMessage("");
+                          setSuccessTitle(
+                            "The record has been successfully updated."
+                          );
+                          setIsSuccessModalOpen(true);
+                        }
+                      } else {
+                        setIsEditing(false);
+
+                        if (
+                          editedRecord.status === "For Revision (Site)" ||
+                          editedRecord.status === "For Revision (Head)"
+                        ) {
+                          setSuccessMessage("");
+                          setSuccessTitle(
+                            "No changes were made to the record."
+                          );
+                          setIsSuccessModalOpen(true);
+                        }
+                      }
+                    } else {
+                      setIsEditing(true);
+                    }
+                  }}
+                >
+                  {isEditing ? "SAVE" : "EDIT"}
+                </Button>
+              )}
+
+            {/* APPROVE & REVISE buttons */}
+            <Box>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "#2B8C37",
+                  borderRadius: "999px",
+                  padding: "9px 18px",
+                  fontSize: "1rem",
+                  fontWeight: "bold",
+                  "&:hover": {
+                    backgroundColor: "#256d2f",
+                  },
+                }}
+                onClick={() => {
+                  setModalType("approve");
+                  setIsModalOpen(true);
+                }}
+              >
+                Approve
+              </Button>
+
+              {editedRecord.status !== "For Revision (Site)" &&
+                editedRecord.status !== "For Revision (Head)" && (
+                  <Button
+                    variant="contained"
+                    sx={{
+                      marginLeft: 1,
+                      backgroundColor: "#182959",
+                      borderRadius: "999px",
+                      padding: "9px 18px",
+                      fontSize: "1rem",
+                      fontWeight: "bold",
+                      "&:hover": {
+                        backgroundColor: "#0f1a3c",
+                      },
+                    }}
+                    onClick={() => {
+                      setModalType("revise");
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    Revise
+                  </Button>
+                )}
+            </Box>
+          </Box>
+        )}
+
+        {/* Approved message */}
+        {editedRecord.status === "Approved" && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+            <Typography
+              sx={{
+                fontSize: "0.9rem",
+                color: "#FF0000",
+                fontStyle: "italic",
+              }}
+            >
+              This record has been approved and cannot be edited.
+            </Typography>
+          </Box>
+        )}
+
+        {isModalOpen && modalType === "revise" && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <Paper
+              sx={{
+                p: 4,
+                width: "500px",
+                borderRadius: "16px",
+                bgcolor: "white",
+              }}
+            >
+              <Typography
+                sx={{ fontSize: "2rem", color: "#182959", fontWeight: 800 }}
+              >
+                Revision Request
+              </Typography>
+              <TextField
+                sx={{
+                  mt: 2,
+                  mb: 2,
+                }}
+                label={
+                  <>
+                    {" "}
+                    Remarks <span style={{ color: "red" }}>*</span>{" "}
+                  </>
+                }
+                variant="outlined"
+                fullWidth
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                multiline
+              />
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Button
+                  sx={{
+                    color: "#182959",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      color: "#0f1a3c",
+                    },
+                  }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={{
+                    marginLeft: 1,
+                    backgroundColor: "#2B8C37",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      backgroundColor: "#256d2f",
+                    },
+                  }}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    handleStatusUpdate("revise");
+                  }}
+                >
+                  Confirm
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
+        )}
+
+        {isModalOpen && modalType === "approve" && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <ConfirmModal
+              open={isModalOpen}
+              title={"Approval Confirmation"}
+              message={"Are you sure you want to approve this employee record?"}
+              onConfirm={handleApproveConfirm}
+              onCancel={() => setIsModalOpen(false)}
+              summaryData={summaryData}
+            />
+          </Overlay>
+        )}
+
+        {isErrorModalOpen && (
+          <Overlay onClose={() => setIsErrorModalOpen(false)}>
+            <ErrorModal
+              open={isErrorModalOpen}
+              title={errorTitle}
+              errorMessage={errorMessage}
+              onClose={() => setIsErrorModalOpen(false)}
+            />
+          </Overlay>
+        )}
+
+        {isSuccessModalOpen && (
+          <Overlay onClose={() => setIsSuccessModalOpen(false)}>
+            <SuccessModal
+              open={isSuccessModalOpen}
+              title={successTitle}
+              successMessage={successMessage}
+              color={successColor}
+              onClose={() => {
+                setIsSuccessModalOpen(false);
+                onClose();
+              }}
+            />
+          </Overlay>
+        )}
       </Box>
     </Paper>
   );

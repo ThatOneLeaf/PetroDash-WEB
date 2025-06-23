@@ -125,10 +125,8 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
 
   //STATUS DONT CHANGE
   const statusOptions = [
-    { label: "Under Review (Site)", value: "URS" },
     { label: "Under Review (Head)", value: "URH" },
     { label: "Approved", value: "APP" },
-    { label: "For Revision (Site)", value: "FRS" },
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
@@ -396,10 +394,8 @@ function OSH({ onFilterChange, shouldReload, setShouldReload }) {
               <ViewUpdateOSHModal
                 title={"HR Occupational Safety Health Details"}
                 record={selectedRecord}
-                status={(data) => {
-                  if (!data) {
-                    fetchOSHData();
-                  }
+                onSuccess={() => {
+                  setShouldReload(true);
                   setSelectedRecord(null);
                 }}
                 onClose={() => setSelectedRecord(null)}

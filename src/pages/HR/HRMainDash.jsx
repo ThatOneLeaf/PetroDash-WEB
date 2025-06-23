@@ -10,7 +10,6 @@ import api from "../../services/api";
 import PageButtons from "../../components/hr_components/page_button";
 
 import HREmployability from "./HREmployabilityDash";
-import HRSafetyTraining from "./HRSafetyTrainingDash";
 
 import RefreshIcon from "@mui/icons-material/Refresh";
 import Overlay from "../../components/modal";
@@ -42,8 +41,6 @@ function HRMainDash() {
       case "employability":
         return <HREmployability {...commonProps} />;
 
-      case "safetyandtraining":
-        return <HRSafetyTraining {...commonProps} />;
       default:
         return <div>Page Not Found</div>;
     }

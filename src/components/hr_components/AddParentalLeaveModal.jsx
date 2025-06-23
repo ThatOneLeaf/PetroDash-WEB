@@ -12,6 +12,7 @@ import {
   Box,
 } from "@mui/material";
 
+import Overlay from "../../components/modal";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -22,6 +23,10 @@ dayjs.extend(isSameOrAfter);
 
 import api from "../../services/api";
 
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+import ConfirmModal from "./ConfirmModal";
+
 function AddParentalLeaveModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     employeeId: "",
@@ -29,11 +34,27 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
     daysAvailed: "",
     typeOfLeave: "",
   });
+  const summaryData = [
+    { label: "Employee ID", value: String(formData.employeeId || "N/A") },
+    {
+      label: "Date Availed",
+      value: formData.dateAvailed
+        ? dayjs(formData.dateAvailed).format("YYYY-MM-DD")
+        : "N/A",
+    },
+    { label: "Days Availed", value: String(formData.daysAvailed || "N/A") },
+    { label: "Type of Leave", value: String(formData.typeOfLeave || "N/A") },
+  ];
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const MIN_DATE = dayjs("1994-09-29");
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [employabilityData, setEmployabilityData] = useState([]);
 
@@ -108,22 +129,30 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
       daysAvailed !== "" && !isNaN(daysAvailed) && Number(daysAvailed) > 0;
 
     if (!employeeId || !isValidEmployee) {
-      alert("Please select a valid Employee ID.");
+      setErrorMessage("Please select a valid Employee ID.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidDate) {
-      alert("Please select a valid Date Availed (not before 1994-09-29).");
+      setErrorMessage("Please select a valid Date Availed");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidDays) {
-      alert("Days Availed must be a number greater than 0.");
+      setErrorMessage("Days Availed must be a number greater than 0.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!typeOfLeave || !isValidLeaveType) {
-      alert("Please select a valid Type of Leave.");
+      setErrorMessage("Please select a valid Type of Leave.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
@@ -139,9 +168,9 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
         days: formData.daysAvailed,
       });
 
-      console.log("success  ");
+      setIsConfirmModalOpen(false);
+      setIsSuccessModalOpen(true);
       if (onSuccess) onSuccess();
-      onClose();
 
       setFormData({
         employeeId: "",
@@ -285,11 +314,48 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
               backgroundColor: "#256d2f",
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => setIsConfirmModalOpen(true)}
         >
           ADD RECORD
         </Button>
       </Box>
+      {isConfirmModalOpen && (
+        <Overlay onClose={() => setIsConfirmModalOpen(false)}>
+          <ConfirmModal
+            open={isConfirmModalOpen}
+            title={"Confirm Record Addition"}
+            message={"Are you sure you want to add this parental leave record?"}
+            onConfirm={handleSubmit}
+            onCancel={() => setIsConfirmModalOpen(false)}
+            summaryData={summaryData}
+          />
+        </Overlay>
+      )}
+
+      {isErrorModalOpen && (
+        <Overlay onClose={() => setIsErrorModalOpen(false)}>
+          <ErrorModal
+            open={isErrorModalOpen}
+            errorMessage={errorMessage}
+            onClose={() => setIsErrorModalOpen(false)}
+          />
+        </Overlay>
+      )}
+
+      {isSuccessModalOpen && (
+        <Overlay onClose={() => setIsSuccessModalOpen(false)}>
+          <SuccessModal
+            open={isSuccessModalOpen}
+            successMessage={
+              "Your parental leave record has been successfully added to the repository."
+            }
+            onClose={() => {
+              setIsSuccessModalOpen(false);
+              onClose();
+            }}
+          />
+        </Overlay>
+      )}
     </Paper>
   );
 }

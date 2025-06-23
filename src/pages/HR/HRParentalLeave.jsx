@@ -21,7 +21,16 @@ import dayjs from "dayjs";
 
 import ViewUpdateParentalLeaveModal from "../../components/hr_components/ViewUpdateParentalLeaveModal";
 
-function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
+import CustomTable from "../../components/Table/Table";
+
+function ParentalLeave({
+  onFilterChange,
+  shouldReload,
+  setShouldReload,
+  onSelectedRowIdsChange,
+  setFilteredData,
+  parentSelectedRowIds,
+}) {
   //INITIALIZE
 
   const [data, setData] = useState([]);
@@ -30,10 +39,9 @@ function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [isUpdateModal, setIsUpdateModal] = useState(false);
-  const [row, setRow] = useState([]);
-
   const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
+
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
 
   // DATA -- CHANGE PER PAGE
   const fetchParentalData = async () => {
@@ -101,10 +109,8 @@ function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
 
   //STATUS DONT CHANGE
   const statusOptions = [
-    { label: "Under Review (Site)", value: "URS" },
     { label: "Under Review (Head)", value: "URH" },
     { label: "Approved", value: "APP" },
-    { label: "For Revision (Site)", value: "FRS" },
     { label: "For Revision (Head)", value: "FRH" },
   ];
 
@@ -123,10 +129,25 @@ function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
   const filteredData = useFilteredData(data, filters, searchQuery);
 
   useEffect(() => {
-    if (typeof onFilterChange === "function" && filteredData !== null) {
+    if (typeof onFilterChange === "function") {
       onFilterChange(filteredData);
     }
-  }, [filteredData, onFilterChange]);
+
+    if (typeof setFilteredData === "function") {
+      setFilteredData(filteredData);
+    }
+  }, [filteredData]);
+
+  const handleRowSelect = (newIds) => {
+    setSelectedRowIds(newIds);
+    if (typeof onSelectedRowIdsChange === "function") {
+      onSelectedRowIdsChange(newIds);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedRowIds(parentSelectedRowIds || []);
+  }, [parentSelectedRowIds]);
 
   //SEARCH
   const suggestions = useMemo(() => {
@@ -214,9 +235,7 @@ function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
               </Button>
             ))}
           </Box> */}
-
         {/* Filters */}
-
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
           <Search onSearch={setSearchQuery} suggestions={suggestions} />
           <Filter
@@ -279,20 +298,24 @@ function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
             </Button>
           )}
         </Box>
-
         {/* Table or fallback */}
-
         {
-          <Table
+          <CustomTable
             columns={columns}
             rows={paginatedData}
+            filteredData={filteredData}
+            idKey={"parental_leave_id"} // or "id", "recordId", etc. depending on the page
+            onSelectionChange={(selectedRows) => {
+              handleRowSelect(selectedRows);
+            }}
+            emptyMessage="No demographics data found."
+            maxHeight="60vh"
+            minHeight="300px"
             actions={renderActions}
-            emptyMessage="No records found for the selected filters."
           />
         }
 
         {/* Pagination */}
-
         <Box
           sx={{
             display: "flex",
@@ -301,10 +324,22 @@ function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
           }}
         >
           {/* Row Count Display */}
-          <Typography sx={{ fontSize: "0.85rem" }}>
-            Showing {filteredData.length}{" "}
-            {filteredData.length === 1 ? "record" : "records"}
-          </Typography>
+
+          <Box>
+            <Typography sx={{ fontSize: "0.85rem" }}>
+              Total {filteredData.length}{" "}
+              {filteredData.length === 1 ? "record" : "records"}
+            </Typography>
+            {selectedRowIds.length > 0 && (
+              <Typography
+                sx={{ fontSize: "0.85rem", color: "#2B8C37", fontWeight: 700 }}
+              >
+                {selectedRowIds.length} selected record
+                {selectedRowIds.length > 1 ? "s" : ""}
+              </Typography>
+            )}
+          </Box>
+
           <Pagination
             page={page}
             count={Math.ceil(filteredData.length / rowsPerPage)}
@@ -316,7 +351,6 @@ function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
             {Math.min(page * rowsPerPage, filteredData.length)} records
           </Typography>
         </Box>
-
         {selectedRecord != null &&
           (console.log("Selected Record:", selectedRecord),
           (
@@ -324,25 +358,14 @@ function ParentalLeave({ onFilterChange, shouldReload, setShouldReload }) {
               <ViewUpdateParentalLeaveModal
                 title={"HR Parental Leave Details"}
                 record={selectedRecord}
-                status={(data) => {
-                  if (!data) {
-                    fetchParentalData();
-                  }
+                onSuccess={() => {
+                  setShouldReload(true);
                   setSelectedRecord(null);
                 }}
                 onClose={() => setSelectedRecord(null)}
               />
             </Overlay>
           ))}
-
-        {isUpdateModal && (
-          <Overlay onClose={() => setIsUpdateModal(false)}>
-            <UpdateParentalLeaveModal
-              onClose={() => setIsUpdateModal(false)}
-              row={row}
-            />
-          </Overlay>
-        )}
       </Box>
     </Box>
   );

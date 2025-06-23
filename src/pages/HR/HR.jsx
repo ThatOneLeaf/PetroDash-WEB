@@ -20,7 +20,16 @@ import dayjs from "dayjs";
 
 import ViewUpdateEmployeeModal from "../../components/hr_components/ViewUpdateEmployeeModal";
 
-function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
+import CustomTable from "../../components/Table/Table";
+
+function Demographics({
+  onFilterChange,
+  shouldReload,
+  setShouldReload,
+  onSelectedRowIdsChange,
+  setFilteredData,
+  parentSelectedRowIds,
+}) {
   //INITIALIZE
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +38,8 @@ function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [selectedRecord, setSelectedRecord] = useState(null); // Old Data
+
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
 
   // DATA -- CHANGE PER PAGE
   const fetchEmployabilityData = async () => {
@@ -161,11 +172,11 @@ function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
 
   //STATUS DONT CHANGE
   const statusOptions = [
-    { label: "Under Review (Site)", value: "URS" },
-    { label: "Under Review (Head)", value: "URH" },
+    //{ label: "Under Review (Site)", value: "URS" },
+    { label: "Under Review", value: "URH" },
     { label: "Approved", value: "APP" },
-    { label: "For Revision (Site)", value: "FRS" },
-    { label: "For Revision (Head)", value: "FRH" },
+    //{ label: "For Revision (Site)", value: "FRS" },
+    { label: "For Revision", value: "FRH" },
   ];
 
   const [filters, setFilters] = useState({
@@ -186,10 +197,25 @@ function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
   const filteredData = useFilteredData(data, filters, searchQuery);
 
   useEffect(() => {
-    if (typeof onFilterChange === "function" && filteredData !== null) {
+    if (typeof onFilterChange === "function") {
       onFilterChange(filteredData);
     }
-  }, [filteredData, onFilterChange]);
+
+    if (typeof setFilteredData === "function") {
+      setFilteredData(filteredData);
+    }
+  }, [filteredData]);
+
+  const handleRowSelect = (newIds) => {
+    setSelectedRowIds(newIds);
+    if (typeof onSelectedRowIdsChange === "function") {
+      onSelectedRowIdsChange(newIds);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedRowIds(parentSelectedRowIds || []);
+  }, [parentSelectedRowIds]);
 
   //SEARCH
   const suggestions = useMemo(() => {
@@ -362,14 +388,29 @@ function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
 
         {/* Table or fallback */}
 
-        {
+        {/*
           <Table
             columns={columns}
             rows={paginatedData}
             actions={renderActions}
             emptyMessage="No records found for the selected filters."
           />
-        }
+        */}
+
+        {/* Custom Table Component */}
+        <CustomTable
+          columns={columns}
+          rows={paginatedData}
+          filteredData={filteredData}
+          idKey={"employee_id"} // or "id", "recordId", etc. depending on the page
+          onSelectionChange={(selectedRows) => {
+            handleRowSelect(selectedRows);
+          }}
+          emptyMessage="No demographics data found."
+          maxHeight="60vh"
+          minHeight="300px"
+          actions={renderActions}
+        />
 
         {/* Pagination */}
 
@@ -381,10 +422,22 @@ function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
           }}
         >
           {/* Row Count Display */}
-          <Typography sx={{ fontSize: "0.85rem" }}>
-            Showing {filteredData.length}{" "}
-            {filteredData.length === 1 ? "record" : "records"}
-          </Typography>
+
+          <Box>
+            <Typography sx={{ fontSize: "0.85rem" }}>
+              Total {filteredData.length}{" "}
+              {filteredData.length === 1 ? "record" : "records"}
+            </Typography>
+            {selectedRowIds.length > 0 && (
+              <Typography
+                sx={{ fontSize: "0.85rem", color: "#2B8C37", fontWeight: 700 }}
+              >
+                {selectedRowIds.length} selected record
+                {selectedRowIds.length > 1 ? "s" : ""}
+              </Typography>
+            )}
+          </Box>
+
           <Pagination
             page={page}
             count={Math.ceil(filteredData.length / rowsPerPage)}
@@ -404,10 +457,8 @@ function Demographics({ onFilterChange, shouldReload, setShouldReload }) {
               <ViewUpdateEmployeeModal
                 title={"HR Employability Details"}
                 record={selectedRecord}
-                status={(data) => {
-                  if (!data) {
-                    fetchEmployabilityData();
-                  }
+                onSuccess={() => {
+                  setShouldReload(true);
                   setSelectedRecord(null);
                 }}
                 onClose={() => setSelectedRecord(null)}

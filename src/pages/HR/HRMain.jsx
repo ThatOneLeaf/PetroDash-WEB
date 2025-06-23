@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Box, Button } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Box, Button, Typography, Paper, TextField } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
 import Sidebar from "../../components/Sidebar";
@@ -24,6 +24,10 @@ import HRSafetyWorkData from "./HRSafetyWorkData";
 import HRTraining from "./HRTraining";
 import HROSH from "./HROSH";
 
+import ConfirmModal from "../../components/hr_components/ConfirmModal";
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+
 function HRMain() {
   const [selected, setSelected] = useState("Employability");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -31,6 +35,27 @@ function HRMain() {
   const [shouldReload, setShouldReload] = useState(false);
 
   const [filteredExportData, setFilteredExportData] = useState(null);
+
+  const [selectedRowIds, setSelectedRowIds] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successTitle, setSuccessTitle] = useState("");
+  const [successColor, setSuccessColor] = useState("#2B8C37");
+  const [modalType, setModalType] = useState("");
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorTitle, setErrorTitle] = useState("");
+  const statuses = ["URH", "FRH", "APP"];
+  const [remarks, setRemarks] = useState("");
+
+  const statusIdToName = {
+    URH: "Under review (head level)",
+    FRH: "For Revision (Head)",
+    APP: "Approved",
+  };
 
   const pages = [
     "Employability",
@@ -41,7 +66,11 @@ function HRMain() {
   ];
 
   const handleFilteredDataFromChild = (data) => {
-    setFilteredExportData(data);
+    setFilteredExportData(data); // Set data for EXPORT
+  };
+
+  const handleSelectedRowIdsChange = (ids) => {
+    setSelectedRowIds(ids); // Set selected rows for buttons (approve/revise)
   };
 
   const renderModals = () => {
@@ -184,6 +213,9 @@ function HRMain() {
           <HREmployability
             {...commonProps}
             onFilterChange={handleFilteredDataFromChild}
+            parentSelectedRowIds={selectedRowIds}
+            onSelectedRowIdsChange={handleSelectedRowIdsChange}
+            setFilteredData={setFilteredData}
           />
         );
       case "Parental Leave":
@@ -191,6 +223,9 @@ function HRMain() {
           <HRParental
             {...commonProps}
             onFilterChange={handleFilteredDataFromChild}
+            parentSelectedRowIds={selectedRowIds}
+            onSelectedRowIdsChange={handleSelectedRowIdsChange}
+            setFilteredData={setFilteredData}
           />
         );
       case "Safety Work Data":
@@ -198,6 +233,9 @@ function HRMain() {
           <HRSafetyWorkData
             {...commonProps}
             onFilterChange={handleFilteredDataFromChild}
+            parentSelectedRowIds={selectedRowIds}
+            onSelectedRowIdsChange={handleSelectedRowIdsChange}
+            setFilteredData={setFilteredData}
           />
         );
       case "Training":
@@ -205,6 +243,9 @@ function HRMain() {
           <HRTraining
             {...commonProps}
             onFilterChange={handleFilteredDataFromChild}
+            parentSelectedRowIds={selectedRowIds}
+            onSelectedRowIdsChange={handleSelectedRowIdsChange}
+            setFilteredData={setFilteredData}
           />
         );
       case "Occupational Safety Health":
@@ -212,12 +253,19 @@ function HRMain() {
           <HROSH
             {...commonProps}
             onFilterChange={handleFilteredDataFromChild}
+            parentSelectedRowIds={selectedRowIds}
+            onSelectedRowIdsChange={handleSelectedRowIdsChange}
+            setFilteredData={setFilteredData}
           />
         );
       default:
         return <div>Page Not Found</div>;
     }
   };
+
+  useEffect(() => {
+    setSelectedRowIds([]);
+  }, [selected]);
 
   //create api for export
   const exportToExcel = async () => {
@@ -242,6 +290,225 @@ function HRMain() {
     }
   };
 
+  // BULK UPDATE
+  const getRecordID = (record) => {
+    if (record && typeof record === "object") {
+      const firstKey = Object.keys(record)[0];
+
+      return record[firstKey];
+    }
+    return null;
+  };
+
+  const fetchNextStatus = (action, currentStatus) => {
+    const currentStatusId = statusIdToName[currentStatus];
+
+    let newStatus = "";
+    if (action === "approve") {
+      switch (currentStatusId) {
+        case "For Revision (Head)":
+          newStatus = statuses[0]; // "URH"
+          break;
+        case "Under review (head level)":
+          newStatus = statuses[2]; // "APP"
+          break;
+      }
+    } else if (action === "revise") {
+      switch (currentStatusId) {
+        case "Under review (head level)":
+          newStatus = statuses[1]; // "FRH"
+          break;
+      }
+    }
+
+    return newStatus;
+  };
+
+  const handleBulkStatusUpdate = async (action) => {
+    //Check if the selected row ids status are the same
+    const isSame = areSelectedStatusesSame();
+
+    let currentStatus = null;
+    if (isSame && selectedRowIds.length > 0) {
+      // Get the status from the first selected row
+
+      const firstRow = filteredData.find(
+        (row) => String(row[idKey]) === String(selectedRowIds[0])
+      );
+      selectedRowIds.length > 0;
+      currentStatus = firstRow?.status_id || null;
+    } else {
+      setErrorTitle("Error");
+      setErrorMessage(
+        "Selected rows have different statuses. Please select rows with the same status to proceed."
+      );
+      setIsErrorModalOpen(true);
+      return; // Optionally stop if not the same
+    }
+
+    const newStatus = fetchNextStatus(action, currentStatus);
+
+    if (newStatus) {
+      console.log("Updated status to:", newStatus);
+    } else {
+      console.warn("No matching status transition found.");
+    }
+
+    try {
+      if (action === "revise") {
+        if (!remarks) {
+          setErrorTitle("Remarks Required");
+          setErrorMessage("Remarks is required for the status update.");
+          setIsErrorModalOpen(true);
+
+          return;
+        }
+      } else {
+        const confirm = window.confirm(
+          "Are you sure you want to approve this record?"
+        );
+        if (!confirm) return;
+      }
+
+      const payload = {
+        record_ids: Array.isArray(selectedRowIds)
+          ? selectedRowIds
+          : [selectedRowIds],
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+
+      console.log(payload);
+
+      const response = await api.post(
+        "/usable_apis/bulk_update_status",
+        payload
+      );
+
+      // alert(response.data.message);
+
+      // Use the helper function to refresh data
+      setSelectedRowIds([]);
+      setShouldReload((prev) => !prev);
+
+      setIsModalOpen(false);
+
+      setRemarks("");
+
+      // Show bulk revise modal if action is revise
+      if (action === "revise") {
+        setSuccessColor("#182959");
+        setSuccessMessage(
+          "The selected record(s) have been sent for revision."
+        );
+        setSuccessTitle("Revision Requested!");
+        setIsSuccessModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error updating record status:", error);
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }
+  };
+
+  // Approve confirmation for bulk
+  const handleApproveConfirm = async () => {
+    setIsModalOpen(false);
+    const isSame = areSelectedStatusesSame();
+    let currentStatus = null;
+
+    if (isSame && selectedRowIds.length > 0) {
+      const firstRow = filteredData.find(
+        (row) => String(row[idKey]) === String(selectedRowIds[0])
+      );
+      selectedRowIds.length > 0;
+      currentStatus = firstRow?.status_id || null;
+    } else {
+      setErrorTitle("Error");
+      setErrorMessage(
+        "Selected rows have different statuses. Please select rows with the same status to proceed."
+      );
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    const newStatus = fetchNextStatus("approve", currentStatus);
+
+    if (!newStatus) {
+      alert("No matching status transition found.");
+      return;
+    }
+    try {
+      const payload = {
+        record_ids: Array.isArray(selectedRowIds)
+          ? selectedRowIds
+          : [selectedRowIds],
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+      await api.post("/usable_apis/bulk_update_status", payload);
+      setSelectedRowIds([]);
+      setShouldReload((prev) => !prev);
+
+      setRemarks("");
+
+      setSuccessMessage(
+        "The selected record(s) have been successfully approved."
+      );
+      setSuccessTitle("Record(s) Approved Successfully!");
+      setIsSuccessModalOpen(true);
+    } catch (error) {
+      alert(error?.response?.data?.detail || "Update Status Failed.");
+    }
+  };
+
+  const areSelectedStatusesSame = () => {
+    if (!selectedRowIds.length) return false;
+
+    const selectedStatuses = selectedRowIds
+      .map((id) =>
+        filteredData.find((row) => String(row[idKey]) === String(id))
+      )
+      .filter(Boolean)
+      .map((row) => row.status_id);
+
+    return (
+      selectedStatuses.length > 0 &&
+      selectedStatuses.every((status) => status === selectedStatuses[0])
+    );
+  };
+  const idKey =
+    selected === "Employability"
+      ? "employee_id"
+      : selected === "Parental Leave"
+      ? "parental_leave_id"
+      : selected === "Safety Work Data"
+      ? "safety_workdata_id"
+      : selected === "Training"
+      ? "training_id"
+      : selected === "Occupational Safety Health"
+      ? "osh_id"
+      : "id";
+
+  const isApprove = selectedRowIds
+    .map((id) => filteredData.find((row) => row[idKey] === id))
+    .filter(Boolean)
+    .every((row) => row.status_id === "APP");
+
+  const allowedStatuses = ["FRS", "FRH"];
+  console.log(selectedRowIds);
+  const isForRevision = selectedRowIds
+    .map((id) => filteredData.find((row) => String(row[idKey]) === String(id)))
+    .filter(Boolean)
+    .every((row) => allowedStatuses.includes(row.status_id));
+
+  // Filter only selected rows for export
+  const selectedRows = filteredData
+    .filter((row) => selectedRowIds.includes(row[idKey]))
+    .map((row) => ({
+      ...row,
+      statusIdName: statusIdToName[row.status_id] || row.status_id,
+    }));
+  console.log("Render Check", selectedRowIds.length, isApprove);
   return (
     <Box sx={{ display: "flex" }}>
       <Sidebar />
@@ -272,56 +539,103 @@ function HRMain() {
             </div>
 
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: "#182959",
-                  borderRadius: "999px",
-                  padding: "9px 18px",
-                  fontSize: "0.85rem",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    backgroundColor: "#0f1a3c",
-                  },
-                }}
-                startIcon={<FileUploadIcon />}
-                onClick={() => exportToExcel(filteredExportData)}
-              >
-                EXPORT DATA
-              </Button>
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: "#182959",
-                  borderRadius: "999px",
-                  padding: "9px 18px",
-                  fontSize: "0.85rem",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    backgroundColor: "#0f1a3c",
-                  },
-                }}
-                onClick={() => setIsImportModalOpen(true)}
-              >
-                IMPORT
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                sx={{
-                  backgroundColor: "#2B8C37",
-                  borderRadius: "999px",
-                  padding: "9px 18px",
-                  fontSize: "0.85rem",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    backgroundColor: "#256d2f",
-                  },
-                }}
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                ADD RECORD
-              </Button>
+              {selectedRowIds.length > 0 && !isApprove ? (
+                <>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: "#2B8C37",
+                      borderRadius: "999px",
+                      padding: "9px 18px",
+                      fontSize: "1rem",
+                      fontWeight: "bold",
+                      "&:hover": {
+                        backgroundColor: "#256d2f",
+                      },
+                    }}
+                    onClick={() => {
+                      setModalType("approve");
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    Approve
+                  </Button>
+                  {selectedRowIds.length > 0 && !isForRevision && (
+                    <Button
+                      variant="contained"
+                      sx={{
+                        backgroundColor: "#182959",
+                        borderRadius: "999px",
+                        padding: "9px 18px",
+                        fontSize: "1rem",
+                        fontWeight: "bold",
+                        "&:hover": {
+                          backgroundColor: "#0f1a3c",
+                        },
+                      }}
+                      onClick={() => {
+                        setModalType("revise");
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      Revise
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: "#182959",
+                      borderRadius: "999px",
+                      padding: "9px 18px",
+                      fontSize: "0.85rem",
+                      fontWeight: "bold",
+                      "&:hover": {
+                        backgroundColor: "#0f1a3c",
+                      },
+                    }}
+                    startIcon={<FileUploadIcon />}
+                    onClick={() => exportToExcel(filteredExportData)}
+                  >
+                    EXPORT DATA
+                  </Button>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: "#182959",
+                      borderRadius: "999px",
+                      padding: "9px 18px",
+                      fontSize: "0.85rem",
+                      fontWeight: "bold",
+                      "&:hover": {
+                        backgroundColor: "#0f1a3c",
+                      },
+                    }}
+                    onClick={() => setIsImportModalOpen(true)}
+                  >
+                    IMPORT
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    sx={{
+                      backgroundColor: "#2B8C37",
+                      borderRadius: "999px",
+                      padding: "9px 18px",
+                      fontSize: "0.85rem",
+                      fontWeight: "bold",
+                      "&:hover": {
+                        backgroundColor: "#256d2f",
+                      },
+                    }}
+                    onClick={() => setIsAddModalOpen(true)}
+                  >
+                    ADD RECORD
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -336,6 +650,128 @@ function HRMain() {
           <Box mt={3}>{renderPage()}</Box>
         </Box>
         {renderModals()}
+
+        {isModalOpen && modalType === "revise" && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <Paper
+              sx={{
+                p: 4,
+                width: "500px",
+                borderRadius: "16px",
+                bgcolor: "white",
+              }}
+            >
+              <Typography
+                sx={{ fontSize: "2rem", color: "#182959", fontWeight: 800 }}
+              >
+                Revision Request
+              </Typography>
+              <TextField
+                sx={{
+                  mt: 2,
+                  mb: 2,
+                }}
+                label={
+                  <>
+                    {" "}
+                    Remarks <span style={{ color: "red" }}>*</span>{" "}
+                  </>
+                }
+                variant="outlined"
+                fullWidth
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                multiline
+              />
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Button
+                  sx={{
+                    color: "#182959",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      color: "#0f1a3c",
+                    },
+                  }}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setRemarks("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={{
+                    marginLeft: 1,
+                    backgroundColor: "#2B8C37",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      backgroundColor: "#256d2f",
+                    },
+                  }}
+                  onClick={() => {
+                    handleBulkStatusUpdate("revise");
+                  }}
+                >
+                  Confirm
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
+        )}
+
+        {isModalOpen && modalType === "approve" && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <ConfirmModal
+              open={isModalOpen}
+              title={"Approval Confirmation"}
+              message={""}
+              onConfirm={handleApproveConfirm}
+              onCancel={() => setIsModalOpen(false)}
+              summaryData={selectedRows.flatMap((row) => [
+                { label: "ID", value: getRecordID(row) },
+                { label: "Status", value: row.statusIdName },
+              ])}
+            />
+          </Overlay>
+        )}
+
+        {isErrorModalOpen && (
+          <Overlay onClose={() => setIsErrorModalOpen(false)}>
+            <ErrorModal
+              open={isErrorModalOpen}
+              title={errorTitle}
+              errorMessage={errorMessage}
+              onClose={() => setIsErrorModalOpen(false)}
+            />
+          </Overlay>
+        )}
+
+        {isSuccessModalOpen && (
+          <Overlay onClose={() => setIsSuccessModalOpen(false)}>
+            <SuccessModal
+              open={isSuccessModalOpen}
+              title={successTitle}
+              successMessage={successMessage}
+              color={successColor}
+              onClose={() => {
+                setIsSuccessModalOpen(false);
+                onClose();
+              }}
+            />
+          </Overlay>
+        )}
       </Box>
     </Box>
   );

@@ -18,21 +18,68 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import StatusChip from "../../components/StatusChip";
 
-const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
+//added
+import Overlay from "../../components/modal";
+
+import ConfirmModal from "./ConfirmModal";
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+
+const ViewUpdateParentalLeaveModal = ({
+  title,
+  record,
+  onClose,
+  status,
+  onSuccess,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedRecord, setEditedRecord] = useState(record || {});
-
   const permanentlyReadOnlyFields = ["employee_id", "company_id", "status"];
 
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectRemarks, setRejectRemarks] = useState("");
+  //const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  //const [rejectRemarks, setRejectRemarks] = useState("");
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  //added
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successTitle, setSuccessTitle] = useState("");
+  const [successColor, setSuccessColor] = useState("#2B8C37");
+  const [modalType, setModalType] = useState("");
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorTitle, setErrorTitle] = useState("");
+  const statuses = ["URH", "FRH", "APP"];
+  const [nextStatus, setNextStatus] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const recordIdKey = Object.keys(record)[0];
+
+  const statusIdToName = {
+    URH: "Under review (head level)",
+    FRH: "For Revision (Head)",
+    APP: "Approved",
+  };
+
   if (!record) return null;
+
+  const getRecordWithStatus = (record) => ({
+    ...record,
+    status: statusIdToName[record?.status_id] || record?.status || "",
+  });
+
+  const [editedRecord, setEditedRecord] = useState(getRecordWithStatus(record));
+
+  const summaryData = Object.entries(editedRecord)
+    .map(([key, value]) => ({
+      label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+      value: value ? String(value) : "N/A",
+    }))
+    .slice(0, -4);
 
   // Initialize Data Options
   const fetchParentalData = async () => {
@@ -68,91 +115,198 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
   };
 
   const handleDateChange = (field) => (newValue) => {
+    const isoDate = newValue ? dayjs(newValue).format("YYYY-MM-DD") : null;
+
     setEditedRecord((prev) => ({
       ...prev,
-      [field]: newValue ? newValue : null,
+      [field]: isoDate,
     }));
   };
 
   const handleSave = async () => {
-    console.log("Old Data:", record);
-    console.log("Updated Data:", editedRecord);
+    /* VALIDATIONS*/
+
+    console.log(editedRecord);
+
+    const MIN_DATE = dayjs("1994-09-29");
+
+    const { employeeId, date, days, type_of_leave } = editedRecord;
+
+    const isValidLeaveType = uniqueOptions("type_of_leave").some(
+      (option) => option.value === type_of_leave
+    );
+
+    const isValidDate = date && dayjs(date).isSameOrAfter(MIN_DATE);
+
+    const isValidDays = days !== "" && !isNaN(days) && Number(days) > 0;
+
+    if (!isValidDate) {
+      setErrorMessage("Please select a valid Date Availed.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!isValidDays) {
+      setErrorMessage("Days Availed must be a number greater than 0.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (!type_of_leave || !isValidLeaveType) {
+      setErrorMessage("Please select a valid Type of Leave.");
+      setIsErrorModalOpen(true);
+      return;
+    }
 
     try {
       const response = await api.post("hr/edit_parental_leave", editedRecord);
-      console.log(response);
-      alert(response.data.message || "Record saved successfully.");
       setIsEditing(false);
+
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      return true;
     } catch (error) {
       const errorMessage =
         error.response?.data?.detail ||
         error.message ||
         "Unknown error occurred";
-      alert(`Failed to save record: ${errorMessage}`);
+      return false;
     }
   };
+  //remove added status field for comparison
+  const stripStatus = (obj) => {
+    const { status, ...rest } = obj;
+    return rest;
+  };
+  const isRecordUnchanged = () =>
+    JSON.stringify(stripStatus(record)) ===
+    JSON.stringify(stripStatus(editedRecord));
+  {
+    /* ADDED */
+  }
 
-  const isRecordUnchanged =
-    JSON.stringify(record) === JSON.stringify(editedRecord);
+  const fetchNextStatus = (action) => {
+    let newStatus = "";
+    if (action === "approve") {
+      switch (editedRecord.status) {
+        case "For Revision (Head)":
+          newStatus = statuses[0]; // "URH"
+          break;
+        case "Under review (head level)":
+          newStatus = statuses[2]; // "APP"
+          break;
+      }
+    } else if (action === "revise") {
+      switch (editedRecord.status) {
+        case "Under review (head level)":
+          newStatus = statuses[1]; // "FRH"
+          break;
+      }
+    }
+    return newStatus;
+  };
 
-  const handleApprove = async () => {
-    const confirm = window.confirm(
-      "Are you sure you want to approve this record?"
-    );
-    if (!confirm) return;
+  //statuses = ["URS","FRS","URH","FRH","APP"]
+
+  const handleStatusUpdate = async (action) => {
+    const newStatus = fetchNextStatus(action);
+
+    if (newStatus) {
+      setNextStatus(newStatus);
+      console.log("Updated status to:", newStatus);
+    } else {
+      console.warn("No matching status transition found.");
+    }
 
     try {
-      onClose(); // CLOSE MODAL HERE
+      if (action === "revise") {
+        if (!remarks) {
+          setErrorTitle("Remarks Required");
+          setErrorMessage("Remarks is required for the status update");
+          setIsErrorModalOpen(true);
+          return;
+        }
+      } else {
+        const confirm = window.confirm(
+          "Are you sure you want to approve this record?"
+        );
+        if (!confirm) return; // Fixed: changed 'confirmed' to 'confirm'
+      }
+
+      const payload = {
+        record_id: record[recordIdKey]?.toString().trim(),
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+
+      const response = await api.post("/usable_apis/update_status", payload);
+
+      // alert(response.data.message);
+      // status(false);
+
+      // Show appropriate modal for revision
+      if (action === "revise") {
+        if (newStatus === "FRS") {
+          setSuccessMessage("Revision (Site) Requested!");
+          setSuccessTitle("The record has been sent for revision (site).");
+          setSuccessColor("#FFA000");
+          setIsSuccessModalOpen(true);
+        } else if (newStatus === "FRH") {
+          setSuccessMessage("Revision (Head) Requested!");
+          setSuccessTitle("The record has been sent for revision (head).");
+          setSuccessColor("#182959");
+          setIsSuccessModalOpen(true);
+        }
+
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        if (onSuccess) {
+          onSuccess();
+        }
+      }
     } catch (error) {
-      const msg = error.response?.data?.detail || error.message;
-      alert(`Failed to approve: ${msg}`);
+      console.error("Error updating record status:", error);
+      alert(error?.response?.data?.detail || "Update Status Failed.");
     }
   };
 
-  const handleRejectConfirm = async () => {
-    if (!rejectRemarks.trim()) {
-      alert("Please enter remarks before rejecting.");
-      return;
-    }
-
+  const handleApproveConfirm = async () => {
+    setIsModalOpen(false);
+    const newStatus = fetchNextStatus("approve");
     try {
-      if (updateStatus) updateStatus("REJ");
-      setRejectDialogOpen(false);
-      onClose(); // CLOSE MODAL HERE
+      const payload = {
+        record_id: record[recordIdKey]?.toString().trim(),
+        new_status: newStatus.trim(),
+        remarks: remarks.trim(),
+      };
+      const response = await api.post("/usable_apis/update_status", payload);
+      console.log(payload);
+
+      setSuccessMessage("Record Approved Successfully!");
+      setSuccessTitle("The record has been successfully approved.");
+      setIsSuccessModalOpen(true);
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
-      const msg = error.response?.data?.detail || error.message;
-      alert(`Failed to reject: ${msg}`);
+      alert(error?.response?.data?.detail || "Update Status Failed.");
     }
   };
 
-  const handleCloseClick = () => {
-    if (isEditing && !isUnchanged) {
-      const confirmClose = window.confirm(
-        "You have unsaved changes. Close anyway?"
-      );
-      if (!confirmClose) return;
-    }
-    if (updateStatus) updateStatus(isUnchanged);
-    onClose();
-  };
   return (
-    <Paper sx={{ p: 4, width: 600, borderRadius: 2, position: "relative" }}>
-      {/* Close Button */}
-      <Button
-        onClick={handleCloseClick}
-        sx={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          minWidth: "auto",
-          padding: 0,
-          color: "grey.600",
-        }}
-      >
-        ✕
-      </Button>
-
-      {/* Title */}
+    <Paper
+      sx={{
+        p: 4,
+        width: "600px",
+        borderRadius: "16px",
+        bgcolor: "white",
+      }}
+    >
       <Box
         sx={{
           display: "flex",
@@ -161,72 +315,116 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
           mb: 3,
         }}
       >
-        <Typography sx={{ fontSize: "0.85rem", fontWeight: 800 }}>
+        <Typography
+          sx={{
+            fontSize: "0.85rem",
+            fontWeight: 800,
+          }}
+        >
           {isEditing ? "EDIT RECORD" : "VIEW RECORD"}
         </Typography>
         <Typography
           sx={{ fontSize: "1.75rem", color: "#182959", fontWeight: 800 }}
         >
-          Leave Record
+          {title}
         </Typography>
       </Box>
 
-      {/* Status and Remarks */}
-      <Box mb={2} width="100%">
-        <Typography variant="body2" fontWeight={600}>
-          Status:{" "}
-          <span
-            style={{
-              color:
-                status === "APP" ? "green" : status === "REJ" ? "red" : "#555",
-            }}
-          >
-            {status || "PENDING"}
-          </span>
-        </Typography>
-        {remarks && (
-          <Box mt={1} p={1} bgcolor="grey.100" borderRadius={1}>
-            <Typography variant="body2" color="text.secondary" fontWeight={500}>
-              Remarks:
-            </Typography>
-            <Typography variant="body2" color="text.primary">
-              {remarks}
-            </Typography>
-          </Box>
-        )}
-      </Box>
-
-      {/* Form Fields */}
-      <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 1,
+          mb: 2,
+        }}
+      >
         <TextField
-          label={getLabel("Employee ID", "employee_id")}
+          label={
+            isEditing && !permanentlyReadOnlyFields.includes("employee_id") ? (
+              <>
+                Employee ID <span style={{ color: "red" }}>*</span>
+              </>
+            ) : (
+              "Employee ID"
+            )
+          }
           variant="outlined"
           fullWidth
           value={editedRecord.employee_id ?? ""}
           onChange={(e) => handleChange("employee_id", e.target.value)}
           type="text"
-          InputProps={getInputProps("employee_id")}
-          InputLabelProps={getLabelProps()}
+          InputProps={{
+            readOnly:
+              !isEditing || permanentlyReadOnlyFields.includes("employee_id"),
+            sx: {
+              color: isEditing ? "black" : "#182959",
+            },
+          }}
+          InputLabelProps={{
+            sx: {
+              color: isEditing ? "#182959" : "grey",
+            },
+          }}
         />
 
         <TextField
-          label={getLabel("Company", "company_id")}
+          label={
+            isEditing && !permanentlyReadOnlyFields.includes("company_id") ? (
+              <>
+                Company <span style={{ color: "red" }}>*</span>
+              </>
+            ) : (
+              "Company"
+            )
+          }
           variant="outlined"
           fullWidth
           value={editedRecord.company_id ?? ""}
           onChange={(e) => handleChange("company_id", e.target.value)}
           type="text"
-          InputProps={getInputProps("company_id")}
-          InputLabelProps={getLabelProps()}
+          InputProps={{
+            readOnly:
+              !isEditing || permanentlyReadOnlyFields.includes("company_id"),
+            sx: {
+              color: isEditing ? "black" : "#182959",
+            },
+          }}
+          InputLabelProps={{
+            sx: {
+              color: isEditing ? "#182959" : "grey",
+            },
+          }}
         />
 
-        {isEditable("type_of_leave") ? (
-          <FormControl fullWidth sx={{ gridColumn: "1 / -1" }}>
+        {isEditing ? (
+          <FormControl fullWidth sx={{ minWidth: 120 }}>
             <InputLabel>
-              {getLabel("Type of Leave", "type_of_leave")}
+              {isEditing &&
+              !permanentlyReadOnlyFields.includes("type_of_leave") ? (
+                <>
+                  <span style={{ color: isEditing ? "#182959" : "grey" }}>
+                    Type of Leave
+                  </span>
+                  <span style={{ color: "red" }}>*</span>
+                </>
+              ) : (
+                "Type of Leave"
+              )}
             </InputLabel>
             <Select
-              label="Type of Leave"
+              label={
+                isEditing &&
+                !permanentlyReadOnlyFields.includes("type_of_leave") ? (
+                  <>
+                    <span style={{ color: isEditing ? "#182959" : "grey" }}>
+                      Type of Leave
+                    </span>
+                    <span style={{ color: "red" }}>*</span>
+                  </>
+                ) : (
+                  "Type of Leave"
+                )
+              }
               value={editedRecord.type_of_leave ?? ""}
               onChange={(e) => handleChange("type_of_leave")(e)}
               sx={{ height: "55px" }}
@@ -247,29 +445,72 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
             value={editedRecord.type_of_leave ?? ""}
             onChange={(e) => handleChange("type_of_leave", e.target.value)}
             type="text"
-            InputProps={getInputProps("type_of_leave")}
-            InputLabelProps={getLabelProps()}
+            InputProps={{
+              readOnly:
+                !isEditing ||
+                permanentlyReadOnlyFields.includes("type_of_leave"),
+              sx: {
+                color: isEditing ? "black" : "#182959",
+              },
+            }}
+            InputLabelProps={{
+              sx: {
+                color: isEditing ? "#182959" : "grey",
+              },
+            }}
           />
         )}
 
         <TextField
-          label={getLabel("Days Availed", "days")}
+          label={
+            isEditing && !permanentlyReadOnlyFields.includes("days") ? (
+              <>
+                Days Availed <span style={{ color: "red" }}>*</span>
+              </>
+            ) : (
+              "Days Availed"
+            )
+          }
           variant="outlined"
           fullWidth
           value={editedRecord.days ?? ""}
           onChange={handleChange("days")}
           type="number"
-          InputProps={{ ...getInputProps("days"), min: 0 }}
-          InputLabelProps={getLabelProps()}
+          inputProps={{ min: 1 }}
+          InputProps={{
+            readOnly: !isEditing || permanentlyReadOnlyFields.includes("days"),
+            sx: {
+              color: isEditing ? "black" : "#182959",
+            },
+          }}
+          InputLabelProps={{
+            sx: {
+              color: isEditing ? "#182959" : "grey",
+            },
+          }}
         />
 
-        {isEditable("date") ? (
+        {isEditing ? (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label={getLabel("Date Availed", "date")}
+              label={
+                isEditing && !permanentlyReadOnlyFields.includes("date") ? (
+                  <>
+                    <span style={{ color: isEditing ? "#182959" : "grey" }}>
+                      Date Availed
+                    </span>
+                    <span style={{ color: "red" }}>*</span>
+                  </>
+                ) : (
+                  "Date Availed"
+                )
+              }
               value={editedRecord.date ? dayjs(editedRecord.date) : null}
               onChange={handleDateChange("date")}
-              slotProps={{ textField: { fullWidth: true, size: "medium" } }}
+              minDate={dayjs("1994-09-29")}
+              slotProps={{
+                textField: { fullWidth: true, size: "medium" },
+              }}
             />
           </LocalizationProvider>
         ) : (
@@ -277,112 +518,283 @@ const ViewUpdateParentalLeaveModal = ({ title, record, onClose, status }) => {
             label="Date Availed"
             variant="outlined"
             fullWidth
-            value={
-              editedRecord.date
-                ? dayjs(editedRecord.date).format("MM-DD-YYYY")
-                : ""
-            }
+            value={editedRecord.date ? editedRecord.date.split("T")[0] : ""}
             onChange={(e) => handleChange("date", e.target.value)}
             type="text"
-            InputProps={getInputProps("date")}
-            InputLabelProps={getLabelProps()}
+            InputProps={{
+              readOnly:
+                !isEditing || permanentlyReadOnlyFields.includes("date"),
+              sx: {
+                color: isEditing ? "black" : "#182959",
+              },
+            }}
+            InputLabelProps={{
+              sx: {
+                color: isEditing ? "#182959" : "grey",
+              },
+            }}
           />
         )}
 
-        <TextField
-          label="Status"
-          variant="outlined"
-          fullWidth
-          value={editedRecord.status_id ?? ""}
-          onChange={(e) => handleChange("status_id", e.target.value)}
-          type="text"
-          InputProps={getInputProps("status_id")}
-          InputLabelProps={getLabelProps()}
-        />
-      </Box>
-
-      {/* Footer Actions */}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mt={4}
-      >
-        {/* Left Button: Save or Edit */}
-        <Box display="flex" gap={1}>
-          <Button
-            startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-            onClick={async () => {
-              if (isReadOnly) return;
-              if (isEditing) {
-                if (!isUnchanged) {
-                  await handleSave();
-                } else {
-                  alert("No changes made.");
-                  setIsEditing(false);
-                }
-              } else {
-                setIsEditing(true);
-              }
+        <Box
+          sx={{
+            p: 0.5,
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "0.85rem",
+              color: "grey",
             }}
-            disabled={isReadOnly}
           >
-            {isEditing ? "Save" : "Edit"}
-          </Button>
+            Status:
+          </Typography>
+          <StatusChip status={record.status_id} />
         </Box>
 
-        {/* Right Buttons: Approve / Revise */}
-        {!isReadOnly && !isEditing && (
-          <Box display="flex" gap={1}>
-            <Button variant="outlined" color="success" onClick={handleApprove}>
-              Approve
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={() => setRejectDialogOpen(true)}
-            >
-              Revise
-            </Button>
+        <Box />
+      </Box>
+
+      {/*added */}
+
+      <Box sx={{ display: "flex", flexDirection: "column", mt: 3 }}>
+        {editedRecord.status !== "Approved" && (
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            {/* EDIT/SAVE button - Hidden if Under Review */}
+            {editedRecord.status !== "Under review (site)" &&
+              editedRecord.status !== "Under review (head level)" && (
+                <Button
+                  startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
+                  sx={{
+                    color: isEditing ? "#1976d2" : "#FFA000",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      color: isEditing ? "#1565c0" : "#FB8C00",
+                    },
+                  }}
+                  onClick={async () => {
+                    if (isEditing) {
+                      console.log("🟡 isRecordUnchanged:", isRecordUnchanged());
+                      if (!isRecordUnchanged()) {
+                        const saveSuccess = await handleSave();
+                        if (
+                          saveSuccess &&
+                          (editedRecord.status === "For Revision (Site)" ||
+                            editedRecord.status === "For Revision (Head)")
+                        ) {
+                          setSuccessMessage("");
+                          setSuccessTitle(
+                            "The record has been successfully updated."
+                          );
+                          setIsSuccessModalOpen(true);
+                        }
+                      } else {
+                        setIsEditing(false);
+
+                        if (
+                          editedRecord.status === "For Revision (Site)" ||
+                          editedRecord.status === "For Revision (Head)"
+                        ) {
+                          setSuccessMessage("");
+                          setSuccessTitle(
+                            "No changes were made to the record."
+                          );
+                          setIsSuccessModalOpen(true);
+                        }
+                      }
+                    } else {
+                      setIsEditing(true);
+                    }
+                  }}
+                >
+                  {isEditing ? "SAVE" : "EDIT"}
+                </Button>
+              )}
+
+            {/* APPROVE & REVISE buttons */}
+            <Box>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "#2B8C37",
+                  borderRadius: "999px",
+                  padding: "9px 18px",
+                  fontSize: "1rem",
+                  fontWeight: "bold",
+                  "&:hover": {
+                    backgroundColor: "#256d2f",
+                  },
+                }}
+                onClick={() => {
+                  setModalType("approve");
+                  setIsModalOpen(true);
+                }}
+              >
+                Approve
+              </Button>
+
+              {editedRecord.status !== "For Revision (Site)" &&
+                editedRecord.status !== "For Revision (Head)" && (
+                  <Button
+                    variant="contained"
+                    sx={{
+                      marginLeft: 1,
+                      backgroundColor: "#182959",
+                      borderRadius: "999px",
+                      padding: "9px 18px",
+                      fontSize: "1rem",
+                      fontWeight: "bold",
+                      "&:hover": {
+                        backgroundColor: "#0f1a3c",
+                      },
+                    }}
+                    onClick={() => {
+                      setModalType("revise");
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    Revise
+                  </Button>
+                )}
+            </Box>
           </Box>
         )}
 
-        {isReadOnly && (
-          <Typography variant="caption" color="error">
-            This record has been approved and cannot be edited.
-          </Typography>
+        {/* Approved message */}
+        {editedRecord.status === "Approved" && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+            <Typography
+              sx={{
+                fontSize: "0.9rem",
+                color: "#FF0000",
+                fontStyle: "italic",
+              }}
+            >
+              This record has been approved and cannot be edited.
+            </Typography>
+          </Box>
+        )}
+
+        {isModalOpen && modalType === "revise" && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <Paper
+              sx={{
+                p: 4,
+                width: "500px",
+                borderRadius: "16px",
+                bgcolor: "white",
+              }}
+            >
+              <Typography
+                sx={{ fontSize: "2rem", color: "#182959", fontWeight: 800 }}
+              >
+                Revision Request
+              </Typography>
+              <TextField
+                sx={{
+                  mt: 2,
+                  mb: 2,
+                }}
+                label={
+                  <>
+                    {" "}
+                    Remarks <span style={{ color: "red" }}>*</span>{" "}
+                  </>
+                }
+                variant="outlined"
+                fullWidth
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                multiline
+              />
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Button
+                  sx={{
+                    color: "#182959",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      color: "#0f1a3c",
+                    },
+                  }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={{
+                    marginLeft: 1,
+                    backgroundColor: "#2B8C37",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      backgroundColor: "#256d2f",
+                    },
+                  }}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    handleStatusUpdate("revise");
+                  }}
+                >
+                  Confirm
+                </Button>
+              </Box>
+            </Paper>
+          </Overlay>
+        )}
+
+        {isModalOpen && modalType === "approve" && (
+          <Overlay onClose={() => setIsModalOpen(false)}>
+            <ConfirmModal
+              open={isModalOpen}
+              title={"Approval Confirmation"}
+              message={"Are you sure you want to approve this employee record?"}
+              onConfirm={handleApproveConfirm}
+              onCancel={() => setIsModalOpen(false)}
+              summaryData={summaryData}
+            />
+          </Overlay>
+        )}
+
+        {isErrorModalOpen && (
+          <Overlay onClose={() => setIsErrorModalOpen(false)}>
+            <ErrorModal
+              open={isErrorModalOpen}
+              title={errorTitle}
+              errorMessage={errorMessage}
+              onClose={() => setIsErrorModalOpen(false)}
+            />
+          </Overlay>
+        )}
+
+        {isSuccessModalOpen && (
+          <Overlay onClose={() => setIsSuccessModalOpen(false)}>
+            <SuccessModal
+              open={isSuccessModalOpen}
+              title={successTitle}
+              successMessage={successMessage}
+              color={successColor}
+              onClose={() => {
+                setIsSuccessModalOpen(false);
+                onClose();
+              }}
+            />
+          </Overlay>
         )}
       </Box>
-
-      {/* Reject Remarks Dialog */}
-      <Dialog
-        open={rejectDialogOpen}
-        onClose={() => setRejectDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Request to Revise Record</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Remarks"
-            multiline
-            fullWidth
-            rows={4}
-            value={rejectRemarks}
-            onChange={(e) => setRejectRemarks(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={handleRejectConfirm}
-            variant="contained"
-            color="error"
-          >
-            Confirm Revision Request
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Paper>
   );
 };

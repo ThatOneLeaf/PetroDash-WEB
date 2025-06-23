@@ -10,6 +10,7 @@ import {
   Box,
 } from "@mui/material";
 
+import Overlay from "../../components/modal";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -17,6 +18,10 @@ import dayjs from "dayjs";
 import api from "../../services/api";
 
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+
+import SuccessModal from "../../components/hr_components/SuccessModal";
+import ErrorModal from "../../components/hr_components/ErrorModal";
+import ConfirmModal from "./ConfirmModal";
 
 dayjs.extend(isSameOrAfter);
 
@@ -29,9 +34,31 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
     safetyManhours: "",
   });
 
+  const summaryData = [
+    { label: "Company ID", value: String(formData.companyId || "N/A") },
+    { label: "Contractor", value: String(formData.contractor || "N/A") },
+    {
+      label: "Date",
+      value: formData.date ? dayjs(formData.date).format("YYYY-MM-DD") : "N/A",
+    },
+    {
+      label: "Safety Manpower",
+      value: String(formData.safetyManpower || "N/A"),
+    },
+    {
+      label: "Safety Manhours",
+      value: String(formData.safetyManhours || "N/A"),
+    },
+  ];
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     setLoading(false);
@@ -102,22 +129,31 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
       Number(safetyManhours) > 0;
 
     if (!isValidContractor) {
-      alert("Contractor is required.");
+      setErrorMessage("Contractor is required.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
+
       return;
     }
 
     if (!isValidDate) {
-      alert("Please select a valid Date.");
+      setErrorMessage("Please select a valid Date.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidManpower) {
-      alert("Safety Manpower must be a number greater than 0.");
+      setErrorMessage("Safety Manpower must be a number greater than 0.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
     if (!isValidManhours) {
-      alert("Safety Manhours must be a number greater than 0.");
+      setErrorMessage("Safety Manhours must be a number greater than 0.");
+      setIsConfirmModalOpen(false);
+      setIsErrorModalOpen(true);
       return;
     }
 
@@ -132,9 +168,9 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
         manhours: formData.safetyManhours,
       });
 
-      console.log("success  ");
+      setIsConfirmModalOpen(false);
+      setIsSuccessModalOpen(true);
       if (onSuccess) onSuccess();
-      onClose();
 
       setFormData({
         companyId: "", // get current  company of emp
@@ -272,10 +308,50 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
               backgroundColor: "#256d2f",
             },
           }}
-          onClick={handleSubmit}
+          onClick={() => setIsConfirmModalOpen(true)}
         >
           ADD RECORD
         </Button>
+
+        {isConfirmModalOpen && (
+          <Overlay onClose={() => setIsConfirmModalOpen(false)}>
+            <ConfirmModal
+              open={isConfirmModalOpen}
+              title={"Confirm Record Addition"}
+              message={
+                "Are you sure you want to add this safety work data record?"
+              }
+              onConfirm={handleSubmit}
+              onCancel={() => setIsConfirmModalOpen(false)}
+              summaryData={summaryData}
+            />
+          </Overlay>
+        )}
+
+        {isErrorModalOpen && (
+          <Overlay onClose={() => setIsErrorModalOpen(false)}>
+            <ErrorModal
+              open={isErrorModalOpen}
+              errorMessage={errorMessage}
+              onClose={() => setIsErrorModalOpen(false)}
+            />
+          </Overlay>
+        )}
+
+        {isSuccessModalOpen && (
+          <Overlay onClose={() => setIsSuccessModalOpen(false)}>
+            <SuccessModal
+              open={isSuccessModalOpen}
+              successMessage={
+                "Your safety work data record has been successfully added to the repository."
+              }
+              onClose={() => {
+                setIsSuccessModalOpen(false);
+                onClose();
+              }}
+            />
+          </Overlay>
+        )}
       </Box>
     </Paper>
   );
