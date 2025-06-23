@@ -31,6 +31,7 @@ const ViewEditEnergyModal = ({
   status,
   remarks,
   updateStatus,
+  canEdit = true, // <-- new prop, default true
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [record, setRecord] = useState(null);
@@ -353,26 +354,28 @@ const handleRejectConfirm = async () => {
         <Box display="flex" justifyContent="space-between" alignItems="center" mt={4}>
   {/* Left: Save/Edit */}
   <Box display="flex" gap={1}>
-    <Button
-      startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-      onClick={async () => {
-        if (isReadOnly) return;
-        if (isEditing) {
-          if (!isUnchanged) {
-            await handleSave();  // await the async save to complete
+    {canEdit && (
+      <Button
+        startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
+        onClick={async () => {
+          if (isReadOnly) return;
+          if (isEditing) {
+            if (!isUnchanged) {
+              await handleSave();  // await the async save to complete
+            } else {
+              alert('No changes made.');
+              setIsEditing(false);
+            }
           } else {
-            alert('No changes made.');
-            setIsEditing(false);
+            setIsEditing(true);
           }
-        } else {
-          setIsEditing(true);
-        }
-      }}
+        }}
 
-      disabled={isReadOnly}
-    >
-      {isEditing ? 'Save' : 'Edit'}
-    </Button>
+        disabled={isReadOnly}
+      >
+        {isEditing ? 'Save' : 'Edit'}
+      </Button>
+    )}
   </Box>
 
   {/* Right: Approve/Reject */}

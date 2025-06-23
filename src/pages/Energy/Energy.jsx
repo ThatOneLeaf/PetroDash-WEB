@@ -30,6 +30,7 @@ import Table from "../../components/Table/Table";
 import api from '../../services/api';
 import { exportExcelData } from "../../services/directExport";
 import ViewEditEnergyModal from "../../components/ViewEditEnergyModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Energy() {
   const [data, setData] = useState([]);
@@ -100,13 +101,20 @@ function Energy() {
   const [powerPlants, setPowerPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { getUserRole } = useAuth();
+  const {getUserCompanyId} = useAuth();
+  const{getUserPowerPlantId}=useAuth();
+  const role = getUserRole();
+  const companyId = getUserCompanyId();
+  const powerPlantId = getUserPowerPlantId();
 
-  // Placeholder for role-based permissions (currently all true)
-  const canEdit = true;      // user?.role === 'admin' || user?.role === 'editor';
-  const canApprove = true;   // user?.role === 'admin';
-  const canAdd = true;       // canEdit
-  const canImport = true;    // canEdit
-  const canExport = true;    // true for all users
+  // Role-based permissions
+  const canEdit = role === 'R05' || role === 'R03' || role === 'R04'; // Encoder
+  const canApprove = role === 'R03' || role === 'R04'; // Head Office/Checker
+  const canAdd = canEdit; // Only encoder can add
+  const canImport = canEdit; // Only encoder can import
+  const canExport = canApprove || canEdit; // Approver or encoder can export
+  console.log("User Role:", role);
 
 
   const fetchEnergyData = async () => {
@@ -504,79 +512,86 @@ function Energy() {
             </>
           )}
 
-
-{selectedRowIds.length > 0 && canApprove && (
-  <>
-    <ButtonComp
-      label="Approve"
-      rounded
-      onClick={() => {
-        
-        const record = data.find(r => r.energyId === selectedRowIds[0]);
-        
-        if (record) {
-          // your approve logic
-          const records = selectedRowIds
-            .map(id => data.find(r => r.energyId === id))
-            .filter(Boolean);
-
-          const statusList = records.map(record => record.status);
-
-          setSelectedRecords(records);
-          setStatuses(statusList);
-          const allSameStatus = statusList.every(status => status === statusList[0]);
-
-          if (allSameStatus && statusList[0] != "APP") {
-            setModalType('approve');
-            setIsModalOpen(true);
-          } else if (allSameStatus && statusList[0] === "APP") {
-            alert("Cannot proceed: Record is already Approved.");
-          } else {
-            setShowStatusErrorModal(true);
-          }
-        }
-      }}
-      color="green"
-      startIcon={<CheckIcon />}
-    />
-    <ButtonComp
-      label="Revise"
-      rounded
-      onClick={() => {
-        const record = data.find(r => r.energyId === selectedRowIds[0]);
-        if (record) {
-          // your revise logic
-          const records = selectedRowIds
-            .map(id => data.find(r => r.energyId === id))
-            .filter(Boolean);
-
-          const statusList = records.map(record => record.status);
-
-          setSelectedRecords(records);
-          setStatuses(statusList);
-          const allSameStatus = statusList.every(status => status === statusList[0]);
-
-          if (
-            allSameStatus &&
-            statusList[0] !== "APP" &&
-            !["FRS", "FRH"].includes(statusList[0])
-          ) {
-            setModalType('revise');
-            setIsModalOpen(true);
-          } else if (allSameStatus && ["FRS", "FRH"].includes(statusList[0])) {
-            alert("Cannot proceed: Record is already for Revision.");
-          } else if (allSameStatus && statusList[0] === "APP") {
-            alert("Cannot proceed: Record is already Approved.");
-          } else {
-            setShowStatusErrorModal(true);
-          }
-        }
-      }}
-      color="blue"
-    />
-  </>
-)}
-
+          {/* Show Export, Approve, and Revise when rows are selected and user can approve/export */}
+          {selectedRowIds.length > 0 && (
+            <>
+              {canExport && (
+                <ButtonComp
+                  label="Export Selected"
+                  rounded
+                  onClick={() => {
+                    const selectedData = filteredData.filter(row => selectedRowIds.includes(row.energyId));
+                    exportExcelData(selectedData, exportFields, "Selected Power Generated");
+                  }}
+                  color="blue"
+                  startIcon={<FileUploadIcon />}
+                />
+              )}
+              {canApprove && (
+                <>
+                  <ButtonComp
+                    label="Approve"
+                    rounded
+                    onClick={() => {
+                      const record = data.find(r => r.energyId === selectedRowIds[0]);
+                      if (record) {
+                        // your approve logic
+                        const records = selectedRowIds
+                          .map(id => data.find(r => r.energyId === id))
+                          .filter(Boolean);
+                        const statusList = records.map(record => record.status);
+                        setSelectedRecords(records);
+                        setStatuses(statusList);
+                        const allSameStatus = statusList.every(status => status === statusList[0]);
+                        if (allSameStatus && statusList[0] != "APP") {
+                          setModalType('approve');
+                          setIsModalOpen(true);
+                        } else if (allSameStatus && statusList[0] === "APP") {
+                          alert("Cannot proceed: Record is already Approved.");
+                        } else {
+                          setShowStatusErrorModal(true);
+                        }
+                      }
+                    }}
+                    color="green"
+                    startIcon={<CheckIcon />}
+                  />
+                  <ButtonComp
+                    label="Revise"
+                    rounded
+                    onClick={() => {
+                      const record = data.find(r => r.energyId === selectedRowIds[0]);
+                      if (record) {
+                        // your revise logic
+                        const records = selectedRowIds
+                          .map(id => data.find(r => r.energyId === id))
+                          .filter(Boolean);
+                        const statusList = records.map(record => record.status);
+                        setSelectedRecords(records);
+                        setStatuses(statusList);
+                        const allSameStatus = statusList.every(status => status === statusList[0]);
+                        if (
+                          allSameStatus &&
+                          statusList[0] !== "APP" &&
+                          !["FRS", "FRH"].includes(statusList[0])
+                        ) {
+                          setModalType('revise');
+                          setIsModalOpen(true);
+                        } else if (allSameStatus && ["FRS", "FRH"].includes(statusList[0])) {
+                          alert("Cannot proceed: Record is already for Revision.");
+                        } else if (allSameStatus && statusList[0] === "APP") {
+                          alert("Cannot proceed: Record is already Approved.");
+                        } else {
+                          setShowStatusErrorModal(true);
+                        }
+                      }
+                    }}
+                    color="blue"
+                  />
+                </>
+              )}
+            </>
+          )}
           </Box>
 
 
@@ -1096,13 +1111,14 @@ function Energy() {
           energyId={selectedRecord.energyId}
           powerplantId={selectedRecord.powerPlant}
           companyName={selectedRecord.companyName}  
-          status = {selectedRecord.status_name}
+          status={selectedRecord.status_name}
           remarks={selectedRecord.remarks}
           updatePath="/energy/edit"
           onClose={handleClose}
           updateStatus={(updated) => {
             if (updated) fetchEnergyData();
           }}
+          canEdit={canEdit}
         />
         </Overlay>
       )}
@@ -1114,7 +1130,8 @@ function Energy() {
                 setIsAddEnergyModalOpen(false);
                 fetchEnergyData();
               }}
-              powerPlants={powerPlants}
+              companyId={companyId}
+              powerPlantId={powerPlantId}
             />
           </Overlay>
         )}
