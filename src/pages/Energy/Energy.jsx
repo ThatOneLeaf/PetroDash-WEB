@@ -643,10 +643,20 @@ function Energy() {
                   ...data.map((row) => row.province).filter(Boolean),
                 ]),
               ]}
+              style={{ display: role === 'R03' ? 'block' : 'none' }}
             />
-            <Filter label="Company" placeholder="Company" options={[{ label: "All Companies", value: "" }, ...companyOptions]} value={filters.company} onChange={(val) => { setFilters((prev) => ({ ...prev, company: val })); setPage(1); }} />
-            <Filter label="Power Project" placeholder="Power Project" options={[{ label: "All Power Projects", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
-            <Filter label="Generation Source" placeholder="Source" options={[{ label: "All Sources", value: "" }, ...generationSourceOptions]} value={filters.generationSource} onChange={(val) => { setFilters((prev) => ({ ...prev, generationSource: val })); setPage(1); }} />
+            {role === 'R03' && (
+              <Filter label="Company" placeholder="Company" options={[{ label: "All Companies", value: "" }, ...companyOptions]} value={filters.company} onChange={(val) => { setFilters((prev) => ({ ...prev, company: val })); setPage(1); }} />
+            )}
+            {(role === 'R03' || role === 'R04') && (
+              <Filter label="Power Project" placeholder="Power Project" options={[{ label: "All Power Projects", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
+            )}
+            {role === 'R03' && (
+              <Filter label="Generation Source" placeholder="Source" options={[{ label: "All Sources", value: "" }, ...generationSourceOptions]} value={filters.generationSource} onChange={(val) => { setFilters((prev) => ({ ...prev, generationSource: val })); setPage(1); }} />
+            )}
+            {role === 'R03' && (
+              <Filter label="Province" placeholder="Province" options={[{ label: "All Provinces", value: "" }, ...provinceOptions]} value={filters.province} onChange={(val) => { setFilters((prev) => ({ ...prev, province: val })); setPage(1); }} />
+            )}
             <Filter label="Status" placeholder="Status" options={[{ label: "All Status", value: "" }, ...statusOptions]} value={filters.status} onChange={(val) => { setFilters((prev) => ({ ...prev, status: val })); setPage(1); }} />
             <DateRangePicker
               label="Date Range"
@@ -682,7 +692,6 @@ function Energy() {
                 Clear Filters
               </Button>
             )}
-  
           </Box>
 
           {/* Table */}
