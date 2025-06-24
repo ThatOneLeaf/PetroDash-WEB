@@ -488,9 +488,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   height: isMobile ? 24 : 28,
                   display: "block",
                   margin: "0 auto",
-                  cursor: allowedModes.length > 1 ? "pointer" : "not-allowed",
+                  cursor: allowedModes.length > 1 ? "pointer" : "default",
                   transition: "filter 0.2s",
-                  opacity: allowedModes.length > 1 ? 1 : 0.4,
                   filter:
                     mode === "dashboard"
                       ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
@@ -502,7 +501,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
               <Button
                 fullWidth
                 variant="contained"
-                disabled={allowedModes.length <= 1}
                 sx={{
                   bgcolor: mode === "dashboard" ? "#1a3365" : "#2B8C37",
                   color: "#fff",
@@ -518,21 +516,13 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   "&:hover": allowedModes.length > 1 ? { 
                     bgcolor: mode === "dashboard" ? "#162a52" : "#23702b" 
                   } : {},
-                  "&:disabled": {
-                    bgcolor: mode === "dashboard" ? "#1a3365" : "#2B8C37",
-                    color: "#fff",
-                    opacity: 0.6,
-                  },
                   transition: "all 0.2s",
                   mb: 1,
-                  cursor: allowedModes.length > 1 ? "pointer" : "not-allowed",
+                  cursor: allowedModes.length > 1 ? "pointer" : "default",
                 }}
                 onClick={allowedModes.length > 1 ? handleToggleMode : undefined}
               >
                 {mode === "dashboard" ? "Dashboard" : "Repository"}
-                {allowedModes.length <= 1 && (
-                  <span style={{ marginLeft: isMobile ? 4 : 8, fontSize: isMobile ? 10 : 12 }}>🔒</span>
-                )}
               </Button>
             )}
           </Box>
@@ -546,16 +536,13 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   key={item.label}
                   sx={{
                     position: "relative",
-                    opacity: item.hasAccess ? 1 : 0.4,
-                    cursor: item.hasAccess ? "pointer" : "not-allowed",
-                    pointerEvents: item.hasAccess ? "auto" : "none"
                   }}
                 >
                   <Link
                     to={item.hasAccess ? item.to : "#"}
                     style={{
                       textDecoration: "none",
-                      color: item.hasAccess ? "#1a3365" : "#9e9e9e",
+                      color: "#1a3365",
                     }}
                     onClick={(e) => {
                       if (!item.hasAccess) {
@@ -569,12 +556,13 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   >
                     <Box
                       sx={{
-                        display: "flex",                        alignItems: "center",
+                        display: "flex",
+                        alignItems: "center",
                         justifyContent: collapsed ? "center" : "flex-start",
                         px: collapsed ? 0 : (isMobile ? 3 : 4),
                         py: isMobile ? 1.2 : 1.5,
                         gap: collapsed ? 0 : (isMobile ? 1.5 : 2),
-                        cursor: item.hasAccess ? "pointer" : "not-allowed",
+                        cursor: "pointer",
                         transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
                         bgcolor: (item.hasAccess && isSelected(item) && !collapsed)
                           ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
@@ -592,17 +580,17 @@ function SideBar({ collapsed: collapsedProp = false }) {
                           borderBottomRightRadius: 12,
                           zIndex: 2,
                         } : {},
-                        "&:hover": item.hasAccess ? {
+                        "&:hover": {
                           bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
-                        } : {},
-                        "&:hover span": item.hasAccess ? {
+                        },
+                        "&:hover span": {
                           color: "#fff",
                           fontWeight: 700,
-                        } : {},
-                        "&:hover img": item.hasAccess ? {
+                        },
+                        "&:hover img": {
                           filter:
                             "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                        } : {},
+                        },
                       }}
                     >
                       <img
@@ -614,22 +602,20 @@ function SideBar({ collapsed: collapsedProp = false }) {
                           transition: "filter 0.2s, margin 0.3s",
                           marginLeft: 0,
                           marginRight: 0,
-                          filter: item.hasAccess ?
-                            ((isSelected(item) && !collapsed)
+                          filter:
+                            (isSelected(item) && !collapsed)
                               ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
                               : mode === "repository"
                                 ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
-                                : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)")
-                            : "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
-                        }}                      />
+                                : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
+                        }}
+                      />
                     {collapsed ? null : (
                       <span
                         style={{
                           fontSize: isMobile ? 16 : 18,
                           fontWeight: (item.hasAccess && isSelected(item) && !collapsed) ? 700 : 400,
-                          color: item.hasAccess ? 
-                            ((isSelected(item) && !collapsed) ? "#fff" : "#1a3365") : 
-                            "#9e9e9e",
+                          color: (isSelected(item) && !collapsed) ? "#fff" : "#1a3365",
                           transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
                           opacity: 1,
                           marginLeft: isMobile ? 3 : 4,
@@ -641,25 +627,11 @@ function SideBar({ collapsed: collapsedProp = false }) {
                     )}
                     </Box>
                   </Link>
-                  {!item.hasAccess && !collapsed && (
-                    <span style={{ 
-                      position: "absolute", 
-                      right: 16, 
-                      top: "50%", 
-                      transform: "translateY(-50%)", 
-                      fontSize: 12 
-                    }}>
-                      🔒
-                    </span>
-                  )}
                 </Box>              ) : item.label === "Environment" ? (
                 <React.Fragment key={item.label}>
                   <Box
                     sx={{
                       position: "relative",
-                      opacity: item.hasAccess ? 1 : 0.4,
-                      cursor: item.hasAccess ? "pointer" : "not-allowed",
-                      pointerEvents: item.hasAccess ? "auto" : "none"
                     }}
                   >
                     <Box
@@ -670,15 +642,15 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         px: collapsed ? 0 : 4,
                         py: 1.5,
                         gap: collapsed ? 0 : 2,
-                        cursor: item.hasAccess ? "pointer" : "not-allowed",
+                        cursor: "pointer",
                         transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                        bgcolor: item.hasAccess ?
+                        bgcolor:
                           ((envOpen && !collapsed)
                             ? "#2B8C37"
                             : (isSelected(item) && !collapsed)
                               ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
-                              : "transparent") : "transparent",
-                        borderRadius: (item.hasAccess && ((envOpen && !collapsed) || (isSelected(item) && !collapsed))) ? 0 : undefined,
+                              : "transparent"),
+                        borderRadius: (((envOpen && !collapsed) || (isSelected(item) && !collapsed))) ? 0 : undefined,
                         position: "relative",
                         "&::before": (item.hasAccess && isSelected(item)) ? {
                           content: '""',
@@ -692,23 +664,24 @@ function SideBar({ collapsed: collapsedProp = false }) {
                           borderBottomRightRadius: 12,
                           zIndex: 2,
                         } : {},
-                        "&:hover": item.hasAccess ? {
+                        "&:hover": {
                           bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
-                        } : {},
-                        "&:hover span": item.hasAccess ? {
+                        },
+                        "&:hover span": {
                           color: "#fff",
                           fontWeight: 700,
-                        } : {},
-                        "&:hover img": item.hasAccess ? {
+                        },
+                        "&:hover img": {
                           filter:
                             "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                        } : {},
+                        },
                       }}
                       onClick={() => {
                         if (!item.hasAccess) return;
                         if (!collapsed) handleDropdownToggle("env");
                       }}
-                    >                    <img
+                    >
+                    <img
                       src={item.icon}
                       alt={item.label}
                       style={{
@@ -717,13 +690,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         transition: "filter 0.2s, margin 0.3s",
                         marginLeft: 0,
                         marginRight: 0,
-                        filter: item.hasAccess ?
+                        filter:
                           (((envOpen && !collapsed) || (isSelected(item) && !collapsed))
                             ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
                             : mode === "repository"
                               ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
                               : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)")
-                          : "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
                       }}
                     />
                     {collapsed ? null : (
@@ -731,10 +703,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         <span
                           style={{
                             fontSize: 18,
-                            fontWeight: (item.hasAccess && (envOpen || (isSelected(item) && !collapsed))) ? 700 : 400,
-                            color: item.hasAccess ?
-                              ((envOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365") :
-                              "#9e9e9e",
+                            fontWeight: (envOpen || (isSelected(item) && !collapsed)) ? 700 : 400,
+                            color: (envOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365",
                             transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
                             opacity: 1,
                             marginLeft: 4,
@@ -751,26 +721,15 @@ function SideBar({ collapsed: collapsedProp = false }) {
                             width: 22,
                             height: 22,
                             marginLeft: 2,
-                            transition: "transform 0.3s, filter 0.2s",                            transform: (item.hasAccess && envOpen) ? "rotate(180deg)" : "rotate(0deg)",
-                            filter: item.hasAccess ?
-                              "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)" :
-                              "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
+                            transition: "transform 0.3s, filter 0.2s",
+                            transform: envOpen ? "rotate(180deg)" : "rotate(0deg)",
+                            filter:
+                              "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
                           }}
                         />
                       </>
                     )}
                   </Box>
-                  {!item.hasAccess && !collapsed && (
-                    <span style={{ 
-                      position: "absolute", 
-                      right: 16, 
-                      top: "50%", 
-                      transform: "translateY(-50%)", 
-                      fontSize: 12 
-                    }}>
-                      🔒
-                    </span>
-                  )}
                   </Box>
                   {!collapsed && envOpen && item.hasAccess && (
                     <Box
@@ -836,9 +795,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   <Box
                     sx={{
                       position: "relative",
-                      opacity: item.hasAccess ? 1 : 0.4,
-                      cursor: item.hasAccess ? "pointer" : "not-allowed",
-                      pointerEvents: item.hasAccess ? "auto" : "none"
                     }}
                   >
                     <Box
@@ -849,15 +805,15 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         px: collapsed ? 0 : 4,
                         py: 1.5,
                         gap: collapsed ? 0 : 2,
-                        cursor: item.hasAccess ? "pointer" : "not-allowed",
+                        cursor: "pointer",
                         transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                        bgcolor: item.hasAccess ?
+                        bgcolor:
                           ((socialOpen && !collapsed)
                             ? "#2B8C37"
                             : (isSelected(item) && !collapsed)
                               ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
-                              : "transparent") : "transparent",
-                        borderRadius: (item.hasAccess && ((socialOpen && !collapsed) || (isSelected(item) && !collapsed))) ? 0 : undefined,
+                              : "transparent"),
+                        borderRadius: (((socialOpen && !collapsed) || (isSelected(item) && !collapsed))) ? 0 : undefined,
                         position: "relative",
                         "&::before": (item.hasAccess && isSelected(item)) ? {
                           content: '""',
@@ -870,17 +826,18 @@ function SideBar({ collapsed: collapsedProp = false }) {
                           borderTopRightRadius: 12,
                           borderBottomRightRadius: 12,
                           zIndex: 2,
-                        } : {},                        "&:hover": item.hasAccess ? {
-                          bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
                         } : {},
-                        "&:hover span": item.hasAccess ? {
+                        "&:hover": {
+                          bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
+                        },
+                        "&:hover span": {
                           color: "#fff",
                           fontWeight: 700,
-                        } : {},
-                        "&:hover img": item.hasAccess ? {
+                        },
+                        "&:hover img": {
                           filter:
                             "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                        } : {},
+                        },
                       }}
                       onClick={() => {
                         if (!item.hasAccess) return;
@@ -896,13 +853,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
                           transition: "filter 0.2s, margin 0.3s",
                           marginLeft: 0,
                           marginRight: 0,
-                          filter: item.hasAccess ?
+                          filter:
                             (((socialOpen && !collapsed) || (isSelected(item) && !collapsed))
                               ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
                               : mode === "repository"
                                 ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
                                 : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)")
-                            : "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
                         }}
                       />
                       {collapsed ? null : (
@@ -910,10 +866,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                           <span
                             style={{
                               fontSize: 18,
-                              fontWeight: (item.hasAccess && (socialOpen || (isSelected(item) && !collapsed))) ? 700 : 400,
-                              color: item.hasAccess ?
-                                ((socialOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365") :
-                                "#9e9e9e",
+                              fontWeight: (socialOpen || (isSelected(item) && !collapsed)) ? 700 : 400,
+                              color: (socialOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365",
                               transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
                               opacity: 1,
                               marginLeft: 4,
@@ -931,26 +885,14 @@ function SideBar({ collapsed: collapsedProp = false }) {
                               height: 22,
                               marginLeft: 2,
                               transition: "transform 0.3s, filter 0.2s",
-                              transform: (item.hasAccess && socialOpen) ? "rotate(180deg)" : "rotate(0deg)",
-                              filter: item.hasAccess ?
-                                "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)" :
-                                "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
+                              transform: socialOpen ? "rotate(180deg)" : "rotate(0deg)",
+                              filter:
+                                "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
                             }}
                           />
                         </>
                       )}
                     </Box>
-                    {!item.hasAccess && !collapsed && (
-                      <span style={{ 
-                        position: "absolute", 
-                        right: 16, 
-                        top: "50%", 
-                        transform: "translateY(-50%)", 
-                        fontSize: 12 
-                      }}>
-                        🔒
-                      </span>
-                    )}
                   </Box>
                   {!collapsed && socialOpen && item.hasAccess && (
                     <Box
@@ -1009,7 +951,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       ))}
                     </Box>
                   )}
-                </React.Fragment>              ) : (
+                </React.Fragment>) : (
                 <Box
                   key={item.label}
                   sx={{
