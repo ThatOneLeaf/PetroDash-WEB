@@ -5,6 +5,8 @@ import {
   Typography,
   Button,
   Container,
+  Paper,
+  TextField,
   IconButton
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
@@ -31,6 +33,7 @@ function CSR() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [isReviseModalOpen, setIsReviseModalOpen] = useState(false)
   const [modalKey, setModalKey] = useState(0);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
@@ -140,10 +143,10 @@ function CSR() {
       }
     } else if (action === 'revise') {
       switch (currentStatus) {
-        case 'Under review (site)':
+        case 'Under Review (Site)':
           newStatus = statuses[1]; // "FRS"
           break;
-        case 'Under review (head level)':
+        case 'Under Review (Head)': 
           newStatus = statuses[3]; // "FRH"
           break;
       }
@@ -160,10 +163,14 @@ function CSR() {
       // Get the status from the first selected row
       const firstRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
       currentStatus = firstRow?.statusId || null;
+      if (currentStatus === "Approved"){
+        alert("This record is already Approved.");
+        return;
+        }
       } else {
       alert("Selected rows have different statuses.");
       return; // Optionally stop if not the same
-    }
+      }
 
     const newStatus = fetchNextStatus(action, currentStatus);
 
@@ -184,14 +191,11 @@ function CSR() {
           if (!confirm) return;
       }
 
-      console.log('new status: ', newStatus)
       const payload = {
         record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
         new_status: newStatus.trim(),
         remarks: remarks.trim(),
       };
-
-      console.log(payload)
 
       const response = await api.post(
         "/usable_apis/bulk_update_status",
@@ -464,25 +468,35 @@ function CSR() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
+            {/* Only show Approve button if first selected row is NOT For Revision (Site/Head) */}
             {selectedRowIds.length > 0 && !isApprove ? (
               <>
-                <Button 
-                  variant='contained'
-                  sx={{ 
-                    backgroundColor: '#2B8C37',
-                    borderRadius: '999px',
-                    padding: '9px 18px',
-                    fontSize: '1rem',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#256d2f',
-                    },
-                  }}
-                  onClick={() => handleBulkStatusUpdate("approve")}
-                >
-                  Approve
-                </Button>
-                {/* {(selectedRowIds.length > 0 && !isForRevision) && (
+                {(() => {
+                  const firstSelectedRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
+                  const hideApprove =
+                    firstSelectedRow &&
+                    (firstSelectedRow.statusId === 'For Revision (Site)' ||
+                     firstSelectedRow.statusId === 'For Revision (Head)');
+                  return !hideApprove ? (
+                    <Button 
+                      variant='contained'
+                      sx={{ 
+                        backgroundColor: '#2B8C37',
+                        borderRadius: '999px',
+                        padding: '9px 18px',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        '&:hover': {
+                          backgroundColor: '#256d2f',
+                        },
+                      }}
+                      onClick={() => handleBulkStatusUpdate("approve")}
+                    >
+                      Approve
+                    </Button>
+                  ) : null;
+                })()}
+                {(selectedRowIds.length > 0 && !isForRevision) && (
                   <Button 
                     variant='contained'
                     sx={{ 
@@ -495,11 +509,24 @@ function CSR() {
                         backgroundColor: '#0f1a3c',
                       },
                     }}
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => {
+                      // Get the selected row from pagedData
+                      const selectedRowsForModal = pagedData.filter(row => selectedRowIds.includes(row[idKey]));
+                      const allStatuses = selectedRowsForModal.map(row => row.statusId);
+                      const isForRevisionSite = allStatuses.every(status => status === 'For Revision (Site)');
+                      const isForRevisionHeadLevel = allStatuses.every(status => status === 'For Revision (Head)');
+                      const isOnlyApprove = isForRevisionSite || isForRevisionHeadLevel;
+                      if (isOnlyApprove && selectedRowsForModal.length === 1) {
+                        setRemarks(selectedRowsForModal[0].statusRemarks || '');
+                      } else {
+                        setRemarks('');
+                      }
+                      setIsReviseModalOpen(true);
+                    }}
                   >
                     Revise
                   </Button>
-                )} */}
+                )}
               </>
             ) : (
               <>
@@ -646,12 +673,14 @@ function CSR() {
             </Button>
           )}
         </Box>
-
+        
+        {console.log(pagedData)}
         {/* Table */}
         <Table
           columns={columns}
           rows={pagedData}
           idKey={idKey}
+          filteredData={filteredData}
           onSelectionChange={(selectedRows) => setSelectedRowIds(selectedRows)}
           onSort={handleSort}
           sortConfig={sortConfig}
@@ -729,7 +758,111 @@ function CSR() {
           </Overlay>
         )}
 
-        {/* revise modal */}
+        {/* Inline ReviseModalHelp component */}
+        {isReviseModalOpen && (
+          <Overlay
+            onClose={() => {
+              setIsReviseModalOpen(false);
+              setRemarks("");
+            }}
+          >
+            <Paper
+              sx={{
+                p: 4,
+                width: "500px",
+                borderRadius: "16px",
+                bgcolor: "white",
+              }}
+            >
+              <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
+                Revision Request
+              </Typography>
+              {(() => {
+                // Determine if remarks should be disabled and show message
+                const selectedRowsForModal = filteredData.filter(row => selectedRowIds.includes(row[idKey]));
+                const allStatuses = selectedRowsForModal.map(row => row.statusId);
+                const isForRevisionSite = allStatuses.every(status => status === 'For Revision (Site)');
+                const isForRevisionHeadLevel = allStatuses.every(status => status === 'For Revision (Head)');
+                const isOnlyApprove = isForRevisionSite || isForRevisionHeadLevel;
+                return (
+                  <>
+                    <TextField
+                      sx={{
+                        mt: 2,
+                        mb: 2
+                      }}
+                      label={<> Remarks <span style={{ color: 'red' }}>*</span> </>}
+                      variant="outlined"
+                      fullWidth
+                      value={remarks}
+                      onChange={(e) => setRemarks(e.target.value)}
+                      multiline
+                      disabled={isOnlyApprove}
+                      placeholder={isOnlyApprove ? "This record can only be approved." : undefined}
+                      InputProps={{
+                        style: isOnlyApprove
+                          ? { backgroundColor: '#f5f5f5', color: '#888' }
+                          : undefined
+                      }}
+                    />
+                    {isOnlyApprove && (
+                      <Typography sx={{ color: 'red', fontSize: '0.95em', mb: 1 }}>
+                        This record can only be approved.
+                      </Typography>
+                    )}
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'flex-end'
+                      }}>
+                      <Button 
+                        sx={{ 
+                          color: '#182959',
+                          borderRadius: '999px',
+                          padding: '9px 18px',
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          '&:hover': {
+                            color: '#0f1a3c',
+                          },
+                        }}
+                        onClick={() => {
+                          setRemarks("");
+                          setIsReviseModalOpen(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        variant='contained'
+                        sx={{ 
+                          marginLeft: 1,
+                          backgroundColor: '#2B8C37',
+                          borderRadius: '999px',
+                          padding: '9px 18px',
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          '&:hover': {
+                            backgroundColor: '#256d2f',
+                            },
+                        }}
+                        onClick={() => {
+                          if (isOnlyApprove) {
+                            handleBulkStatusUpdate("approve");
+                          } else {
+                            handleBulkStatusUpdate("revise");
+                          }
+                          setIsReviseModalOpen(false);
+                        }}
+                      >
+                        {isOnlyApprove ? "Approve" : "Confirm"}
+                      </Button>
+                    </Box>
+                  </>
+                );
+              })()}
+            </Paper>
+          </Overlay>
+        )}
       </Container>
     </Box>
   );

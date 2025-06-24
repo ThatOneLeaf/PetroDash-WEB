@@ -13,6 +13,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import api from '../../services/api';
+import StatusChip from '../../components/StatusChip';
 
 // Modal for viewing/editing a CSR Activity record
 const ViewHelpRecordModal = ({
@@ -27,7 +28,8 @@ const ViewHelpRecordModal = ({
   const [editedRecord, setEditedRecord] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Program and project options state
+  // Company, Program and Project options state
+  const [companyOptions, setCompanyOptions] = useState([]);
   const [programOptions, setProgramOptions] = useState([]);
   const [projectOptions, setProjectOptions] = useState({}); // { [programId]: [{label, value}] }
 
@@ -52,6 +54,20 @@ const ViewHelpRecordModal = ({
       })
       .finally(() => setLoading(false));
   }, [record]);
+
+  useEffect(() => {
+    api.get('/reference/companies')
+      .then(res => {
+        setCompanyOptions(
+          [{ label: "Select Company", value: "" }]
+            .concat((res.data || []).map(p => ({
+              label: p.name,
+              value: p.id
+            })))
+        );
+      })
+      .catch(() => setCompanyOptions([{ label: "Select Company", value: "" }]));
+  }, []);
 
   // Fetch program options on mount
   useEffect(() => {
@@ -98,23 +114,49 @@ const ViewHelpRecordModal = ({
     setEditedRecord(prev => ({ ...prev, [key]: value }));
   };
 
+  // Add field error state
+  const [fieldErrors, setFieldErrors] = useState({});
+
   // Save changes to API
   const handleSave = async () => {
+    // Validate required fields
+    const errors = {};
+    if (!editedRecord.projectYear) errors.projectYear = "Please fill out this field";
+    if (!editedRecord.companyId) errors.companyId = "Please fill out this field";
+    if (!editedRecord.programId) errors.programId = "Please fill out this field";
+    if (!editedRecord.projectId) errors.projectId = "Please fill out this field";
+    if (!editedRecord.csrReport) errors.csrReport = "Please fill out this field";
+    if (!editedRecord.projectExpenses) errors.projectExpenses = "Please fill out this field";
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      alert("Please fill out all required fields.");
+      return;
+    }
+
     try {
       // Only send the required fields
       const payload = {
         csr_id: editedRecord.csrId,
+        company_id: editedRecord.companyId,
         project_year: Number(editedRecord.projectYear),
         project_id: editedRecord.projectId,
         csr_report: Number(editedRecord.csrReport),
         project_expenses: Number(editedRecord.projectExpenses),
         project_remarks: editedRecord.projectRemarks
       };
-      await api.post('/help/activities-update', payload);
-      if (onSave) onSave({ ...editedRecord, statusId: editedRecord.statusId });
-      setIsEditing(false);
-      setFetchedRecord({ ...editedRecord, statusId: editedRecord.statusId });
-      alert("Successfully updated.")
+      const response = await api.post('/help/activities-update', payload);
+
+      const message = response.data.message
+
+      if (response.data.success) {
+          if (onSave) onSave({ ...editedRecord, statusId: editedRecord.statusId });
+        setIsEditing(false);
+        setFetchedRecord({ ...editedRecord, statusId: editedRecord.statusId });
+        alert("Successfully updated.")
+      }
+      else {
+        alert(message)
+      }
     } catch (error) {
       alert('Failed to save changes.');
     }
@@ -138,6 +180,22 @@ const ViewHelpRecordModal = ({
     );
   }
 
+  // Add this custom close handler
+  const handleClose = () => {
+    if (isEditing && JSON.stringify(fetchedRecord) !== JSON.stringify(editedRecord)) {
+      if (window.confirm("You have unsaved changes. Discard them?")) {
+        setIsEditing(false);
+        setEditedRecord(fetchedRecord); // reset changes
+        onClose();
+      }
+      // If user cancels, do nothing (stay open)
+    } else {
+      setIsEditing(false);
+      setEditedRecord(fetchedRecord); // always reset edit state
+      onClose();
+    }
+  };
+
   // Main modal content
   return (
     <Paper sx={{ p: 4, width: 600, borderRadius: 2 }}>
@@ -160,19 +218,59 @@ const ViewHelpRecordModal = ({
       <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
         <TextField
           label="Year"
+          type="text"
+          inputProps={{
+            maxLength: 4,
+            inputMode: 'numeric',
+            pattern: '[0-9]*'
+          }}
           value={editedRecord.projectYear || ''}
-          onChange={e => handleChange('projectYear', e.target.value)}
+          onChange={e => {
+            // Only allow up to 4 digits, no letters
+            const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+            handleChange('projectYear', val);
+            setFieldErrors(prev => ({ ...prev, projectYear: undefined }));
+          }}
           fullWidth
+          required
+          placeholder="Year"
+          error={!!fieldErrors.projectYear}
+          helperText={fieldErrors.projectYear || ''}
           disabled={!isEditing || isReadOnly}
         />
-        {console.log(editedRecord)}
-        <FormControl fullWidth>
+        {/* COMPANY DROPDOWN */}
+        <FormControl fullWidth required error={!!fieldErrors.companyId}>
+          <InputLabel>Company</InputLabel>
+            <Select
+              value={editedRecord.companyId || ''}
+              onChange={e => {
+                handleChange('companyId', e.target.value);
+                setFieldErrors(prev => ({ ...prev, companyId: undefined }));
+                // Optionally update companyName as well:
+                const selected = companyOptions.find(opt => opt.value === e.target.value);
+                handleChange('companyName', selected ? selected.label : '');
+              }}
+              disabled={!isEditing || isReadOnly}
+              label="Company"
+            >
+            {companyOptions.map(opt => (
+              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            ))}
+          </Select>
+          {fieldErrors.companyId && (
+            <Typography variant="caption" color="error">{fieldErrors.companyId}</Typography>
+          )}
+        </FormControl>
+
+        {/* PROGRAM DROPDOWN */}
+        <FormControl fullWidth required error={!!fieldErrors.programId}>
           <InputLabel>Program</InputLabel>
             <Select
               value={editedRecord.programId || ''}
               onChange={e => {
                 handleChange('programId', e.target.value);
                 handleChange('projectId', '');
+                setFieldErrors(prev => ({ ...prev, programId: undefined, projectId: undefined }));
               }}
               disabled={!isEditing || isReadOnly}
               label="Program"
@@ -181,13 +279,20 @@ const ViewHelpRecordModal = ({
               <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
             ))}
           </Select>
+          {fieldErrors.programId && (
+            <Typography variant="caption" color="error">{fieldErrors.programId}</Typography>
+          )}
         </FormControl>
-        {/* Project dropdown */}
-        <FormControl fullWidth>
+
+        {/* PROJECT DROPDOWN */}
+        <FormControl fullWidth required error={!!fieldErrors.projectId}>
           <InputLabel>Project</InputLabel>
             <Select
               value={editedRecord.projectId || ''}
-              onChange={e => handleChange('projectId', e.target.value)}
+              onChange={e => {
+                handleChange('projectId', e.target.value);
+                setFieldErrors(prev => ({ ...prev, projectId: undefined }));
+              }}
               disabled={!isEditing || isReadOnly || !editedRecord.programId}
               label="Project"
             >
@@ -195,35 +300,59 @@ const ViewHelpRecordModal = ({
               <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
             ))}
           </Select>
+          {fieldErrors.projectId && (
+            <Typography variant="caption" color="error">{fieldErrors.projectId}</Typography>
+          )}
         </FormControl>
+
+        {/* BENEFICIARIES TEXT FIELD */}
         <TextField
           label="Beneficiaries"
           type="number"
           value={editedRecord.csrReport || ''}
-          onChange={e => handleChange('csrReport', e.target.value)}
+          onChange={e => {
+            handleChange('csrReport', e.target.value);
+            setFieldErrors(prev => ({ ...prev, csrReport: undefined }));
+          }}
           fullWidth
+          required
+          placeholder="Beneficiaries"
+          error={!!fieldErrors.csrReport}
+          helperText={fieldErrors.csrReport || ''}
           disabled={!isEditing || isReadOnly}
         />
+
+        {/* PROJECT INVESTMENTS TEXT FIELD */}
         <TextField
           label="Investments (₱)"
           type="number"
           value={editedRecord.projectExpenses || ''}
-          onChange={e => handleChange('projectExpenses', e.target.value)}
+          onChange={e => {
+            // Only allow digits and optional decimal point
+            const val = e.target.value.replace(/[^0-9.]/g, '');
+            handleChange('projectExpenses', val);
+            setFieldErrors(prev => ({ ...prev, projectExpenses: undefined }));
+          }}
+          onInput={e => {
+            // Prevent entering 'e', '+', '-'
+            e.target.value = e.target.value.replace(/[^0-9.]/g, '');
+          }}
           fullWidth
+          required
+          placeholder="Investments (₱)"
+          error={!!fieldErrors.projectExpenses}
+          helperText={fieldErrors.projectExpenses || ''}
           disabled={!isEditing || isReadOnly}
         />
-        <TextField
-          label="Status"
-          value={editedRecord.statusId || ''}
-          fullWidth
-          disabled
-        />
       </Box>
+
+      {/* PROJECT REMARKS TEXT FIELD */}
       <TextField
           label="Project Remarks"
           value={editedRecord.projectRemarks || ''}
           onChange={e => handleChange('projectRemarks', e.target.value)}
           fullWidth
+          placeholder="Project Remarks"
           disabled={!isEditing || isReadOnly}
           sx={{ mt: 2 }}
         />
@@ -248,9 +377,14 @@ const ViewHelpRecordModal = ({
         >
           {isEditing ? 'Save' : 'Edit'}
         </Button>
+
+        {/* Put status chip here */}
+        <StatusChip status={editedRecord.statusId} />
       </Box>
     </Paper>
   );
 };
 
 export default ViewHelpRecordModal;
+
+// Make sure to use the handleClose function as the onClose prop from the parent
