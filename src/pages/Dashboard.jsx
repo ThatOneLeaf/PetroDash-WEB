@@ -98,10 +98,12 @@ function Dashboard() {
         sx={{
           flexGrow: 1,
           height: "100vh",
-          overflow: "hidden",
+          overflow: "auto",
           px: 3,
           py: 1,
           backgroundColor: "#ffff",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {/* Header */}
@@ -111,6 +113,7 @@ function Dashboard() {
             justifyContent: "space-between",
             alignItems: "center",
             mb: 1,
+            flexShrink: 0,
           }}
         >
           <DashboardHeader
@@ -131,13 +134,13 @@ function Dashboard() {
         {loading ? (
           <Box
             sx={{
-              width: "100%",
-              height: "calc(100vh - 150px)",
+              flex: 1,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               background: "transparent",
+              minHeight: 0,
             }}
           >
             <CircularProgress size={48} thickness={5} />
@@ -155,7 +158,8 @@ function Dashboard() {
                 display: "flex",
                 flexDirection: "column",
                 gap: 2,
-                height: "calc(100vh - 150px)",
+                flex: 1,
+                minHeight: 0,
               }}
             >
               {/* First Row - Energy Section (Full Width) */}
@@ -167,7 +171,8 @@ function Dashboard() {
                   borderRadius: 2,
                   backgroundColor: "white",
                   position: "relative",
-                  flex: "1 1 25%",
+                  flex: "0 0 auto",
+                  minHeight: "200px",
                 }}
               >
                 {/* Floating label */}
@@ -202,19 +207,20 @@ function Dashboard() {
               </Paper>
 
               {/* Second Row - 2 Columns */}
-              <Box sx={{ display: "flex", gap: 2, flex: "1 1 60%" }}>
+              <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
                 {/* Left Column - Economics */}
-                <Paper
-                  elevation={1}
-                  sx={{
-                    flex: "1 1 50%",
-                    p: 2,
-                    border: "2px solid #333",
-                    borderRadius: 2,
-                    backgroundColor: "white",
-                    position: "relative",
-                  }}
-                >
+                                  <Paper
+                    elevation={1}
+                    sx={{
+                      flex: 1,
+                      p: 2,
+                      border: "2px solid #333",
+                      borderRadius: 2,
+                      backgroundColor: "white",
+                      position: "relative",
+                      minHeight: 0,
+                    }}
+                  >
                   <Typography
                     variant="h6"
                     sx={{
@@ -229,7 +235,7 @@ function Dashboard() {
                   >
                     ECONOMIC
                   </Typography>
-                  <Box sx={{ pt: 0, height: "100%" }}>
+                  <Box sx={{ pt: 2, height: "100%" }}>
                     {economicLoading ? (
                       <Box
                         sx={{
@@ -262,15 +268,16 @@ function Dashboard() {
                                 sx={{
                                   borderRadius: 2,
                                   boxShadow: 1,
+                                  bgcolor: "#2B8C37",
                                   height: "fit-content",
                                 }}
                               >
                                 <CardContent
                                   sx={{
                                     textAlign: "center",
-                                    py: 0.5,
+                                    py: 1,
                                     px: 1,
-                                    "&:last-child": { pb: 0.5 },
+                                    "&:last-child": { pb: 1 },
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "center",
@@ -281,7 +288,7 @@ function Dashboard() {
                                   <Typography
                                     variant="h5"
                                     sx={{
-                                      color: "#182959",
+                                      color: "white",
                                       fontWeight: "bold",
                                       fontSize: "1.1rem",
                                       mb: 0.2,
@@ -294,8 +301,8 @@ function Dashboard() {
                                   </Typography>
                                   <Typography
                                     variant="body2"
-                                    color="textSecondary"
                                     sx={{
+                                      color: "white",
                                       fontSize: "0.7rem",
                                       mb: 0.2,
                                       lineHeight: 1.1,
@@ -307,7 +314,7 @@ function Dashboard() {
                                     <Typography
                                       variant="caption"
                                       sx={{
-                                        color: "#2B8C37",
+                                        color: "white",
                                         fontSize: "0.6rem",
                                         lineHeight: 1,
                                       }}
@@ -330,16 +337,16 @@ function Dashboard() {
                                 sx={{
                                   borderRadius: 2,
                                   boxShadow: 1,
-                                  bgcolor: "#182959",
+                                  bgcolor: "#FF8042",
                                   height: "fit-content",
                                 }}
                               >
                                 <CardContent
                                   sx={{
                                     textAlign: "center",
-                                    py: 0.5,
+                                    py: 1,
                                     px: 1,
-                                    "&:last-child": { pb: 0.5 },
+                                    "&:last-child": { pb: 1 },
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "center",
@@ -399,15 +406,16 @@ function Dashboard() {
                                 sx={{
                                   borderRadius: 2,
                                   boxShadow: 1,
+                                  bgcolor: "#182959",
                                   height: "fit-content",
                                 }}
                               >
                                 <CardContent
                                   sx={{
                                     textAlign: "center",
-                                    py: 0.5,
+                                    py: 1,
                                     px: 1,
-                                    "&:last-child": { pb: 0.5 },
+                                    "&:last-child": { pb: 1 },
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "center",
@@ -418,7 +426,7 @@ function Dashboard() {
                                   <Typography
                                     variant="h5"
                                     sx={{
-                                      color: "#182959",
+                                      color: "white",
                                       fontWeight: "bold",
                                       fontSize: "1.1rem",
                                       mb: 0.2,
@@ -431,8 +439,8 @@ function Dashboard() {
                                   </Typography>
                                   <Typography
                                     variant="body2"
-                                    color="textSecondary"
                                     sx={{
+                                      color: "white",
                                       fontSize: "0.7rem",
                                       mb: 0.2,
                                       lineHeight: 1.1,
@@ -444,11 +452,7 @@ function Dashboard() {
                                     <Typography
                                       variant="caption"
                                       sx={{
-                                        color:
-                                          previousYearMetrics.valueRetained >
-                                          currentYearMetrics?.valueRetained
-                                            ? "#ff5722"
-                                            : "#2B8C37",
+                                        color: "white",
                                         fontSize: "0.6rem",
                                         lineHeight: 1,
                                       }}
@@ -511,17 +515,17 @@ function Dashboard() {
                                 <Legend wrapperStyle={{ fontSize: "10px" }} />
                                 <Bar
                                   dataKey="economic_value_generated"
-                                  fill="#182959"
+                                  fill="#2B8C37"
                                   name="Value Generated"
                                 />
                                 <Bar
                                   dataKey="economic_value_distributed"
-                                  fill="#2B8C37"
+                                  fill="#FF8042"
                                   name="Value Distributed"
                                 />
                                 <Bar
                                   dataKey="economic_value_retained"
-                                  fill="#FF8042"
+                                  fill="#182959"
                                   name="Value Retained"
                                 />
                               </ComposedChart>
@@ -534,26 +538,28 @@ function Dashboard() {
                 </Paper>
 
                 {/* Right Column - Environment and Social stacked */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    flex: "1 1 50%",
-                  }}
-                >
-                  {/* Environment Section */}
-                  <Paper
-                    elevation={1}
+                                  <Box
                     sx={{
-                      flex: "1 1 20%",
-                      p: 0,
-                      border: "2px solid #333",
-                      borderRadius: 2,
-                      backgroundColor: "white",
-                      position: "relative",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 2,
+                      flex: 1,
+                      minHeight: 0,
                     }}
                   >
+                                      {/* Environment Section */}
+                    <Paper
+                      elevation={1}
+                      sx={{
+                        flex: 1,
+                        p: 0,
+                        border: "2px solid #333",
+                        borderRadius: 2,
+                        backgroundColor: "white",
+                        position: "relative",
+                        minHeight: 0,
+                      }}
+                    >
                     <Typography
                       variant="h6"
                       sx={{
@@ -571,13 +577,13 @@ function Dashboard() {
                     </Typography>
                     <Box
                       sx={{
-                        pt: 2,
+                        pt: 3,
                         height: "100%",
                         width: "100%",
                         px: 2,
-                        pb: 2,
+                        pb: 1,
                         display: "flex",
-                        alignItems: "center",
+                        alignItems: "stretch",
                         justifyContent: "center",
                       }}
                     >
@@ -586,17 +592,18 @@ function Dashboard() {
                   </Paper>
 
                   {/* Social Section */}
-                  <Paper
-                    elevation={1}
-                    sx={{
-                      flex: "1 1 80%",
-                      p: 2,
-                      border: "2px solid #333",
-                      borderRadius: 2,
-                      backgroundColor: "white",
-                      position: "relative",
-                    }}
-                  >
+                                      <Paper
+                      elevation={1}
+                      sx={{
+                        flex: 1,
+                        p: 2,
+                        border: "2px solid #333",
+                        borderRadius: 2,
+                        backgroundColor: "white",
+                        position: "relative",
+                        minHeight: 0,
+                      }}
+                    >
                     <Typography
                       variant="h6"
                       sx={{

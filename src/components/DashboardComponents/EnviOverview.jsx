@@ -70,7 +70,7 @@ const EnviOverview = () => {
         p: 2,
         color: 'white',
         textAlign: 'center',
-        minHeight: '80px',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
@@ -113,12 +113,12 @@ const EnviOverview = () => {
   }
 
   return (
-    <Box sx={{ height: '100%', width: '100%', p: 1 }}>
+    <Box sx={{ height: '100%', width: '100%', p: 0 }}>
       <Box
         sx={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: 1.5,
+          gap: 1,
           height: '100%'
         }}
       >

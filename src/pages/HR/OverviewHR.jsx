@@ -56,7 +56,7 @@ const HROverview = () => {
         p: 2,
         color: "white",
         textAlign: "center",
-        height: 100,
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -98,12 +98,12 @@ const HROverview = () => {
   }
 
   return (
-    <Box sx={{ height: "100%", width: "100%", p: 1 }}>
+    <Box sx={{ height: "100%", width: "100%", p: 0 }}>
       <Box
         sx={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
-          gap: 1.5,
+          gap: 1,
           height: "100%",
         }}
       >
