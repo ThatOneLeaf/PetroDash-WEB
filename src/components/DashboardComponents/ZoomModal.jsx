@@ -134,13 +134,18 @@ const ZoomModal = ({
                         ref={chartRef}
                         sx={{
                             width: '100%',
+                            minHeight: 500,
+                            height: '70vh',
+                            maxHeight: '80vh',
                             overflow: 'hidden',
                             position: 'relative',
-                            // Ensure fonts are loaded and styles are applied
                             fontFamily: 'inherit',
                             fontSize: 'inherit',
-                            // Force hardware acceleration for better rendering
                             transform: 'translateZ(0)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                            justifyContent: 'flex-start',
                         }}
                     >
                         {/* Title inside the image area */}
@@ -176,7 +181,9 @@ const ZoomModal = ({
                         >
                             {now.toLocaleString()}
                         </Box>
-                        {children}
+                        <Box sx={{ width: '100%', height: 'calc(100% - 70px)', flex: 1, display: 'flex', alignItems: 'stretch', justifyContent: 'center' }}>
+                          {children}
+                        </Box>
                     </Box>
                 </DialogContent>
 

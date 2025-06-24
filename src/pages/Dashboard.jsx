@@ -134,7 +134,7 @@ function Dashboard() {
           }}
         >
           <DashboardHeader
-            title="Dashboard"
+            title="Overview"
             lastUpdated={lastUpdated}
             formatDateTime={formatDateTime}
           />
@@ -222,11 +222,11 @@ function Dashboard() {
                       position: "absolute",
                       top: -14,
                       left: 16,
-                      backgroundColor: "white",
                       px: 1,
                       fontWeight: "bold",
                       color: "#333",
                       zIndex: 2,
+                      textShadow: "2px 0 0 #f5f5f5, -2px 0 0 #f5f5f5, 0 2px 0 #f5f5f5, 0 -2px 0 #f5f5f5, 1px 1px #f5f5f5, -1px -1px 0 #f5f5f5, 1px -1px 0 #f5f5f5, -1px 1px 0 #f5f5f5",
                     }}
                   >
                     ENERGY
@@ -267,10 +267,10 @@ function Dashboard() {
                         position: "absolute",
                         top: -12,
                         left: 16,
-                        backgroundColor: "white",
                         px: 1,
                         fontWeight: "bold",
                         color: "#333",
+                        textShadow: "2px 0 0 #f5f5f5, -2px 0 0 #f5f5f5, 0 2px 0 #f5f5f5, 0 -2px 0 #f5f5f5, 1px 1px #f5f5f5, -1px -1px 0 #f5f5f5, 1px -1px 0 #f5f5f5, -1px 1px 0 #f5f5f5",
                       }}
                     >
                       ECONOMIC
@@ -350,23 +350,25 @@ function Dashboard() {
                                     >
                                       Value Generated
                                     </Typography>
-                                    {previousYearMetrics && (
-                                      <Typography
-                                        variant="caption"
-                                        sx={{
-                                          color: "white",
-                                          fontSize: "0.6rem",
-                                          lineHeight: 1,
-                                        }}
-                                      >
-                                        ▲
-                                        {calculateGrowth(
-                                          currentYearMetrics?.totalGenerated,
-                                          previousYearMetrics?.totalGenerated
-                                        )}
-                                        % from last year
-                                      </Typography>
-                                    )}
+                                                                      {previousYearMetrics && (
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: "white",
+                                        fontSize: "0.6rem",
+                                        lineHeight: 1,
+                                      }}
+                                    >
+                                      <span style={{ color: calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '#4CAF50' : '#F44336' }}>
+                                        {calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '▲' : '▼'}
+                                      </span>
+                                      {Math.abs(calculateGrowth(
+                                        currentYearMetrics?.totalGenerated,
+                                        previousYearMetrics?.totalGenerated
+                                      ))}
+                                      % from last year
+                                    </Typography>
+                                  )}
                                   </CardContent>
                                 </Card>
                               </Grid>
@@ -419,23 +421,21 @@ function Dashboard() {
                                     >
                                       Value Distributed
                                     </Typography>
-                                    {previousYearMetrics && (
-                                      <Typography
-                                        variant="caption"
-                                        sx={{
-                                          color: "white",
-                                          fontSize: "0.6rem",
-                                          lineHeight: 1,
-                                        }}
-                                      >
-                                        ▲
-                                        {calculateGrowth(
-                                          currentYearMetrics?.totalDistributed,
-                                          previousYearMetrics?.totalDistributed
-                                        )}
-                                        % from last year
-                                      </Typography>
-                                    )}
+                                                                      {previousYearMetrics && (
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: "white",
+                                        fontSize: "0.6rem",
+                                        lineHeight: 1,
+                                      }}
+                                    >
+                                      ▲{calculateGrowth(
+                                        currentYearMetrics?.totalDistributed,
+                                        previousYearMetrics?.totalDistributed
+                                      )}% from last year
+                                    </Typography>
+                                  )}
                                   </CardContent>
                                 </Card>
                               </Grid>
@@ -488,7 +488,17 @@ function Dashboard() {
                                     >
                                       Value Retained
                                     </Typography>
-                                    {previousYearMetrics && (
+                                                                      {previousYearMetrics && (() => {
+                                    const currentValue = currentYearMetrics?.valueRetained || 0;
+                                    const previousValue = previousYearMetrics?.valueRetained || 0;
+                                    const growthRate = calculateGrowth(currentValue, previousValue);
+                                    
+                                    // For Value Retained, we need to consider the context:
+                                    // - If current is better than previous (higher retention), show green up
+                                    // - If current is worse than previous (lower retention), show red down
+                                    const isImprovement = currentValue > previousValue;
+                                    
+                                    return (
                                       <Typography
                                         variant="caption"
                                         sx={{
@@ -497,19 +507,13 @@ function Dashboard() {
                                           lineHeight: 1,
                                         }}
                                       >
-                                        {previousYearMetrics.valueRetained >
-                                        currentYearMetrics?.valueRetained
-                                          ? "▼"
-                                          : "▲"}
-                                        {Math.abs(
-                                          calculateGrowth(
-                                            currentYearMetrics?.valueRetained,
-                                            previousYearMetrics?.valueRetained
-                                          )
-                                        )}
-                                        % from last year
+                                        <span style={{ color: isImprovement ? '#4CAF50' : '#F44336' }}>
+                                          {isImprovement ? '▲' : '▼'}
+                                        </span>
+                                        {Math.abs(growthRate)}% from last year
                                       </Typography>
-                                    )}
+                                    );
+                                  })()}
                                   </CardContent>
                                 </Card>
                               </Grid>
@@ -606,11 +610,11 @@ function Dashboard() {
                           position: "absolute",
                           top: -12,
                           left: 16,
-                          backgroundColor: "white",
                           px: 1,
                           fontWeight: "bold",
                           color: "#333",
                           zIndex: 1,
+                          textShadow: "2px 0 0 #f5f5f5, -2px 0 0 #f5f5f5, 0 2px 0 #f5f5f5, 0 -2px 0 #f5f5f5, 1px 1px #f5f5f5, -1px -1px 0 #f5f5f5, 1px -1px 0 #f5f5f5, -1px 1px 0 #f5f5f5",
                         }}
                       >
                         ENVIRONMENT
@@ -650,10 +654,10 @@ function Dashboard() {
                           position: "absolute",
                           top: -12,
                           left: 16,
-                          backgroundColor: "white",
                           px: 1,
                           fontWeight: "bold",
                           color: "#333",
+                          textShadow: "2px 0 0 #f5f5f5, -2px 0 0 #f5f5f5, 0 2px 0 #f5f5f5, 0 -2px 0 #f5f5f5, 1px 1px #f5f5f5, -1px -1px 0 #f5f5f5, 1px -1px 0 #f5f5f5, -1px 1px 0 #f5f5f5",
                         }}
                       >
                         SOCIAL

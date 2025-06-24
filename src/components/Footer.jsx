@@ -4,7 +4,6 @@ function Footer() {
   return (
     <footer style={{
       color: 'white',
-      padding: '3rem 4rem 0',
       marginBottom: 0  // Ensure no bottom margin
     }}>
       <div style={{
@@ -40,9 +39,8 @@ function Footer() {
       <div style={{
         backgroundColor: 'white',
         color: 'gray',
-        fontSize: '14px',
+        fontSize: '0.75rem',
         textAlign: 'center',
-        padding: '1rem 0',
         margin: 0,  // Remove any margin
         width: '100%',  // Ensure full width
         opacity: 0.5,  // Slightly transparent
