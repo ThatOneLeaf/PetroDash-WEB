@@ -832,13 +832,14 @@ return (
           openZoomModal(
             generateFullChartTitle("CO₂ Avoidance Over Time", x, y, filters, startDate, endDate),
             "co2_avoidance_trends_chart",
-            <LineChartComponent
-              title={generateFullChartTitle("CO₂ Avoidance Over Time", x, y, filters, startDate, endDate)}
-              data={data?.line_graph?.total_co2_avoidance || []}
-              yAxisLabel="tons CO2"
-              unit="tons CO2"
-              colorMap={
-                chartReady
+            {
+              type: "line",
+              props: {
+                title: generateFullChartTitle("CO₂ Avoidance Over Time", x, y, filters, startDate, endDate),
+                data: data?.line_graph?.total_co2_avoidance || [],
+                yAxisLabel: "tons CO2",
+                unit: "tons CO2",
+                colorMap: chartReady
                   ? getColorMapForGroupBy(
                       x,
                       data?.line_graph?.total_energy_generated || [],
@@ -848,7 +849,7 @@ return (
                     )
                   : {}
               }
-            />
+            }
           )
         }
       >
