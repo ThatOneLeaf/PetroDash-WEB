@@ -10,6 +10,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GroupsIcon from '@mui/icons-material/Groups';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import WorkIcon from '@mui/icons-material/Work';
+import PersonIcon from '@mui/icons-material/Person'; // Add import for Individual Recipients icon
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'; // Add import for Mobile Clinics icon
 import api from '../../services/api';
@@ -18,6 +19,8 @@ import InvestmentPerProgramChart from '../CSR/Charts/InvestmentPerProgram';
 import InvestmentPerCompanyChart from '../CSR/Charts/InvestmentPerCompany';
 import ZoomModal from '../../components/DashboardComponents/ZoomModal'; // Add this import
 import InvestmentKPI from '../CSR/Charts/InvestmentKPI'; // Add this import
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import IconButton from '@mui/material/IconButton';
 
 // KPI configuration for HELP dashboard
 const kpiConfig = [
@@ -86,8 +89,7 @@ const kpiConfig = [
         bgColor: '#b6d4f7',
       },
     ],
-  },
-  // Livelihood
+  },  // Livelihood
   {
     category: 'LIVELIHOOD',
     items: [
@@ -97,83 +99,64 @@ const kpiConfig = [
         key: 'livelihoodParticipants',
         bgColor: '#fff3b0', // slightly darker than #fffbe6
       },
+      {
+        label: 'Individual Recipients',
+        icon: <PersonIcon sx={{ color: '#fbbf24', fontSize: 40 }} />, // bigger icon
+        key: 'livelihoodIndividualRecipients',
+        bgColor: '#fff3b0', // slightly darker than #fffbe6
+      },
     ],
   },
 ];
 
 // Aggregates KPI values from API data
 function aggregateKPI(data) {
-  // The backend returns: csrReport (number), projectName (string), projectId (string), programName (string)
-  const result = {
+  // Map KPI keys to project IDs
+  const kpiProjectIds = {
     // Health
+    medicalMissionBeneficiaries: ['HE_AMM'],
+    healthCenterBeneficiaries: ['HE_CHC'],
+    nutritionPrograms: ['HE_NP'],
+    ambulanceDonated: ['HE_SA'],
+    mobileClinics: ['HE_MC'],
+    // Education
+    adoptedSchools: ['ED_AS'],
+    collegeScholars: ['ED_SP'],
+    educationalMobileDevices: ['ED_EMD'],
+    teachersTraining: ['ED_TT'],
+    // Livelihood
+    livelihoodParticipants: ['LI_LT_T'],
+    livelihoodIndividualRecipients: ['LI_LT_IND'],
+    // You can add more mappings as needed
+  };
+
+  const result = {
     medicalMissionBeneficiaries: 0,
     healthCenterBeneficiaries: 0,
     nutritionPrograms: 0,
     ambulanceDonated: 0,
-    mobileClinics: 0, // Add mobileClinics KPI
-    // Education
+    mobileClinics: 0,
     adoptedSchools: 0,
     collegeScholars: 0,
     educationalMobileDevices: 0,
     teachersTraining: 0,
-    // Livelihood
     livelihoodParticipants: 0,
+    livelihoodIndividualRecipients: 0,
   };
 
   data.forEach(row => {
-    // Use lowercase for matching, and fallback to empty string if undefined
-    const projectName = String(row.projectName || '').toLowerCase();
-    const programName = String(row.programName || '').toLowerCase();
-    const projectId = String(row.projectId || '').toLowerCase();
+    const projectId = String(row.projectId || '').toUpperCase();
     const csrReport = Number(row.csrReport) || 0;
-
-    // Health
-    if (projectName.includes('medical mission')) {
-      result.medicalMissionBeneficiaries += csrReport;
-    }
-    if (projectName.includes('health center')) {
-      result.healthCenterBeneficiaries += csrReport;
-    }
-    // Nutrition Programs: combine feeding and supplements
-    if (
-      projectName.includes('feeding') ||
-      projectName.includes('supplement') ||
-      projectName.includes('nutrition')
-    ) {
-      result.nutritionPrograms += csrReport;
-    }
-    if (projectName.includes('ambulance')) {
-      // If each row is a donation, count as 1 if csrReport is falsy
-      result.ambulanceDonated += csrReport > 0 ? csrReport : 1;
-    }
-    if (projectName.includes('mobile clinic')) {
-      // If each row is a donation, count as 1 if csrReport is falsy
-      result.mobileClinics += csrReport > 0 ? csrReport : 1;
-    }
-
-    // Education
-    if (projectName.includes('adopted school')) {
-      result.adoptedSchools += csrReport > 0 ? csrReport : 1;
-    }
-    if (projectName.includes('scholar')) {
-      result.collegeScholars += csrReport;
-    }
-    // Educational Mobile Devices: match "mobile device", "tablet", or "educational device"
-    if (
-      projectName.includes('mobile device') ||
-      projectName.includes('tablet') ||
-      projectName.includes('educational device')
-    ) {
-      result.educationalMobileDevices += csrReport;
-    }
-    if (projectName.includes('teacher')) {
-      result.teachersTraining += csrReport;
-    }
-
-    // Livelihood
-    if (projectName.includes('livelihood')) {
-      result.livelihoodParticipants += csrReport;
-    }
+    Object.entries(kpiProjectIds).forEach(([kpiKey, ids]) => {
+      if (ids.includes(projectId)) {
+        // For ambulanceDonated, mobileClinics, adoptedSchools, count as 1 if csrReport is falsy
+        if (["ambulanceDonated", "mobileClinics", "adoptedSchools"].includes(kpiKey)) {
+          result[kpiKey] += csrReport > 0 ? csrReport : 1;
+        } else {
+          result[kpiKey] += csrReport;
+        }
+      }
+    });
   });
 
   return result;
@@ -353,19 +336,6 @@ export default function HELPDash() {
     [data]
   );
 
-  // Filter data based on selected filters
-  const filteredData = useMemo(() => {
-    return data.filter(row => {
-      if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
-      if (filters.company && row.companyName !== filters.company) return false;
-      return true;
-    });
-  }, [data, filters]);
-
-  // Memoized KPI and investment values
-  const kpi = useMemo(() => aggregateKPI(filteredData), [filteredData]);
-  const investments = useMemo(() => aggregateInvestments(filteredData), [filteredData]);
-
   // Handle filter change
   const handleFilter = (key, value) => {
     setFilters(f => ({
@@ -381,17 +351,33 @@ export default function HELPDash() {
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
     if (tab === 'HELP') {
-      // Set most recent year as default
-      setFilters(f => ({
-        ...f,
-        year: yearOptions.length > 0 ? yearOptions[0] : '',
-        company: ''
-      }));
+      // No filter applied by default, but display most recent year data
+      setFilters(f => ({ year: '', company: '' }));
     } else {
       // Investments: clear filters (all years)
       setFilters({ year: '', company: '' });
     }
   };
+
+  // Memoized filtered data for HELP: if no filter, show most recent year
+  const filteredData = useMemo(() => {
+    if (activeTab === 'HELP' && !filters.year) {
+      // Find most recent year in data
+      const years = data.map(d => d.projectYear).filter(Boolean);
+      if (years.length === 0) return [];
+      const mostRecentYear = Math.max(...years);
+      return data.filter(row => String(row.projectYear) === String(mostRecentYear));
+    }
+    return data.filter(row => {
+      if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
+      if (filters.company && row.companyName !== filters.company) return false;
+      return true;
+    });
+  }, [data, filters, activeTab]);
+
+  // Memoized KPI and investment values
+  const kpi = useMemo(() => aggregateKPI(filteredData), [filteredData]);
+  const investments = useMemo(() => aggregateInvestments(filteredData), [filteredData]);
 
   // Helper to open modal with chart content
   const openZoomModal = (title, fileName, content) => {
@@ -775,21 +761,44 @@ export default function HELPDash() {
                       width={900}
                       year={filters.year}
                       companyId={filters.company}
+                      showLegendAndLabels={true} // Pass prop to show legend and labels in modal
                     />  
                   )
                 }
               >
-                <Typography
-                  sx={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: '#1e293b',
-                    mb: 0.5,
-                    flexShrink: 0
-                  }}
-                >
-                  Investments per Project
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#1e293b',
+                      flexShrink: 0
+                    }}
+                  >
+                    Investments per Project
+                  </Typography>
+                  <IconButton
+                    aria-label="zoom"
+                    size="small"
+                    sx={{ ml: 1 }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      openZoomModal(
+                        'Investments per Project',
+                        'investments_per_project',
+                        <InvestmentPerProjectChart
+                          height={500}
+                          width={900}
+                          year={filters.year}
+                          companyId={filters.company}
+                          showLegendAndLabels={true} // Pass prop to show legend and labels in modal
+                        />
+                      );
+                    }}
+                  >
+                    <ZoomInIcon fontSize="small" />
+                  </IconButton>
+                </Box>
                 <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <InvestmentPerProjectChart
@@ -847,21 +856,44 @@ export default function HELPDash() {
                         width={600}
                         year={filters.year}
                         companyId={filters.company}
+                        showLegendAndLabels={true} // Pass prop to show legend and labels in modal
                       />
                     )
                   }
                 >
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#1e293b',
-                      mb: 0.5,
-                      flexShrink: 0
-                    }}
-                  >
-                    Investments per Program
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: '#1e293b',
+                        flexShrink: 0
+                      }}
+                    >
+                      Investments per Program
+                    </Typography>
+                    <IconButton
+                      aria-label="zoom"
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        openZoomModal(
+                          'Investments per Program',
+                          'investments_per_program',
+                          <InvestmentPerProgramChart
+                            height={400}
+                            width={600}
+                            year={filters.year}
+                            companyId={filters.company}
+                            showLegendAndLabels={true} // Pass prop to show legend and labels in modal
+                          />
+                        );
+                      }}
+                    >
+                      <ZoomInIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                   <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', height: '100%' }}>
                       <InvestmentPerProgramChart
@@ -907,21 +939,44 @@ export default function HELPDash() {
                         width={600}
                         year={filters.year}
                         companyId={filters.company}
+                        showLegendAndLabels={true} // Pass prop to show legend and labels in modal
                       />
                     )
                   }
                 >
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#1e293b',
-                      mb: 0.5,
-                      flexShrink: 0
-                    }}
-                  >
-                    Investments per Company
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: '#1e293b',
+                        flexShrink: 0
+                      }}
+                    >
+                      Investments per Company
+                    </Typography>
+                    <IconButton
+                      aria-label="zoom"
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        openZoomModal(
+                          'Investments per Company',
+                          'investments_per_company',
+                          <InvestmentPerCompanyChart
+                            height={400}
+                            width={600}
+                            year={filters.year}
+                            companyId={filters.company}
+                            showLegendAndLabels={true} 
+                          />
+                        );
+                      }}
+                    >
+                      <ZoomInIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                   <Box sx={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <Box sx={{ width: '100%', height: '100%' }}>
                       <InvestmentPerCompanyChart
@@ -946,19 +1001,34 @@ export default function HELPDash() {
               height={600}
             >
               <Box sx={{
-                padding: '20px',
-                margin: '0 auto',
-                width: 'calc(100% - 40px)',
-                height: 'calc(100% - 40px)',
-                overflow: 'hidden',
+                p: 0,
+                m: 0,
+                width: '100%',
+                height: 540, // leave space for title/date/download
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#fff',
+                overflow: 'auto',
+                minHeight: 400,
+                minWidth: 400,
                 '& .recharts-wrapper': {
+                  width: '100% !important',
+                  height: '100% !important',
+                  minWidth: 400,
+                  minHeight: 400,
                   margin: '0 auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 },
                 '& .recharts-surface': {
                   overflow: 'visible',
                 }
               }}>
-                {zoomModal.content}
+                <Box sx={{ width: '100%', height: '100%', minHeight: 400, minWidth: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {zoomModal.content}
+                </Box>
               </Box>
             </ZoomModal>
           </>
