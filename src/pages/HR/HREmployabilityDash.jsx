@@ -109,18 +109,18 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     let labels;
     if (group === "monthly") {
       const months = [
-        "January",
-        "February",
-        "March",
-        "April",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
         "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
       ];
       labels = [
         ...new Set(
@@ -173,18 +173,18 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     let labels;
     if (group === "monthly") {
       const months = [
-        "January",
-        "February",
-        "March",
-        "April",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
         "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
       ];
       labels = [
         ...new Set(
@@ -584,7 +584,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             height: 0,
           }}
         >
-          {/* Monthly Manpower */}
+          {/* Safety Manpower */}
+          
           <Box
             sx={{
               backgroundColor: "white",
@@ -597,11 +598,15 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               height: "100%",
               width: "100%",
               maxWidth: "800px",
-              cursor: "pointer",
+              // cursor: "pointer",
               transition: "box-shadow 0.2s",
               overflow: "hidden",
-            }}
-            onClick={() =>
+              position: "relative",
+            }}>
+            <Button
+              size="small"
+              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
+              onClick={() =>
               openZoomModal(
                 "Safety Manpower (per Company)",
                 "manpower-per-company",
@@ -622,8 +627,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                               monthlyManpower,
                               group,
                               "total_monthly_safety_manpower"
-                            )}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                           )}
+                           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis
@@ -668,15 +673,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 )
               )
             }
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 4px 16px rgba(59,130,246,0.15)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-            title="Click to enlarge"
-          >
+              >
+                🔍
+            </Button>
             <Typography
               sx={{
                 fontSize: "13px",
@@ -750,7 +749,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             )}
           </Box>
 
-          {/* Monthly Manhour */}
+          {/* Safety Manhour */}
           <Box
             sx={{
               backgroundColor: "white",
@@ -763,11 +762,16 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               height: "100%",
               width: "100%",
               maxWidth: "800px",
-              cursor: "pointer",
+              // cursor: "pointer",
               transition: "box-shadow 0.2s",
               overflow: "hidden",
+              position: "relative",
             }}
-            onClick={() =>
+          >
+            <Button
+              size="small"
+              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
+              onClick={() =>
               openZoomModal(
                 "Safety Manhours (per Company)",
                 "manhour-per-company",
@@ -833,16 +837,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   </Box>
                 )
               )
-            }
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 4px 16px rgba(59,130,246,0.15)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-            title="Click to enlarge"
-          >
+            }>
+                🔍
+            </Button>
             <Typography
               sx={{
                 fontSize: "13px",
@@ -930,13 +927,18 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               flexDirection: "column",
               minHeight: 0,
               height: "100%",
-              cursor: "pointer",
+              // cursor: "pointer",
               transition: "box-shadow 0.2s",
               width: "100%",
               maxWidth: "100%",
               overflow: "hidden",
+              position: "relative",
             }}
-            onClick={() =>
+          >
+            <Button
+              size="small"
+              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
+              onClick={() =>
               openZoomModal("Incidents Count", "incidents-count", () => (
                 <Box
                   sx={{
@@ -987,15 +989,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 </Box>
               ))
             }
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 4px 16px rgba(59,130,246,0.15)";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-            title="Click to enlarge"
           >
+              🔍
+          </Button>
             <Typography
               sx={{
                 fontSize: "13px",
@@ -1079,12 +1075,16 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 flexDirection: "column",
                 minHeight: 0,
                 height: "100%",
-                cursor: "pointer",
                 transition: "box-shadow 0.2s",
                 width: "100%",
                 maxWidth: "100%",
                 overflow: "hidden",
+                position: "relative",
               }}
+            >
+              <Button
+              size="small"
+              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
                 openZoomModal(
                   "Gender Distribution by Position",
@@ -1116,16 +1116,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     </Box>
                   )
                 )
-              }
-              onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 4px 16px rgba(59,130,246,0.15)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-              }}
-              title="Click to enlarge"
-            >
+              }>
+                🔍
+              </Button>
               <Typography
                 sx={{
                   fontSize: "13px",
@@ -1179,12 +1172,15 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 flexDirection: "column",
                 minHeight: 0,
                 height: "100%",
-                cursor: "pointer",
                 transition: "box-shadow 0.2s",
                 width: "100%",
                 maxWidth: "100%",
                 overflow: "hidden",
-              }}
+                position: "relative",
+              }}>
+              <Button
+              size="small"
+              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
                 openZoomModal(
                   "Age Group Distribution",
@@ -1237,16 +1233,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     </Box>
                   )
                 )
-              }
-              onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 4px 16px rgba(59,130,246,0.15)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-              }}
-              title="Click to enlarge"
-            >
+              }>
+                🔍
+              </Button>
               <Typography
                 sx={{
                   fontSize: "13px",
@@ -1323,10 +1312,13 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 height: "100%",
                 width: "100%",
                 maxWidth: "800px",
-                cursor: "pointer",
                 transition: "box-shadow 0.2s",
                 overflow: "hidden",
-              }}
+                position: "relative",
+              }}>
+              <Button
+              size="small"
+              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
                 openZoomModal(
                   "Employee Count Per Company",
@@ -1368,16 +1360,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                     </Box>
                   )
                 )
-              }
-              onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 4px 16px rgba(59,130,246,0.15)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-              }}
-              title="Click to enlarge"
-            >
+              }>
+                🔍
+              </Button>
               <Typography
                 sx={{
                   fontSize: "13px",
