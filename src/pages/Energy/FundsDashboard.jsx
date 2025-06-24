@@ -956,8 +956,11 @@ return (
           title={zoomModal.title}
           downloadFileName={zoomModal.fileName}
           enableDownload
+          enableScroll={true}
         >
-          {zoomModal.content}
+          <div style={{ minWidth: 400, minHeight: 350, width: '100%', height: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {zoomModal.content}
+          </div>
         </ZoomModal>
       </Box>
       </Box>

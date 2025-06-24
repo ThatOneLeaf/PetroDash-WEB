@@ -588,7 +588,7 @@ return (
           />
           <KPICard
             loading={false}
-            value={`${roundUpToNiceNumber(housePowerData?.totals?.est_house_powered || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+            value={`${roundUpToNiceNumber(housePowerData?.totals?.est_house_powered || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
             unit=""
             title="Estimated No. of Households Powered"
             label={"Based on average consumption from PIDS (2017)"}
@@ -1091,16 +1091,19 @@ return (
           downloadFileName={zoomModal.fileName}
           maxWidth="lg"
           enableDownload
+          enableScroll={true}
         >
-          {zoomModal.chartConfig?.type === "line" && (
-            <LineChartComponent {...zoomModal.chartConfig.props} />
-          )}
-          {zoomModal.chartConfig?.type === "pie" && (
-            <PieChartComponent {...zoomModal.chartConfig.props} />
-          )}
-          {zoomModal.chartConfig?.type === "verticalBar" && (
-            <VerticalStackedBarChartComponent {...zoomModal.chartConfig.props} />
-          )}
+          <div style={{ minWidth: 400, minHeight: 350, width: '100%', height: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {zoomModal.chartConfig?.type === "line" && (
+              <LineChartComponent {...zoomModal.chartConfig.props} />
+            )}
+            {zoomModal.chartConfig?.type === "pie" && (
+              <PieChartComponent {...zoomModal.chartConfig.props} />
+            )}
+            {zoomModal.chartConfig?.type === "verticalBar" && (
+              <VerticalStackedBarChartComponent {...zoomModal.chartConfig.props} />
+            )}
+          </div>
         </ZoomModal>
       </Box>
     </Box>
