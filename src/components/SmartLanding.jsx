@@ -2,6 +2,15 @@ import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
+/**
+ * SmartLanding Component
+ * 
+ * Handles role-based landing navigation after login:
+ * - R02 (Executive): Dashboard access only → Overview Dashboard (/dashboard)
+ * - R03 (Head Office-Level Checker): Both dashboard and repository access → Overview Dashboard (/dashboard)
+ * - R04 (Site-Level Checker): Both dashboard and repository access → Overview Dashboard (/dashboard)
+ * - R05 (Encoder): Repository access only → Energy Repository (/energy/power-generation)
+ */
 const SmartLanding = () => {
   const { user, loading, isLoggedIn, getUserRole } = useAuth();
 
@@ -21,24 +30,22 @@ const SmartLanding = () => {
 
   // Get user role and determine where to redirect
   const userRole = getUserRole();
-    // Role-based navigation logic based on access patterns from Sidebar
+  // Role-based navigation logic based on access patterns from App.jsx routes
   const getDefaultRoute = (role) => {
     switch (role) {
-      case 'R02': // Executive - Dashboard only
+      case 'R02': // Executive - Dashboard access only
+        // R02 has access to dashboard overview, so land on overview dashboard
         return '/dashboard';
-      case 'R03': // Head Office-Level Checker - Both modes, default to dashboard
-      case 'R04': // Site-Level Checker - Both modes, default to dashboard
+        
+      case 'R03': // Head Office-Level Checker - Both dashboard and repository access
+      case 'R04': // Site-Level Checker - Both dashboard and repository access
+        // R03/R04 have access to dashboards, so land on overview dashboard
         return '/dashboard';
-      case 'R05': // Encoder - Repository only, find first accessible repository page
-        // Priority order: Economic (most common) -> Energy -> Environment -> Social
-        const r05Routes = [
-          '/economic/repository',
-          '/energy/power-generation',
-          '/environment/energy',
-          '/environment/water',
-          '/social/hr'
-        ];
-        return r05Routes[0]; // Default to economic repository
+        
+      case 'R05': // Encoder - Repository access only
+        // R05 has no dashboard access, so land on energy repository (power-generation)
+        return '/energy/power-generation';
+        
       default:
         // Default fallback - try dashboard first
         return '/dashboard';
