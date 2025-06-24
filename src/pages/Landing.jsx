@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  useTheme, 
+  useMediaQuery
+} from '@mui/material';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { Box } from '@mui/material';
 import image1 from '../assets/petroenergy_1.jpg';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -13,23 +19,17 @@ import LoginPage from './Login_page/Login_page';
 import Btn from '../components/ButtonComp'
 
 function Landing() {
-  // Create refs for each section
-  const aboutRef = useRef(null);
-  const disclosureRef = useRef(null);
-  const contactRef = useRef(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+
   const [isLoginModal, setLoginModal] = useState(false);
 
-  // Scroll handler function
-  const scrollToSection = (ref) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-const toggleModal = () => {
+  const toggleModal = () => {
     setLoginModal(!isLoginModal);
   };
-
   return (
-    <div style={{ 
+    <Box sx={{ 
       display: 'flex',
       flexDirection: 'column',
       minHeight: '100vh',
@@ -37,141 +37,87 @@ const toggleModal = () => {
       margin: 0,
       padding: 0,
       overflowX: 'hidden'
-    }}>
-      {/* Responsive styles */}
-      <style>
-        {`
-          @media (max-width: 900px) {
-            .landing-main {
-              flex-direction: column !important;
-              padding: 3rem 1.5rem !important;
-              gap: 2rem !important;
-            }
-            .landing-section {
-              padding: 3rem 1.5rem !important;
-            }
-            .landing-about-images {
-              flex-direction: column !important;
-              gap: 1.5rem !important;
-            }
-            .landing-about-images > div {
-              width: 100% !important;
-              max-width: 350px;
-              margin: 0 auto;
-              height: 180px !important;
-            }
-            .landing-disclosure {
-              flex-direction: column !important;
-              gap: 2rem !important;
-              padding: 3rem 1.5rem !important;
-            }
-            .landing-disclosure > div,
-            .landing-disclosure > .disclosure-img {
-              width: 100% !important;
-              max-width: 100%;
-            }
-            .landing-contact-flex {
-              flex-direction: column !important;
-              gap: 2rem !important;
-            }
-            .landing-contact-flex > div {
-              max-width: 100% !important;
-            }
-          }
-          @media (max-width: 600px) {
-            .landing-main,
-            .landing-section,
-            .landing-disclosure {
-              padding: 1.5rem 0.5rem !important;
-            }
-            h1 {
-              font-size: 2rem !important;
-            }
-            h2 {
-              font-size: 1.3rem !important;
-            }
-          }
-        `}
-      </style>
-      <Navbar 
-        isSticky={true}
-        onAboutClick={() => scrollToSection(aboutRef)}
-        onDisclosureClick={() => scrollToSection(disclosureRef)}
-        onContactClick={() => scrollToSection(contactRef)}
-      />
-      
-      <main className="landing-main" style={{
+    }}>      <Navbar isSticky={true} />
+        <div className="hero-section" style={{
         display: 'flex',
-        padding: '5.5rem',
-        gap: '4rem',
-        flexWrap: 'wrap'
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: isMobile ? '2rem 1rem' : isTablet ? '3rem 2rem' : '4rem 6rem',
+        gap: isMobile ? '2rem' : '4rem',
+        minHeight: '80vh'
       }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="hero-text" style={{
+          flex: 1,
+          textAlign: isMobile ? 'center' : 'left',
+          maxWidth: isMobile ? '100%' : '50%'
+        }}>
           <h1 style={{
-            fontSize: '3rem',
-            marginBottom: '2rem',
+            fontSize: isMobile ? '2rem' : isTablet ? '2.5rem' : '3.5rem',
+            marginBottom: isMobile ? '1rem' : '1.5rem',
             fontStyle: 'italic',
-            lineHeight: '1.2'
+            lineHeight: '1.2',
+            fontWeight: 'bold'
           }}>
             <span style={{ fontWeight: 'bold' }}>PetroEnergy</span>, building a more sustainable and ethical future
           </h1>
           
           <p style={{
             color: '#666',
-            marginBottom: '3rem',
-            fontSize: '1.1rem',
+            marginBottom: isMobile ? '2rem' : '2.5rem',
+            fontSize: isMobile ? '1rem' : '1.1rem',
             lineHeight: '1.6'
           }}>
             ESG is a vital framework that helps investors assess sustainability risks and guides businesses in operating responsibly for long-term impact.
           </p>
+
           <Btn
             color="green"
             label="LOGIN"
             startIcon={<LoginIcon />}
             onClick={toggleModal}
             rounded
-            fontsize="1.2rem"
+            fontsize={isMobile ? "1rem" : "1.2rem"}
           />
         </div>
 
-        {isLoginModal && (
-          <Modal onClose={toggleModal}>
-            <LoginPage />
-          </Modal>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Box
-            sx={{
-              bgcolor: "#7694c4",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100%",
-              height: 400, // Use a fixed px value for reliable sizing
-              borderRadius: "24px",
-              overflow: "hidden", // Ensures no overflow
-              p: 0 // No padding
-            }}
-          >
-            <Box
-              component="img"
+        <div className="hero-image" style={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          maxWidth: isMobile ? '100%' : '50%'
+        }}>
+          <div style={{
+            backgroundColor: "#7694c4",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: isMobile ? "250px" : isTablet ? "300px" : "400px",
+            maxWidth: isMobile ? "100%" : "500px",
+            borderRadius: "24px",
+            overflow: "hidden"
+          }}>
+            <img
               src={image1}
-              alt="Login"
-              sx={{
+              alt="PetroEnergy Sustainability"
+              style={{
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
                 opacity: 0.825,
-                borderRadius: "24px",
-                display: "block", // Prevents extra space below
-                m: 0, // No margin
-                p: 0  // No padding
+                borderRadius: "24px"
               }}
             />
-          </Box>
+          </div>
         </div>
-      </main>
-      
+      </div>
+
+      {isLoginModal && (
+        <Modal onClose={toggleModal}>
+          <LoginPage />
+        </Modal>
+      )}      
       { /* Additionaal sections 
         <section ref={aboutRef} className="landing-section" style={{
           backgroundColor: '#f5f5f5',
@@ -258,7 +204,7 @@ const toggleModal = () => {
         
       */}
       <Footer />
-    </div>
+    </Box>
   );
 }
 

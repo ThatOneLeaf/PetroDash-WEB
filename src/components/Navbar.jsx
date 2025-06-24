@@ -1,8 +1,25 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { 
+  AppBar, 
+  Toolbar, 
+  Box, 
+  IconButton, 
+  Drawer, 
+  List, 
+  ListItem, 
+  ListItemButton, 
+  ListItemText,
+  useTheme,
+  useMediaQuery,
+  Container
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import LoginIcon from '@mui/icons-material/Login';
 import Modal from '../components/modal'; 
 import LoginPage from '../pages/Login_page/Login_page';
 import Btn from '../components/ButtonComp';
+import CO2Widget from './CO2Widget';
 
 // Simple hamburger icon component
 function Hamburger({ open, onClick }) {
@@ -56,12 +73,9 @@ function Hamburger({ open, onClick }) {
   );
 }
 
-function Navbar({ 
-  isSticky = false, 
-  onAboutClick, 
-  onDisclosureClick, 
-  onContactClick 
-}) {
+function Navbar({ isSticky = false }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [scrolled, setScrolled] = useState(false);
   const [isNavbarLogin, setLoginModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -149,8 +163,7 @@ function Navbar({
           .navbar-center-btn:hover,
           .navbar-center-btn:focus {
             color: #182959;
-          }
-          @media (max-width: 900px) {
+          }          @media (max-width: 900px) {
             .navbar-center-desktop {
               display: none !important;
             }
@@ -170,8 +183,7 @@ function Navbar({
       </style>
       <div style={{
         height: isSticky ? '72px' : 'auto'
-      }}>
-        <nav style={{
+      }}>        <nav style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -186,7 +198,7 @@ function Navbar({
           boxSizing: 'border-box',
           ...navAnimStyle
         }}>
-          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link to="/" style={{ textDecoration: 'none', color: 'inherit', flex: '0 0 auto' }}>
             <img
               src="src/assets/petrodashlogo.png"
               alt="PetroDash"
@@ -194,63 +206,24 @@ function Navbar({
               className="navbar-logo"
             />
           </Link>
-
-          {/* Desktop Center Navigation 
           
-          */}
+          {/* Centered CO2 Widget for desktop */}
           <div className="navbar-center-desktop" style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2rem',
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)'
+            display: 'flex', 
+            justifyContent: 'center', 
+            flex: '1 1 auto',
+            zIndex: 1202 
           }}>
-            <button 
-              onClick={onAboutClick}
-              className="navbar-center-btn"
-              style={{ 
-                background: 'none',
-                border: 'none',
-                color: '#333',
-                cursor: 'pointer',
-                fontFamily: 'Inter',
-                fontSize: '14px',
-              }}
-            >
-              ABOUT
-            </button>
-            <button 
-              onClick={onDisclosureClick}
-              className="navbar-center-btn"
-              style={{ 
-                background: 'none',
-                border: 'none',
-                color: '#333',
-                cursor: 'pointer',
-                fontFamily: 'Inter',
-                fontSize: '14px'
-              }}
-            >
-              DISCLOSURE
-            </button>
-            <button 
-              className="navbar-center-btn"
-              style={{ 
-                background: 'none',
-                border: 'none',
-                color: '#333',
-                cursor: 'pointer',
-                fontFamily: 'Inter',
-                fontSize: '14px'
-              }}
-            >
-              HELP
-            </button>
+            <CO2Widget />
           </div>
           
           {/* Desktop LOGIN button */}
-          <div className="navbar-login-desktop" style={{ display: 'flex', alignItems: 'center', zIndex: 1202 }}>
+          <div className="navbar-login-desktop" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            flex: '0 0 auto',
+            zIndex: 1202 
+          }}>
             <Btn color="green" label="LOGIN" onClick={toggleModal} rounded fontsize='0.8rem'/>
           </div>
 
@@ -322,46 +295,13 @@ function Navbar({
                 src="src/assets/petrodashlogo.png"
                 alt="PetroDash"
                 style={{ height: '40px' }}
-              />
-            </Link>
-            <button 
-              onClick={() => { setMobileMenuOpen(false); onAboutClick && onAboutClick(); }}
-              className="navbar-center-btn"
-              style={{ 
-                background: 'none',
-                border: 'none',
-                color: '#333',
-                cursor: 'pointer',
-                fontFamily: 'Inter',
-                fontSize: '18px',
-                marginBottom: 12,
-                textAlign: 'left',
-                padding: '0.75rem 0',
-                borderRadius: 6,
-                transition: 'background 0.2s',
-              }}
-            >
-              ABOUT
-            </button>
-            <button 
-              onClick={() => { setMobileMenuOpen(false); onDisclosureClick && onDisclosureClick(); }}
-              className="navbar-center-btn"
-              style={{ 
-                background: 'none',
-                border: 'none',
-                color: '#333',
-                cursor: 'pointer',
-                fontFamily: 'Inter',
-                fontSize: '18px',
-                marginBottom: 12,
-                textAlign: 'left',
-                padding: '0.75rem 0',
-                borderRadius: 6,
-                transition: 'background 0.2s',
-              }}
-            >
-              DISCLOSURE
-            </button>
+              />            </Link>
+            
+            {/* CO2 Widget for mobile */}
+            <div style={{ alignSelf: 'center', marginBottom: '1rem' }}>
+              <CO2Widget />
+            </div>
+            
             <div style={{ marginTop: '2rem', alignSelf: 'stretch' }}>
               {/* Full width, green LOGIN button for mobile */}
               <Btn

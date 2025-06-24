@@ -53,6 +53,7 @@ import ForestIcon from '@mui/icons-material/Forest';
 import VerticalStackedBarChartComponent from "../../components/charts/VerticalStackedBar";
 import HorizontalGroupedBarChartComponent from "../../components/charts/HorizontalGrouped";
 import { useAuth } from "../../contexts/AuthContext";
+import { useCO2 } from "../../contexts/CO2Context";
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 
@@ -199,10 +200,10 @@ function PowerDashboard() {
   const [plantMetadata, setPlantMetadata] = useState([]);
   const [equivalenceData, setEquivalenceData] = useState({});
   const [housePowerData, setHousePowerData] = useState({});
-  const [staticData, setStaticData] = useState({});
-  const { getUserRole } = useAuth();
+  const [staticData, setStaticData] = useState({});  const { getUserRole } = useAuth();
   const {getUserCompanyId} = useAuth();
   const{getUserPowerPlantId}=useAuth();
+  const { updateCO2Data } = useCO2();
   const role = getUserRole();
   const companyId = getUserCompanyId();
   const powerPlantId = getUserPowerPlantId();
@@ -325,15 +326,18 @@ const fetchData = async () => {
 
     const raw = response?.data;
     const energyData = raw?.energy_data || {};
-    const rawData = energyData?.results || [];
-
-    setData(energyData);
+    const rawData = energyData?.results || [];    setData(energyData);
     setFilteredData(rawData);
     setEquivalenceData(raw?.equivalence_data || {});
     setHousePowerData(raw?.house_powered || {});
     setStaticData(raw?.formula || {});
 
-    setLastUpdated(new Date());  // ✅ Update the last updated time here
+    const updatedTime = new Date();
+    setLastUpdated(updatedTime);  // ✅ Update the last updated time here
+    
+    // Update CO2 context with total CO2 avoided
+    const totalCO2 = energyData?.totals?.total_co2_avoidance || 0;
+    updateCO2Data(totalCO2, updatedTime);
   } catch (error) {
     console.error("Error fetching data:", error);
     setData({});

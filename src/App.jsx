@@ -8,6 +8,7 @@ import LoginPage from "./pages/Login_page/Login_page";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
 import { AuthProvider } from "./contexts/AuthContext";
+import { CO2Provider } from "./contexts/CO2Context";
 import EconomicRepository from "./pages/Economic/EconomicRepository";
 import EnvironmentEnergy from "./pages/Envi/EnvironmentEnergy";
 import EnvironmentWater from "./pages/Envi/EnvironmentWater";
@@ -31,9 +32,10 @@ import ProfilePage from "./pages/Profile_page/Profile_page";
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="app">
-          <main>            <Routes>
+      <CO2Provider>
+        <Router>
+          <div className="app">
+            <main><Routes>
               <Route path="/" element={<SmartLanding />} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/login" element={<LoginPage />} />
@@ -220,11 +222,11 @@ function App() {
                     <Dashboard />
                   </ProtectedRoute>
                 }
-              />
-            </Routes>
+              />            </Routes>
           </main>
         </div>
       </Router>
+      </CO2Provider>
     </AuthProvider>
   );
 }
