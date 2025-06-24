@@ -24,12 +24,17 @@ import SingleSelectDropdown from '../../components/DashboardComponents/SingleSel
 import RefreshIcon from '@mui/icons-material/Refresh';
 import StyledSelect from "../../components/DashboardComponents/StyledSelect";
 import ZoomModal from "../../components/DashboardComponents/ZoomModal";
-import { IconButton } from '@mui/material';
+import { IconButton, useTheme, useMediaQuery } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B', '#64748b', '#06B6D4', '#84CC16'];
 
 function EnvironmentWasteDash() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [activeTab, setActiveTab] = useState('hazardous_generated'); // 'hazardous_generated', 'hazardous_disposed', 'non_hazardous_generated'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

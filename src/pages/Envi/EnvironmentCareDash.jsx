@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import Sidebar from '../../components/Sidebar';
 
 function EnvironmentCareDash() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [lastUpdated] = useState(new Date());
 
   // Function to format the current date and time
@@ -25,16 +29,16 @@ function EnvironmentCareDash() {
   const handleRefresh = () => {
     window.location.reload();
   };
-
   return (
     <div style={{ 
       display: 'flex',
-      flexDirection: 'row',
-      height: '100vh',
+      flexDirection: isMobile ? 'column' : 'row',
+      height: isMobile ? 'auto' : '100vh',
+      minHeight: isMobile ? '100vh' : 'auto',
       width: '100%',
       margin: 0,
       padding: 0,
-      overflow: 'hidden',
+      overflow: isMobile ? 'visible' : 'hidden',
       backgroundColor: '#f8fafc'
     }}>
       <Sidebar />
@@ -42,32 +46,33 @@ function EnvironmentCareDash() {
       {/* Main Content */}
       <div style={{ 
         flex: 1,
-        padding: '15px',
+        padding: isSmallScreen ? '8px' : '15px',
         backgroundColor: '#f4f6fb',
-        overflow: 'hidden',
+        overflow: isMobile ? 'visible' : 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        zoom: '0.8'
-      }}>
-        {/* Header - Compact */}
+        zoom: isSmallScreen ? '0.7' : '0.8'
+      }}>        {/* Header - Responsive */}
         <div style={{ 
           display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between', 
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          gap: isMobile ? '10px' : '0',
           marginBottom: '15px',
           flexShrink: 0
         }}>
           <div>
             <div style={{ 
               color: '#64748b', 
-              fontSize: '12px',
+              fontSize: isSmallScreen ? '10px' : '12px',
               fontWeight: '500',
               marginBottom: '3px'
             }}>
               DASHBOARD
             </div>
             <h1 style={{ 
-              fontSize: '24px',
+              fontSize: isSmallScreen ? '18px' : isMobile ? '20px' : '24px',
               fontWeight: 'bold', 
               color: '#1e293b',
               margin: 0 
@@ -81,21 +86,22 @@ function EnvironmentCareDash() {
               backgroundColor: '#1976d2',
               color: 'white',
               border: 'none',
-              padding: '8px 16px',
+              padding: isSmallScreen ? '6px 12px' : '8px 16px',
               borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: isSmallScreen ? '6px' : '8px',
               cursor: 'pointer',
-              fontSize: '13px',
+              fontSize: isSmallScreen ? '11px' : '13px',
               fontWeight: '700',
               transition: 'background-color 0.2s ease',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              alignSelf: isMobile ? 'flex-start' : 'auto'
             }}
             onMouseOver={(e) => e.target.style.backgroundColor = '#115293'}
             onMouseOut={(e) => e.target.style.backgroundColor = '#1976d2'}
           >
-            <RefreshIcon style={{ fontSize: '16px' }} />
+            <RefreshIcon style={{ fontSize: isSmallScreen ? '14px' : '16px' }} />
             Refresh
           </button>
         </div>
@@ -119,9 +125,8 @@ function EnvironmentCareDash() {
             textAlign: 'center',
             gap: 3,
             padding: '40px'
-          }}>
-            <ConstructionIcon sx={{ 
-              fontSize: 120, 
+          }}>            <ConstructionIcon sx={{ 
+              fontSize: isSmallScreen ? 80 : isMobile ? 100 : 120, 
               color: '#1e293b', 
               opacity: 0.6,
               marginBottom: 1
@@ -130,7 +135,7 @@ function EnvironmentCareDash() {
               fontWeight: 'bold', 
               color: '#1e293b', 
               marginBottom: 2,
-              fontSize: '2.5rem'
+              fontSize: isSmallScreen ? '1.8rem' : isMobile ? '2.2rem' : '2.5rem'
             }}>
               Coming Soon
             </Typography>
@@ -138,8 +143,10 @@ function EnvironmentCareDash() {
               color: '#64748b', 
               maxWidth: '600px', 
               lineHeight: 1.6,
-              fontSize: '1.1rem',
-              fontWeight: '400'
+              fontSize: isSmallScreen ? '0.9rem' : isMobile ? '1rem' : '1.1rem',
+              fontWeight: '400',
+              textAlign: 'center',
+              px: { xs: 2, sm: 0 }
             }}>
               Data for this section is not yet available. This page will be updated once the necessary information has been provided.
             </Typography>
@@ -149,13 +156,14 @@ function EnvironmentCareDash() {
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0',
               borderRadius: '8px',
-              padding: '20px',
+              padding: isSmallScreen ? '15px' : '20px',
               marginTop: '20px',
-              maxWidth: '500px'
+              maxWidth: isSmallScreen ? '100%' : '500px',
+              mx: { xs: 2, sm: 0 }
             }}>
               <Typography variant="body2" sx={{ 
                 color: '#475569',
-                fontSize: '0.9rem',
+                fontSize: isSmallScreen ? '0.8rem' : '0.9rem',
                 textAlign: 'center'
               }}>
                 This dashboard is intended to support the CARE program, which focuses on protecting and preserving the ecological balance and value of the area. It aligns with the goals of sustainable ecotourism by helping prevent environmental threats and promoting responsible tourism practices.

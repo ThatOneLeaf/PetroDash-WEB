@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Button, Box, IconButton } from "@mui/material";
+import { Button, Box, IconButton, useTheme, useMediaQuery } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 
@@ -30,6 +30,11 @@ function Demographics({
   setFilteredData,
   parentSelectedRowIds,
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
   //INITIALIZE
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -283,14 +288,37 @@ function Demographics({
         <div>{error}</div>
       </Box>
     );
-
   return (
-    <Box sx={{ display: "flex" }}>
-      <Box sx={{ flexGrow: 1, height: "100%", overflow: "auto" }}>
+    <Box sx={{ 
+      display: "flex",
+      flexDirection: { xs: 'column', md: 'row' },
+      minHeight: '100vh',
+      p: { xs: 1, sm: 2 }
+    }}>
+      <Box sx={{ 
+        flexGrow: 1, 
+        height: "100%", 
+        overflow: "auto",
+        maxWidth: '100%'
+      }}>
         {/* Filters */}
-
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-          <Search onSearch={setSearchQuery} suggestions={suggestions} />
+        <Box sx={{ 
+          display: "flex", 
+          gap: isSmallScreen ? 1 : 2, 
+          flexWrap: "wrap", 
+          mb: 3,
+          px: { xs: 1, sm: 0 },
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' }
+        }}>          <Search 
+            onSearch={setSearchQuery} 
+            suggestions={suggestions}
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '200px' },
+              mb: { xs: 1, sm: 0 }
+            }}
+          />
           <Filter
             label="Company"
             options={[{ label: "All Companies", value: "" }, ...companyOptions]}
@@ -300,6 +328,11 @@ function Demographics({
               setPage(1);
             }}
             placeholder="Company"
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '150px' },
+              mb: { xs: 1, sm: 0 }
+            }}
           />
 
           <Filter
@@ -311,6 +344,11 @@ function Demographics({
               setPage(1);
             }}
             placeholder="Gender"
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '120px' },
+              mb: { xs: 1, sm: 0 }
+            }}
           />
 
           <Filter
@@ -322,12 +360,17 @@ function Demographics({
               setPage(1);
             }}
             placeholder="Position"
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '150px' },
+              mb: { xs: 1, sm: 0 }
+            }}
           />
 
           <Filter
-            label="Employement Category"
+            label="Employment Category"
             options={[
-              { label: "All Employement Category", value: "" },
+              { label: "All Employment Category", value: "" },
               ...employementCategoryOptions,
             ]}
             value={filters.p_np}
@@ -335,13 +378,18 @@ function Demographics({
               setFilters((prev) => ({ ...prev, p_np: val }));
               setPage(1);
             }}
-            placeholder="Employement Category"
+            placeholder="Employment Category"
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '180px' },
+              mb: { xs: 1, sm: 0 }
+            }}
           />
 
           <Filter
-            label="Employement Status"
+            label="Employment Status"
             options={[
-              { label: "All Employement Status", value: "" },
+              { label: "All Employment Status", value: "" },
               ...employementStatusOptions,
             ]}
             value={filters.employment_status}
@@ -349,7 +397,12 @@ function Demographics({
               setFilters((prev) => ({ ...prev, employment_status: val }));
               setPage(1);
             }}
-            placeholder="Employement Status"
+            placeholder="Employment Status"
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '180px' },
+              mb: { xs: 1, sm: 0 }
+            }}
           />
 
           <Filter
@@ -361,6 +414,11 @@ function Demographics({
               setPage(1);
             }}
             placeholder="Status"
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: '100%', sm: '120px' },
+              mb: { xs: 1, sm: 0 }
+            }}
           />
 
           {isFiltering && (
@@ -370,9 +428,12 @@ function Demographics({
               sx={{
                 color: "#182959",
                 borderRadius: "999px",
-                padding: "9px 18px",
-                fontSize: "0.85rem",
+                padding: isSmallScreen ? "6px 12px" : "9px 18px",
+                fontSize: isSmallScreen ? "0.75rem" : "0.85rem",
                 fontWeight: "bold",
+                width: { xs: '100%', sm: 'auto' },
+                minWidth: { xs: '100%', sm: 'auto' },
+                mt: { xs: 1, sm: 0 }
               }}
               onClick={() => {
                 setFilters({
@@ -400,42 +461,57 @@ function Demographics({
             actions={renderActions}
             emptyMessage="No records found for the selected filters."
           />
-        */}
-
-        {/* Custom Table Component */}
-        <CustomTable
-          columns={columns}
-          rows={paginatedData}
-          filteredData={filteredData}
-          idKey={"employee_id"} // or "id", "recordId", etc. depending on the page
-          onSelectionChange={(selectedRows) => {
-            handleRowSelect(selectedRows);
-          }}
-          emptyMessage="No demographics data found."
-          maxHeight="60vh"
-          minHeight="300px"
-          actions={renderActions}
-        />
+        */}        {/* Custom Table Component */}
+        <Box sx={{ 
+          width: '100%',
+          overflowX: 'auto',
+          mb: 2
+        }}>
+          <CustomTable
+            columns={columns}
+            rows={paginatedData}
+            filteredData={filteredData}
+            idKey={"employee_id"} // or "id", "recordId", etc. depending on the page
+            onSelectionChange={(selectedRows) => {
+              handleRowSelect(selectedRows);
+            }}
+            emptyMessage="No demographics data found."
+            maxHeight={isSmallScreen ? "50vh" : "60vh"}
+            minHeight={isSmallScreen ? "250px" : "300px"}
+            actions={renderActions}
+          />
+        </Box>
 
         {/* Pagination */}
-
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: "space-between",
+            alignItems: { xs: 'center', sm: 'flex-start' },
             marginTop: "1rem",
+            gap: { xs: 2, sm: 0 },
+            px: { xs: 1, sm: 0 }
           }}
         >
           {/* Row Count Display */}
-
-          <Box>
-            <Typography sx={{ fontSize: "0.85rem" }}>
+          <Box sx={{ 
+            textAlign: { xs: 'center', sm: 'left' },
+            order: { xs: 2, sm: 1 }
+          }}>
+            <Typography sx={{ 
+              fontSize: isSmallScreen ? "0.75rem" : "0.85rem" 
+            }}>
               Total {filteredData.length}{" "}
               {filteredData.length === 1 ? "record" : "records"}
             </Typography>
             {selectedRowIds.length > 0 && (
               <Typography
-                sx={{ fontSize: "0.85rem", color: "#2B8C37", fontWeight: 700 }}
+                sx={{ 
+                  fontSize: isSmallScreen ? "0.75rem" : "0.85rem", 
+                  color: "#2B8C37", 
+                  fontWeight: 700 
+                }}
               >
                 {selectedRowIds.length} selected record
                 {selectedRowIds.length > 1 ? "s" : ""}
@@ -443,16 +519,31 @@ function Demographics({
             )}
           </Box>
 
-          <Pagination
-            page={page}
-            count={Math.ceil(filteredData.length / rowsPerPage)}
-            onChange={handlePageChange}
-          />
-          <Typography sx={{ fontSize: "0.85rem" }}>
-            Showing{" "}
-            {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
-            {Math.min(page * rowsPerPage, filteredData.length)} records
-          </Typography>
+          <Box sx={{ 
+            order: { xs: 1, sm: 2 },
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <Pagination
+              page={page}
+              count={Math.ceil(filteredData.length / rowsPerPage)}
+              onChange={handlePageChange}
+              size={isSmallScreen ? "small" : "medium"}
+            />
+          </Box>
+          
+          <Box sx={{ 
+            order: { xs: 3, sm: 3 },
+            textAlign: { xs: 'center', sm: 'right' }
+          }}>
+            <Typography sx={{ 
+              fontSize: isSmallScreen ? "0.75rem" : "0.85rem" 
+            }}>
+              Showing{" "}
+              {Math.min((page - 1) * rowsPerPage + 1, filteredData.length)}–
+              {Math.min(page * rowsPerPage, filteredData.length)} records
+            </Typography>
+          </Box>
         </Box>
 
         {selectedRecord != null &&

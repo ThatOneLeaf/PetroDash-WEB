@@ -21,7 +21,7 @@ import MultiSelectWithChips from "../../components/DashboardComponents/MultiSele
 import StyledSelect from "../../components/DashboardComponents/StyledSelect";
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ZoomModal from "../../components/DashboardComponents/ZoomModal";
-import { IconButton } from '@mui/material';
+import { IconButton, useTheme, useMediaQuery } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981'];
@@ -38,6 +38,11 @@ const getYearRangeText = (fromYear, toYear) => {
 };
 
 function EnvironmentWaterDash() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -469,16 +474,16 @@ function EnvironmentWaterDash() {
       </div>
     );
    }
-
   return (
     <div style={{ 
       display: 'flex',
-      flexDirection: 'row',
-      height: '100vh',
+      flexDirection: isMobile ? 'column' : 'row',
+      height: isMobile ? 'auto' : '100vh',
+      minHeight: isMobile ? '100vh' : 'auto',
       width: '100%',
       margin: 0,
       padding: 0,
-      overflow: 'hidden',
+      overflow: isMobile ? 'visible' : 'hidden',
       backgroundColor: '#f8fafc'
     }}>
       <Sidebar />
@@ -486,32 +491,33 @@ function EnvironmentWaterDash() {
       {/* Main Content */}
       <div style={{ 
         flex: 1,
-        padding: '15px',
+        padding: isSmallScreen ? '8px' : '15px',
         backgroundColor: '#f4f6fb',
-        overflow: 'hidden',
+        overflow: isMobile ? 'visible' : 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        zoom: '0.8'  // Add this line
-      }}>
-        {/* Header - Compact */}
+        zoom: isSmallScreen ? '0.7' : '0.8'
+      }}>        {/* Header - Responsive */}
         <div style={{ 
           display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between', 
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          gap: isMobile ? '10px' : '0',
           marginBottom: '15px',
           flexShrink: 0
         }}>
           <div>
             <div style={{ 
               color: '#64748b', 
-              fontSize: '12px',
+              fontSize: isSmallScreen ? '10px' : '12px',
               fontWeight: '500',
               marginBottom: '3px'
             }}>
               DASHBOARD
             </div>
             <h1 style={{ 
-              fontSize: '24px',
+              fontSize: isSmallScreen ? '18px' : isMobile ? '20px' : '24px',
               fontWeight: 'bold', 
               color: '#1e293b',
               margin: 0 
@@ -520,9 +526,10 @@ function EnvironmentWaterDash() {
             </h1>
             <div style={{ 
               color: '#64748b', 
-              fontSize: '10px',
+              fontSize: isSmallScreen ? '8px' : '10px',
               fontWeight: '400',
-              marginTop: '4px'
+              marginTop: '4px',
+              display: isSmallScreen ? 'none' : 'block'
             }}>
                The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
             </div>
@@ -533,16 +540,17 @@ function EnvironmentWaterDash() {
               backgroundColor: '#1976d2',
               color: 'white',
               border: 'none',
-              padding: '12px 24px',
+              padding: isSmallScreen ? '8px 16px' : '12px 24px',
               borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
+              gap: isSmallScreen ? '6px' : '10px',
               cursor: 'pointer',
-              fontSize: '16px',
+              fontSize: isSmallScreen ? '12px' : '16px',
               fontWeight: '700',
               transition: 'background-color 0.2s ease, color 0.2s ease',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              alignSelf: isMobile ? 'flex-start' : 'auto'
             }}
             onMouseOver={(e) => {
               e.target.style.backgroundColor = '#115293';
@@ -556,12 +564,10 @@ function EnvironmentWaterDash() {
             <RefreshIcon style={{ fontSize: '20px', color: 'inherit' }} />
             Refresh
           </button>
-        </div>
-
-        {/* Filters - Updated with MultiSelect */}
+        </div>        {/* Filters - Responsive */}
         <div style={{ 
           display: 'flex', 
-          gap: '10px',
+          gap: isSmallScreen ? '6px' : '10px',
           marginBottom: '15px',
           flexWrap: 'wrap',
           alignItems: 'center',
@@ -631,30 +637,28 @@ function EnvironmentWaterDash() {
               Clear All
             </button>
           )}
-        </div>
-
-        {/* Key Metrics Cards - Now showing filtered data */}
+        </div>        {/* Key Metrics Cards - Responsive */}
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: '1fr 1fr 1fr', 
-          gap: '12px',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', 
+          gap: isSmallScreen ? '8px' : '12px',
           marginBottom: '15px',
           flexShrink: 0
         }}>
           <div style={{
             backgroundColor: '#3B82F6',
             color: 'white',
-            padding: '15px',
+            padding: isSmallScreen ? '10px' : '15px',
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
+            <div style={{ fontSize: isSmallScreen ? '16px' : '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {filteredTotalAbstracted.toLocaleString()} m³
             </div>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+            <div style={{ fontSize: isSmallScreen ? '8px' : '10px', opacity: 0.9, marginBottom: '6px' }}>
               WATER ABSTRACTION
             </div>
-            <div style={{ fontSize: '9px', opacity: 0.8 }}>
+            <div style={{ fontSize: isSmallScreen ? '7px' : '9px', opacity: 0.8, display: isSmallScreen ? 'none' : 'block' }}>
               {getFilterDescription()} {getDateRangeText()}
             </div>
           </div>
@@ -662,17 +666,17 @@ function EnvironmentWaterDash() {
           <div style={{
             backgroundColor: '#F97316',
             color: 'white',
-            padding: '15px',
+            padding: isSmallScreen ? '10px' : '15px',
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
+            <div style={{ fontSize: isSmallScreen ? '16px' : '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {filteredTotalDischarged.toLocaleString()} m³
             </div>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+            <div style={{ fontSize: isSmallScreen ? '8px' : '10px', opacity: 0.9, marginBottom: '6px' }}>
               WATER DISCHARGE
             </div>
-            <div style={{ fontSize: '9px', opacity: 0.8 }}>
+            <div style={{ fontSize: isSmallScreen ? '7px' : '9px', opacity: 0.8, display: isSmallScreen ? 'none' : 'block' }}>
               {getFilterDescription()} {getDateRangeText()}
             </div>
           </div>
@@ -680,40 +684,37 @@ function EnvironmentWaterDash() {
           <div style={{
             backgroundColor: '#10B981',
             color: 'white',
-            padding: '15px',
+            padding: isSmallScreen ? '10px' : '15px',
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '3px' }}>
+            <div style={{ fontSize: isSmallScreen ? '16px' : '20px', fontWeight: 'bold', marginBottom: '3px' }}>
               {filteredTotalConsumed.toLocaleString()} m³
             </div>
-            <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '6px' }}>
+            <div style={{ fontSize: isSmallScreen ? '8px' : '10px', opacity: 0.9, marginBottom: '6px' }}>
               WATER CONSUMPTION
             </div>
-            <div style={{ fontSize: '9px', opacity: 0.8 }}>
+            <div style={{ fontSize: isSmallScreen ? '7px' : '9px', opacity: 0.8, display: isSmallScreen ? 'none' : 'block' }}>
               {getFilterDescription()} {getDateRangeText()}
             </div>
           </div>
-        </div>
-
-        {/* Charts Section - New Layout: Pie chart in first column, Line and Bar charts stacked in second column */}
+        </div>        {/* Charts Section - Responsive Layout */}
         <div style={{ 
           flex: 1,
           display: 'grid', 
-          gridTemplateColumns: '1fr 1fr',
-          gap: '15px',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: isSmallScreen ? '10px' : '15px',
           minHeight: 0
-        }}>
-          {/* Pie Chart - Takes full height of first column */}
+        }}>          {/* Pie Chart - Takes full height of first column */}
           <div style={{ 
             flex: 1,
             backgroundColor: 'white', 
-            padding: '12px', 
+            padding: isSmallScreen ? '8px' : '12px', 
             borderRadius: '8px', 
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: 0,
+            minHeight: isMobile ? '300px' : 0,
             position: 'relative' // Add this
           }}>
             {/* Zoom button */}

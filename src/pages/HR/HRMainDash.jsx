@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, Container, IconButton, Typography } from "@mui/material";
+import { Box, Button, Container, IconButton, Typography, useTheme, useMediaQuery } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import AddIcon from "@mui/icons-material/Add";
 import Sidebar from "../../components/Sidebar";
@@ -28,6 +28,11 @@ const tabs = [
 ];
 
 function HRMainDash() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const lastUpdated = new Date();
   const [activeTab, setActiveTab] = useState("employability");
   const [shouldReload, setShouldReload] = useState(false);
@@ -49,25 +54,26 @@ function HRMainDash() {
   const handleRefresh = () => {
     setShouldReload((prev) => !prev);
   };
-
   return (
-    <Box sx={{ display: "flex", height: "100vh" }}>
+    <Box sx={{ display: "flex", flexDirection: { xs: 'column', md: 'row' }, height: { xs: 'auto', md: "100vh" }, minHeight: { xs: '100vh', md: 'auto' } }}>
       <Sidebar />
       <Box
         sx={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
-          height: "100vh",
+          overflow: { xs: 'visible', md: "hidden" },
+          height: { xs: 'auto', md: "100vh" },
         }}
-      >
-        {/* Header */}
+      >        {/* Header */}
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: "space-between",
-            px: 2,
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            gap: { xs: 2, sm: 0 },
+            px: { xs: 1, sm: 2 },
             pt: 2,
             flexShrink: 0,
           }}
@@ -77,20 +83,20 @@ function HRMainDash() {
             lastUpdated={lastUpdated}
             formatDateTime={formatDateTime}
           />
-          <Box sx={{ mt: "15px" }}>
+          <Box sx={{ mt: { xs: 0, sm: "15px" } }}>
             <button
               onClick={handleRefresh}
               style={{
                 backgroundColor: "#1976d2",
                 color: "white",
                 border: "none",
-                padding: "8px 16px",
+                padding: isSmallScreen ? "6px 12px" : "8px 16px",
                 borderRadius: "8px",
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
+                gap: isSmallScreen ? "6px" : "8px",
                 cursor: "pointer",
-                fontSize: "13px",
+                fontSize: isSmallScreen ? "11px" : "13px",
                 fontWeight: "700",
                 transition: "background-color 0.2s ease",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
@@ -98,7 +104,7 @@ function HRMainDash() {
               onMouseOver={(e) => (e.target.style.backgroundColor = "#115293")}
               onMouseOut={(e) => (e.target.style.backgroundColor = "#1976d2")}
             >
-              <RefreshIcon style={{ fontSize: "16px" }} />
+              <RefreshIcon style={{ fontSize: isSmallScreen ? "14px" : "16px" }} />
               Refresh
             </button>
           </Box>
@@ -111,9 +117,7 @@ function HRMainDash() {
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
-        </Box> */}
-
-        {/* Page-specific content with controls inside */}
+        </Box> */}        {/* Page-specific content with controls inside */}
         <Box
           sx={{
             flex: 1,
@@ -121,13 +125,14 @@ function HRMainDash() {
             justifyContent: "center",
             alignItems: "stretch",
             width: "100%",
-            overflow: "auto",
+            overflow: { xs: 'visible', md: "auto" },
+            px: { xs: 1, sm: 0 },
           }}
         >
           <Box
             mt={0}
             sx={{
-              width: "98%",
+              width: { xs: "100%", sm: "98%" },
               height: "100%",
               display: "flex",
               flexDirection: "column",
