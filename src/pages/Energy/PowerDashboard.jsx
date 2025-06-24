@@ -152,11 +152,11 @@ function PowerDashboard() {
     open: false,
     title: '',
     fileName: '',
-    content: null,
+    chartConfig: null,
   });
 
-  const openZoomModal = (title, fileName, content) => {
-    setZoomModal({ open: true, title, fileName, content });
+  const openZoomModal = (title, fileName, chartConfig) => {
+    setZoomModal({ open: true, title, fileName, chartConfig });
   };
 
 
@@ -594,12 +594,13 @@ return (
                       openZoomModal(
                         generateFullChartTitle("Power Generation Over Time", x, y, filters, startDate, endDate),
                         "total_energy_generated_chart",
-                        <LineChartComponent
-                          title={generateFullChartTitle("Power Generation Over Time", x, y, filters, startDate, endDate)}
-                          data={data?.line_graph?.total_energy_generated || []}
-                          unit="kWh"
-                          colorMap={
-                            chartReady
+                        {
+                          type: "line",
+                          props: {
+                            title: generateFullChartTitle("Power Generation Over Time", x, y, filters, startDate, endDate),
+                            data: data?.line_graph?.total_energy_generated || [],
+                            unit: "kWh",
+                            colorMap: chartReady
                               ? getColorMapForGroupBy(
                                   x,
                                   data?.line_graph?.total_energy_generated || [],
@@ -608,7 +609,8 @@ return (
                                   generationSourceColors
                                 )
                               : {}
-                          }/>
+                          }
+                        }
                       )
                     }
                   >
@@ -643,11 +645,12 @@ return (
                       openZoomModal(
                         generateFullChartTitle("Power Generation Distribution", x, y, filters, startDate, endDate),
                         "total_energy_generated_pie",
-                        <PieChartComponent
-                          title={generateFullChartTitle("PPower Generation Distribution", x, y, filters, startDate, endDate)}
-                          data={data?.pie_chart?.total_energy_generated || []}
-                        colorMap={
-                            chartReady
+                        {
+                          type: "pie",
+                          props: {
+                            title: generateFullChartTitle("Power Generation Distribution", x, y, filters, startDate, endDate),
+                            data: data?.pie_chart?.total_energy_generated || [],
+                            colorMap: chartReady
                               ? getColorMapForGroupBy(
                                   x,
                                   data?.line_graph?.total_energy_generated || [],
@@ -656,7 +659,8 @@ return (
                                   generationSourceColors
                                 )
                               : {}
-                          }/>
+                          }
+                        }
                       )
                     }
                   >
@@ -697,13 +701,14 @@ return (
                       openZoomModal(
                         generateFullChartTitle("Cumulative Power Generation", x, y, filters, startDate, endDate),
                         "total_energy_generated_bar",
-                        <VerticalStackedBarChartComponent
-                      title={generateFullChartTitle("Cumulative Power Generation", x, y, filters, startDate, endDate)}
-                      data={data?.stacked_bar || []}
-                      legendName="Cumulative Power Generation"
-                      unit="kWh"
-                      colorMap={
-                            chartReady
+                        {
+                          type: "verticalBar",
+                          props: {
+                            title: generateFullChartTitle("Cumulative Power Generation", x, y, filters, startDate, endDate),
+                            data: data?.stacked_bar || [],
+                            legendName: "Cumulative Power Generation",
+                            unit: "kWh",
+                            colorMap: chartReady
                               ? getColorMapForGroupBy(
                                   x,
                                   data?.line_graph?.total_energy_generated || [],
@@ -713,7 +718,7 @@ return (
                                 )
                               : {}
                           }
-                    />
+                        }
                       )
                     }
                   >
@@ -751,23 +756,24 @@ return (
                       openZoomModal(
                         generateFullChartTitle("Number of Households Powered", x, y, filters, startDate, endDate),
                         "households_powered_over_time",
-                        <VerticalStackedBarChartComponent
-                          title={generateFullChartTitle("Number of Households Powered", x, y, filters, startDate, endDate)}
-                          data={housePowerData?.stacked_bar || []}
-                          legendName="Total Energy Generated"
-                          yAxisLabel={"No. of Household"}
-                          colorMap={
-                                chartReady
-                                  ? getColorMapForGroupBy(
-                                      x,
-                                      data?.line_graph?.total_energy_generated || [],
-                                      plantColors,
-                                      plantMetadata,
-                                      generationSourceColors
-                                    )
-                                  : {}
-                              }
-                        />
+                        {
+                          type: "verticalBar",
+                          props: {
+                            title: generateFullChartTitle("Number of Households Powered", x, y, filters, startDate, endDate),
+                            data: housePowerData?.stacked_bar || [],
+                            legendName: "Total Energy Generated",
+                            yAxisLabel: "No. of Household",
+                            colorMap: chartReady
+                              ? getColorMapForGroupBy(
+                                  x,
+                                  data?.line_graph?.total_energy_generated || [],
+                                  plantColors,
+                                  plantMetadata,
+                                  generationSourceColors
+                                )
+                              : {}
+                          }
+                        }
                       )
                     }
                   >
@@ -1051,7 +1057,15 @@ return (
           maxWidth="lg"
           enableDownload
         >
-          {zoomModal.content}
+          {zoomModal.chartConfig?.type === "line" && (
+            <LineChartComponent {...zoomModal.chartConfig.props} />
+          )}
+          {zoomModal.chartConfig?.type === "pie" && (
+            <PieChartComponent {...zoomModal.chartConfig.props} />
+          )}
+          {zoomModal.chartConfig?.type === "verticalBar" && (
+            <VerticalStackedBarChartComponent {...zoomModal.chartConfig.props} />
+          )}
         </ZoomModal>
       </Box>
     </Box>
