@@ -222,11 +222,11 @@ function Dashboard() {
                       position: "absolute",
                       top: -14,
                       left: 16,
-                      backgroundColor: "white",
                       px: 1,
                       fontWeight: "bold",
                       color: "#333",
                       zIndex: 2,
+                      textShadow: "2px 0 0 #f5f5f5, -2px 0 0 #f5f5f5, 0 2px 0 #f5f5f5, 0 -2px 0 #f5f5f5, 1px 1px #f5f5f5, -1px -1px 0 #f5f5f5, 1px -1px 0 #f5f5f5, -1px 1px 0 #f5f5f5",
                     }}
                   >
                     ENERGY
@@ -267,10 +267,10 @@ function Dashboard() {
                         position: "absolute",
                         top: -12,
                         left: 16,
-                        backgroundColor: "white",
                         px: 1,
                         fontWeight: "bold",
                         color: "#333",
+                        textShadow: "2px 0 0 #f5f5f5, -2px 0 0 #f5f5f5, 0 2px 0 #f5f5f5, 0 -2px 0 #f5f5f5, 1px 1px #f5f5f5, -1px -1px 0 #f5f5f5, 1px -1px 0 #f5f5f5, -1px 1px 0 #f5f5f5",
                       }}
                     >
                       ECONOMIC
@@ -610,11 +610,11 @@ function Dashboard() {
                           position: "absolute",
                           top: -12,
                           left: 16,
-                          backgroundColor: "white",
                           px: 1,
                           fontWeight: "bold",
                           color: "#333",
                           zIndex: 1,
+                          textShadow: "2px 0 0 #f5f5f5, -2px 0 0 #f5f5f5, 0 2px 0 #f5f5f5, 0 -2px 0 #f5f5f5, 1px 1px #f5f5f5, -1px -1px 0 #f5f5f5, 1px -1px 0 #f5f5f5, -1px 1px 0 #f5f5f5",
                         }}
                       >
                         ENVIRONMENT
@@ -654,10 +654,10 @@ function Dashboard() {
                           position: "absolute",
                           top: -12,
                           left: 16,
-                          backgroundColor: "white",
                           px: 1,
                           fontWeight: "bold",
                           color: "#333",
+                          textShadow: "2px 0 0 #f5f5f5, -2px 0 0 #f5f5f5, 0 2px 0 #f5f5f5, 0 -2px 0 #f5f5f5, 1px 1px #f5f5f5, -1px -1px 0 #f5f5f5, 1px -1px 0 #f5f5f5, -1px 1px 0 #f5f5f5",
                         }}
                       >
                         SOCIAL
