@@ -14,6 +14,7 @@ import {
   Button,
   ToggleButton, ToggleButtonGroup
 } from "@mui/material";
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -53,6 +54,7 @@ import ForestIcon from '@mui/icons-material/Forest';
 import VerticalStackedBarChartComponent from "../../components/charts/VerticalStackedBar";
 import HorizontalGroupedBarChartComponent from "../../components/charts/HorizontalGrouped";
 import GenericResponsiveTable from "../../components/DashboardComponents/ResponsiveTable";
+import { useAuth } from "../../contexts/AuthContext";
 
 
 
@@ -148,6 +150,12 @@ function roundUpToNiceNumber(num) {
 
 function FundsDashboard() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const { getUserRole } = useAuth();
+  const {getUserCompanyId} = useAuth();
+  const{getUserPowerPlantId}=useAuth();
+  const role = getUserRole();
+  const companyId = getUserCompanyId();
+  const powerPlantId = getUserPowerPlantId();
 
 
   const [zoomModal, setZoomModal] = useState({
@@ -197,9 +205,6 @@ function FundsDashboard() {
   const [housePowerData, setHousePowerData] = useState({});
   const [staticData, setStaticData] = useState({});
 
-
-  // Dynamically build plant color map for stacked_by_ffid keys
-  const [plantFFIDColorMap, setPlantFFIDColorMap] = useState({});
 
   // Build companyColors from pp_info (plantMetadata) and print to console
 const [companyColors, setCompanyColors] = useState({});
@@ -337,6 +342,8 @@ const fetchData = async () => {
     const params = { x, y };
 
     if (filters.company) params.p_company_id = filters.company;
+    // Always pass companyId for R04
+    if (role === 'R04' && companyId) params.p_company_id = companyId;
     if (filters.powerPlant) params.p_power_plant_id = filters.powerPlant;
 
     if (startDate) {
@@ -458,6 +465,31 @@ useEffect(() => {
     endDate !== null;
 
 
+// Filter data by companyId if role is R04
+useEffect(() => {
+  if (role === 'R04' && companyId) {
+    setCompanyFilter([companyId]);
+  }
+  // If you want to clear the filter for other roles, you can add an else block
+  // else {
+  //   setCompanyFilter([]);
+  // }
+}, [role, companyId]);
+
+
+
+// Compute filtered power plant options for R04
+const filteredPowerPlantOptions = React.useMemo(() => {
+  if (role === 'R04' && companyId && plantMetadata.length > 0) {
+    return plantMetadata
+      .filter(item => item.company_id === companyId)
+      .map(item => ({ value: item.power_plant_id, label: item.power_plant_id }));
+  }
+  return powerPlantOptions;
+}, [role, companyId, plantMetadata, powerPlantOptions]);
+
+
+
 if (loading) {
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
@@ -536,11 +568,13 @@ return (
             },
           }}
         >
-          <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
-          <MultiSelectWithChips label="Power Plants" options={powerPlantOptions} selectedValues={powerPlantFilter} onChange={setPowerPlantFilter} placeholder="All Power Projects" />
+          {role !== 'R04' && (
+            <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
+          )}
+          <MultiSelectWithChips label="Power Plants" options={filteredPowerPlantOptions} selectedValues={powerPlantFilter} onChange={setPowerPlantFilter} placeholder="All Power Projects" />
           <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
 
-          {showClearButton && <ClearButton onClick={clearAllFilters} />}
+          {role !== 'R04' && showClearButton && <ClearButton onClick={clearAllFilters} />}
 
           <Box sx={{ flexGrow: 1, minWidth: 10 }} />
           <SingleSelectDropdown label="Group By" options={xOptions} selectedValue={x} onChange={setX} />
@@ -600,7 +634,7 @@ return (
     {/* Chart Content */}
     <Box sx={{ flex: 1, width: '100%', height: '100%' }}>
       <VerticalStackedBarChartComponent
-        title="Estimated Households Powered Over Time"
+        title={generateFullChartTitle("Breakdown of Primary Allocation of Funds", x, y, filters, startDate, endDate)}
         data={
             lineView === 'period'
             ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
@@ -631,34 +665,36 @@ return (
       sx={{ position: 'absolute', top: 8, right: 8 }}
       onClick={() =>
         openZoomModal(
-          generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate),
+          generateFullChartTitle("Breakdown of Primary Allocation of Funds", x, y, filters, startDate, endDate),
           "total_energy_generated_chart",
-          <LineChartComponent
-            title={generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate)}
+          <VerticalStackedBarChartComponent
+            title={generateFullChartTitle("Breakdown of Primary Allocation of Funds", x, y, filters, startDate, endDate)}
             data={
-              lineView === 'period'
-                ? data?.line_graph?.total_energy_generated || []
-                : data?.line_graph?.total_energy_generated_by_category || []
+                lineView === 'period'
+                ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
+                : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || []
             }
-            unit="kWh"
+            legendName="Total Energy Generated"
+            yAxisLabel={"Pesos"}
+            unit="pesos"
+            yAxisKey={lineView === 'period' ? 'period' : 'ff_name'}
+
             colorMap={
-              chartReady
+              lineView === 'period'
                 ? getColorMapForGroupBy(
                     x,
-                    lineView === 'period'
-                ? data?.line_graph?.total_energy_generated || []
-                : data?.line_graph?.total_energy_generated_by_category || [],
+                    data?.funds_allocated_peso?.allocation?.stacked_by_period || [],
                     plantColors,
                     plantMetadata,
                     generationSourceColors
                   )
-                : {}
+                : x === 'company_id' ? companyColors : plantColors
             }
-          />
+            />
         )
       }
     >
-      🔍
+      <ZoomInIcon fontSize="small" />
     </Button>
   </Paper>
 </Box>
@@ -713,22 +749,12 @@ return (
               <PieChartComponent
                 title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
                 data={data?.funds_allocated_peso?.allocation?.pie || []}
-                colorMap={
-                  chartReady
-                    ? getColorMapForGroupBy(
-                        x,
-                        data?.funds_allocated_peso?.allocation?.pie || [],
-                        plantColors,
-                        plantMetadata,
-                        generationSourceColors
-                      )
-                    : {}
-                }
+                colorMap={plantColors}
               />
             )
           }
         >
-          🔍
+          <ZoomInIcon fontSize="small" />
         </Button>
       </Paper>
     </Box>
@@ -785,11 +811,11 @@ return (
     {/* Chart Content */}
     <Box sx={{ flex: 1, width: '100%', height: '100%' }}>
       <VerticalStackedBarChartComponent
-        title="Estimated Households Powered Over Time"
+        title={generateFullChartTitle("Breakdown of Funds Allocation for Beneficiaries", x, y, filters, startDate, endDate)}
         data={
             lineView === 'period'
-            ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
-            : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || []
+            ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
+            : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || []
         }
         legendName="Total Energy Generated"
         yAxisLabel={"Pesos"}
@@ -800,7 +826,7 @@ return (
           lineView === 'period'
             ? getColorMapForGroupBy(
                 x,
-                data?.funds_allocated_peso?.allocation?.stacked_by_period || [],
+                data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || [],
                 plantColors,
                 plantMetadata,
                 generationSourceColors
@@ -816,32 +842,36 @@ return (
       sx={{ position: 'absolute', top: 8, right: 8 }}
       onClick={() =>
         openZoomModal(
-          generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate),
+          generateFullChartTitle("Breakdown of Funds Allocation for Beneficiaries", x, y, filters, startDate, endDate),
           "total_energy_generated_chart",
-          <LineChartComponent
-            title={generateFullChartTitle("Total Energy Generated", x, y, filters, startDate, endDate)}
-            data={
-              lineView === 'period'
-                ? data?.line_graph?.total_energy_generated || []
-                : data?.line_graph?.total_energy_generated_by_category || []
-            }
-            unit="kWh"
-            colorMap={
-              chartReady
-                ? getColorMapForGroupBy(
-                    x,
-                    data?.funds_allocated_peso?.beneficiaries?.tabledata,
-                    plantColors,
-                    plantMetadata,
-                    generationSourceColors
-                  )
-                : {}
-            }
-          />
+          <VerticalStackedBarChartComponent
+        title={generateFullChartTitle("Breakdown of Funds Allocation for Beneficiaries", x, y, filters, startDate, endDate)}
+        data={
+            lineView === 'period'
+            ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
+            : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || []
+        }
+        legendName="Total Energy Generated"
+        yAxisLabel={"Pesos"}
+        unit="pesos"
+        yAxisKey={lineView === 'period' ? 'period' : 'ff_name'}
+
+        colorMap={
+          lineView === 'period'
+            ? getColorMapForGroupBy(
+                x,
+                data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || [],
+                plantColors,
+                plantMetadata,
+                generationSourceColors
+              )
+            : x === 'company_id' ? companyColors : plantColors
+        }
+        />
         )
       }
     >
-      🔍
+      <ZoomInIcon fontSize="small" />
     </Button>
   </Paper>
 </Box>
@@ -911,7 +941,7 @@ return (
             )
           }
         >
-          🔍
+          <ZoomInIcon fontSize="small" />
         </Button>
       </Paper>
     </Box>
