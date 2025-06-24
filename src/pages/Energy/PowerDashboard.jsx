@@ -51,6 +51,7 @@ import ForestIcon from '@mui/icons-material/Forest';
 import VerticalStackedBarChartComponent from "../../components/charts/VerticalStackedBar";
 import HorizontalGroupedBarChartComponent from "../../components/charts/HorizontalGrouped";
 import { useAuth } from "../../contexts/AuthContext";
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 
 // Utils
@@ -647,7 +648,7 @@ return (
                       )
                     }
                   >
-                    🔍
+                    <ZoomInIcon fontSize="small" />
                   </Button>
                 </Paper>
               </Box>
@@ -697,7 +698,7 @@ return (
                       )
                     }
                   >
-                    🔍
+                    <ZoomInIcon fontSize="small" />
                   </Button>
                 </Paper>
               </Box>
@@ -755,7 +756,7 @@ return (
                       )
                     }
                   >
-                    🔍
+                    <ZoomInIcon fontSize="small" />
                   </Button>
                 </Paper>
               </Box>
@@ -810,7 +811,7 @@ return (
                       )
                     }
                   >
-                    🔍
+                    <ZoomInIcon fontSize="small" />
                   </Button>
                 </Paper>
               </Box>
@@ -886,7 +887,7 @@ return (
           )
         }
       >
-        🔍
+        <ZoomInIcon fontSize="small" />
       </Button>
     </Paper>
 

@@ -1148,9 +1148,9 @@ function Energy() {
           }}
           canEdit={
             role === 'R05'
-              ? ['FRS', 'URS', 'FRH'].includes(selectedRecord.status)
+              ? ['FRS', 'URS'].includes(selectedRecord.status)
               : role === 'R04'
-                ? ['URH', 'FRH', 'URS'].includes(selectedRecord.status)
+                ? ['URH', 'FRH'].includes(selectedRecord.status)
                 : role === 'R03'
                   ? false
                   : canEdit
