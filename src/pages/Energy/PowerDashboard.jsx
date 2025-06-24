@@ -85,18 +85,18 @@ const tabs = [
   { key: "avoidance", label: "CO2 Avoidance" },
 ];
   const iconMap = {
-  EQ_1: DirectionsCarIcon ,
-  EQ_2: ElectricCarIcon ,
-  EQ_3: MapIcon ,
-  EQ_4: LocalGasStationIcon ,
-  EQ_5: LocalShippingIcon ,
-  EQ_6: FactoryIcon ,
-  EQ_7: SmartphoneIcon ,
-  EQ_8: RecyclingIcon ,
-  EQ_9: DeleteIcon ,
-  EQ_10:LocalMallIcon ,
-  EQ_11:WindPowerIcon ,
-  EQ_12:ForestIcon ,
+  EQ_1: LocalMallIcon ,//done
+  EQ_2: RecyclingIcon ,//done
+  EQ_3: MapIcon ,//done
+  EQ_4: DirectionsCarIcon ,//done
+  EQ_5: SmartphoneIcon ,
+  EQ_6: ForestIcon ,
+  EQ_7: LocalShippingIcon ,//done 
+  EQ_8: ElectricCarIcon ,//done
+  EQ_9: DeleteIcon ,//done
+  EQ_10:WindPowerIcon ,//done
+  EQ_11:FactoryIcon ,//done
+  EQ_12: LocalGasStationIcon,//done
 };
 
 const colorSchemes = {
@@ -1038,7 +1038,14 @@ return (
             gridAutoRows: '1fr', // 🔑 Makes each row same height
           }}
         >
-          {Object.entries(records).map(([eqKey, [eq]], index, arr) => {
+          {Object.entries(records)
+            .sort(([aKey], [bKey]) => {
+              const aNum = parseInt(aKey.replace(/\D/g, ''), 10);
+              const bNum = parseInt(bKey.replace(/\D/g, ''), 10);
+              return aNum - bNum;
+            })
+            .map(([eqKey, [eq]], index, arr) => {
+
             const isLast = index === arr.length - 1;
             const isOdd = arr.length % 2 === 1;
             const scheme = colorSchemes[eq.equivalence_category] || colorSchemes.default;
