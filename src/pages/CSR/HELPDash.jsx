@@ -326,7 +326,7 @@ export default function HELPDash() {
   // Fetch HELP activities data from API
   const fetchData = () => {
     setLoading(true);
-    api.get('help/activities')
+    api.get('help/help-report')
       .then(res => {
         setData(res.data);
         setLastUpdated(new Date());

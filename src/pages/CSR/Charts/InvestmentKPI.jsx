@@ -72,7 +72,7 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
     };
 
     return (
-        <div style={{ display: 'flex', gap: 16, width: '100%', marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 8, width: '100%', marginBottom: 8 }}>
         {/* Health KPI */}
         <Paper
             elevation={0}

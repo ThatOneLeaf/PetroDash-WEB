@@ -421,7 +421,7 @@ function Economic() {
           {/* Metrics Cards */}
           <div ref={kpiRef}>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'nowrap', pb: 0, flexShrink: 0 }}>
-                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#182959', flex: 1, minHeight: 60 }}>
+                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#2B8C37', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
                       {currentYearMetrics ? `₱${currentYearMetrics.totalGenerated.toLocaleString()}` : '₱0'}
@@ -440,7 +440,7 @@ function Economic() {
                     )}
                   </CardContent>
                 </Card>
-                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#2B8C37', flex: 1, minHeight: 60 }}>
+                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#FF8042', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
                       {currentYearMetrics ? `₱${currentYearMetrics.totalDistributed.toLocaleString()}` : '₱0'}
@@ -455,7 +455,7 @@ function Economic() {
                     )}
                   </CardContent>
                 </Card>
-                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#FF8042', flex: 1, minHeight: 60 }}>
+                              <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#182959', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
                       {currentYearMetrics ? `₱${currentYearMetrics.valueRetained.toLocaleString()}` : '₱0'}

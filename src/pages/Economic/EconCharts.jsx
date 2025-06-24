@@ -382,9 +382,9 @@ export const EconomicAnalysisChart = ({
           <YAxis tick={{ fontSize: 9 }} />
           <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
           <Legend wrapperStyle={{ fontSize: '10px' }} />
-          <Bar dataKey="economic_value_generated" fill="#182959" name="Value Generated" />
-          <Bar dataKey="economic_value_distributed" fill="#2B8C37" name="Value Distributed" />
-          <Bar dataKey="economic_value_retained" fill="#FF8042" name="Value Retained" />
+          <Bar dataKey="economic_value_generated" fill="#2B8C37" name="Value Generated" />
+          <Bar dataKey="economic_value_distributed" fill="#FF8042" name="Value Distributed" />
+          <Bar dataKey="economic_value_retained" fill="#182959" name="Value Retained" />
         </ComposedChart>
       ) : (
         <AreaChart data={retentionData}>
@@ -441,8 +441,8 @@ export const EconomicLineChart = ({ flowData }) => (
           <YAxis tick={{ fontSize: 9 }} />
           <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
           <Legend wrapperStyle={{ fontSize: '10px' }} />
-          <Line type="monotone" dataKey="economic_value_generated" stroke="#182959" strokeWidth={3} dot={{ r: 3 }} name="Value Generated" />
-          <Line type="monotone" dataKey="economic_value_retained" stroke="#FF8042" strokeWidth={3} dot={{ r: 3 }} name="Value Retained" />
+          <Line type="monotone" dataKey="economic_value_generated" stroke="#2B8C37" strokeWidth={3} dot={{ r: 3 }} name="Value Generated" />
+          <Line type="monotone" dataKey="economic_value_retained" stroke="#182959" strokeWidth={3} dot={{ r: 3 }} name="Value Retained" />
         </LineChart>
       </ResponsiveContainer>
     </Box>
@@ -691,9 +691,9 @@ export const generateModalContent = {
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
               <Legend wrapperStyle={{ fontSize: '12px' }} />
-              <Bar dataKey="economic_value_generated" fill="#182959" name="Value Generated" />
-              <Bar dataKey="economic_value_distributed" fill="#2B8C37" name="Value Distributed" />
-              <Bar dataKey="economic_value_retained" fill="#FF8042" name="Value Retained" />
+              <Bar dataKey="economic_value_generated" fill="#2B8C37" name="Value Generated" />
+              <Bar dataKey="economic_value_distributed" fill="#FF8042" name="Value Distributed" />
+              <Bar dataKey="economic_value_retained" fill="#182959" name="Value Retained" />
             </ComposedChart>
           ) : (
             <AreaChart data={retentionData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
@@ -749,8 +749,8 @@ export const generateModalContent = {
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
             <Legend wrapperStyle={{ fontSize: '12px' }} />
-            <Line type="monotone" dataKey="economic_value_generated" stroke="#182959" strokeWidth={3} dot={{ r: 4 }} name="Value Generated" />
-            <Line type="monotone" dataKey="economic_value_retained" stroke="#FF8042" strokeWidth={3} dot={{ r: 4 }} name="Value Retained" />
+            <Line type="monotone" dataKey="economic_value_generated" stroke="#2B8C37" strokeWidth={3} dot={{ r: 4 }} name="Value Generated" />
+            <Line type="monotone" dataKey="economic_value_retained" stroke="#182959" strokeWidth={3} dot={{ r: 4 }} name="Value Retained" />
           </LineChart>
         </ResponsiveContainer>
       </Box>

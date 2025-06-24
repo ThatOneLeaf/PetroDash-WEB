@@ -111,7 +111,7 @@ function AddRecordModalHelp({
     )
 
     try {
-      await api.post('/help/activities-single', {
+      const response = await api.post('/help/activities-single', {
         company_id: company,
         project_id: project,
         project_year: Number(year),
@@ -120,28 +120,49 @@ function AddRecordModalHelp({
         project_remarks: projectRemarks,
       });
 
-      alert("Upload successful")
-
-      // if (onAdd) onAdd();
-      onClose();
-      setYear('');
-      setCompany('');
-      setProgram('');
-      setProject('');
-      setBeneficiaries('');
-      setAmountInvested('');
-      setYearError('');
-    } catch (err) {
-      alert("Add record failed: ", err)
-    } finally {
+      if (response.data.success) {
+        alert("Data successfully uploaded.")
+        onClose();
+        setYear('');
+        setCompany('');
+        setProgram('');
+        setProject('');
+        setBeneficiaries('');
+        setAmountInvested('');
+        setYearError('');
+      } else {
+        alert(response.data.message)
+      }
+    } 
+    finally {
       setLoading(false);
+    }
+  };
+
+  // Custom close handler to check for unsaved input
+  const handleClose = () => {
+    // Check if any field is not empty
+    if (
+      year ||
+      company ||
+      program ||
+      project ||
+      beneficiaries ||
+      amountInvested ||
+      projectRemarks
+    ) {
+      if (window.confirm("You have unsaved data. Discard this record?")) {
+        onClose();
+      }
+    } else {
+      onClose();
     }
   };
 
   if (!open) return null;
 
   return (
-    <Overlay onClose={onClose}>
+    <Overlay onClose={handleClose}>
       <Box
         sx={{
           bgcolor: '#f7f9fb',
@@ -324,7 +345,7 @@ function AddRecordModalHelp({
 
             {/* Row 5: Project Remarks */}
             <TextField
-              label="Project Remarks"
+              label="Project Remarks (Optional) "
               type="text"
               value={projectRemarks}
               onChange={e => setProjectRemarks(e.target.value)}
