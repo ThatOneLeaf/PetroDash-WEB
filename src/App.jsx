@@ -172,7 +172,7 @@ function App() {
               <Route
                 path="/social/help"
                 element={
-                  <ProtectedRoute requiredRoles={["R04", "R03"]}>
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
                     <CSR />
                   </ProtectedRoute>
                 }
@@ -198,7 +198,7 @@ function App() {
               <Route
                 path="/social/hrdashboard"
                 element={
-                  <ProtectedRoute requiredRoles={["R04", "R03"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <HRDashboard />
                   </ProtectedRoute>
                 }

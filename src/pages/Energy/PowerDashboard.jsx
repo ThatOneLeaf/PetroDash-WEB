@@ -11,7 +11,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Button
+  Button,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -145,6 +147,10 @@ function roundUpToNiceNumber(num) {
 
 
 function PowerDashboard() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
 
@@ -502,39 +508,51 @@ return (
 
     <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
 
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' ,width: '111.11%',
-    height: '111.11%', transform:"scale(0.9)",  transformOrigin: 'top left'}}>
+    <Box sx={{ 
+      flex: 1, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      overflow: 'hidden',
+      width: isMobile ? '100%' : '111.11%',
+      height: isMobile ? '100%' : '111.11%', 
+      transform: isMobile ? "scale(0.7)" : isTablet ? "scale(0.8)" : "scale(0.9)",  
+      transformOrigin: 'top left'
+    }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pt: 2, flexShrink: 0 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        px: isMobile ? 1 : 2, 
+        pt: isMobile ? 1 : 2, 
+        flexShrink: 0,
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 1 : 0,
+      }}>
         <DashboardHeader
           title="Energy"
           lastUpdated={lastUpdated}
           formatDateTime={formatDateTime}
         />
-        <Box sx={{ mt: "15px" }}>
+        <Box sx={{ mt: isMobile ? 0 : "15px", alignSelf: isMobile ? 'flex-start' : 'auto' }}>
           <RefreshButton onClick={handleRefresh} />
         </Box>
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ px: 2, flexShrink: 0 }}>
+      <Box sx={{ px: isMobile ? 1 : 2, flexShrink: 0 }}>
         <TabButtons tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       </Box>
 
       {/* Filters */}
-      <Box sx={{ px: 2, pb: 1, flexShrink: 0 }}>
+      <Box sx={{ px: isMobile ? 1 : 2, pb: 1, flexShrink: 0 }}>
         <Stack
-          direction="row"
+          direction={isMobile ? "column" : "row"}
           spacing={1}
           flexWrap="wrap"
-          alignItems="flex-start"
+          alignItems={isMobile ? "stretch" : "flex-start"}
           sx={{
             rowGap: 1,
             columnGap: 1,
-            '@media (max-width: 600px)': {
-              flexDirection: 'column',
-              alignItems: 'stretch',
-            },
           }}
         >
           {role !== 'R04' && (
@@ -562,21 +580,34 @@ return (
           <SingleSelectDropdown label="Group By" options={xOptions} selectedValue={x} onChange={setX} />
           <SingleSelectDropdown label="Time Interval" options={yOptions} selectedValue={y} onChange={setY} />
         </Stack>
-      </Box>
-
-      {/* Main Content */}
-      <Box sx={{ flex: 1, px: 2, pb: 2, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      </Box>      {/* Main Content */}
+      <Box sx={{ 
+        flex: 1, 
+        px: isMobile ? 1 : 2, 
+        pb: isMobile ? 1 : 2, 
+        minHeight: 0, 
+        display: 'flex', 
+        flexDirection: 'column' 
+      }}>
 
 
         {/* KPI Cards */}
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'nowrap', pb: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: isMobile ? 1 : 2, 
+          flexWrap: isMobile ? 'wrap' : 'nowrap', 
+          pb: 2 
+        }}>
           <KPICard
             loading={false}
             value={`${(data?.totals?.total_energy_generated || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
             unit="kWh"
             title="Total Energy Generated"
             colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
-            style={{ flex: 1 }}
+            style={{ 
+              flex: isMobile ? '1 1 calc(50% - 4px)' : 1,
+              minHeight: isMobile ? '80px' : 'auto',
+            }}
           />
           <KPICard
             loading={false}
@@ -584,7 +615,10 @@ return (
             unit="tons CO2"
             title="Total CO₂ Avoided"
             colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
-            style={{ flex: 1 }}
+            style={{ 
+              flex: isMobile ? '1 1 calc(50% - 4px)' : 1,
+              minHeight: isMobile ? '80px' : 'auto',
+            }}
           />
           <KPICard
             loading={false}
@@ -593,16 +627,34 @@ return (
             title="Estimated No. of Households Powered"
             label={"Based on average consumption from PIDS (2017)"}
             colorScheme={{ backgroundColor: '#1E40AF', textColor: '#FFFFFF', iconColor: '#FFFFFF' }}
-            style={{ flex: 1 }}
+            style={{ 
+              flex: isMobile ? '1 1 100%' : 1,
+              minHeight: isMobile ? '80px' : 'auto',
+            }}
           />
-        </Box>
-
-        {/* Generation Charts */}
+        </Box>        {/* Generation Charts */}
         {activeTab === "generation" && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 0, flex: 1 }}>
-            <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 0, maxHeight: '50%' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: isMobile ? 1 : 2, 
+            minHeight: 0, 
+            flex: 1 
+          }}>
+            <Box sx={{ 
+              display: 'flex', 
+              gap: isMobile ? 1 : 2, 
+              flex: 1, 
+              minHeight: 0, 
+              maxHeight: '50%',
+              flexDirection: isMobile ? 'column' : 'row',
+            }}>
               {/* Line Chart - 60% width */}
-              <Box sx={{ flex: 3, minHeight: 0, height: '100%' }}>
+              <Box sx={{ 
+                flex: isMobile ? 1 : 3, 
+                minHeight: 0, 
+                height: isMobile ? '300px' : '100%' 
+              }}>
                 <Paper sx={{ height: '100%', p: 2, position: 'relative' }}>
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <LineChartComponent

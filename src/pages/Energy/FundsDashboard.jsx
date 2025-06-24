@@ -12,7 +12,9 @@ import {
   TableHead,
   TableRow,
   Button,
-  ToggleButton, ToggleButtonGroup
+  ToggleButton, ToggleButtonGroup,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
@@ -149,6 +151,10 @@ function roundUpToNiceNumber(num) {
 
 
 function FundsDashboard() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const { getUserRole } = useAuth();
   const {getUserCompanyId} = useAuth();
@@ -533,39 +539,51 @@ return (
   <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
     <SideBar />
     <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',width: '111.11%',
-    height: '111.11%', transform:"scale(0.9)",  transformOrigin: 'top left' }}>
+    <Box sx={{ 
+      flex: 1, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      overflow: 'hidden',
+      width: isMobile ? '100%' : '111.11%',
+      height: isMobile ? '100%' : '111.11%', 
+      transform: isMobile ? "scale(0.7)" : isTablet ? "scale(0.8)" : "scale(0.9)",  
+      transformOrigin: 'top left' 
+    }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pt: 2, flexShrink: 0 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        px: isMobile ? 1 : 2, 
+        pt: isMobile ? 1 : 2, 
+        flexShrink: 0,
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 1 : 0,
+      }}>
         <DashboardHeader
           title="ER 1-94 Funds Allocation"
           lastUpdated={lastUpdated}
           formatDateTime={formatDateTime}
         />
-        <Box sx={{ mt: "15px" }}>
+        <Box sx={{ mt: isMobile ? 0 : "15px", alignSelf: isMobile ? 'flex-start' : 'auto' }}>
           <RefreshButton onClick={handleRefresh} />
         </Box>
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ px: 2, flexShrink: 0 }}>
+      <Box sx={{ px: isMobile ? 1 : 2, flexShrink: 0 }}>
         <TabButtons tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       </Box>
 
       {/* Filters */}
-      <Box sx={{ px: 2, pb: 1, flexShrink: 0 }}>
+      <Box sx={{ px: isMobile ? 1 : 2, pb: 1, flexShrink: 0 }}>
         <Stack
-          direction="row"
+          direction={isMobile ? "column" : "row"}
           spacing={1}
           flexWrap="wrap"
-          alignItems="flex-start"
+          alignItems={isMobile ? "stretch" : "flex-start"}
           sx={{
             rowGap: 1,
             columnGap: 1,
-            '@media (max-width: 600px)': {
-              flexDirection: 'column',
-              alignItems: 'stretch',
-            },
           }}
         >
           {role !== 'R04' && (
