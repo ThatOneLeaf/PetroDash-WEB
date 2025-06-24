@@ -83,7 +83,7 @@ function App() {
               <Route
                 path="/environment/water-dash"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <EnvironmentWaterDash />
                   </ProtectedRoute>
                 }
@@ -91,7 +91,7 @@ function App() {
               <Route
                 path="/environment/energy-dash"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <EnvironmentEnergyDash />
                   </ProtectedRoute>
                 }
@@ -99,7 +99,7 @@ function App() {
               <Route
                 path="/environment/waste-dash"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <EnvironmentWasteDash />
                   </ProtectedRoute>
                 }
@@ -107,7 +107,7 @@ function App() {
               <Route
                 path="/environment/air-dash"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <EnvironmentAirDash />
                   </ProtectedRoute>
                 }
@@ -115,7 +115,7 @@ function App() {
               <Route
                 path="/environment/care-dash"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <EnvironmentCareDash />
                   </ProtectedRoute>
                 }
@@ -179,7 +179,7 @@ function App() {
               <Route
                 path="/social/help-dash"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <HELPDash />
                   </ProtectedRoute>
                 }

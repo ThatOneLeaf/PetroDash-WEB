@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import Sidebar from '../../components/Sidebar';
 import {
   Box,
@@ -41,6 +42,12 @@ function CSR() {
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [remarks, setRemarks] = useState('');
   const statuses = ["URS","FRS","URH","FRH","APP"];
+  const { user } = useAuth();
+  const canAddOrImport = user?.roles?.includes('R05');
+  const canApproveOrRevise = user?.roles?.includes('R03') || user?.roles?.includes('R04');
+
+  console.log("Can add or import:", canAddOrImport)
+  console.log("Can approve or revise:", canApproveOrRevise)
 
   const [sortConfig, setSortConfig] = useState({
     key: 'projectYear',
@@ -431,7 +438,9 @@ function CSR() {
   const isApprove = selectedRowIds
     .map(id => filteredData.find(row => row[idKey] === id))
     .filter(Boolean)
-    .every(row => row.status === 'Approved');
+    .every(row => row.statusId === 'Approved'); 
+
+  console.log("Approved?", isApprove)
 
   const allowedStatuses = ['For Revision (Site)', 'For Revision (Head)'];
   const isForRevision = selectedRowIds
@@ -468,67 +477,8 @@ function CSR() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
-            {/* Only show Approve button if first selected row is NOT For Revision (Site/Head) */}
-            {selectedRowIds.length > 0 && !isApprove ? (
-              <>
-                {(() => {
-                  const firstSelectedRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
-                  const hideApprove =
-                    firstSelectedRow &&
-                    (firstSelectedRow.statusId === 'For Revision (Site)' ||
-                     firstSelectedRow.statusId === 'For Revision (Head)');
-                  return !hideApprove ? (
-                    <Button 
-                      variant='contained'
-                      sx={{ 
-                        backgroundColor: '#2B8C37',
-                        borderRadius: '999px',
-                        padding: '9px 18px',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        '&:hover': {
-                          backgroundColor: '#256d2f',
-                        },
-                      }}
-                      onClick={() => handleBulkStatusUpdate("approve")}
-                    >
-                      Approve
-                    </Button>
-                  ) : null;
-                })()}
-                {(selectedRowIds.length > 0 && !isForRevision) && (
-                  <Button 
-                    variant='contained'
-                    sx={{ 
-                      backgroundColor: '#182959',
-                      borderRadius: '999px',
-                      padding: '9px 18px',
-                      fontSize: '1rem',
-                      fontWeight: 'bold',
-                      '&:hover': {
-                        backgroundColor: '#0f1a3c',
-                      },
-                    }}
-                    onClick={() => {
-                      // Get the selected row from pagedData
-                      const selectedRowsForModal = pagedData.filter(row => selectedRowIds.includes(row[idKey]));
-                      const allStatuses = selectedRowsForModal.map(row => row.statusId);
-                      const isForRevisionSite = allStatuses.every(status => status === 'For Revision (Site)');
-                      const isForRevisionHeadLevel = allStatuses.every(status => status === 'For Revision (Head)');
-                      const isOnlyApprove = isForRevisionSite || isForRevisionHeadLevel;
-                      if (isOnlyApprove && selectedRowsForModal.length === 1) {
-                        setRemarks(selectedRowsForModal[0].statusRemarks || '');
-                      } else {
-                        setRemarks('');
-                      }
-                      setIsReviseModalOpen(true);
-                    }}
-                  >
-                    Revise
-                  </Button>
-                )}
-              </>
-            ) : (
+            {/* Add/Import/Export buttons for canAddOrImport */}
+            {canAddOrImport && (
               <>
                 <Button
                   variant="contained"
@@ -580,6 +530,67 @@ function CSR() {
                 >
                   ADD RECORD
                 </Button>
+              </>
+            )}
+            {/* Approve/Revise buttons for canApproveOrRevise */}
+            {canApproveOrRevise && !isApprove && (
+              <>
+                {(() => {
+                  const firstSelectedRow = filteredData.find(row => row[idKey] === selectedRowIds[0]);
+                  const hideApprove =
+                    firstSelectedRow &&
+                    (firstSelectedRow.statusId === 'For Revision (Site)' ||
+                     firstSelectedRow.statusId === 'For Revision (Head)');
+                  return !hideApprove ? (
+                    <Button 
+                      variant='contained'
+                      sx={{ 
+                        backgroundColor: '#2B8C37',
+                        borderRadius: '999px',
+                        padding: '9px 18px',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        '&:hover': {
+                          backgroundColor: '#256d2f',
+                        },
+                      }}
+                      onClick={() => handleBulkStatusUpdate("approve")}
+                    >
+                      Approve
+                    </Button>
+                  ) : null;
+                })()}
+                {(
+                  <Button 
+                    variant='contained'
+                    sx={{ 
+                      backgroundColor: '#182959',
+                      borderRadius: '999px',
+                      padding: '9px 18px',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      '&:hover': {
+                        backgroundColor: '#0f1a3c',
+                      },
+                    }}
+                    onClick={() => {
+                      // Get the selected row from pagedData
+                      const selectedRowsForModal = pagedData.filter(row => selectedRowIds.includes(row[idKey]));
+                      const allStatuses = selectedRowsForModal.map(row => row.statusId);
+                      const isForRevisionSite = allStatuses.every(status => status === 'For Revision (Site)');
+                      const isForRevisionHeadLevel = allStatuses.every(status => status === 'For Revision (Head)');
+                      const isOnlyApprove = isForRevisionSite || isForRevisionHeadLevel;
+                      if (isOnlyApprove && selectedRowsForModal.length === 1) {
+                        setRemarks(selectedRowsForModal[0].statusRemarks || '');
+                      } else {
+                        setRemarks('');
+                      }
+                      setIsReviseModalOpen(true);
+                    }}
+                  >
+                    Revise
+                  </Button>
+                )}
               </>
             )}
           </Box>

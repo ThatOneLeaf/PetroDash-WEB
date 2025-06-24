@@ -20,6 +20,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import StatusChip from "../../components/StatusChip";
 import ClearIcon from "@mui/icons-material/Clear";
 import Overlay from "../../components/modal";
+import { useAuth } from '../../contexts/AuthContext';
 
 const ViewEditRecordModal = ({
   source,
@@ -85,6 +86,9 @@ const ViewEditRecordModal = ({
   const [hazGenUnitOptions, setHazGenUnitOptions] = useState([]);
   const [hazDisUnitOptions, setHazDisUnitOptions] = useState([]);
   const [nonHazUnitOptions, setNonHazUnitOptions] = useState([]);
+
+  const { user } = useAuth();
+  const canApproveOrRevise = Array.isArray(user?.roles) && user.roles.some(role => ['R03', 'R04'].includes(role));
 
   const [showApproveSuccessModal, setShowApproveSuccessModal] = useState(false);
   // Add new modals for revision and edit success
@@ -901,47 +905,50 @@ const ViewEditRecordModal = ({
                   {isEditing ? "SAVE" : "EDIT"}
                 </Button>
               )}
-            <Box>
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: "#2B8C37",
-                  borderRadius: "999px",
-                  padding: "9px 18px",
-                  fontSize: "1rem",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    backgroundColor: "#256d2f",
-                  },
-                }}
-                onClick={() => {
-                  setModalType("approve");
-                  setIsModalOpen(true);
-                }}
-              >
-                Approve
-              </Button>
-              {editedRecord.status !== "For Revision (Site)" &&
-                editedRecord.status !== "For Revision (Head)" && (
-                  <Button
-                    variant="contained"
-                    sx={{
-                      marginLeft: 1,
-                      backgroundColor: "#182959",
-                      borderRadius: "999px",
-                      padding: "9px 18px",
-                      fontSize: "1rem",
-                      fontWeight: "bold",
-                      "&:hover": {
-                        backgroundColor: "#0f1a3c",
-                      },
-                    }}
-                    onClick={() => openModal("revise")}
-                  >
-                    Revise
-                  </Button>
-                )}
-            </Box>
+            {canApproveOrRevise && (
+              <Box>
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#2B8C37",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      backgroundColor: "#256d2f",
+                    },
+                  }}
+                  onClick={() => {
+                    setModalType("approve");
+                    setIsModalOpen(true);
+                  }}
+                >
+                  Approve
+                </Button>
+                {editedRecord.status !== "For Revision (Site)" &&
+                  editedRecord.status !== "For Revision (Head)" && (
+                    <Button
+                      variant="contained"
+                      sx={{
+                        marginLeft: 1,
+                        backgroundColor: "#182959",
+                        borderRadius: "999px",
+                        padding: "9px 18px",
+                        fontSize: "1rem",
+                        fontWeight: "bold",
+                        "&:hover": {
+                          backgroundColor: "#0f1a3c",
+                        },
+                      }}
+                      onClick={() => openModal("revise")}
+                    >
+                      Revise
+                    </Button>
+                  )}
+              </Box>
+            )}
+            
           </Box>
         )}
       </Box>
