@@ -1118,7 +1118,7 @@ return (
                     maximumFractionDigits: 2,
                   })}`}
                   unit=""
-                  title={eq.metric || `Metric ${index + 1}`}
+                  title={eq.equivalence_label || `Metric ${index + 1}`}
                   icon={iconMap[eqKey]}
                   colorScheme={scheme}
                   style={{
