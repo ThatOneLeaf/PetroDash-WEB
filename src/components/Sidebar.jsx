@@ -29,7 +29,23 @@ function SideBar({ collapsed: collapsedProp = false }) {
   
   // Get user role for access control
   const userRole = getUserRole();
-    // Determine allowed modes based on role
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  
+  // Auto-collapse on mobile and adjust behavior
+  useEffect(() => {
+    if (isMobile) {
+      setCollapsed(true);
+      setEnvOpen(false);
+      setSocialOpen(false);
+      setEnergyOpen(false);
+    }
+  }, [isMobile]);  // Determine allowed modes based on role
   const getAllowedModes = () => {
     if (userRole === 'R02') return ['dashboard']; // Dashboard only
     if (['R03', 'R04'].includes(userRole)) return ['dashboard', 'repository']; // Both modes
@@ -44,11 +60,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
     const savedMode = localStorage.getItem("sidebarMode") || "dashboard";
     return allowedModes.includes(savedMode) ? savedMode : allowedModes[0];
   });
-
-  const navigate = useNavigate();
-  const location = useLocation();
-  const theme = useTheme();
-  useMediaQuery(theme.breakpoints.down("sm")); // isMobile not used  // Check if user has access to a specific module in current mode
   const hasModuleAccess = (label) => {
     switch (label) {
       case "Overview":
@@ -309,29 +320,33 @@ function SideBar({ collapsed: collapsedProp = false }) {
     window.addEventListener('storage', syncProfileImg);
     return () => window.removeEventListener('storage', syncProfileImg);
   }, []);
-
   return (
     <>
-      {isExpanded && (
+      {(isExpanded || (isMobile && !collapsed)) && (
         <Box
-          onClick={() => setCollapsed(true)}
+          onClick={() => {
+            setCollapsed(true);
+            setEnvOpen(false);
+            setSocialOpen(false);
+            setEnergyOpen(false);
+          }}
           sx={{
             position: "fixed",
             top: 0,
             left: 0,
             width: "100vw",
             height: "100vh",
-            bgcolor: "rgba(30,40,60,0.18)",
+            bgcolor: isMobile ? "rgba(30,40,60,0.25)" : "rgba(30,40,60,0.18)",
             zIndex: 1299,
             opacity: 1,
             transition: "opacity 0.35s cubic-bezier(.4,0,.2,1)",
-            backdropFilter: "blur(1.5px)",
+            backdropFilter: isMobile ? "blur(2px)" : "blur(1.5px)",
+            display: isMobile ? (collapsed ? "none" : "block") : "block",
           }}
         />
-      )}
-      <Box
+      )}<Box
         sx={{
-          width: collapsed ? 72 : 240,
+          width: collapsed ? (isMobile ? 56 : 72) : (isMobile ? 220 : 240),
           bgcolor: "#fff",
           height: "100vh",
           display: "flex",
@@ -340,43 +355,91 @@ function SideBar({ collapsed: collapsedProp = false }) {
           borderRight: "1px solid #eee",
           transition: collapsed
             ? "none"
-            : "width 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1), position 0s linear 0.35s",
+            : isMobile 
+              ? "width 0.25s ease-in-out, left 0.25s ease-in-out, box-shadow 0.25s ease-in-out"
+              : "width 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1), position 0s linear 0.35s",
           boxShadow: collapsed
-            ? "4px 0 12px 0 rgba(44,62,80,0.22)"
-            : "8px 0 24px 0 rgba(44,62,80,0.22)",
-          position: collapsed ? "sticky" : "fixed",
+            ? isMobile 
+              ? "2px 0 8px 0 rgba(44,62,80,0.15)"
+              : "4px 0 12px 0 rgba(44,62,80,0.22)"
+            : isMobile
+              ? "6px 0 18px 0 rgba(44,62,80,0.25)"
+              : "8px 0 24px 0 rgba(44,62,80,0.22)",
+          position: collapsed ? (isMobile ? "fixed" : "sticky") : "fixed",
           top: 0,
           left: 0,
           overflowX: "hidden",
-          zIndex: collapsed ? 100 : 1300,
+          overflowY: "auto", // Allow scrolling on mobile if content is too tall
+          zIndex: collapsed ? (isMobile ? 1200 : 100) : 1300,
           pointerEvents: "auto",
+          maxHeight: "100vh", // Ensure it doesn't exceed viewport height
         }}
-        onMouseEnter={() => setCollapsed(false)}
+        onMouseEnter={() => !isMobile && setCollapsed(false)}
         onMouseLeave={() => {
-          setCollapsed(true);
-          setEnvOpen(false);
-          setSocialOpen(false);
-          setEnergyOpen(false);
+          if (!isMobile) {
+            setCollapsed(true);
+            setEnvOpen(false);
+            setSocialOpen(false);
+            setEnergyOpen(false);
+          }
         }}
-      >
-        <Box>
+        onClick={() => {
+          // On mobile, toggle sidebar when clicking anywhere
+          if (isMobile && collapsed) {
+            setCollapsed(false);
+          }
+        }}
+      >        <Box>
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              pt: collapsed ? 2 : 3,
+              pt: collapsed ? (isMobile ? 1.5 : 2) : (isMobile ? 2 : 3),
               pb: 1,
               transition: "padding 0.3s",
+              position: "relative",
             }}
           >
+            {/* Mobile close button */}
+            {isMobile && !collapsed && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(0,0,0,0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  zIndex: 10,
+                  "&:hover": {
+                    bgcolor: "rgba(0,0,0,0.2)",
+                  },
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCollapsed(true);
+                  setEnvOpen(false);
+                  setSocialOpen(false);
+                  setEnergyOpen(false);
+                }}
+              >
+                <Typography sx={{ fontSize: 18, color: "#666" }}>×</Typography>
+              </Box>
+            )}
+            
             <img
               src={PetroDashLogo}
               alt="PetroDash"
               style={{
-                width: collapsed ? 44 : 100,
-                marginBottom: collapsed ? 8 : 4,
-                marginTop: 10,
+                width: collapsed ? (isMobile ? 36 : 44) : (isMobile ? 80 : 100),
+                marginBottom: collapsed ? (isMobile ? 6 : 8) : 4,
+                marginTop: isMobile ? 5 : 10,
                 transition: "width 0.35s cubic-bezier(.4,0,.2,1), margin 0.2s, opacity 0.3s",
                 opacity: 1,
                 cursor: "pointer"
@@ -385,7 +448,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
             />
             <div
               style={{
-                maxHeight: collapsed ? 0 : 60,
+                maxHeight: collapsed ? 0 : (isMobile ? 50 : 60),
                 overflow: "hidden",
                 transition: "max-height 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s",
                 opacity: collapsed ? 0 : 1,
@@ -399,8 +462,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   src={PetroEnergyLogo}
                   alt="PetroEnergy"
                   style={{
-                    width: 190,
-                    marginBottom: 16,
+                    width: isMobile ? 160 : 190,
+                    marginBottom: isMobile ? 12 : 16,
                     marginTop: 2,
                     transition: "opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1)",
                     opacity: collapsed ? 0 : 1,
@@ -410,14 +473,19 @@ function SideBar({ collapsed: collapsedProp = false }) {
               )}
             </div>
           </Box>          {/* Dashboard/Repository Toggle Button or Icon - Always show but disable if user has limited access */}
-          <Box sx={{ px: collapsed ? 1 : 3, mb: 2, mt: 2, transition: "padding 0.3s" }}>
+          <Box sx={{ 
+            px: collapsed ? (isMobile ? 0.5 : 1) : (isMobile ? 2 : 3), 
+            mb: 2, 
+            mt: 2, 
+            transition: "padding 0.3s" 
+          }}>
             {collapsed ? (
               <img
                 src={DashboardIcon}
                 alt="Dashboard"
                 style={{
-                  width: 28,
-                  height: 28,
+                  width: isMobile ? 24 : 28,
+                  height: isMobile ? 24 : 28,
                   display: "block",
                   margin: "0 auto",
                   cursor: allowedModes.length > 1 ? "pointer" : "not-allowed",
@@ -439,9 +507,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   bgcolor: mode === "dashboard" ? "#1a3365" : "#2B8C37",
                   color: "#fff",
                   borderRadius: 999,
-                  height: 40,
+                  height: isMobile ? 36 : 40,
                   fontWeight: 700,
-                  fontSize: 16,
+                  fontSize: isMobile ? 14 : 16,
                   minWidth: 0,
                   boxShadow: "none",
                   display: "flex",
@@ -463,7 +531,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
               >
                 {mode === "dashboard" ? "Dashboard" : "Repository"}
                 {allowedModes.length <= 1 && (
-                  <span style={{ marginLeft: 8, fontSize: 12 }}>🔒</span>
+                  <span style={{ marginLeft: isMobile ? 4 : 8, fontSize: isMobile ? 10 : 12 }}>🔒</span>
                 )}
               </Button>
             )}
@@ -501,12 +569,11 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   >
                     <Box
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
+                        display: "flex",                        alignItems: "center",
                         justifyContent: collapsed ? "center" : "flex-start",
-                        px: collapsed ? 0 : 4,
-                        py: 1.5,
-                        gap: collapsed ? 0 : 2,
+                        px: collapsed ? 0 : (isMobile ? 3 : 4),
+                        py: isMobile ? 1.2 : 1.5,
+                        gap: collapsed ? 0 : (isMobile ? 1.5 : 2),
                         cursor: item.hasAccess ? "pointer" : "not-allowed",
                         transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
                         bgcolor: (item.hasAccess && isSelected(item) && !collapsed)
@@ -519,7 +586,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                           left: 0,
                           top: 4,
                           bottom: 4,
-                          width: 6,
+                          width: isMobile ? 4 : 6,
                           background: "#000",
                           borderTopRightRadius: 12,
                           borderBottomRightRadius: 12,
@@ -542,8 +609,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         src={item.icon}
                         alt={item.label}
                         style={{
-                          width: 28,
-                          height: 28,
+                          width: isMobile ? 24 : 28,
+                          height: isMobile ? 24 : 28,
                           transition: "filter 0.2s, margin 0.3s",
                           marginLeft: 0,
                           marginRight: 0,
@@ -558,14 +625,14 @@ function SideBar({ collapsed: collapsedProp = false }) {
                     {collapsed ? null : (
                       <span
                         style={{
-                          fontSize: 18,
+                          fontSize: isMobile ? 16 : 18,
                           fontWeight: (item.hasAccess && isSelected(item) && !collapsed) ? 700 : 400,
                           color: item.hasAccess ? 
                             ((isSelected(item) && !collapsed) ? "#fff" : "#1a3365") : 
                             "#9e9e9e",
                           transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
                           opacity: 1,
-                          marginLeft: 4,
+                          marginLeft: isMobile ? 3 : 4,
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -1074,8 +1141,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
               )
             )}
           </Box>
-        </Box>
-        <Box sx={{ mb: 3 }}>
+        </Box>        <Box sx={{ mb: isMobile ? 2 : 3 }}>
           {/* User Info with Icon (icon above credentials) */}
           <Box
             component={Link}
@@ -1085,22 +1151,22 @@ function SideBar({ collapsed: collapsedProp = false }) {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              px: collapsed ? 0 : 4,
-              py: 1.5,
+              px: collapsed ? 0 : (isMobile ? 3 : 4),
+              py: isMobile ? 1.2 : 1.5,
               mb: 1,
               mt: 2,
               bgcolor: collapsed ? 'transparent' : '#f8f9fa', // Remove bg when collapsed
               borderRadius: 2,
-              transition: 'background 0.2s',
+              transition: 'background 0.2s, padding 0.2s',
             }}
           >
             <img
               src={profileImg || ProfileIcon}
               alt="Account"
               style={{
-                width: 32,
-                height: 32,
-                marginBottom: !collapsed ? 6 : 0,
+                width: isMobile ? 28 : 32,
+                height: isMobile ? 28 : 32,
+                marginBottom: !collapsed ? (isMobile ? 4 : 6) : 0,
                 opacity: 0.85,
                 borderRadius: "50%",
                 border: profileImg ? "2px solid #388E3C" : undefined,
@@ -1111,9 +1177,27 @@ function SideBar({ collapsed: collapsedProp = false }) {
             />
             {!collapsed && (
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <Typography variant="body2" sx={{ color: "#1a3365", fontWeight: 600, textAlign: "center" }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: "#1a3365", 
+                    fontWeight: 600, 
+                    textAlign: "center",
+                    fontSize: isMobile ? 11 : 14,
+                    lineHeight: 1.2
+                  }}
+                >
                   {userEmail}
-                </Typography>                <Typography variant="caption" sx={{ color: "#6c757d", fontSize: 12, fontWeight: 500, textAlign: "center" }}>
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: "#6c757d", 
+                    fontSize: isMobile ? 10 : 12, 
+                    fontWeight: 500, 
+                    textAlign: "center" 
+                  }}
+                >
                   {userRoleName}
                 </Typography>
               </Box>
@@ -1124,9 +1208,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
               display: "flex",
               alignItems: "center",
               justifyContent: collapsed ? "center" : "flex-start",
-              px: collapsed ? 0 : 4,
-              py: 1.5,
-              gap: collapsed ? 0 : 2,
+              px: collapsed ? 0 : (isMobile ? 3 : 4),
+              py: isMobile ? 1.2 : 1.5,
+              gap: collapsed ? 0 : (isMobile ? 1.5 : 2),
               cursor: "pointer",
               transition: "padding 0.35s cubic-bezier(.4,0,.2,1)",
               "&:hover": { bgcolor: "#f5f5f5" },
@@ -1147,8 +1231,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
               src={LogoutIcon}
               alt="Logout"
               style={{
-                width: 28,
-                height: 28,
+                width: isMobile ? 24 : 28,
+                height: isMobile ? 24 : 28,
                 transition: "margin 0.3s, filter 0.2s",
                 marginLeft: 0,
                 marginRight: 0,
@@ -1157,11 +1241,11 @@ function SideBar({ collapsed: collapsedProp = false }) {
             {collapsed ? null : (
               <span
                 style={{
-                  fontSize: 18,
+                  fontSize: isMobile ? 16 : 18,
                   color: "#1a3365",
                   transition: "font-weight 0.2s, text-decoration 0.2s, opacity 0.3s, margin 0.3s",
                   opacity: 1,
-                  marginLeft: 4,
+                  marginLeft: isMobile ? 3 : 4,
                   whiteSpace: "nowrap",
                 }}
               >

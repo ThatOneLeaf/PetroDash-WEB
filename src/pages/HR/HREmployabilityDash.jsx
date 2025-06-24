@@ -7,6 +7,8 @@ import {
   Typography,
   IconButton,
   Stack,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 
 import {
@@ -66,6 +68,10 @@ const COLORS = [
 ];
 
 function DemographicsDash({ shouldReload, setShouldReload }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
   //INITIALIZE -DATA
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -465,7 +471,6 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   const getIncidentTypes = (data) => [
     ...new Set(data.map((i) => i.incident_title)),
   ];
-
   return (
     <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       <Box
@@ -474,23 +479,19 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          zoom: "0.8",
+          zoom: isMobile ? "0.6" : isTablet ? "0.7" : "0.8",
         }}
       >
         {/* Filters */}
-        <Box sx={{ px: 2, pb: 1, flexShrink: 0 }}>
+        <Box sx={{ px: isMobile ? 1 : 2, pb: 1, flexShrink: 0 }}>
           <Stack
-            direction="row"
+            direction={isMobile ? "column" : "row"}
             spacing={1}
             flexWrap="wrap"
-            alignItems="flex-start"
+            alignItems={isMobile ? "stretch" : "flex-start"}
             sx={{
               rowGap: 1,
               columnGap: 1,
-              "@media (max-width: 600px)": {
-                flexDirection: "column",
-                alignItems: "stretch",
-              },
             }}
           >
             <MultiSelectWithChips
@@ -519,10 +520,14 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               onChange={setGroup}
             />
           </Stack>
-        </Box>
-
-        {/* KPI Cards */}
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "nowrap", pb: 2 }}>
+        </Box>        {/* KPI Cards */}
+        <Box sx={{ 
+          display: "flex", 
+          gap: isMobile ? 1 : 2, 
+          flexWrap: isMobile ? "wrap" : "nowrap", 
+          pb: 2,
+          px: isMobile ? 1 : 0,
+        }}>
           <KPICard
             loading={false}
             value={totalManpower}
@@ -533,7 +538,11 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1, minHeight: "100px", fontSize: "18px" }}
+            style={{ 
+              flex: isMobile ? "1 1 calc(50% - 4px)" : 1, 
+              minHeight: isMobile ? "80px" : "100px", 
+              fontSize: isMobile ? "14px" : "18px" 
+            }}
           />
           <KPICard
             loading={false}
@@ -545,7 +554,11 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1, minHeight: "100px", fontSize: "18px" }}
+            style={{ 
+              flex: isMobile ? "1 1 calc(50% - 4px)" : 1, 
+              minHeight: isMobile ? "80px" : "100px", 
+              fontSize: isMobile ? "14px" : "18px" 
+            }}
           />
           <KPICard
             loading={false}
@@ -557,7 +570,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1, minHeight: "100px" }}
+            style={{ 
+              flex: isMobile ? "1 1 calc(50% - 4px)" : 1, 
+              minHeight: isMobile ? "80px" : "100px" 
+            }}
           />
           <KPICard
             loading={false}
@@ -569,19 +585,25 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ flex: 1, minHeight: "100px" }}
+            style={{ 
+              flex: isMobile ? "1 1 calc(50% - 4px)" : 1, 
+              minHeight: isMobile ? "80px" : "100px" 
+            }}
           />
-        </Box>
-
-        {/* Charts */}
+        </Box>        {/* Charts */}
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 2,
+            gridTemplateColumns: isMobile 
+              ? "1fr" 
+              : isTablet 
+              ? "repeat(2, 1fr)" 
+              : "repeat(3, 1fr)",
+            gap: isMobile ? 1 : 2,
             minHeight: 0,
             flexGrow: 1,
             height: 0,
+            px: isMobile ? 1 : 0,
           }}
         >
           {/* Safety Manpower */}
@@ -675,10 +697,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             }
               >
                 <ZoomInIcon fontSize="small" />
-            </IconButton>
-            <Typography
+            </IconButton>            <Typography
               sx={{
-                fontSize: "13px",
+                fontSize: isMobile ? "11px" : "13px",
                 fontWeight: 600,
                 mb: 1,
                 color: "#1e293b",

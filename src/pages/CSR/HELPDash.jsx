@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Sidebar from '../../components/Sidebar';
-import { Box, Typography, Grid, Paper, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, Grid, Paper, CircularProgress, Button, useTheme, useMediaQuery } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
@@ -181,13 +181,16 @@ function aggregateInvestments(data) {
 }
 
 // KPIBox: Displays a single KPI with icon, value, label, and last updated
-function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
-  // Dynamically adjust font size based on label length to avoid wrapping
-  let labelFontSize = 15;
-  if (label.length > 35) labelFontSize = 11;
-  else if (label.length > 28) labelFontSize = 12;
-  else if (label.length > 22) labelFontSize = 13;
-  else if (label.length > 16) labelFontSize = 14;
+function KPIBox({ icon, label, value, lastUpdated, bgColor, isMobile = false, isSmallScreen = false }) {
+  // Dynamically adjust font size and icon size based on screen size and label length
+  let labelFontSize = isMobile ? 11 : 15;
+  let iconSize = isSmallScreen ? 32 : isMobile ? 36 : 40;
+  let valueFontSize = isSmallScreen ? 20 : isMobile ? 24 : 28;
+  
+  if (label.length > 35) labelFontSize = isMobile ? 9 : 11;
+  else if (label.length > 28) labelFontSize = isMobile ? 10 : 12;
+  else if (label.length > 22) labelFontSize = isMobile ? 11 : 13;
+  else if (label.length > 16) labelFontSize = isMobile ? 12 : 14;
 
   // Format last updated as "Month, Year"
   let asOfText = '';
@@ -195,7 +198,6 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
     const date = new Date(lastUpdated);
     asOfText = `As of: ${date.toLocaleString('default', { month: 'long' })}, ${date.getFullYear()}`;
   }
-
   return (
     <Paper
       elevation={0}
@@ -206,22 +208,39 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
         boxShadow: 'none',
         width: '100%',
         minWidth: 0,
-        minHeight: 120,
+        minHeight: isSmallScreen ? 100 : isMobile ? 110 : 120,
         height: '100%',
-        padding: '18px 18px 14px 18px',
+        padding: isSmallScreen ? '12px' : isMobile ? '14px' : '18px 18px 14px 18px',
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: isMobile ? 'column' : 'row',
         alignItems: 'center',
         justifyContent: 'center',   
         textAlign: 'center',
       }}
     >
-      <Box sx={{ fontSize: 48, mr: 0.5 }}>{icon}</Box>
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+      <Box sx={{ 
+        fontSize: iconSize, 
+        mr: isMobile ? 0 : 0.5,
+        mb: isMobile ? 0.5 : 0 
+      }}>
+        {/* Clone icon with responsive size */}
+        {icon && typeof icon === 'object' ? 
+          React.cloneElement(icon, { sx: { ...icon.props.sx, fontSize: iconSize } }) : 
+          icon
+        }
+      </Box>
+      <Box sx={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        width: '100%' 
+      }}>
         {/*KPIS */}
         <Typography
           sx={{
-            fontSize: 28,
+            fontSize: valueFontSize,
             fontWeight: 900,
             color: '#182959',
             textAlign: 'center',
@@ -240,11 +259,11 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
             color: '#64748b',
             textAlign: 'center',
             lineHeight: 1.2,
-            wordBreak: 'keep-all',
-            whiteSpace: 'nowrap',
+            wordBreak: isMobile ? 'break-word' : 'keep-all',
+            whiteSpace: isMobile ? 'normal' : 'nowrap',
             width: '100%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            overflow: isMobile ? 'visible' : 'hidden',
+            textOverflow: isMobile ? 'unset' : 'ellipsis',
           }}
           title={label}
         >
@@ -252,7 +271,7 @@ function KPIBox({ icon, label, value, lastUpdated, bgColor }) {
         </Typography>
         <Typography
           sx={{
-            fontSize: 10,
+            fontSize: isSmallScreen ? 8 : 10,
             color: '#94a3b8',
             textAlign: 'center',
             mt: 0.5,
@@ -294,6 +313,11 @@ function formatDateTime(date) {
 
 // Main HELP Dashboard component
 export default function HELPDash() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ year: '', company: '' });
@@ -383,29 +407,50 @@ export default function HELPDash() {
   const openZoomModal = (title, fileName, content) => {
     setZoomModal({ open: true, title, fileName, content });
   };
-
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', background: '#f4f6fb' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      minHeight: '100vh', 
+      background: '#f4f6fb',
+      flexDirection: { xs: 'column', md: 'row' }
+    }}>
       <Sidebar />
-      <Box sx={{ flexGrow: 1, p: { xs: 1, sm: 2, md: 4 } }}>
+      <Box sx={{ 
+        flexGrow: 1, 
+        p: { xs: 1, sm: 2, md: 4 },
+        maxWidth: '100%',
+        overflow: 'hidden'
+      }}>
         {/* Header Row */}
         <Box sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          mb: 2,
+          gap: { xs: 2, sm: 0 }
         }}>
-          <Box>
-            <Typography sx={{ fontSize: 11, fontWeight: 800, color: '#64748b', mb: 0.5 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ 
+              fontSize: isSmallScreen ? 9 : 11, 
+              fontWeight: 800, 
+              color: '#64748b', 
+              mb: 0.5 
+            }}>
               DASHBOARD
             </Typography>
-            <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#182959', letterSpacing: 0.5 }}>
+            <Typography sx={{ 
+              fontSize: isSmallScreen ? 16 : isMobile ? 18 : 18, 
+              fontWeight: 800, 
+              color: '#182959', 
+              letterSpacing: 0.5 
+            }}>
               Social - H.E.L.P
             </Typography>
             {/* Metadata: Last updated */}
             <Typography sx={{
               color: '#64748b',
-              fontSize: 10,
+              fontSize: isSmallScreen ? 8 : 10,
               fontWeight: 400,
               mt: 0.5
             }}>
@@ -414,16 +459,16 @@ export default function HELPDash() {
           </Box>
           <Button
             variant="contained"
-            startIcon={<RefreshIcon sx={{ fontSize: 16 }} />}
+            startIcon={<RefreshIcon sx={{ fontSize: isSmallScreen ? 14 : 16 }} />}
             sx={{
               backgroundColor: '#1976d2',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: 11,
-              px: 1.5,
+              fontSize: isSmallScreen ? 10 : 11,
+              px: isSmallScreen ? 1 : 1.5,
               py: 0.5,
-              minHeight: '28px',
-              minWidth: '80px',
+              minHeight: isSmallScreen ? '24px' : '28px',
+              minWidth: isSmallScreen ? '70px' : '80px',
               '&:hover': { backgroundColor: '#115293' }
             }}
             onClick={fetchData}
@@ -437,21 +482,22 @@ export default function HELPDash() {
           display: 'flex',
           gap: '6px',
           mb: 1.5,
-          flexShrink: 0
+          flexShrink: 0,
+          flexWrap: 'wrap'
         }}>
           <Button
             onClick={() => handleTabSwitch('HELP')}
             sx={{
-              padding: '5px 10px',
+              padding: isSmallScreen ? '4px 8px' : '5px 10px',
               backgroundColor: activeTab === 'HELP' ? '#10B981' : '#9CA3AF',
               color: 'white',
               border: 'none',
               borderRadius: '16px',
-              fontSize: '11px',
+              fontSize: isSmallScreen ? '10px' : '11px',
               fontWeight: '600',
               cursor: 'pointer',
-              minWidth: '60px',
-              minHeight: '26px',
+              minWidth: isSmallScreen ? '50px' : '60px',
+              minHeight: isSmallScreen ? '22px' : '26px',
               boxShadow: 'none',
               '&:hover': {
                 backgroundColor: activeTab === 'HELP' ? '#059669' : '#6B7280'
@@ -463,16 +509,16 @@ export default function HELPDash() {
           <Button
             onClick={() => handleTabSwitch('Investments')}
             sx={{
-              padding: '5px 10px',
+              padding: isSmallScreen ? '4px 8px' : '5px 10px',
               backgroundColor: activeTab === 'Investments' ? '#10B981' : '#9CA3AF',
               color: 'white',
               border: 'none',
               borderRadius: '16px',
-              fontSize: '11px',
+              fontSize: isSmallScreen ? '10px' : '11px',
               fontWeight: '600',
               cursor: 'pointer',
-              minWidth: '60px',
-              minHeight: '26px',
+              minWidth: isSmallScreen ? '50px' : '60px',
+              minHeight: isSmallScreen ? '22px' : '26px',
               boxShadow: 'none',
               '&:hover': {
                 backgroundColor: activeTab === 'Investments' ? '#059669' : '#6B7280'
@@ -485,16 +531,16 @@ export default function HELPDash() {
 
         {/* HELP Tab */}
         {activeTab === 'HELP' && (
-          <>
-            {/* Filters Row */}
+          <>            {/* Filters Row */}
             <Box
               sx={{
                 display: 'flex',
-                gap: '7px',
+                gap: isSmallScreen ? '5px' : '7px',
                 mb: 2,
                 flexWrap: 'wrap',
                 alignItems: 'center',
                 flexShrink: 0,
+                flexDirection: { xs: 'column', sm: 'row' }
               }}
             >
               {/* Year Filter */}
@@ -502,15 +548,16 @@ export default function HELPDash() {
                 value={filters.year}
                 onChange={e => handleFilter('year', e.target.value)}
                 style={{
-                  padding: '5px 8px',
+                  padding: isSmallScreen ? '4px 6px' : '5px 8px',
                   border: '1.5px solid #e2e8f0',
                   borderRadius: '14px',
                   backgroundColor: 'white',
-                  fontSize: '11px',
+                  fontSize: isSmallScreen ? '10px' : '11px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  minWidth: '70px',
-                  height: '28px'
+                  minWidth: isSmallScreen ? '60px' : '70px',
+                  width: isSmallScreen ? '100%' : 'auto',
+                  height: isSmallScreen ? '24px' : '28px'
                 }}
               >
                 {/* No "All Years" option for HELP */}
@@ -524,15 +571,16 @@ export default function HELPDash() {
                 value={filters.company}
                 onChange={e => handleFilter('company', e.target.value)}
                 style={{
-                  padding: '5px 8px',
+                  padding: isSmallScreen ? '4px 6px' : '5px 8px',
                   border: '1.5px solid #e2e8f0',
                   borderRadius: '14px',
                   backgroundColor: 'white',
-                  fontSize: '11px',
+                  fontSize: isSmallScreen ? '10px' : '11px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  minWidth: '70px',
-                  height: '28px'
+                  minWidth: isSmallScreen ? '60px' : '70px',
+                  width: isSmallScreen ? '100%' : 'auto',
+                  height: isSmallScreen ? '24px' : '28px'
                 }}
               >
                 <option value="">All Companies</option>
@@ -544,15 +592,16 @@ export default function HELPDash() {
               {(filters.year || filters.company) && (
                 <button
                   style={{
-                    padding: '5px 8px',
+                    padding: isSmallScreen ? '4px 6px' : '5px 8px',
                     backgroundColor: '#ef4444',
                     color: 'white',
                     border: 'none',
                     borderRadius: '14px',
-                    fontSize: '10px',
+                    fontSize: isSmallScreen ? '9px' : '10px',
                     cursor: 'pointer',
                     fontWeight: '600',
-                    height: '28px'
+                    width: isSmallScreen ? '100%' : 'auto',
+                    height: isSmallScreen ? '24px' : '28px'
                   }}
                   onClick={clearFilters}
                 >
@@ -571,24 +620,23 @@ export default function HELPDash() {
                     width: '100%',
                     maxWidth: '100%',
                   }}
-                >
-                  <Typography
+                >                  <Typography
                     sx={{
-                      fontSize: 28, 
+                      fontSize: isSmallScreen ? 22 : isMobile ? 24 : 28, 
                       fontWeight: 900,
                       color: '#182959',
                       mb: 1.2,
                       letterSpacing: 1,
-                      textAlign: 'left',
+                      textAlign: { xs: 'center', sm: 'left' },
                       textTransform: 'uppercase',
-                      pl: { xs: 1, sm: 2 },
+                      px: { xs: 1, sm: 2 },
                     }}
                   >
                     {section.category}
                   </Typography>
                   <Grid
                     container
-                    spacing={1.5}
+                    spacing={isSmallScreen ? 1 : 1.5}
                     sx={{
                       width: '100%',
                       margin: 0,
@@ -603,7 +651,7 @@ export default function HELPDash() {
                         item
                         xs={12}
                         sm={6}
-                        md={Math.max(12 / section.items.length, 3)}
+                        md={section.items.length <= 2 ? 6 : 4}
                         lg={Math.max(12 / section.items.length, 3)}
                         key={item.key}
                         sx={{
@@ -618,9 +666,11 @@ export default function HELPDash() {
                         <KPIBox
                           icon={item.icon}
                           label={item.label}
-                          value={loading ? <CircularProgress size={22} /> : kpi[item.key]}
+                          value={loading ? <CircularProgress size={isSmallScreen ? 16 : 22} /> : kpi[item.key]}
                           lastUpdated={lastUpdated}
                           bgColor={item.bgColor}
+                          isMobile={isMobile}
+                          isSmallScreen={isSmallScreen}
                         />
                       </Grid>
                     ))}
@@ -633,16 +683,16 @@ export default function HELPDash() {
 
         {/* Investments Tab */}
         {activeTab === 'Investments' && (
-          <>
-            {/* Filters Row (reuse HELP filters) */}
+          <>            {/* Filters Row (reuse HELP filters) */}
             <Box
               sx={{
                 display: 'flex',
-                gap: '7px',
+                gap: isSmallScreen ? '5px' : '7px',
                 mb: 2,
                 flexWrap: 'wrap',
                 alignItems: 'center',
                 flexShrink: 0,
+                flexDirection: { xs: 'column', sm: 'row' }
               }}
             >
               {/* Year Filter */}
@@ -650,15 +700,16 @@ export default function HELPDash() {
                 value={filters.year}
                 onChange={e => handleFilter('year', e.target.value)}
                 style={{
-                  padding: '5px 8px',
+                  padding: isSmallScreen ? '4px 6px' : '5px 8px',
                   border: '1.5px solid #e2e8f0',
                   borderRadius: '14px',
                   backgroundColor: 'white',
-                  fontSize: '11px',
+                  fontSize: isSmallScreen ? '10px' : '11px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  minWidth: '70px',
-                  height: '28px'
+                  minWidth: isSmallScreen ? '60px' : '70px',
+                  width: isSmallScreen ? '100%' : 'auto',
+                  height: isSmallScreen ? '24px' : '28px'
                 }}
               >
                 <option value="">All Years</option>
@@ -672,15 +723,16 @@ export default function HELPDash() {
                 value={filters.company}
                 onChange={e => handleFilter('company', e.target.value)}
                 style={{
-                  padding: '5px 8px',
+                  padding: isSmallScreen ? '4px 6px' : '5px 8px',
                   border: '1.5px solid #e2e8f0',
                   borderRadius: '14px',
                   backgroundColor: 'white',
-                  fontSize: '11px',
+                  fontSize: isSmallScreen ? '10px' : '11px',
                   fontWeight: '500',
                   cursor: 'pointer',
-                  minWidth: '70px',
-                  height: '28px'
+                  minWidth: isSmallScreen ? '60px' : '70px',
+                  width: isSmallScreen ? '100%' : 'auto',
+                  height: isSmallScreen ? '24px' : '28px'
                 }}
               >
                 <option value="">All Companies</option>
@@ -692,15 +744,16 @@ export default function HELPDash() {
               {(filters.year || filters.company) && (
                 <button
                   style={{
-                    padding: '5px 8px',
+                    padding: isSmallScreen ? '4px 6px' : '5px 8px',
                     backgroundColor: '#ef4444',
                     color: 'white',
                     border: 'none',
                     borderRadius: '14px',
-                    fontSize: '10px',
+                    fontSize: isSmallScreen ? '9px' : '10px',
                     cursor: 'pointer',
                     fontWeight: '600',
-                    height: '28px'
+                    width: isSmallScreen ? '100%' : 'auto',
+                    height: isSmallScreen ? '24px' : '28px'
                   }}
                   onClick={clearFilters}
                 >
@@ -713,18 +766,16 @@ export default function HELPDash() {
             <InvestmentKPI
               year={filters.year}
               companyId={filters.company}
-            />
-
-            {/* Graph Containers Layout */}
+            />            {/* Graph Containers Layout */}
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
-                gap: 2,
+                gap: { xs: 1.5, md: 2 },
                 width: '100%',
                 alignItems: 'stretch',
                 minHeight: 0,
-                height: `calc(100vh - 64px - 48px - 32px - 120px - 48px)`, // subtract header, tabs, filters, KPI, margins
+                height: isMobile ? 'auto' : `calc(100vh - 64px - 48px - 32px - 120px - 48px)`, // subtract header, tabs, filters, KPI, margins
                 // 64px header, 48px tabs/filters, 120px KPI, 48px margins (adjust as needed)
               }}
             >
@@ -732,24 +783,24 @@ export default function HELPDash() {
               <Paper
                 elevation={0}
                 sx={{
-                  flex: 2,
+                  flex: { xs: 1, md: 2 },
                   display: 'flex',
                   flexDirection: 'column',
                   background: '#fff',
                   borderRadius: '10px',
                   border: '1.5px solid #e2e8f0',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                  minWidth: '50%',
-                  maxWidth: '55%',
-                  height: '100%',
-                  minHeight: 0,
-                  padding: '10px 10px 8px 10px',
+                  minWidth: { xs: '100%', md: '50%' },
+                  maxWidth: { xs: '100%', md: '55%' },
+                  height: { xs: '300px', sm: '400px', md: '100%' },
+                  minHeight: { xs: '300px', md: 0 },
+                  padding: isSmallScreen ? '8px 8px 6px 8px' : '10px 10px 8px 10px',
                   justifyContent: 'flex-start',
                   cursor: 'pointer',
                   transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
                   '&:hover': {
                     boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
-                    transform: 'translateY(-2px) scale(1.01)'
+                    transform: isMobile ? 'none' : 'translateY(-2px) scale(1.01)'
                   }
                 }}
                 onClick={() =>
@@ -769,7 +820,7 @@ export default function HELPDash() {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                   <Typography
                     sx={{
-                      fontSize: 12,
+                      fontSize: isSmallScreen ? 10 : 12,
                       fontWeight: 700,
                       color: '#1e293b',
                       flexShrink: 0
@@ -809,16 +860,15 @@ export default function HELPDash() {
                     />
                   </Box>
                 </Box>
-              </Paper>
-              {/* Right: Stack of two charts */}
+              </Paper>              {/* Right: Stack of two charts */}
               <Box
                 sx={{
                   flex: 1,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 2,
+                  gap: { xs: 1.5, md: 2 },
                   minWidth: 0,
-                  height: '100%',
+                  height: { xs: 'auto', md: '100%' },
                   minHeight: 0,
                 }}
               >
@@ -834,18 +884,12 @@ export default function HELPDash() {
                     border: '1.5px solid #e2e8f0',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                     minWidth: 0,
-                    height: '50%',
-                    minHeight: 0,
-                    padding: '10px 10px 8px 10px',
+                    height: { xs: '250px', sm: '300px', md: '50%' },
+                    minHeight: { xs: '250px', md: 0 },
+                    padding: isSmallScreen ? '8px 8px 6px 8px' : '10px 10px 8px 10px',
                     justifyContent: 'flex-start',
                     cursor: 'pointer',
                     transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
-                    // Removed green outline on hover
-                    // '&:hover': {
-                    //   boxShadow: '0 4px 16px rgba(16,185,129,0.12)',
-                    //   borderColor: '#10B981',
-                    //   transform: 'translateY(-2px) scale(1.01)'
-                    // }
                   }}
                   onClick={() =>
                     openZoomModal(
@@ -864,7 +908,7 @@ export default function HELPDash() {
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                     <Typography
                       sx={{
-                        fontSize: 12,
+                        fontSize: isSmallScreen ? 10 : 12,
                         fontWeight: 700,
                         color: '#1e293b',
                         flexShrink: 0

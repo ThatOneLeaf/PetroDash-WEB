@@ -21,7 +21,7 @@ import MultiSelectWithChips from "../../components/DashboardComponents/MultiSele
 import StyledSelect from "../../components/DashboardComponents/StyledSelect";
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ZoomModal from "../../components/DashboardComponents/ZoomModal";
-import { IconButton } from '@mui/material';
+import { IconButton, useTheme, useMediaQuery } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 const COLORS = ['#3B82F6', '#F97316', '#10B981', '#EF4444', '#8B5CF6', '#F59E0B'];
@@ -38,6 +38,11 @@ const getYearRangeText = (fromYear, toYear) => {
 };
 
 function EnvironmentEnergyDash() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [activeTab, setActiveTab] = useState('electricity'); // 'electricity' or 'diesel'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
