@@ -179,7 +179,7 @@ function App() {
               <Route
                 path="/social/help-dash"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <HELPDash />
                   </ProtectedRoute>
                 }
