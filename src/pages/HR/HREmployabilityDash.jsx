@@ -603,7 +603,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               overflow: "hidden",
               position: "relative",
             }}>
-            <Button
+            <IconButton
               size="small"
               sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
@@ -674,8 +674,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               )
             }
               >
-                🔍
-            </Button>
+                <ZoomInIcon fontSize="small" />
+            </IconButton>
             <Typography
               sx={{
                 fontSize: "13px",
@@ -768,7 +768,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               position: "relative",
             }}
           >
-            <Button
+            <IconButton
               size="small"
               sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
@@ -838,8 +838,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 )
               )
             }>
-                🔍
-            </Button>
+                <ZoomInIcon fontSize="small" />
+            </IconButton>
             <Typography
               sx={{
                 fontSize: "13px",
@@ -935,7 +935,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               position: "relative",
             }}
           >
-            <Button
+            <IconButton
               size="small"
               sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
@@ -990,8 +990,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               ))
             }
           >
-              🔍
-          </Button>
+              <ZoomInIcon fontSize="small" />
+          </IconButton>
             <Typography
               sx={{
                 fontSize: "13px",
@@ -1082,7 +1082,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 position: "relative",
               }}
             >
-              <Button
+              <IconButton
               size="small"
               sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
@@ -1117,8 +1117,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   )
                 )
               }>
-                🔍
-              </Button>
+                <ZoomInIcon fontSize="small" />
+              </IconButton>
               <Typography
                 sx={{
                   fontSize: "13px",
@@ -1178,7 +1178,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 overflow: "hidden",
                 position: "relative",
               }}>
-              <Button
+              <IconButton
               size="small"
               sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
@@ -1234,8 +1234,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   )
                 )
               }>
-                🔍
-              </Button>
+                <ZoomInIcon fontSize="small" />
+              </IconButton>
               <Typography
                 sx={{
                   fontSize: "13px",
@@ -1316,7 +1316,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 overflow: "hidden",
                 position: "relative",
               }}>
-              <Button
+              <IconButton
               size="small"
               sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
               onClick={() =>
@@ -1361,8 +1361,8 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                   )
                 )
               }>
-                🔍
-              </Button>
+                <ZoomInIcon fontSize="small" />
+              </IconButton>
               <Typography
                 sx={{
                   fontSize: "13px",
