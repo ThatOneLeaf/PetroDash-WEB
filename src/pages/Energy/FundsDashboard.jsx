@@ -198,6 +198,34 @@ function FundsDashboard() {
   const [staticData, setStaticData] = useState({});
 
 
+  // Dynamically build plant color map for stacked_by_ffid keys
+  const [plantFFIDColorMap, setPlantFFIDColorMap] = useState({});
+
+  // Build companyColors from pp_info (plantMetadata) and print to console
+const [companyColors, setCompanyColors] = useState({});
+
+useEffect(() => {
+  if (plantMetadata && plantMetadata.length > 0) {
+    // Map company_id to color (first occurrence wins)
+    const map = {};
+    plantMetadata.forEach(item => {
+      if (item.company_id && item.color && !map[item.company_id.toUpperCase()]) {
+        map[item.company_id.toUpperCase()] = item.color;
+      }
+    });
+    console.log('Company Colors from API:', map);
+    setCompanyColors(map);
+  }
+}, [plantMetadata]);
+
+// Print companyColors to the console whenever it changes
+useEffect(() => {
+  if (companyColors && Object.keys(companyColors).length > 0) {
+    console.log('Company Colors:', companyColors);
+  }
+}, [companyColors]);
+
+
   const chartReady =
   Object.keys(plantColors).length > 0 &&
   plantMetadata.length > 0 &&
@@ -237,19 +265,19 @@ function FundsDashboard() {
 
 
 
+// Update getColorMapForGroupBy to fallback to company_id color if power_plant_id color is not found
 const getColorMapForGroupBy = (
   groupByKey,
   dataItems,
   plantColors,
   plantMetadata,
-  generationSourceColors
+  generationSourceColors,
+  companyColors = {}
 ) => {
   const colorMap = {};
 
   dataItems.forEach((item) => {
     let rawKey;
-
-    // Dynamically get the key based on groupByKey
     if (groupByKey === 'power_plant_id') {
       rawKey = item.power_plant_id || item.name;
     } else if (groupByKey === 'company_id') {
@@ -261,27 +289,32 @@ const getColorMapForGroupBy = (
     } else {
       rawKey = item[groupByKey] || item.name;
     }
-
     if (!rawKey) return;
-
     const key = typeof rawKey === 'string' ? rawKey.trim().toUpperCase() : rawKey;
-
     if (groupByKey === 'power_plant_id') {
-      colorMap[key] = plantColors[key] || '#CBD5E1';
+      // Fallback to company_id color if plant color not found
+      const plantColor = plantColors[key];
+      if (plantColor) {
+        colorMap[key] = plantColor;
+      } else if (item.company_id) {
+        const companyKey = item.company_id.toUpperCase();
+        colorMap[key] = companyColors[companyKey] || '#A5B4FC';
+      } else {
+        colorMap[key] = '#CBD5E1';
+      }
     } else if (groupByKey === 'company_id') {
       const match = plantMetadata.find(
         (entry) => entry.company_id.toUpperCase() === key
       );
-      colorMap[key] = match?.color || '#A5B4FC';
+      colorMap[key] = companyColors[key] || match?.color || '#A5B4FC';
     } else if (groupByKey === 'generation_source') {
       colorMap[key.toLowerCase()] = generationSourceColors[key.toLowerCase()] || '#D1FAE5';
     } else if (groupByKey === 'ff_name') {
       colorMap[key] = generationSourceColors[key.toLowerCase()] || '#FDE68A';
     } else {
-      colorMap[key] = '#E5E7EB'; // fallback
+      colorMap[key] = '#E5E7EB';
     }
   });
-
   return colorMap;
 };
 
@@ -579,17 +612,15 @@ return (
         yAxisKey={lineView === 'period' ? 'period' : 'ff_name'}
 
         colorMap={
-            chartReady
+          lineView === 'period'
             ? getColorMapForGroupBy(
                 x,
-                lineView === 'period'
-            ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
-            : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || [],
+                data?.funds_allocated_peso?.allocation?.stacked_by_period || [],
                 plantColors,
                 plantMetadata,
                 generationSourceColors
-                )
-            : {}
+              )
+            : x === 'company_id' ? companyColors : plantColors
         }
         />
     </Box>
@@ -669,17 +700,7 @@ return (
           <PieChartComponent
             title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
             data={data?.funds_allocated_peso?.allocation?.pie || []}
-            colorMap={
-              chartReady
-                ? getColorMapForGroupBy(
-                    x,
-                    data?.funds_allocated_peso?.allocation?.pie || [],
-                    plantColors,
-                    plantMetadata,
-                    generationSourceColors
-                  )
-                : {}
-            }
+            colorMap={plantColors}
           />
         </Box>
         <Button
@@ -776,15 +797,15 @@ return (
         yAxisKey={lineView === 'period' ? 'period' : 'ff_name'}
 
         colorMap={
-            chartReady
+          lineView === 'period'
             ? getColorMapForGroupBy(
                 x,
-                data?.funds_allocated_peso?.beneficiaries?.tabledata,
+                data?.funds_allocated_peso?.allocation?.stacked_by_period || [],
                 plantColors,
                 plantMetadata,
                 generationSourceColors
-                )
-            : {}
+              )
+            : x === 'company_id' ? companyColors : plantColors
         }
         />
     </Box>
@@ -861,18 +882,8 @@ return (
         <Box sx={{ width: '100%', height: '100%' }}>
           <PieChartComponent
             title={generateFullChartTitle("Power Generation Breakdown", x, y, filters, startDate, endDate)}
-            data={data?.funds_allocated_peso?.allocation?.pie || []}
-            colorMap={
-              chartReady
-                ? getColorMapForGroupBy(
-                    x,
-                    data?.funds_allocated_peso?.beneficiaries?.pie || [],
-                    plantColors,
-                    plantMetadata,
-                    generationSourceColors
-                  )
-                : {}
-            }
+            data={data?.funds_allocated_peso?.beneficiaries?.pie || []}
+            colorMap={plantColors}
           />
         </Box>
         <Button
