@@ -1,4 +1,4 @@
-// Enhanced ZoomModal.js with better support for custom styled charts
+// Enhanced ZoomModal.js with scrollable content support
 import React, { useRef, useState } from 'react';
 import {
     Dialog,
@@ -24,6 +24,7 @@ const ZoomModal = ({
     children,
     enableDownload = false,
     downloadFileName = 'chart',
+    enableScroll = true, // New prop to control scrolling
 }) => {
     const chartRef = useRef(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -113,7 +114,14 @@ const ZoomModal = ({
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} maxWidth={maxWidth} fullWidth>
+            <Dialog 
+                open={open} 
+                onClose={onClose} 
+                maxWidth={maxWidth} 
+                fullWidth
+                // Allow the dialog itself to be scrollable if content is too tall
+                scroll="paper"
+            >
                 <DialogTitle sx={{ pr: 6 }}>
                     <IconButton
                         aria-label="close"
@@ -129,15 +137,23 @@ const ZoomModal = ({
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent>
+                <DialogContent
+                    sx={{
+                        // Remove default padding to give more control
+                        p: 0,
+                        // Enable scrolling on the dialog content
+                        overflowY: enableScroll ? 'auto' : 'hidden',
+                        overflowX: enableScroll ? 'auto' : 'hidden',
+                    }}
+                >
                     <Box
                         ref={chartRef}
                         sx={{
                             width: '100%',
-                            minHeight: 500,
-                            height: '70vh',
-                            maxHeight: '80vh',
-                            overflow: 'hidden',
+                            minHeight: enableScroll ? 'auto' : 500,
+                            height: enableScroll ? 'auto' : '70vh',
+                            maxHeight: enableScroll ? 'none' : '80vh',
+                            overflow: enableScroll ? 'visible' : 'hidden',
                             position: 'relative',
                             fontFamily: 'inherit',
                             fontSize: 'inherit',
@@ -146,6 +162,7 @@ const ZoomModal = ({
                             flexDirection: 'column',
                             alignItems: 'stretch',
                             justifyContent: 'flex-start',
+                            padding: 2, // Add some padding back
                         }}
                     >
                         {/* Title inside the image area */}
@@ -181,7 +198,17 @@ const ZoomModal = ({
                         >
                             {now.toLocaleString()}
                         </Box>
-                        <Box sx={{ width: '100%', height: 'calc(100% - 70px)', flex: 1, display: 'flex', alignItems: 'stretch', justifyContent: 'center' }}>
+                        <Box 
+                            sx={{ 
+                                width: '100%', 
+                                height: enableScroll ? 'auto' : 'calc(100% - 70px)', 
+                                flex: enableScroll ? 'none' : 1, 
+                                display: 'flex', 
+                                alignItems: enableScroll ? 'flex-start' : 'stretch', 
+                                justifyContent: 'center',
+                                minHeight: enableScroll ? '300px' : 'auto', // Ensure minimum height when scrollable
+                            }}
+                        >
                           {children}
                         </Box>
                     </Box>
