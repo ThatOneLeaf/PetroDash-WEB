@@ -102,14 +102,13 @@ const toggleModal = () => {
       
       <main className="landing-main" style={{
         display: 'flex',
-        marginTop: '1.5rem',
         padding: '5.5rem',
         gap: '4rem',
         flexWrap: 'wrap'
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{
-            fontSize: '3.5rem',
+            fontSize: '3rem',
             marginBottom: '2rem',
             fontStyle: 'italic',
             lineHeight: '1.2'

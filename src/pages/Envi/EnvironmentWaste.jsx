@@ -33,6 +33,7 @@ import Filter from '../../components/Filter/Filter';
 import Search from '../../components/Filter/Search';
 import ViewEditRecordModal from '../../components/envi_components/ViewEditEnviModal';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useAuth } from '../../contexts/AuthContext';
 
 function EnvironmentWaste() {
   const [data, setData] = useState([]);
@@ -58,6 +59,10 @@ function EnvironmentWaste() {
   });
   
   const rowsPerPage = 10;
+
+  const { user } = useAuth();
+  const canAddOrImport = user?.roles?.includes('R05') || false;
+  const canApproveOrRevise = Array.isArray(user?.roles) && user.roles.some(role => ['R03', 'R04'].includes(role));
 
   const [filters, setFilters] = useState({
     year: '',
@@ -545,7 +550,7 @@ function EnvironmentWaste() {
           </Box>
           
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
-            {selectedRowIds.length > 0 && !isApprove ? (
+            {selectedRowIds.length > 0 && !isApprove && canApproveOrRevise ? (
               <>
                 <Button 
                   variant='contained'
@@ -601,39 +606,43 @@ function EnvironmentWaste() {
                 >
                   EXPORT DATA
                 </Button>
-                <Button
-                  variant="contained"
-                  sx={{ 
-                    backgroundColor: '#182959',
-                    borderRadius: '999px',
-                    padding: '9px 18px',
-                    fontSize: '0.85rem',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#0f1a3c',
-                    },
-                  }}
-                  onClick={() => setIsImportModalOpen(true)}
-                >
-                  IMPORT
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  sx={{ 
-                    backgroundColor: '#2B8C37',
-                    borderRadius: '999px',
-                    padding: '9px 18px',
-                    fontSize: '0.85rem',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#256d2f',
-                    },
-                  }}
-                  onClick={() => setIsAddModalOpen(true)}
-                >
-                  ADD RECORD
-                </Button>
+                {canAddOrImport && (
+                  <>
+                    <Button
+                      variant="contained"
+                      sx={{ 
+                        backgroundColor: '#182959',
+                        borderRadius: '999px',
+                        padding: '9px 18px',
+                        fontSize: '0.85rem',
+                        fontWeight: 'bold',
+                        '&:hover': {
+                          backgroundColor: '#0f1a3c',
+                        },
+                      }}
+                      onClick={() => setIsImportModalOpen(true)}
+                    >
+                      IMPORT
+                    </Button>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      sx={{ 
+                        backgroundColor: '#2B8C37',
+                        borderRadius: '999px',
+                        padding: '9px 18px',
+                        fontSize: '0.85rem',
+                        fontWeight: 'bold',
+                        '&:hover': {
+                          backgroundColor: '#256d2f',
+                        },
+                      }}
+                      onClick={() => setIsAddModalOpen(true)}
+                    >
+                      ADD RECORD
+                    </Button>
+                  </> 
+                )}
               </>
             )}
           </Box>
