@@ -350,23 +350,23 @@ function Dashboard() {
                                     >
                                       Value Generated
                                     </Typography>
-                                    {previousYearMetrics && (
-                                      <Typography
-                                        variant="caption"
-                                        sx={{
-                                          color: "white",
-                                          fontSize: "0.6rem",
-                                          lineHeight: 1,
-                                        }}
-                                      >
-                                        ▲
-                                        {calculateGrowth(
-                                          currentYearMetrics?.totalGenerated,
-                                          previousYearMetrics?.totalGenerated
-                                        )}
-                                        % from last year
-                                      </Typography>
-                                    )}
+                                                                      {previousYearMetrics && (
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '#4CAF50' : '#F44336',
+                                        fontSize: "0.6rem",
+                                        lineHeight: 1,
+                                      }}
+                                    >
+                                      {calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '▲' : '▼'}
+                                      {Math.abs(calculateGrowth(
+                                        currentYearMetrics?.totalGenerated,
+                                        previousYearMetrics?.totalGenerated
+                                      ))}
+                                      % from last year
+                                    </Typography>
+                                  )}
                                   </CardContent>
                                 </Card>
                               </Grid>
@@ -419,23 +419,21 @@ function Dashboard() {
                                     >
                                       Value Distributed
                                     </Typography>
-                                    {previousYearMetrics && (
-                                      <Typography
-                                        variant="caption"
-                                        sx={{
-                                          color: "white",
-                                          fontSize: "0.6rem",
-                                          lineHeight: 1,
-                                        }}
-                                      >
-                                        ▲
-                                        {calculateGrowth(
-                                          currentYearMetrics?.totalDistributed,
-                                          previousYearMetrics?.totalDistributed
-                                        )}
-                                        % from last year
-                                      </Typography>
-                                    )}
+                                                                      {previousYearMetrics && (
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: "white",
+                                        fontSize: "0.6rem",
+                                        lineHeight: 1,
+                                      }}
+                                    >
+                                      ▲{calculateGrowth(
+                                        currentYearMetrics?.totalDistributed,
+                                        previousYearMetrics?.totalDistributed
+                                      )}% from last year
+                                    </Typography>
+                                  )}
                                   </CardContent>
                                 </Card>
                               </Grid>
@@ -488,28 +486,30 @@ function Dashboard() {
                                     >
                                       Value Retained
                                     </Typography>
-                                    {previousYearMetrics && (
+                                                                      {previousYearMetrics && (() => {
+                                    const currentValue = currentYearMetrics?.valueRetained || 0;
+                                    const previousValue = previousYearMetrics?.valueRetained || 0;
+                                    const growthRate = calculateGrowth(currentValue, previousValue);
+                                    
+                                    // For Value Retained, we need to consider the context:
+                                    // - If current is better than previous (higher retention), show green up
+                                    // - If current is worse than previous (lower retention), show red down
+                                    const isImprovement = currentValue > previousValue;
+                                    
+                                    return (
                                       <Typography
                                         variant="caption"
                                         sx={{
-                                          color: "white",
+                                          color: isImprovement ? '#4CAF50' : '#F44336',
                                           fontSize: "0.6rem",
                                           lineHeight: 1,
                                         }}
                                       >
-                                        {previousYearMetrics.valueRetained >
-                                        currentYearMetrics?.valueRetained
-                                          ? "▼"
-                                          : "▲"}
-                                        {Math.abs(
-                                          calculateGrowth(
-                                            currentYearMetrics?.valueRetained,
-                                            previousYearMetrics?.valueRetained
-                                          )
-                                        )}
-                                        % from last year
+                                        {isImprovement ? '▲' : '▼'}
+                                        {Math.abs(growthRate)}% from last year
                                       </Typography>
-                                    )}
+                                    );
+                                  })()}
                                   </CardContent>
                                 </Card>
                               </Grid>
