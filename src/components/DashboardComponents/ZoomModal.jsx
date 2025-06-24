@@ -197,19 +197,21 @@ const ZoomModal = ({
                             }}
                         >
                             {now.toLocaleString()}
-                        </Box>
-                        <Box 
+                        </Box>                        <Box 
                             sx={{ 
                                 width: '100%', 
+                                maxWidth: 1200, // Increase max width for wider charts
+                                minWidth: 600, // Increase minimum width for better chart display
+                                margin: '0 auto', // Center the chart
                                 height: enableScroll ? 'auto' : 'calc(100% - 70px)', 
                                 flex: enableScroll ? 'none' : 1, 
                                 display: 'flex', 
                                 alignItems: enableScroll ? 'flex-start' : 'stretch', 
                                 justifyContent: 'center',
-                                minHeight: enableScroll ? '300px' : 'auto', // Ensure minimum height when scrollable
+                                minHeight: enableScroll ? '400px' : 'auto', // Increase minimum height for better visibility
                             }}
                         >
-                          {children}
+                            {children}
                         </Box>
                     </Box>
                 </DialogContent>

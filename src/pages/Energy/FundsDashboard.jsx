@@ -949,8 +949,7 @@ return (
 </Box>
 
   </Box>
-)}
-        <ZoomModal
+)}        <ZoomModal
           open={zoomModal.open}
           onClose={() => setZoomModal({ ...zoomModal, open: false })}
           title={zoomModal.title}
@@ -958,9 +957,20 @@ return (
           enableDownload
           enableScroll={true}
         >
-          <div style={{ minWidth: 400, minHeight: 350, width: '100%', height: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{ 
+            width: '100%', 
+            height: '500px', 
+            minHeight: '400px',
+            display: 'flex', 
+            alignItems: 'stretch', 
+            justifyContent: 'center',
+            '& > *': {
+              width: '100% !important',
+              maxWidth: 'none !important'
+            }
+          }}>
             {zoomModal.content}
-          </div>
+          </Box>
         </ZoomModal>
       </Box>
       </Box>

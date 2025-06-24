@@ -92,19 +92,17 @@ const maxValue = Math.max(...data.flatMap(source => source.data.map(d => d.y || 
     unit === 'kWh' && maxValue >= 1_000 ? 'MWh' :
     unit === 'kWh'? 'kWh': yAxisLabel;
 
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
       <div style={{ padding: '0' }}>
         <h3 style={{ fontSize: '14px', margin: 0 }}>{title}</h3>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <div style={{ flex: 1, minHeight: 0, padding: '0 12px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, width: '100%' }}>
+        <div style={{ flex: 1, minHeight: 0, padding: '0 8px', width: '100%' }}>
+          <ResponsiveContainer width="100%" height="100%">            <LineChart
               data={formattedData}
-              margin={{ top: 10, right: 10, left: 5, bottom: 10 }}
+              margin={{ top: 15, right: 40, left: 30, bottom: 15 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" tickFormatter={formatPeriod}>

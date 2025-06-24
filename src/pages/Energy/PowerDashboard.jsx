@@ -1092,13 +1092,14 @@ return (
           maxWidth="lg"
           enableDownload
           enableScroll={true}
-        >
-          <div style={{ minWidth: 400, minHeight: 350, width: '100%', height: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        >          <div style={{ width: '100%', height: '60vh', minHeight: 400 }}>
             {zoomModal.chartConfig?.type === "line" && (
               <LineChartComponent {...zoomModal.chartConfig.props} />
             )}
             {zoomModal.chartConfig?.type === "pie" && (
-              <PieChartComponent {...zoomModal.chartConfig.props} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <PieChartComponent {...zoomModal.chartConfig.props} />
+              </div>
             )}
             {zoomModal.chartConfig?.type === "verticalBar" && (
               <VerticalStackedBarChartComponent {...zoomModal.chartConfig.props} />
