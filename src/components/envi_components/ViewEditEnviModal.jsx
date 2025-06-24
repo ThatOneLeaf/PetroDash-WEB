@@ -21,6 +21,7 @@ import StatusChip from "../../components/StatusChip";
 import ClearIcon from "@mui/icons-material/Clear";
 import Overlay from "../../components/modal";
 import { useAuth } from '../../contexts/AuthContext';
+import { is } from "date-fns/locale";
 
 const ViewEditRecordModal = ({
   source,
@@ -89,7 +90,14 @@ const ViewEditRecordModal = ({
 
   const { user } = useAuth();
   const canApproveOrRevise = Array.isArray(user?.roles) && user.roles.some(role => ['R03', 'R04'].includes(role));
+  const isSiteApprover = ["Under review (site)", "For Revision (Site)"].includes(
+    editedRecord.status) && user.roles.includes("R04");
 
+  const isHeadApprover = ["Under review (head level)", "For Revision (Head)"].includes(
+    editedRecord.status) && user.roles.includes("R03");
+
+  console.log((canApproveOrRevise && isSiteApprover) || (canApproveOrRevise && isHeadApprover));
+  
   const [showApproveSuccessModal, setShowApproveSuccessModal] = useState(false);
   // Add new modals for revision and edit success
   const [showReviseSiteSuccessModal, setShowReviseSiteSuccessModal] =
@@ -905,7 +913,7 @@ const ViewEditRecordModal = ({
                   {isEditing ? "SAVE" : "EDIT"}
                 </Button>
               )}
-            {canApproveOrRevise && (
+            {((canApproveOrRevise && isSiteApprover) || (canApproveOrRevise && isHeadApprover)) && (
               <Box>
                 <Button
                   variant="contained"

@@ -523,8 +523,18 @@ function EnvironmentEnergy() {
     .filter(Boolean)
     .every(row => allowedStatuses.includes(row.status));
 
-  // Filter only selected rows for export
+  // Get selected rows from filteredData
   const selectedRows = filteredData.filter(row => selectedRowIds.includes(row[idKey]));
+
+  // Check if all selected rows are for site approver
+  const isSiteApprover = selectedRows.length > 0 && selectedRows.every(row =>
+      ["Under review (site)", "For Revision (Site)"].includes(row.status)
+    ) && user.roles.includes("R04");
+
+  // Check if all selected rows are for head approver
+  const isHeadApprover = selectedRows.length > 0 && selectedRows.every(row =>
+      ["Under review (head level)", "For Revision (Head)"].includes(row.status)
+    ) && user.roles.includes("R03");
 
   return (
     <Box sx={{ display: 'flex', }}>
@@ -552,7 +562,7 @@ function EnvironmentEnergy() {
           </Box>
           
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
-            {selectedRowIds.length > 0 && !isApprove && canApproveOrRevise ? (
+            {selectedRowIds.length > 0 && !isApprove && ((canApproveOrRevise && isSiteApprover) || (canApproveOrRevise && isHeadApprover)) ? (
               <>
                 <Button 
                   variant='contained'
@@ -665,7 +675,7 @@ function EnvironmentEnergy() {
                 borderRadius: '15px',
                 padding: '3px 6px',
                 height: '30px',
-                width: '25%',
+                width: '20%',
                 fontSize: '0.85rem',
                 fontWeight: 700,
                 color: 'white',

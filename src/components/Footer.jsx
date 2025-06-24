@@ -40,6 +40,7 @@ function Footer() {
         backgroundColor: 'white',
         color: 'gray',
         fontSize: '0.75rem',
+        padding: '1rem 0',  // Add padding for better spacing
         textAlign: 'center',
         margin: 0,  // Remove any margin
         width: '100%',  // Ensure full width

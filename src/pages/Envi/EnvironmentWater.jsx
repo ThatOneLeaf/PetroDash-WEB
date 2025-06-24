@@ -499,7 +499,7 @@ function EnvironmentWater() {
     return selectedStatuses.every(status => status === selectedStatuses[0]);
   };
 
-  const isApprove = selectedRowIds
+ const isApprove = selectedRowIds
     .map(id => filteredData.find(row => row[idKey] === id))
     .filter(Boolean)
     .every(row => row.status === 'Approved');
@@ -510,7 +510,18 @@ function EnvironmentWater() {
     .filter(Boolean)
     .every(row => allowedStatuses.includes(row.status));
 
+  // Get selected rows from filteredData
   const selectedRows = filteredData.filter(row => selectedRowIds.includes(row[idKey]));
+
+  // Check if all selected rows are for site approver
+  const isSiteApprover = selectedRows.length > 0 && selectedRows.every(row =>
+      ["Under review (site)", "For Revision (Site)"].includes(row.status)
+    ) && user.roles.includes("R04");
+
+  // Check if all selected rows are for head approver
+  const isHeadApprover = selectedRows.length > 0 && selectedRows.every(row =>
+      ["Under review (head level)", "For Revision (Head)"].includes(row.status)
+    ) && user.roles.includes("R03");
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -538,7 +549,7 @@ function EnvironmentWater() {
           </Box>
           
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
-            {selectedRowIds.length > 0 && !isApprove && canApproveOrRevise ? (
+            {selectedRowIds.length > 0 && !isApprove && ((canApproveOrRevise && isSiteApprover) || (canApproveOrRevise && isHeadApprover)) ? (
               <>
                 <Button 
                   variant='contained'
