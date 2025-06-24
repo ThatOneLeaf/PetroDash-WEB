@@ -51,15 +51,38 @@ const GenericResponsiveTable = ({ data }) => {
     >
       <Table stickyHeader size="small" sx={{ fontSize }}>
         <TableHead>
-          <TableRow>
+          <TableRow sx={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%)' }}>
             {headers.map((header) => (
-              <TableCell key={header} sx={{ fontSize }}>{header}</TableCell>
+              <TableCell
+                key={header}
+                sx={{
+                  fontSize,
+                  fontWeight: 'bold',
+                  color: '#fff',
+                  background: 'linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%)',
+                  borderRight: '1px solid #e0e7ef',
+                  letterSpacing: 1,
+                  textTransform: 'capitalize',
+                  boxShadow: '0 2px 4px 0 rgba(30,58,138,0.08)'
+                }}
+              >
+                {header}
+              </TableCell>
             ))}
           </TableRow>
         </TableHead>
         <TableBody>
           {data.map((row, index) => (
-            <TableRow key={index}>
+            <TableRow
+              key={index}
+              sx={{
+                transition: 'background 0.2s',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #e0e7ef 0%, #f1f5f9 100%)',
+                  cursor: 'pointer',
+                },
+              }}
+            >
               {headers.map((key) => (
                 <TableCell key={key} sx={{ fontSize }}>
                   {typeof row[key] === 'number'
