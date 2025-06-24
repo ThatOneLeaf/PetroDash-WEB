@@ -125,7 +125,7 @@ function App() {
               <Route
                 path="/economic"
                 element={
-                  <ProtectedRoute requiredRoles={["R02", "R03"]}>
+                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
                     <Economic />
                   </ProtectedRoute>
                 }
