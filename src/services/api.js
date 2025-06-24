@@ -19,15 +19,13 @@ export const setupAuthInterceptors = (getToken, logout) => {
     return config;
   });
 
-  // Auto logout on 401 errors
+  // Log response errors for debugging (no auto-logout - let ProtectedRoute handle auth)
   api.interceptors.response.use(
     (response) => response,
     (error) => {
       console.log('[API INTERCEPTOR] Response error:', error.response?.status, 'for URL:', error.config?.url);
-      if (error.response?.status === 401) {
-        console.log('[API INTERCEPTOR] 401 error, logging out');
-        logout();
-      }
+      // Let ProtectedRoute component handle authentication redirects
+      // No auto-logout here to avoid disrupting user experience
       return Promise.reject(error);
     }
   );

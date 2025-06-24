@@ -22,42 +22,45 @@ import {
   Typography,
   Paper,
   Tabs,
-  Tab
+  Tab,
+  IconButton
 } from '@mui/material';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 // Color schemes for charts
 const COLORS = ['#3B82F6', '#06B6D4', '#10B981', '#8B5CF6', '#6366F1', '#0EA5E9', '#14B8A6'];
 
-// Custom label function for pie charts with smart positioning
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name, index }) => {
+// Store label positions to prevent overlap
+let usedLabelPositions = [];
+
+// Custom label function with smart positioning, clipping prevention, and overlap avoidance
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name, index, data }) => {
   const RADIAN = Math.PI / 180;
   
-  // Calculate label position with more spacing
-  const radius = innerRadius + (outerRadius - innerRadius) * 1.8;
-  let x = cx + radius * Math.cos(-midAngle * RADIAN);
-  let y = cy + radius * Math.sin(-midAngle * RADIAN);
-  
-  // Adjust position based on quadrant to avoid overlap
-  const quadrant = Math.floor(((midAngle + 90) % 360) / 90);
-  switch (quadrant) {
-    case 0: // Top right
-      y -= 5;
-      break;
-    case 1: // Bottom right
-      y += 5;
-      break;
-    case 2: // Bottom left
-      y += 5;
-      break;
-    case 3: // Top left
-      y -= 5;
-      break;
+  // Reset positions array for first label
+  if (index === 0) {
+    usedLabelPositions = [];
   }
   
-  // Text wrapping with shorter lines for better spacing
+  // Calculate original pie edge position for line start
+  const pieEdgeRadius = outerRadius;
+  const pieEdgeX = cx + pieEdgeRadius * Math.cos(-midAngle * RADIAN);
+  const pieEdgeY = cy + pieEdgeRadius * Math.sin(-midAngle * RADIAN);
+  
+  // Calculate base position
+  const baseRadius = innerRadius + (outerRadius - innerRadius) * 1.6;
+  let x = cx + baseRadius * Math.cos(-midAngle * RADIAN);
+  let y = cy + baseRadius * Math.sin(-midAngle * RADIAN);
+  
+  // Chart boundaries with margin
+  const margin = 15;
+  const chartWidth = cx * 2;
+  const chartHeight = cy * 2;
+  
+  // Text processing
   const words = name.split(' ');
   const lines = [];
-  const maxCharsPerLine = 10; // Shorter lines to reduce overlap
+  const maxCharsPerLine = 11;
   
   let currentLine = '';
   words.forEach(word => {
@@ -71,33 +74,184 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
   });
   if (currentLine) lines.push(currentLine);
   
-  // Limit to maximum 2 lines
+  // Limit to 2 lines
   if (lines.length > 2) {
     lines[1] = lines.slice(1).join(' ');
     lines.splice(2);
   }
   
+  // Calculate text dimensions
+  const charWidth = 6;
+  const lineHeight = 12;
+  const textWidth = Math.max(...lines.map(line => line.length)) * charWidth;
+  const textHeight = lines.length * lineHeight + 12; // +12 for percentage
+  
+  // Store original position for comparison
+  const originalX = x;
+  const originalY = y;
+  
+  // Determine initial text anchor
+  let textAnchor = x > cx ? 'start' : 'end';
+  
+  // Adjust for boundary clipping
+  if (textAnchor === 'start' && x + textWidth > chartWidth - margin) {
+    x = chartWidth - textWidth - margin;
+  } else if (textAnchor === 'end' && x - textWidth < margin) {
+    x = margin + textWidth;
+    textAnchor = 'start';
+  }
+  
+  // Vertical boundary adjustment
+  if (y - textHeight/2 < margin) {
+    y = margin + textHeight/2;
+  } else if (y + textHeight/2 > chartHeight - margin) {
+    y = chartHeight - margin - textHeight/2;
+  }
+  
+  // Check for overlaps with existing labels
+  const currentBounds = {
+    left: textAnchor === 'end' ? x - textWidth : x,
+    right: textAnchor === 'end' ? x : x + textWidth,
+    top: y - textHeight/2,
+    bottom: y + textHeight/2
+  };
+  
+  // Find overlapping positions and adjust
+  let attempts = 0;
+  const maxAttempts = 8;
+  
+  while (attempts < maxAttempts) {
+    let hasOverlap = false;
+    
+    for (const usedPos of usedLabelPositions) {
+      if (!(currentBounds.right < usedPos.left || 
+            currentBounds.left > usedPos.right || 
+            currentBounds.bottom < usedPos.top || 
+            currentBounds.top > usedPos.bottom)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+    
+    if (!hasOverlap) break;
+    
+    // Adjust position to avoid overlap
+    const angleStep = 15; // degrees
+    const newAngle = midAngle + (attempts % 2 === 0 ? angleStep * Math.ceil(attempts/2) : -angleStep * Math.ceil(attempts/2));
+    const adjustedRadius = baseRadius + (attempts * 8); // Move further out if needed
+    
+    x = cx + adjustedRadius * Math.cos(-newAngle * RADIAN);
+    y = cy + adjustedRadius * Math.sin(-newAngle * RADIAN);
+    
+    // Re-apply boundary checks
+    textAnchor = x > cx ? 'start' : 'end';
+    
+    if (textAnchor === 'start' && x + textWidth > chartWidth - margin) {
+      x = chartWidth - textWidth - margin;
+    } else if (textAnchor === 'end' && x - textWidth < margin) {
+      x = margin + textWidth;
+      textAnchor = 'start';
+    }
+    
+    if (y - textHeight/2 < margin) {
+      y = margin + textHeight/2;
+    } else if (y + textHeight/2 > chartHeight - margin) {
+      y = chartHeight - margin - textHeight/2;
+    }
+    
+    // Update bounds for next check
+    currentBounds.left = textAnchor === 'end' ? x - textWidth : x;
+    currentBounds.right = textAnchor === 'end' ? x : x + textWidth;
+    currentBounds.top = y - textHeight/2;
+    currentBounds.bottom = y + textHeight/2;
+    
+    attempts++;
+  }
+  
+  // Store this label's position
+  usedLabelPositions.push(currentBounds);
+  
+  // For very small slices, use abbreviated text
+  let displayLines = lines;
+  let displayPercent = `${(percent * 100).toFixed(0)}%`;
+  
+  if (percent < 0.03) {
+    // Very small slice - show only percentage
+    displayLines = [name.split(' ')[0]]; // First word only
+  }
+  
   const percentage = `${(percent * 100).toFixed(0)}%`;
   
+  // Calculate line connection point (closer to text)
+  let lineEndX = x;
+  let lineEndY = y;
+  
+  // Adjust line end point based on text anchor
+  if (textAnchor === 'start') {
+    lineEndX = x - 5; // Line ends slightly before text starts
+  } else if (textAnchor === 'end') {
+    lineEndX = x + 5; // Line ends slightly after text ends
+  }
+  
+  // Determine if we should show a connecting line
+  // Show line if position was adjusted OR if label is far from pie edge
+  const distanceFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+  const positionChanged = Math.abs(x - originalX) > 5 || Math.abs(y - originalY) > 5;
+  const isFarFromPie = distanceFromCenter > outerRadius + 15;
+  const shouldShowLine = positionChanged || isFarFromPie;
+  
+  // Get the appropriate color for this slice
+  let sliceColor = '#999'; // fallback color
+  
+  // Try to determine color based on slice data
+  if (data && data[index]) {
+    // For distribution pie chart, use DISTRIBUTION_COLORS
+    if (DISTRIBUTION_COLORS[name]) {
+      sliceColor = DISTRIBUTION_COLORS[name];
+    } else {
+      // For other pie charts, use COLORS array
+      sliceColor = COLORS[index % COLORS.length];
+    }
+  } else {
+    // Fallback to COLORS array
+    sliceColor = COLORS[index % COLORS.length];
+  }
+  
   return (
-    <text 
-      x={x} 
-      y={y} 
-      fill="#1F2937" 
-      textAnchor={x > cx ? 'start' : 'end'} 
-      dominantBaseline="central"
-      fontSize="10px"
-      fontWeight="600"
-    >
-      {lines.map((line, lineIndex) => (
-        <tspan key={lineIndex} x={x} dy={lineIndex === 0 ? -6 : 12}>
-          {line}
+    <g>
+      {/* Custom label line */}
+      {shouldShowLine && (
+        <line
+          x1={pieEdgeX}
+          y1={pieEdgeY}
+          x2={lineEndX}
+          y2={lineEndY}
+          stroke={sliceColor}
+          strokeWidth={1.5}
+          opacity={0.8}
+        />
+      )}
+      
+      {/* Label text */}
+      <text 
+        x={x} 
+        y={y} 
+        fill="#1F2937" 
+        textAnchor={textAnchor} 
+        dominantBaseline="central"
+        fontSize="9px"
+        fontWeight="600"
+      >
+        {displayLines.map((line, lineIndex) => (
+          <tspan key={lineIndex} x={x} dy={lineIndex === 0 ? -displayLines.length * 5 : 10}>
+            {line}
+          </tspan>
+        ))}
+        <tspan x={x} dy="10" fontWeight="bold" fontSize="10px">
+          {percentage}
         </tspan>
-      ))}
-      <tspan x={x} dy="12" fontWeight="bold" fontSize="11px">
-        {percentage}
-      </tspan>
-    </text>
+      </text>
+    </g>
   );
 };
 
@@ -113,7 +267,7 @@ const DISTRIBUTION_COLORS = {
   'Other Expenditures': '#0891B2'
 };
 
-// Reusable chart container with hover effects and click handler
+// Reusable chart container with zoom icon
 export const ChartContainer = ({ children, title, fileName, modalContent, chartRef, openZoomModal }) => (
   <div ref={chartRef} style={{ width: '100%' }}>
     <Paper sx={{ 
@@ -123,33 +277,33 @@ export const ChartContainer = ({ children, title, fileName, modalContent, chartR
       height: '100%', 
       display: 'flex', 
       flexDirection: 'column',
-      cursor: 'pointer',
-      '&:hover': {
-        boxShadow: 4,
-        transform: 'translateY(-2px)',
-        transition: 'all 0.3s ease'
-      }
-    }}
-    onClick={() => openZoomModal(title, fileName, modalContent)}
-    >
+      position: 'relative'
+    }}>
+      {/* Zoom Icon Button */}
+      <IconButton
+        onClick={() => openZoomModal(title, fileName, modalContent)}
+        sx={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          zIndex: 10,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          '&:hover': { 
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+            boxShadow: 2
+          }
+        }}
+        size="small"
+      >
+        <ZoomInIcon fontSize="small" />
+      </IconButton>
+      
       {children}
     </Paper>
   </div>
 );
 
-// Reusable modal content wrapper
-export const ModalContent = ({ title, children }) => (
-  <Box sx={{ width: '100%', height: '560px', padding: '10px' }}>
-    <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, fontSize: '1.1rem' }}>
-      {title}
-    </Typography>
-    <Box sx={{ height: '500px' }}>
-      <ResponsiveContainer width="100%" height="100%">
-        {children}
-      </ResponsiveContainer>
-    </Box>
-  </Box>
-);
+
 
 // Economic Analysis Chart Component
 export const EconomicAnalysisChart = ({ 
@@ -161,7 +315,7 @@ export const EconomicAnalysisChart = ({
 }) => (
   <>
     {/* Chart Tabs */}
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, pr: 5 }}>
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Box sx={{ width: 4, height: 20, bgcolor: '#2B8C37', mr: 1 }} />
         <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
@@ -324,11 +478,11 @@ export const GeneratedPieChart = ({ generatedDetails }) => {
               data={pieData}
               cx="50%"
               cy="50%"
-              outerRadius={85}
+              outerRadius={75}
               fill="#8884d8"
               dataKey="value"
               label={renderCustomLabel}
-              labelLine={true}
+              labelLine={false}
             >
               {pieData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -447,11 +601,11 @@ export const DistributionPieChart = ({ distributedDetails, pieChartData }) => {
               data={pieChartData}
               cx="50%"
               cy="50%"
-              outerRadius={85}
+              outerRadius={75}
               fill="#8884d8"
               dataKey="value"
               label={renderCustomLabel}
-              labelLine={true}
+              labelLine={false}
             >
               {pieChartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={DISTRIBUTION_COLORS[entry.name] || COLORS[index % COLORS.length]} />
@@ -468,9 +622,9 @@ export const DistributionPieChart = ({ distributedDetails, pieChartData }) => {
 // Modal content generators
 export const generateModalContent = {
   economicAnalysis: (flowData, retentionData, summaryData, firstChartTab, handleFirstChartTabChange) => (
-    <Box sx={{ width: '100%', height: '560px', padding: '10px' }}>
+    <Box sx={{ width: '100%', height: '480px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
       {/* Chart Tabs */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box sx={{ width: 4, height: 20, bgcolor: '#2B8C37', mr: 1 }} />
           <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
@@ -528,10 +682,10 @@ export const generateModalContent = {
       </Box>
 
       {/* Chart Content */}
-      <Box sx={{ flex: 1, height: '500px' }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           {firstChartTab === 0 ? (
-            <ComposedChart data={flowData}>
+            <ComposedChart data={flowData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
@@ -542,7 +696,7 @@ export const generateModalContent = {
               <Bar dataKey="economic_value_retained" fill="#FF8042" name="Value Retained" />
             </ComposedChart>
           ) : (
-            <AreaChart data={retentionData}>
+            <AreaChart data={retentionData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="year" tick={{ fontSize: 12 }} />
               <YAxis 
@@ -583,17 +737,24 @@ export const generateModalContent = {
   ),
 
   lineChart: (flowData) => (
-    <ModalContent title="Economic Value Generated and Retained">
-      <LineChart data={flowData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-        <YAxis tick={{ fontSize: 12 }} />
-        <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
-        <Legend wrapperStyle={{ fontSize: '12px' }} />
-        <Line type="monotone" dataKey="economic_value_generated" stroke="#182959" strokeWidth={3} dot={{ r: 4 }} name="Value Generated" />
-        <Line type="monotone" dataKey="economic_value_retained" stroke="#FF8042" strokeWidth={3} dot={{ r: 4 }} name="Value Retained" />
-      </LineChart>
-    </ModalContent>
+    <Box sx={{ width: '100%', height: '480px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
+      <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '1.1rem', flexShrink: 0 }}>
+        Economic Value Generated and Retained
+      </Typography>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={flowData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
+            <Legend wrapperStyle={{ fontSize: '12px' }} />
+            <Line type="monotone" dataKey="economic_value_generated" stroke="#182959" strokeWidth={3} dot={{ r: 4 }} name="Value Generated" />
+            <Line type="monotone" dataKey="economic_value_retained" stroke="#FF8042" strokeWidth={3} dot={{ r: 4 }} name="Value Retained" />
+          </LineChart>
+        </ResponsiveContainer>
+      </Box>
+    </Box>
   ),
 
   generatedPie: (generatedDetails) => {
@@ -613,128 +774,147 @@ export const generateModalContent = {
       })[0] || [];
 
     return (
-      <ModalContent title={`Economic Value Generated ${currentYear}`}>
-        <PieChart>
-          <Pie
-            data={pieData}
-            cx="50%"
-            cy="50%"
-            outerRadius={140}
-            fill="#8884d8"
-            dataKey="value"
-            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-            labelLine={true}
-          >
-            {pieData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
-          <Legend />
-        </PieChart>
-      </ModalContent>
+      <Box sx={{ width: '100%', height: '480px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '1.1rem', flexShrink: 0 }}>
+          Economic Value Generated {currentYear}
+        </Typography>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 80 }}>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="45%"
+                outerRadius={110}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                labelLine={true}
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
+      </Box>
     );
   },
 
   companyBar: (companyDistribution) => (
-    <ModalContent title="Top 5 Companies - Economic Value Distribution">
-      {(() => {
-        if (!companyDistribution || companyDistribution.length === 0) {
-          return (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              height: '100%',
-              color: '#666',
-              fontSize: '16px'
-            }}>
-              No data available
-            </div>
-          );
-        }
-        
-        const years = companyDistribution.map(d => d.year).filter(year => year !== undefined);
-        if (years.length === 0) {
-          return <div>No valid years found</div>;
-        }
-        
-        const maxYear = Math.max(...years);
-        const filteredData = companyDistribution.filter(item => item.year === maxYear);
-        
-        if (filteredData.length === 0) {
-          return <div>No data for selected year</div>;
-        }
-        
-        const sortedData = filteredData.sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
-        const chartData = sortedData.slice(0, 5);
-        
-        return (
-          <BarChart 
-            data={chartData}
-            margin={{ top: 20, right: 30, left: 40, bottom: 100 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="companyId" 
-              tick={{ fontSize: 12 }}
-              angle={0}
-              textAnchor="middle"
-              height={60}
-              interval={0}
-            />
-            <YAxis 
-              tick={{ fontSize: 12 }} 
-              tickFormatter={(value) => `${value}%`}
-              label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }}
-            />
-            <Tooltip 
-              formatter={(value, name, props) => [
-                `₱ ${props.payload.totalDistributed.toLocaleString()}`, 
-                'Total Distributed Value'
-              ]}
-              labelFormatter={(label) => {
-                const fullCompany = chartData.find(item => item.companyId === label);
-                return `Company: ${fullCompany ? fullCompany.companyName : label}`;
-              }}
-            />
-            <Bar 
-              dataKey="percentage" 
-              name="Percentage"
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color || '#2B8C37'} />
-              ))}
-            </Bar>
-          </BarChart>
-        );
-      })()}
-    </ModalContent>
+    <Box sx={{ width: '100%', height: '480px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
+      <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '1.1rem', flexShrink: 0 }}>
+        Top 5 Companies - Economic Value Distribution
+      </Typography>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          {(() => {
+            if (!companyDistribution || companyDistribution.length === 0) {
+              return (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  height: '100%',
+                  color: '#666',
+                  fontSize: '16px'
+                }}>
+                  No data available
+                </div>
+              );
+            }
+            
+            const years = companyDistribution.map(d => d.year).filter(year => year !== undefined);
+            if (years.length === 0) {
+              return <div>No valid years found</div>;
+            }
+            
+            const maxYear = Math.max(...years);
+            const filteredData = companyDistribution.filter(item => item.year === maxYear);
+            
+            if (filteredData.length === 0) {
+              return <div>No data for selected year</div>;
+            }
+            
+            const sortedData = filteredData.sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
+            const chartData = sortedData.slice(0, 5);
+            
+            return (
+              <BarChart 
+                data={chartData}
+                margin={{ top: 20, right: 30, left: 40, bottom: 80 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="companyId" 
+                  tick={{ fontSize: 12 }}
+                  angle={0}
+                  textAnchor="middle"
+                  height={60}
+                  interval={0}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }} 
+                  tickFormatter={(value) => `${value}%`}
+                  label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }}
+                />
+                <Tooltip 
+                  formatter={(value, name, props) => [
+                    `₱ ${props.payload.totalDistributed.toLocaleString()}`, 
+                    'Total Distributed Value'
+                  ]}
+                  labelFormatter={(label) => {
+                    const fullCompany = chartData.find(item => item.companyId === label);
+                    return `Company: ${fullCompany ? fullCompany.companyName : label}`;
+                  }}
+                />
+                <Bar 
+                  dataKey="percentage" 
+                  name="Percentage"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color || '#2B8C37'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            );
+          })()}
+        </ResponsiveContainer>
+      </Box>
+    </Box>
   ),
 
   distributionPie: (distributedDetails, pieChartData) => {
     const currentYear = Math.max(...distributedDetails.map(d => d.year)) || 'Current Year';
     return (
-      <ModalContent title={`Economic Value Distribution ${currentYear}`}>
-        <PieChart>
-          <Pie
-            data={pieChartData}
-            cx="50%"
-            cy="50%"
-            outerRadius={140}
-            fill="#8884d8"
-            dataKey="value"
-            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-            labelLine={true}
-          >
-            {pieChartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={DISTRIBUTION_COLORS[entry.name] || COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
-          <Legend />
-        </PieChart>
-      </ModalContent>
+      <Box sx={{ width: '100%', height: '480px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, fontSize: '1.1rem', flexShrink: 0 }}>
+          Economic Value Distribution {currentYear}
+        </Typography>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 80 }}>
+              <Pie
+                data={pieChartData}
+                cx="50%"
+                cy="45%"
+                outerRadius={110}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                labelLine={true}
+              >
+                {pieChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={DISTRIBUTION_COLORS[entry.name] || COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => [value.toLocaleString(), '']} />
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
+      </Box>
     );
   }
 }; 

@@ -6,7 +6,8 @@ import {
   Button,
   Select,
   TextField,
-  Box
+  Box,
+  Typography
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -253,20 +254,66 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
         />
       </FormModal>
       {/* Confirmation Modal */}
-      <Dialog open={showConfirm} onClose={handleHideConfirm}>
-        <DialogTitle>Confirm Submission</DialogTitle>
+      <Dialog open={showConfirm} onClose={handleHideConfirm} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{
+          fontWeight: 'bold',
+          fontSize: '1.5rem',
+          textAlign: 'center',
+          letterSpacing: 1,
+          color: '#222',
+          pt: 3
+        }}>
+          Confirm Record Submission
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ my: 1 }}>
-            <strong>Power Plant:</strong> {powerPlants.find(p => p.id === formData.powerPlant)?.name || ''}<br />
-            <strong>Date:</strong> {formData.date.format('YYYY-MM-DD')}<br />
-            <strong>Energy Generated:</strong> {formData.energyGenerated}<br />
-            <strong>Metric:</strong> {formData.metric}<br />
-            <strong>Remarks:</strong> {formData.remarks || '-'}
+          <Typography variant="subtitle1" sx={{ textAlign: 'center', mt: 1, mb: 2 }}>
+            Are you sure you want to add this power generation record?
+          </Typography>
+          <Box sx={{
+            background: '#f5f5f5',
+            borderRadius: 2,
+            p: 3,
+            mb: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+            boxShadow: 0
+          }}>
+            <Typography variant="body1"><b>Power Project:</b> {powerPlants.find(p => p.id === formData.powerPlant)?.name || ''}</Typography>
+            <Typography variant="body1"><b>Date:</b> {formData.date ? dayjs(formData.date).format('YYYY-MM-DD') : ''}</Typography>
+            <Typography variant="body1"><b>Energy Generated:</b> {formData.energyGenerated} {formData.metric}</Typography>
+            <Typography variant="body1"><b>Remarks:</b> {formData.remarks || '—'}</Typography>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleHideConfirm} color="secondary">Cancel</Button>
-          <Button onClick={() => { handleHideConfirm(); handleSubmit(); }} color="primary" variant="contained">Confirm</Button>
+        <DialogActions sx={{ display: 'flex', gap: 2, justifyContent: 'center', pb: 3 }}>
+          <Button
+            variant="outlined"
+            onClick={handleHideConfirm}
+            sx={{
+              borderRadius: '999px',
+              px: 3,
+              py: 1,
+              fontSize: '1rem',
+              fontWeight: 'bold',
+            }}
+          >
+            CANCEL
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => { handleHideConfirm(); handleSubmit(); }}
+            sx={{
+              backgroundColor: '#2B8C37',
+              borderRadius: '999px',
+              px: 3,
+              py: 1,
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              '&:hover': { backgroundColor: '#256d2f' },
+            }}
+          >
+            CONFIRM
+          </Button>
         </DialogActions>
       </Dialog>
     </>
