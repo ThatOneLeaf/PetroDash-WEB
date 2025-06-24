@@ -7,6 +7,7 @@ import {
   Select,
   TextField,
   Box,
+  Paper,
   Typography
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -15,6 +16,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import api from '../services/api';
 import FormModal from './FormModal';
+import Overlay from "./modal";
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -31,6 +33,12 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
     remarks: '' 
   });
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showInvalid, setShowInvalid] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorDetailText, setErrorDetailText] = useState("");
+
+  
 
   useEffect(() => {
     async function fetchPowerPlants() {
@@ -75,7 +83,8 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
   const handleShowConfirm = () => {
     // Validate energyGenerated before showing confirmation
     if (!formData.energyGenerated || isNaN(formData.energyGenerated)) {
-      alert('Please enter a valid energy generated value.');
+      //alert('Please enter a valid energy generated value.');
+      setShowInvalid(true)
       return;
     }
     setShowConfirm(true);
@@ -107,20 +116,34 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      alert(response.data.message || 'Submission successful.');
-      onClose(); // Close the modal or form
+      //alert(response.data.message || 'Submission successful.');
+      setShowSuccess(true);
+      //onClose(); // Close the modal or form
     } catch (error) {
-      const errorDetail = error.response?.data?.detail;
+      const rawDetail = error.response?.data?.detail;
+      if (typeof rawDetail === "string") {
+        const match = rawDetail.match(/'message':\s*'([^']+)'/);
+        if (match) {
+          setErrorDetailText(match[1]); // extracted 'message' value
+        } else {
+          setErrorDetailText(rawDetail); // fallback: use full string
+        }
+      } else {
+        setErrorDetailText("An unexpected error occurred.");
+      }
 
-      if (typeof errorDetail === 'string') {
+      if (typeof rawDetail === 'string') {
         // e.g., "Date parsing error: invalid format"
-        alert(errorDetail);
+        //alert(errorDetail);
+        setShowError(true);
       } else if (typeof errorDetail === 'object') {
         // e.g., { type: "duplicate_error", message: "..." }
-        alert(errorDetail.message || 'An error occurred while submitting.');
+        //alert(errorDetail.message || 'An error occurred while submitting.');
+        setShowError(true);
       } else {
         // Fallback
-        alert('An unexpected error occurred. Please try again later.');
+        //alert('An unexpected error occurred. Please try again later.');
+        setShowError(true);
       }
 
       console.error('Submission error:', error);
@@ -316,6 +339,164 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* modal */}
+      {showSuccess && (
+        <Overlay onClose={() => setShowSuccess(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Box sx={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                backgroundColor: '#2B8C37',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2
+              }}>
+                <Typography sx={{ 
+                  color: 'white', 
+                  fontSize: '2rem',
+                  fontWeight: 'bold'
+                }}>
+                  ✓
+                </Typography>
+              </Box>
+              <Typography sx={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 800,
+                color: '#182959',
+                mb: 2
+              }}>
+                Successfully Added Record!
+              </Typography>
+              <Typography sx={{ 
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                The record have been successfully added.
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 3
+            }}>
+              <Button
+                variant="contained"
+                sx={{ 
+                  backgroundColor: '#2B8C37',
+                  borderRadius: '999px',
+                  padding: '10px 24px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#256d2f',
+                  },
+                }}
+                onClick={() => {
+                  setShowSuccess(false);
+                  onClose();
+                }}
+              >
+                OK
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      
+
+      {showInvalid && (
+        <Overlay onClose={() => setShowInvalid(false)}>
+          <Paper
+            sx={{
+              p: 4,
+              width: "400px",
+              borderRadius: "16px",
+              bgcolor: "white",
+              outline: "none",
+              textAlign: "center"
+            }}
+          >
+            <Typography sx={{ fontSize: '1.5rem', color: '#b91c1c', fontWeight: 800, mb: 2 }}>
+              Error
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', color: '#333', mb: 3 }}>
+              Please enter a valid energy generated value..
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#b91c1c',
+                borderRadius: '999px',
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#991b1b',
+                },
+              }}
+              onClick={() => setShowInvalid(false)}
+            >
+              OK
+            </Button>
+          </Paper>
+        </Overlay>
+      )}
+      {showError && (
+        <Overlay onClose={() => setShowError(false)}>
+          <Paper
+            sx={{
+              p: 4,
+              width: "400px",
+              borderRadius: "16px",
+              bgcolor: "white",
+              outline: "none",
+              textAlign: "center"
+            }}
+          >
+            <Typography sx={{ fontSize: '1.5rem', color: '#b91c1c', fontWeight: 800, mb: 2 }}>
+              Error
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', color: '#333', mb: 3 }}>
+              {errorDetailText}
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#b91c1c',
+                borderRadius: '999px',
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#991b1b',
+                },
+              }}
+              onClick={() => setShowError(false)}
+            >
+              OK
+            </Button>
+          </Paper>
+        </Overlay>
+      )}
     </>
   );
 }
