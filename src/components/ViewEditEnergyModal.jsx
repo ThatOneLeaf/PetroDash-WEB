@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import Overlay from "./modal";
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -39,6 +40,16 @@ const ViewEditEnergyModal = ({
   const [editedRecord, setEditedRecord] = useState(null);
   const [loading, setLoading] = useState(false);
   const [powerPlants, setPowerPlants] = useState([]);
+
+  // modals
+  const [modalType, setModalType] = useState(''); // 'approve' or 'revise'
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [confirmResolver, setConfirmResolver] = useState(null);
+  const [showNoChanges, setShowNoChanges] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Reject Dialog state
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -94,13 +105,15 @@ const ViewEditEnergyModal = ({
 
 const handleSave = async () => {
   if (isUnchanged) {
-    alert('No changes to save.');
+    // alert('No changes to save.');
+    setshowNoChanges(true);
     setIsEditing(false);
     return;
   }
+  const confirmed = await waitForConfirmation();
+  console.log("Confirmed:", confirmed);
 
-  const confirmed = window.confirm('Are you sure you want to save the changes?');
-  if (!confirmed) return;
+  if (!confirmed) return; // user canceled
 
   try {
     const formData = new FormData();
@@ -120,22 +133,21 @@ const handleSave = async () => {
       },
     });
 
-    alert(response.data.message);
-    setIsEditing(false);
-    if (updateStatus) updateStatus(true);
-    setRecord(editedRecord);
-    onClose(); 
+    //alert(response.data.message);
+    setSuccessMessage(response.data.message || 'Record saved successfully.');
+    setShowSuccessModal(true);
   } catch (error) {
     const detail = error.response?.data?.detail;
 
     if (Array.isArray(detail)) {
       const messages = detail.map((d) => d.msg || JSON.stringify(d)).join('\n');
-      alert(`Failed to save:\n${messages}`);
+      setErrorMessage(`Failed to save:\n${messages}`);
     } else {
       const msg = detail || error.message;
-      alert(`Failed to save: ${msg}`);
+      setErrorMessage(`Failed to save: ${msg}`);
     }
-    console.error('Save error:', error.response?.data || error);
+
+    setShowErrorModal(true);
   }
 };
 
@@ -220,12 +232,20 @@ const handleRejectConfirm = async () => {
   })();
 
   const handleCloseClick = () => {
-  if (isEditing && !isUnchanged) {
-    const confirmClose = window.confirm('You have unsaved changes. Close anyway?');
-    if (!confirmClose) return;
-  }
-  if (updateStatus) updateStatus(isUnchanged);
-  onClose();
+    if (isEditing && !isUnchanged) {
+      const confirmClose = window.confirm('You have unsaved changes. Close anyway?');
+      if (!confirmClose) return;
+    }
+    if (updateStatus) updateStatus(isUnchanged);
+    onClose();
+  };
+
+  const waitForConfirmation = () => {
+  return new Promise((resolve) => {
+    setModalType('approve');
+    setIsModalOpen(true);
+    setConfirmResolver(() => resolve);
+  });
 };
 
 
@@ -363,7 +383,8 @@ const handleRejectConfirm = async () => {
             if (!isUnchanged) {
               await handleSave();  // await the async save to complete
             } else {
-              alert('No changes made.');
+              // alert('No changes made.');
+              setShowNoChanges(true);
               setIsEditing(false);
             }
           } else {
@@ -419,6 +440,189 @@ const handleRejectConfirm = async () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {showNoChanges && (
+        <Overlay onClose={() => setShowNoChanges(false)}>
+          <Paper
+            sx={{
+              p: 4,
+              width: "400px",
+              borderRadius: "16px",
+              bgcolor: "white",
+              outline: "none",
+              textAlign: "center"
+            }}
+          >
+            <Typography sx={{ fontSize: '1.5rem', color: '#e4a728', fontWeight: 800, mb: 2 }}>
+              Warning
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', color: '#333', mb: 3 }}>
+              No changes to save.
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#e4a728',
+                borderRadius: '999px',
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#bd8a21',
+                },
+              }}
+              onClick={() => setShowNoChanges(false)}
+            >
+              OK
+            </Button>
+          </Paper>
+        </Overlay>
+      )}
+      {isModalOpen && modalType === 'approve' && (
+        <Overlay onClose={() => setIsModalOpen(false)}>
+          <Paper
+            sx={{
+              p: 4,
+              width: "500px",
+              borderRadius: "16px",
+              bgcolor: "white",
+            }}
+          >
+            <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800}}>
+              Edit Confirmation
+            </Typography>
+            <Box sx={{
+              bgcolor: '#f5f5f5',
+              p: 2,
+              borderRadius: '8px',
+              width: '100%',
+              mb: 3
+            }}>
+              <Typography sx={{ fontSize: '0.9rem', mb: 1 }}>
+                Are you sure you want to save this changes?
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
+              <Button 
+                sx={{ 
+                  color: '#182959',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    color: '#0f1a3c',
+                  },
+                }}
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant='contained'
+                sx={{ 
+                  marginLeft: 1,
+                  backgroundColor: '#2B8C37',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#256d2f',
+                  },
+                }}
+                onClick={() => {
+                  if (confirmResolver) {
+                    confirmResolver(true);
+                    setIsModalOpen(false);
+                  }
+                }}
+              >
+                Confirm
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      {showSuccessModal && (
+        <Overlay onClose={() => setShowSuccessModal(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            textAlign: 'center'
+          }}>
+            <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#182959', mb: 2 }}>
+              Success!
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', color: '#666', mb: 3 }}>
+              {successMessage}
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#2B8C37',
+                borderRadius: '999px',
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#256d2f',
+                },
+              }}
+              onClick={() => {
+                setShowSuccessModal(false);   
+                setIsEditing(false);          
+                if (updateStatus) updateStatus(true); 
+                setRecord(editedRecord);      
+                onClose();                   
+              }}
+            >
+              OK
+            </Button>
+          </Paper>
+        </Overlay>
+      )}
+      {showErrorModal && (
+        <Overlay onClose={() => setShowErrorModal(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            textAlign: 'center'
+          }}>
+            <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#b00020', mb: 2 }}>
+              Error
+            </Typography>
+            <Typography
+              sx={{ fontSize: '1rem', color: '#444', whiteSpace: 'pre-wrap', mb: 3 }}
+            >
+              {errorMessage}
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#b00020',
+                borderRadius: '999px',
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#8c001a',
+                },
+              }}
+              onClick={() => setShowErrorModal(false)}
+            >
+              OK
+            </Button>
+          </Paper>
+        </Overlay>
+      )}
     </>
   );
 };
