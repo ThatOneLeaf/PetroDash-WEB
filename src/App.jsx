@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Economic from "./pages/Economic/Economic";
 import Landing from "./pages/Landing";
+import SmartLanding from "./components/SmartLanding";
 import LoginPage from "./pages/Login_page/Login_page";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
@@ -32,9 +33,9 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="app">
-          <main>
-            <Routes>
-              <Route path="/" element={<Landing />} />
+          <main>            <Routes>
+              <Route path="/" element={<SmartLanding />} />
+              <Route path="/landing" element={<Landing />} />
               <Route path="/login" element={<LoginPage />} />
 
               {/* Protected Routes Economics - Removed duplicates, proper roles defined below */}
@@ -125,7 +126,7 @@ function App() {
               <Route
                 path="/economic"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03", "R02"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03", "R02"]}>
                     <Economic />
                   </ProtectedRoute>
                 }
@@ -171,7 +172,7 @@ function App() {
               <Route
                 path="/social/help"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03"]}>
                     <CSR />
                   </ProtectedRoute>
                 }
@@ -197,7 +198,7 @@ function App() {
               <Route
                 path="/social/hrdashboard"
                 element={
-                  <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
+                  <ProtectedRoute requiredRoles={["R04", "R03"]}>
                     <HRDashboard />
                   </ProtectedRoute>
                 }

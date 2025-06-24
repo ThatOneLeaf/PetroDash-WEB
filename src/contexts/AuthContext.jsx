@@ -117,10 +117,8 @@ export const AuthProvider = ({ children }) => {
     
     // Clear memory state
     setToken(null);
-    setUser(null);
-
-    // Redirect to home
-    window.location.href = '/';
+    setUser(null);    // Redirect to landing page
+    window.location.href = '/landing';
   };
 
   const isLoggedIn = () => {

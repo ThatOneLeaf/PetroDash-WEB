@@ -21,46 +21,125 @@ import LogoutIcon from "../assets/Icons/logout.svg";
 import DropDownIcon from "../assets/Icons/drop-down.svg";
 
 function SideBar({ collapsed: collapsedProp = false }) {
-  const { user, logout, getUserEmail, getUserRoleName } = useAuth();
+  const { user, logout, getUserEmail, getUserRoleName, getUserRole } = useAuth();
   const [collapsed, setCollapsed] = useState(true);
   const [envOpen, setEnvOpen] = useState(false);
   const [socialOpen, setSocialOpen] = useState(false);
   const [energyOpen, setEnergyOpen] = useState(false);
+  
+  // Get user role for access control
+  const userRole = getUserRole();
+    // Determine allowed modes based on role
+  const getAllowedModes = () => {
+    if (userRole === 'R02') return ['dashboard']; // Dashboard only
+    if (['R03', 'R04'].includes(userRole)) return ['dashboard', 'repository']; // Both modes
+    if (userRole === 'R05') return ['repository']; // Repository only
+    return ['dashboard']; // Default fallback
+  };
+
+  const allowedModes = getAllowedModes();
+  
   const [mode, setMode] = useState(() => {
-    // Read from localStorage on initial mount
-    return localStorage.getItem("sidebarMode") || "dashboard";
+    // Read from localStorage on initial mount, but ensure it's allowed for the user role
+    const savedMode = localStorage.getItem("sidebarMode") || "dashboard";
+    return allowedModes.includes(savedMode) ? savedMode : allowedModes[0];
   });
 
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
-  useMediaQuery(theme.breakpoints.down("sm")); // isMobile not used
-
-  // Only show Overview tab in dashboard mode
-  const navItems = [
-    ...(mode === "dashboard"
-      ? [{ label: "Overview", icon: AssessmentIcon, to: "/dashboard" }]
-      : []),
-    { 
+  useMediaQuery(theme.breakpoints.down("sm")); // isMobile not used  // Check if user has access to a specific module in current mode
+  const hasModuleAccess = (label) => {
+    switch (label) {
+      case "Overview":
+        // Dashboard is accessible to all roles (no specific role requirement in routes)
+        return mode === "dashboard";
+      case "Energy":
+        if (mode === "dashboard") {
+          // Energy dashboard: R04, R03, R02
+          return ['R02', 'R03', 'R04'].includes(userRole);
+        } else {
+          // Energy repository: R05, R04, R03
+          return ['R03', 'R04', 'R05'].includes(userRole);
+        }
+      case "Economic":
+        if (mode === "dashboard") {
+          // Economic dashboard: R05, R04, R03, R02
+          return ['R02', 'R03', 'R04', 'R05'].includes(userRole);
+        } else {
+          // Economic repository: R05, R04, R03
+          return ['R03', 'R04', 'R05'].includes(userRole);
+        }
+      case "Environment":
+        if (mode === "dashboard") {
+          // Environment dashboard: R04, R03, R02
+          return ['R02', 'R03', 'R04'].includes(userRole);
+        } else {
+          // Environment repository: R05, R04, R03
+          return ['R03', 'R04', 'R05'].includes(userRole);
+        }
+      case "Social":
+        if (mode === "dashboard") {
+          // Social dashboard varies by submodule, but generally includes R02, R03, R04, R05
+          return ['R02', 'R03', 'R04', 'R05'].includes(userRole);
+        } else {
+          // Social repository: R05, R04, R03
+          return ['R03', 'R04', 'R05'].includes(userRole);
+        }
+      default:
+        return false;
+    }
+  };  // Get all navigation items with access status - always show all items
+  const getAllNavItems = () => {
+    const allItems = [];
+    
+    // Overview - only show in dashboard mode
+    if (mode === "dashboard") {
+      allItems.push({ 
+        label: "Overview", 
+        icon: AssessmentIcon, 
+        to: "/dashboard",
+        hasAccess: hasModuleAccess("Overview")
+      });
+    }
+    
+    // Energy - always show
+    allItems.push({ 
       label: "Energy", 
       icon: EnergyIcon, 
-      to: mode === "dashboard" ? "/energy" : "/energy/power-generation"
-    },
-    { label: "Economic", icon: EconomicsIcon, to: "/economic" },
-    {
+      to: mode === "dashboard" ? "/energy" : "/energy/power-generation",
+      hasAccess: hasModuleAccess("Energy")
+    });
+    
+    // Economic - always show
+    allItems.push({ 
+      label: "Economic", 
+      icon: EconomicsIcon, 
+      to: "/economic",
+      hasAccess: hasModuleAccess("Economic")
+    });
+    
+    // Environment - always show
+    allItems.push({
       label: "Environment",
       icon: EnvironmentIcon,
       to: "/environment",
-    },
-    {
+      hasAccess: hasModuleAccess("Environment")
+    });
+    
+    // Social - always show
+    allItems.push({
       label: "Social",
       icon: SocialIcon,
       to: "/social",
-      dropdown: [
-        // HR dropdown will be generated dynamically below
-      ],
-    },
-  ];
+      dropdown: [],
+      hasAccess: hasModuleAccess("Social")
+    });
+    
+    return allItems;
+  };
+
+  const navItems = getAllNavItems();
 
   // Helper to get correct environment dropdown based on mode
   const getEnvironmentDropdown = () => {
@@ -191,10 +270,16 @@ function SideBar({ collapsed: collapsedProp = false }) {
     // Default: stay on current path
     return pathname;
   };
-
   // Toggle mode and navigate to correct economics page if on economics
   const handleToggleMode = () => {
+    // Only allow toggle if user has access to both modes
+    if (allowedModes.length <= 1) return;
+    
     const newMode = mode === "dashboard" ? "repository" : "dashboard";
+    
+    // Ensure the new mode is allowed for this user
+    if (!allowedModes.includes(newMode)) return;
+    
     setMode(newMode);
 
     // Try to map current path to the toggled mode
@@ -208,10 +293,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
   React.useEffect(() => {
     localStorage.setItem("sidebarMode", mode);
   }, [mode]);
-
   // Get user details from context
   const userEmail = getUserEmail();
-  const userRole = getUserRoleName();
+  const userRoleName = getUserRoleName();
 
   // Add state for profile image from localStorage (if any)
   const [profileImg, setProfileImg] = React.useState(() => {
@@ -325,8 +409,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                 />
               )}
             </div>
-          </Box>
-          {/* Dashboard/Repository Toggle Button or Icon */}
+          </Box>          {/* Dashboard/Repository Toggle Button or Icon - Always show but disable if user has limited access */}
           <Box sx={{ px: collapsed ? 1 : 3, mb: 2, mt: 2, transition: "padding 0.3s" }}>
             {collapsed ? (
               <img
@@ -337,19 +420,21 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   height: 28,
                   display: "block",
                   margin: "0 auto",
-                  cursor: "pointer",
+                  cursor: allowedModes.length > 1 ? "pointer" : "not-allowed",
                   transition: "filter 0.2s",
+                  opacity: allowedModes.length > 1 ? 1 : 0.4,
                   filter:
                     mode === "dashboard"
                       ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
                       : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
                 }}
-                onClick={handleToggleMode}
+                onClick={allowedModes.length > 1 ? handleToggleMode : undefined}
               />
             ) : (
               <Button
                 fullWidth
                 variant="contained"
+                disabled={allowedModes.length <= 1}
                 sx={{
                   bgcolor: mode === "dashboard" ? "#1a3365" : "#2B8C37",
                   color: "#fff",
@@ -362,13 +447,24 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  "&:hover": { bgcolor: mode === "dashboard" ? "#162a52" : "#23702b" },
+                  "&:hover": allowedModes.length > 1 ? { 
+                    bgcolor: mode === "dashboard" ? "#162a52" : "#23702b" 
+                  } : {},
+                  "&:disabled": {
+                    bgcolor: mode === "dashboard" ? "#1a3365" : "#2B8C37",
+                    color: "#fff",
+                    opacity: 0.6,
+                  },
                   transition: "all 0.2s",
                   mb: 1,
+                  cursor: allowedModes.length > 1 ? "pointer" : "not-allowed",
                 }}
-                onClick={handleToggleMode}
+                onClick={allowedModes.length > 1 ? handleToggleMode : undefined}
               >
                 {mode === "dashboard" ? "Dashboard" : "Repository"}
+                {allowedModes.length <= 1 && (
+                  <span style={{ marginLeft: 8, fontSize: 12 }}>🔒</span>
+                )}
               </Button>
             )}
           </Box>
@@ -377,84 +473,96 @@ function SideBar({ collapsed: collapsedProp = false }) {
               bgcolor: "#fff",
               transition: "background 0.2s",
             }}
-          >
-            {navItems.map((item) =>
-              item.label === "Energy" ? (
-                <Link
+          >            {navItems.map((item) =>              item.label === "Energy" ? (
+                <Box
                   key={item.label}
-                  to={item.to}
-                  style={{
-                    textDecoration: "none",
-                    color: "#1a3365",
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(item.to);
-                    setEnergyOpen(false);
+                  sx={{
+                    position: "relative",
+                    opacity: item.hasAccess ? 1 : 0.4,
+                    cursor: item.hasAccess ? "pointer" : "not-allowed",
+                    pointerEvents: item.hasAccess ? "auto" : "none"
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: collapsed ? "center" : "flex-start",
-                      px: collapsed ? 0 : 4,
-                      py: 1.5,
-                      gap: collapsed ? 0 : 2,
-                      cursor: "pointer",
-                      transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                      bgcolor: isSelected(item) && !collapsed
-                        ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
-                        : "transparent",
-                      position: "relative",
-                      "&::before": isSelected(item) ? {
-                        content: '""',
-                        position: "absolute",
-                        left: 0,
-                        top: 4,
-                        bottom: 4,
-                        width: 6,
-                        background: "#000",
-                        borderTopRightRadius: 12,
-                        borderBottomRightRadius: 12,
-                        zIndex: 2,
-                      } : {},
-                      "&:hover": {
-                        bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
-                      },
-                      "&:hover span": {
-                        color: "#fff",
-                        fontWeight: 700,
-                      },
-                      "&:hover img": {
-                        filter:
-                          "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                      },
+                  <Link
+                    to={item.hasAccess ? item.to : "#"}
+                    style={{
+                      textDecoration: "none",
+                      color: item.hasAccess ? "#1a3365" : "#9e9e9e",
+                    }}
+                    onClick={(e) => {
+                      if (!item.hasAccess) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.preventDefault();
+                      navigate(item.to);
+                      setEnergyOpen(false);
                     }}
                   >
-                    <img
-                      src={item.icon}
-                      alt={item.label}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        transition: "filter 0.2s, margin 0.3s",
-                        marginLeft: 0,
-                        marginRight: 0,
-                        filter:
-                          (isSelected(item) && !collapsed)
-                            ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                            : mode === "repository"
-                              ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
-                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        px: collapsed ? 0 : 4,
+                        py: 1.5,
+                        gap: collapsed ? 0 : 2,
+                        cursor: item.hasAccess ? "pointer" : "not-allowed",
+                        transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                        bgcolor: (item.hasAccess && isSelected(item) && !collapsed)
+                          ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
+                          : "transparent",
+                        position: "relative",
+                        "&::before": (item.hasAccess && isSelected(item)) ? {
+                          content: '""',
+                          position: "absolute",
+                          left: 0,
+                          top: 4,
+                          bottom: 4,
+                          width: 6,
+                          background: "#000",
+                          borderTopRightRadius: 12,
+                          borderBottomRightRadius: 12,
+                          zIndex: 2,
+                        } : {},
+                        "&:hover": item.hasAccess ? {
+                          bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
+                        } : {},
+                        "&:hover span": item.hasAccess ? {
+                          color: "#fff",
+                          fontWeight: 700,
+                        } : {},
+                        "&:hover img": item.hasAccess ? {
+                          filter:
+                            "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                        } : {},
                       }}
-                    />
+                    >
+                      <img
+                        src={item.icon}
+                        alt={item.label}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          transition: "filter 0.2s, margin 0.3s",
+                          marginLeft: 0,
+                          marginRight: 0,
+                          filter: item.hasAccess ?
+                            ((isSelected(item) && !collapsed)
+                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                              : mode === "repository"
+                                ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
+                                : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)")
+                            : "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
+                        }}                      />
                     {collapsed ? null : (
                       <span
                         style={{
                           fontSize: 18,
-                          fontWeight: (isSelected(item) && !collapsed) ? 700 : 400,
-                          color: (isSelected(item) && !collapsed) ? "#fff" : "#1a3365",
+                          fontWeight: (item.hasAccess && isSelected(item) && !collapsed) ? 700 : 400,
+                          color: item.hasAccess ? 
+                            ((isSelected(item) && !collapsed) ? "#fff" : "#1a3365") : 
+                            "#9e9e9e",
                           transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
                           opacity: 1,
                           marginLeft: 4,
@@ -464,57 +572,76 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         {item.label}
                       </span>
                     )}
-                  </Box>
-                </Link>
-              ) : item.label === "Environment" ? (
+                    </Box>
+                  </Link>
+                  {!item.hasAccess && !collapsed && (
+                    <span style={{ 
+                      position: "absolute", 
+                      right: 16, 
+                      top: "50%", 
+                      transform: "translateY(-50%)", 
+                      fontSize: 12 
+                    }}>
+                      🔒
+                    </span>
+                  )}
+                </Box>              ) : item.label === "Environment" ? (
                 <React.Fragment key={item.label}>
                   <Box
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: collapsed ? "center" : "flex-start",
-                      px: collapsed ? 0 : 4,
-                      py: 1.5,
-                      gap: collapsed ? 0 : 2,
-                      cursor: "pointer",
-                      transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                      bgcolor:
-                        (envOpen && !collapsed)
-                          ? "#2B8C37"
-                          : (isSelected(item) && !collapsed)
-                            ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
-                            : "transparent",
-                      borderRadius: (envOpen && !collapsed) || (isSelected(item) && !collapsed) ? 0 : undefined,
                       position: "relative",
-                      "&::before": isSelected(item) ? {
-                        content: '""',
-                        position: "absolute",
-                        left: 0,
-                        top: 4,
-                        bottom: 4,
-                        width: 6,
-                        background: "#000",
-                        borderTopRightRadius: 12,
-                        borderBottomRightRadius: 12,
-                        zIndex: 2,
-                      } : {},
-                      "&:hover": {
-                        bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
-                      },
-                      "&:hover span": {
-                        color: "#fff",
-                        fontWeight: 700,
-                      },
-                      "&:hover img": {
-                        filter:
-                          "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                      },
-                    }}
-                    onClick={() => {
-                      if (!collapsed) handleDropdownToggle("env");
+                      opacity: item.hasAccess ? 1 : 0.4,
+                      cursor: item.hasAccess ? "pointer" : "not-allowed",
+                      pointerEvents: item.hasAccess ? "auto" : "none"
                     }}
                   >
-                    <img
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        px: collapsed ? 0 : 4,
+                        py: 1.5,
+                        gap: collapsed ? 0 : 2,
+                        cursor: item.hasAccess ? "pointer" : "not-allowed",
+                        transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                        bgcolor: item.hasAccess ?
+                          ((envOpen && !collapsed)
+                            ? "#2B8C37"
+                            : (isSelected(item) && !collapsed)
+                              ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
+                              : "transparent") : "transparent",
+                        borderRadius: (item.hasAccess && ((envOpen && !collapsed) || (isSelected(item) && !collapsed))) ? 0 : undefined,
+                        position: "relative",
+                        "&::before": (item.hasAccess && isSelected(item)) ? {
+                          content: '""',
+                          position: "absolute",
+                          left: 0,
+                          top: 4,
+                          bottom: 4,
+                          width: 6,
+                          background: "#000",
+                          borderTopRightRadius: 12,
+                          borderBottomRightRadius: 12,
+                          zIndex: 2,
+                        } : {},
+                        "&:hover": item.hasAccess ? {
+                          bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
+                        } : {},
+                        "&:hover span": item.hasAccess ? {
+                          color: "#fff",
+                          fontWeight: 700,
+                        } : {},
+                        "&:hover img": item.hasAccess ? {
+                          filter:
+                            "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                        } : {},
+                      }}
+                      onClick={() => {
+                        if (!item.hasAccess) return;
+                        if (!collapsed) handleDropdownToggle("env");
+                      }}
+                    >                    <img
                       src={item.icon}
                       alt={item.label}
                       style={{
@@ -523,12 +650,13 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         transition: "filter 0.2s, margin 0.3s",
                         marginLeft: 0,
                         marginRight: 0,
-                        filter:
-                          ((envOpen && !collapsed) || (isSelected(item) && !collapsed))
+                        filter: item.hasAccess ?
+                          (((envOpen && !collapsed) || (isSelected(item) && !collapsed))
                             ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
                             : mode === "repository"
                               ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
-                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
+                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)")
+                          : "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
                       }}
                     />
                     {collapsed ? null : (
@@ -536,8 +664,10 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         <span
                           style={{
                             fontSize: 18,
-                            fontWeight: (envOpen || (isSelected(item) && !collapsed)) ? 700 : 400,
-                            color: (envOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365",
+                            fontWeight: (item.hasAccess && (envOpen || (isSelected(item) && !collapsed))) ? 700 : 400,
+                            color: item.hasAccess ?
+                              ((envOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365") :
+                              "#9e9e9e",
                             transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
                             opacity: 1,
                             marginLeft: 4,
@@ -554,15 +684,28 @@ function SideBar({ collapsed: collapsedProp = false }) {
                             width: 22,
                             height: 22,
                             marginLeft: 2,
-                            transition: "transform 0.3s, filter 0.2s",
-                            transform: envOpen ? "rotate(180deg)" : "rotate(0deg)",
-                            filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                            transition: "transform 0.3s, filter 0.2s",                            transform: (item.hasAccess && envOpen) ? "rotate(180deg)" : "rotate(0deg)",
+                            filter: item.hasAccess ?
+                              "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)" :
+                              "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
                           }}
                         />
                       </>
                     )}
                   </Box>
-                  {!collapsed && envOpen && (
+                  {!item.hasAccess && !collapsed && (
+                    <span style={{ 
+                      position: "absolute", 
+                      right: 16, 
+                      top: "50%", 
+                      transform: "translateY(-50%)", 
+                      fontSize: 12 
+                    }}>
+                      🔒
+                    </span>
+                  )}
+                  </Box>
+                  {!collapsed && envOpen && item.hasAccess && (
                     <Box
                       sx={{
                         pl: 4,
@@ -621,104 +764,128 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       ))}
                     </Box>
                   )}
-                </React.Fragment>
-              ) : item.label === "Social" ? (
+                </React.Fragment>              ) : item.label === "Social" ? (
                 <React.Fragment key={item.label}>
                   <Box
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: collapsed ? "center" : "flex-start",
-                      px: collapsed ? 0 : 4,
-                      py: 1.5,
-                      gap: collapsed ? 0 : 2,
-                      cursor: "pointer",
-                      transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                      bgcolor:
-                        (socialOpen && !collapsed)
-                          ? "#2B8C37"
-                          : (isSelected(item) && !collapsed)
-                            ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
-                            : "transparent",
-                      borderRadius: (socialOpen && !collapsed) || (isSelected(item) && !collapsed) ? 0 : undefined,
                       position: "relative",
-                      "&::before": isSelected(item) ? {
-                        content: '""',
-                        position: "absolute",
-                        left: 0,
-                        top: 4,
-                        bottom: 4,
-                        width: 6,
-                        background: "#000",
-                        borderTopRightRadius: 12,
-                        borderBottomRightRadius: 12,
-                        zIndex: 2,
-                      } : {},
-                      "&:hover": {
-                        bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
-                      },
-                      "&:hover span": {
-                        color: "#fff",
-                        fontWeight: 700,
-                      },
-                      "&:hover img": {
-                        filter:
-                          "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                      },
-                    }}
-                    onClick={() => {
-                      if (!collapsed) handleDropdownToggle("social");
+                      opacity: item.hasAccess ? 1 : 0.4,
+                      cursor: item.hasAccess ? "pointer" : "not-allowed",
+                      pointerEvents: item.hasAccess ? "auto" : "none"
                     }}
                   >
-                    <img
-                      src={item.icon}
-                      alt={item.label}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        transition: "filter 0.2s, margin 0.3s",
-                        marginLeft: 0,
-                        marginRight: 0,
-                        filter:
-                          ((socialOpen && !collapsed) || (isSelected(item) && !collapsed))
-                            ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                            : mode === "repository"
-                              ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
-                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        px: collapsed ? 0 : 4,
+                        py: 1.5,
+                        gap: collapsed ? 0 : 2,
+                        cursor: item.hasAccess ? "pointer" : "not-allowed",
+                        transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                        bgcolor: item.hasAccess ?
+                          ((socialOpen && !collapsed)
+                            ? "#2B8C37"
+                            : (isSelected(item) && !collapsed)
+                              ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
+                              : "transparent") : "transparent",
+                        borderRadius: (item.hasAccess && ((socialOpen && !collapsed) || (isSelected(item) && !collapsed))) ? 0 : undefined,
+                        position: "relative",
+                        "&::before": (item.hasAccess && isSelected(item)) ? {
+                          content: '""',
+                          position: "absolute",
+                          left: 0,
+                          top: 4,
+                          bottom: 4,
+                          width: 6,
+                          background: "#000",
+                          borderTopRightRadius: 12,
+                          borderBottomRightRadius: 12,
+                          zIndex: 2,
+                        } : {},                        "&:hover": item.hasAccess ? {
+                          bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
+                        } : {},
+                        "&:hover span": item.hasAccess ? {
+                          color: "#fff",
+                          fontWeight: 700,
+                        } : {},
+                        "&:hover img": item.hasAccess ? {
+                          filter:
+                            "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                        } : {},
                       }}
-                    />
-                    {collapsed ? null : (
-                      <>
-                        <span
-                          style={{
-                            fontSize: 18,
-                            fontWeight: (socialOpen || (isSelected(item) && !collapsed)) ? 700 : 400,
-                            color: (socialOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365",
-                            transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
-                            opacity: 1,
-                            marginLeft: 4,
-                            whiteSpace: "nowrap",
-                            flex: 1,
-                          }}
-                        >
-                          {item.label}
-                        </span>
-                        <img
-                          src={DropDownIcon}
-                          alt="Expand"
-                          style={{
-                            width: 22,
-                            height: 22,
-                            marginLeft: 2,
-                            transition: "transform 0.3s, filter 0.2s",
-                            transform: socialOpen ? "rotate(180deg)" : "rotate(0deg)",
-                            filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                          }}
-                        />
-                      </>
+                      onClick={() => {
+                        if (!item.hasAccess) return;
+                        if (!collapsed) handleDropdownToggle("social");
+                      }}
+                    >
+                      <img
+                        src={item.icon}
+                        alt={item.label}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          transition: "filter 0.2s, margin 0.3s",
+                          marginLeft: 0,
+                          marginRight: 0,
+                          filter: item.hasAccess ?
+                            (((socialOpen && !collapsed) || (isSelected(item) && !collapsed))
+                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                              : mode === "repository"
+                                ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
+                                : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)")
+                            : "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
+                        }}
+                      />
+                      {collapsed ? null : (
+                        <>
+                          <span
+                            style={{
+                              fontSize: 18,
+                              fontWeight: (item.hasAccess && (socialOpen || (isSelected(item) && !collapsed))) ? 700 : 400,
+                              color: item.hasAccess ?
+                                ((socialOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365") :
+                                "#9e9e9e",
+                              transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
+                              opacity: 1,
+                              marginLeft: 4,
+                              whiteSpace: "nowrap",
+                              flex: 1,
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                          <img
+                            src={DropDownIcon}
+                            alt="Expand"
+                            style={{
+                              width: 22,
+                              height: 22,
+                              marginLeft: 2,
+                              transition: "transform 0.3s, filter 0.2s",
+                              transform: (item.hasAccess && socialOpen) ? "rotate(180deg)" : "rotate(0deg)",
+                              filter: item.hasAccess ?
+                                "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)" :
+                                "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
+                            }}
+                          />
+                        </>
+                      )}
+                    </Box>
+                    {!item.hasAccess && !collapsed && (
+                      <span style={{ 
+                        position: "absolute", 
+                        right: 16, 
+                        top: "50%", 
+                        transform: "translateY(-50%)", 
+                        fontSize: 12 
+                      }}>
+                        🔒
+                      </span>
                     )}
                   </Box>
-                  {!collapsed && socialOpen && (
+                  {!collapsed && socialOpen && item.hasAccess && (
                     <Box
                       sx={{
                         pl: 4,
@@ -775,110 +942,135 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       ))}
                     </Box>
                   )}
-                </React.Fragment>
-              ) : (
-                <Link
+                </React.Fragment>              ) : (
+                <Box
                   key={item.label}
-                  to={item.to}
-                  style={{
-                    textDecoration: "none",
-                    color: "#1a3365",
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNav(item);
+                  sx={{
+                    position: "relative",
+                    opacity: item.hasAccess ? 1 : 0.4,
+                    cursor: item.hasAccess ? "pointer" : "not-allowed",
+                    pointerEvents: item.hasAccess ? "auto" : "none"
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: collapsed ? "center" : "flex-start",
-                      px: collapsed ? 0 : 4,
-                      py: 1.5,
-                      gap: collapsed ? 0 : 2,
-                      cursor: "pointer",
-                      transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                      bgcolor: isSelected(item) && !collapsed
-                        ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
-                        : "transparent",
-                      position: "relative",
-                      "&::before": isSelected(item) ? {
-                        content: '""',
-                        position: "absolute",
-                        left: 0,
-                        top: 4,
-                        bottom: 4,
-                        width: 6,
-                        background: "#000",
-                        borderTopRightRadius: 12,
-                        borderBottomRightRadius: 12,
-                        zIndex: 2,
-                      } : {},
-                      "&:hover": {
-                        bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
-                      },
-                      "&:hover span": {
-                        color: "#fff",
-                        fontWeight: 700,
-                      },
-                      "&:hover img, &:hover .overview-icon": {
-                        filter:
-                          "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                      },
+                  <Link
+                    to={item.hasAccess ? item.to : "#"}
+                    style={{
+                      textDecoration: "none",
+                      color: item.hasAccess ? "#1a3365" : "#9e9e9e",
+                    }}
+                    onClick={(e) => {
+                      if (!item.hasAccess) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.preventDefault();
+                      handleNav(item);
                     }}
                   >
-                    {/* Use AssessmentIcon for Overview, otherwise use img */}
-                    {item.label === "Overview" ? (
-                      <AssessmentIcon
-                        className="overview-icon"
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          color: (isSelected(item) && !collapsed)
-                            ? "#fff"
-                            : mode === "repository"
-                              ? "#1a3365"
-                              : "#2B8C37",
-                          transition: "color 0.2s",
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src={item.icon}
-                        alt={item.label}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          transition: "filter 0.2s, margin 0.3s",
-                          marginLeft: 0,
-                          marginRight: 0,
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        px: collapsed ? 0 : 4,
+                        py: 1.5,
+                        gap: collapsed ? 0 : 2,
+                        cursor: item.hasAccess ? "pointer" : "not-allowed",
+                        transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                        bgcolor: (item.hasAccess && isSelected(item) && !collapsed)
+                          ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
+                          : "transparent",
+                        position: "relative",
+                        "&::before": (item.hasAccess && isSelected(item)) ? {
+                          content: '""',
+                          position: "absolute",
+                          left: 0,
+                          top: 4,
+                          bottom: 4,
+                          width: 6,
+                          background: "#000",
+                          borderTopRightRadius: 12,
+                          borderBottomRightRadius: 12,
+                          zIndex: 2,
+                        } : {},                        "&:hover": item.hasAccess ? {
+                          bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
+                        } : {},
+                        "&:hover span": item.hasAccess ? {
+                          color: "#fff",
+                          fontWeight: 700,
+                        } : {},
+                        "&:hover img, &:hover .overview-icon": item.hasAccess ? {
                           filter:
-                            (isSelected(item) && !collapsed)
-                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                              : mode === "repository"
-                                ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
-                                : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
-                        }}
-                      />
-                    )}
-                    {collapsed ? null : (
-                      <span
-                        style={{
-                          fontSize: 18,
-                          fontWeight: (isSelected(item) && !collapsed) ? 700 : 400,
-                          color: (isSelected(item) && !collapsed) ? "#fff" : "#1a3365",
-                          transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
-                          opacity: 1,
-                          marginLeft: 4,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {item.label}
-                      </span>
-                    )}
-                  </Box>
-                </Link>
+                            "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                        } : {},
+                      }}
+                    >
+                      {/* Use AssessmentIcon for Overview, otherwise use img */}
+                      {item.label === "Overview" ? (
+                        <AssessmentIcon
+                          className="overview-icon"
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            color: item.hasAccess ?
+                              ((isSelected(item) && !collapsed)
+                                ? "#fff"
+                                : mode === "repository"
+                                  ? "#1a3365"
+                                  : "#2B8C37") : "#9e9e9e",
+                            transition: "color 0.2s",
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={item.icon}
+                          alt={item.label}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            transition: "filter 0.2s, margin 0.3s",
+                            marginLeft: 0,
+                            marginRight: 0,                            filter: item.hasAccess ?
+                              ((isSelected(item) && !collapsed)
+                                ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                                : mode === "repository"
+                                  ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
+                                  : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)")
+                              : "brightness(0) saturate(100%) invert(50%)", // Grayscale for disabled
+                          }}
+                        />
+                      )}
+                      {collapsed ? null : (
+                        <span
+                          style={{
+                            fontSize: 18,
+                            fontWeight: (item.hasAccess && isSelected(item) && !collapsed) ? 700 : 400,
+                            color: item.hasAccess ?
+                              ((isSelected(item) && !collapsed) ? "#fff" : "#1a3365") :
+                              "#9e9e9e",
+                            transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
+                            opacity: 1,
+                            marginLeft: 4,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.label}
+                        </span>
+                      )}
+                    </Box>
+                  </Link>
+                  {!item.hasAccess && !collapsed && (
+                    <span style={{ 
+                      position: "absolute", 
+                      right: 16, 
+                      top: "50%", 
+                      transform: "translateY(-50%)", 
+                      fontSize: 12 
+                    }}>
+                      🔒
+                    </span>
+                  )}
+                </Box>
               )
             )}
           </Box>
@@ -921,9 +1113,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <Typography variant="body2" sx={{ color: "#1a3365", fontWeight: 600, textAlign: "center" }}>
                   {userEmail}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "#6c757d", fontSize: 12, fontWeight: 500, textAlign: "center" }}>
-                  {userRole}
+                </Typography>                <Typography variant="caption" sx={{ color: "#6c757d", fontSize: 12, fontWeight: 500, textAlign: "center" }}>
+                  {userRoleName}
                 </Typography>
               </Box>
             )}

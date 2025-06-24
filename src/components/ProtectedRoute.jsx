@@ -15,15 +15,14 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
       </div>
     );
   }
-
-  // If not logged in, redirect to home page
+  // If not logged in, redirect to landing page
   if (!isLoggedIn()) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/landing" replace />;
   }
 
-  // If no user data available, redirect to home (authentication issue)
+  // If no user data available, redirect to landing (authentication issue)
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/landing" replace />;
   }
 
   // If specific roles are required, check if user has at least one of them

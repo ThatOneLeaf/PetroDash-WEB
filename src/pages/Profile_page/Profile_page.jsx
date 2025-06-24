@@ -25,8 +25,38 @@ const modules = [
 const moduleCardColor = "#16275B";
 
 export default function ProfilePage() {
-  const { user, getUserRoleName, getUserEmail } = useAuth();
-  const accessibleModules = modules;
+  const { user, getUserRoleName, getUserEmail, getUserRole } = useAuth();
+  
+  // Get user role for access control
+  const userRole = getUserRole();
+  // Check if user has access to a specific module
+  const hasModuleAccess = (moduleKey) => {
+    switch (moduleKey) {
+      case 'overview':
+        // Dashboard accessible to all roles (no specific role requirement)
+        return true;
+      case 'energy':
+        // Energy accessible in both modes: Dashboard (R02, R03, R04) or Repository (R03, R04, R05)
+        return ['R02', 'R03', 'R04', 'R05'].includes(userRole);
+      case 'economic':
+        // Economic accessible in both modes: Dashboard (R02, R03, R04, R05) or Repository (R03, R04, R05)
+        return ['R02', 'R03', 'R04', 'R05'].includes(userRole);
+      case 'environment':
+        // Environment accessible in both modes: Dashboard (R02, R03, R04) or Repository (R03, R04, R05)
+        return ['R02', 'R03', 'R04', 'R05'].includes(userRole);
+      case 'social':
+        // Social accessible in both modes: Dashboard (R02, R03, R04, R05) or Repository (R03, R04, R05)
+        return ['R02', 'R03', 'R04', 'R05'].includes(userRole);
+      default:
+        return false;
+    }
+  };
+  
+  // Show all modules but mark accessibility
+  const allModulesWithAccess = modules.map(module => ({
+    ...module,
+    hasAccess: hasModuleAccess(module.key)
+  }));
 
   // Profile image state
   const [profileImg, setProfileImg] = useState(null);
@@ -39,25 +69,41 @@ export default function ProfilePage() {
 
   // Dropdown state for Edit Profile
   const [anchorEl, setAnchorEl] = useState(null);
-  const openMenu = Boolean(anchorEl);
-
-  // Helper function to determine module type based on user access and role
+  const openMenu = Boolean(anchorEl);  // Helper function to determine module type based on user access and role
   function getModuleTypeForUser(mod, user) {
     const role = user?.roles?.[0];
-    // Overview (Dashboard) access: R02, R03, R04
-    if (mod.key === 'overview' && ['R02', 'R03', 'R04'].includes(role)) return 'Dashboard';
-    // Energy Dashboard: R04, R03, R02
-    if (mod.key === 'energy' && ['R04', 'R03', 'R02'].includes(role)) return 'Dashboard';
-    // Economic Repository: R05, R04, R03
-    if (mod.key === 'economic' && ['R05', 'R04', 'R03'].includes(role)) return 'Repository';
-    // Environment Repository: R05, R04, R03
-    if (mod.key === 'environment' && ['R05', 'R04', 'R03'].includes(role)) return 'Repository';
-    // Social Repository: R05, R04, R03
-    if (mod.key === 'social' && ['R05', 'R04', 'R03'].includes(role)) return 'Repository';
-    // If user has both dashboard and repository access for a module (rare, but possible)
-    if (mod.key === 'overview' && ['R02', 'R03', 'R04'].includes(role) && ['R05', 'R04', 'R03'].includes(role)) {
-      return 'Dashboard & Repository';
+    
+    // Overview - Dashboard only (accessible to all roles)
+    if (mod.key === 'overview') {
+      return 'Dashboard';
     }
+    
+    // Energy - Dashboard for R02, R03, R04; Repository for R03, R04, R05
+    if (mod.key === 'energy') {
+      if (role === 'R02') return 'Dashboard';
+      if (['R03', 'R04'].includes(role)) return 'Dashboard & Repository';
+      if (role === 'R05') return 'Repository';
+    }
+    
+    // Economic - Dashboard for R02, R03, R04, R05; Repository for R03, R04, R05
+    if (mod.key === 'economic') {
+      if (role === 'R02') return 'Dashboard';
+      if (['R03', 'R04', 'R05'].includes(role)) return 'Dashboard & Repository';
+    }
+    
+    // Environment - Dashboard for R02, R03, R04; Repository for R03, R04, R05
+    if (mod.key === 'environment') {
+      if (role === 'R02') return 'Dashboard';
+      if (['R03', 'R04'].includes(role)) return 'Dashboard & Repository';
+      if (role === 'R05') return 'Repository';
+    }
+    
+    // Social - Dashboard for R02, R03, R04, R05; Repository for R03, R04, R05
+    if (mod.key === 'social') {
+      if (role === 'R02') return 'Dashboard';
+      if (['R03', 'R04', 'R05'].includes(role)) return 'Dashboard & Repository';
+    }
+    
     return '';
   }
 
@@ -263,17 +309,16 @@ export default function ProfilePage() {
         <Box sx={{ mt: 6, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600, color: "#16275B", mb: 2 }}>
             Accessible Modules
-          </Typography>
-          <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", justifyContent: "center" }}>
-            {accessibleModules.map((mod) => (
+          </Typography>          <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", justifyContent: "center" }}>
+            {allModulesWithAccess.map((mod) => (
               <Box
                 key={mod.key}
                 sx={{
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  bgcolor: moduleCardColor,
-                  color: "#fff",
+                  bgcolor: mod.hasAccess ? moduleCardColor : "#e0e0e0",
+                  color: mod.hasAccess ? "#fff" : "#9e9e9e",
                   borderRadius: 4,
                   px: 4,
                   py: 2,
@@ -282,10 +327,28 @@ export default function ProfilePage() {
                   justifyContent: "center",
                   fontWeight: 600,
                   fontSize: 16,
-                  boxShadow: "0 2px 12px #0002",
-                  opacity: 0.92,
-                  transition: "transform 0.2s",
-                  '&:hover': { transform: 'scale(1.04)', boxShadow: '0 4px 20px #0003' },
+                  boxShadow: mod.hasAccess ? "0 2px 12px #0002" : "0 1px 4px #0001",
+                  opacity: mod.hasAccess ? 0.92 : 0.6,
+                  transition: "transform 0.2s, opacity 0.2s",
+                  cursor: mod.hasAccess ? "default" : "not-allowed",
+                  position: "relative",
+                  '&:hover': mod.hasAccess ? { 
+                    transform: 'scale(1.04)', 
+                    boxShadow: '0 4px 20px #0003' 
+                  } : {},
+                  ...(mod.hasAccess ? {} : {
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      borderRadius: 4,
+                      border: '2px dashed #bdbdbd',
+                      pointerEvents: 'none'
+                    }
+                  })
                 }}
               >
                 <span style={{
@@ -295,14 +358,33 @@ export default function ProfilePage() {
                   width: 40,
                   height: 40,
                   borderRadius: '50%',
-                  marginBottom: 10
+                  marginBottom: 10,
+                  opacity: mod.hasAccess ? 1 : 0.5
                 }}>
-                  {mod.key === 'overview' ? mod.icon : <img src={mod.icon} alt={mod.label} style={{ width: 32, height: 32 }} />}
+                  {mod.key === 'overview' ? mod.icon : <img src={mod.icon} alt={mod.label} style={{ 
+                    width: 32, 
+                    height: 32,
+                    filter: mod.hasAccess ? 'none' : 'grayscale(100%)'
+                  }} />}
                 </span>
                 <span style={{ fontSize: 18, fontWeight: 700 }}>{mod.label}</span>
-                <Typography variant="caption" sx={{ mt: 0.5, color: "#e0e0e0", fontWeight: 400 }}>
-                  {getModuleTypeForUser(mod, user)}
+                <Typography variant="caption" sx={{ 
+                  mt: 0.5, 
+                  color: mod.hasAccess ? "#e0e0e0" : "#9e9e9e", 
+                  fontWeight: 400 
+                }}>
+                  {mod.hasAccess ? getModuleTypeForUser(mod, user) : "No Access"}
                 </Typography>
+                {!mod.hasAccess && (
+                  <Typography variant="caption" sx={{ 
+                    mt: 0.5, 
+                    color: "#f44336", 
+                    fontWeight: 500,
+                    fontSize: 11
+                  }}>
+                    🔒 Restricted
+                  </Typography>
+                )}
               </Box>
             ))}
           </Box>
