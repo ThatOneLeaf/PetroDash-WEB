@@ -26,7 +26,6 @@ import TabButtons from "../../components/DashboardComponents/TabButtons";
 import MultiSelectWithChips from "../../components/DashboardComponents/MultiSelectDropdown";
 import MonthRangeSelect from "../../components/DashboardComponents/MonthRangeSelect";
 import { format } from "date-fns";
-import dayjs from "dayjs";
 import api from "../../services/api";
 import SingleSelectDropdown from "../../components/DashboardComponents/SingleSelectDropdown";
 import ClearButton from "../../components/DashboardComponents/ClearButton";
@@ -51,7 +50,7 @@ import WindPowerIcon from '@mui/icons-material/WindPower';
 import ForestIcon from '@mui/icons-material/Forest';
 import VerticalStackedBarChartComponent from "../../components/charts/VerticalStackedBar";
 import HorizontalGroupedBarChartComponent from "../../components/charts/HorizontalGrouped";
-
+import { useAuth } from "../../contexts/AuthContext";
 
 
 // Utils
@@ -194,6 +193,12 @@ function PowerDashboard() {
   const [equivalenceData, setEquivalenceData] = useState({});
   const [housePowerData, setHousePowerData] = useState({});
   const [staticData, setStaticData] = useState({});
+  const { getUserRole } = useAuth();
+  const {getUserCompanyId} = useAuth();
+  const{getUserPowerPlantId}=useAuth();
+  const role = getUserRole();
+  const companyId = getUserCompanyId();
+  const powerPlantId = getUserPowerPlantId();
 
   const chartReady =
   Object.keys(plantColors).length > 0 &&
@@ -281,7 +286,11 @@ const fetchData = async () => {
   try {
     const params = { x, y };
 
-    if (filters.company) params.p_company_id = filters.company;
+    if (role === 'R04' && companyId) {
+      params.p_company_id = companyId;
+    } else if (filters.company) {
+      params.p_company_id = filters.company;
+    }
     if (filters.powerPlant) params.p_power_plant_id = filters.powerPlant;
     if (filters.generationSource) params.p_generation_source = filters.generationSource;
     if (filters.province) params.p_province = filters.province;
@@ -388,6 +397,16 @@ useEffect(() => {
 
     fetchFilterData();
   }, []);
+
+// Compute filtered power plant options for R04
+const filteredPowerPlantOptions = React.useMemo(() => {
+  if (role === 'R04' && companyId && plantMetadata.length > 0) {
+    return plantMetadata
+      .filter(item => item.company_id === companyId)
+      .map(item => ({ value: item.power_plant_id, label: item.power_plant_id }));
+  }
+  return powerPlantOptions;
+}, [role, companyId, plantMetadata, powerPlantOptions]);
 
 // Sync multi-select filter arrays into the filters object
 useEffect(() => {
@@ -517,8 +536,22 @@ return (
             },
           }}
         >
-          <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
-          <MultiSelectWithChips label="Power Plants" options={powerPlantOptions} selectedValues={powerPlantFilter} onChange={setPowerPlantFilter} placeholder="All Power Projects" />
+          {role !== 'R04' && (
+            <MultiSelectWithChips
+              label="Companies"
+              options={companyOptions}
+              selectedValues={companyFilter}
+              onChange={setCompanyFilter}
+              placeholder="All Companies"
+            />
+          )}
+          <MultiSelectWithChips
+  label="Power Plants"
+  options={filteredPowerPlantOptions}
+  selectedValues={powerPlantFilter}
+  onChange={setPowerPlantFilter}
+  placeholder="All Power Projects"
+/>
           <MultiSelectWithChips label="Generation Sources" options={generationSourceOptions} selectedValues={generationSourceFilter} onChange={setGenerationSourceFilter} placeholder="All Sources" />
           <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
 
@@ -1005,41 +1038,41 @@ return (
           }}
         >
           {Object.entries(records).map(([eqKey, [eq]], index, arr) => {
-  const isLast = index === arr.length - 1;
-  const isOdd = arr.length % 2 === 1;
-  const scheme = colorSchemes[eq.equivalence_category] || colorSchemes.default;
+            const isLast = index === arr.length - 1;
+            const isOdd = arr.length % 2 === 1;
+            const scheme = colorSchemes[eq.equivalence_category] || colorSchemes.default;
 
-  return (
-    <Box
-      key={eqKey}
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',         // 🔑 Let it stretch inside grid
-        width: '100%',
-        ...(isLast && isOdd && {
-          gridColumn: 'span 2',
-        }),
-      }}
-    >
-      <KPICard
-        loading={false}
-        value={`${(eq.co2_equivalent || 0).toLocaleString(undefined, {
-          maximumFractionDigits: 2,
-        })}`}
-        unit=""
-        title={eq.metric || `Metric ${index + 1}`}
-        icon={iconMap[eqKey]}
-        colorScheme={scheme}
-        style={{
-          height: '100%',
-          width: '100%',
-        }}
-        tooltip={eq.equivalence_label}
-      />
-    </Box>
-  );
-})}
+            return (
+              <Box
+                key={eqKey}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                  width: '100%',
+                  ...(isLast && isOdd && {
+                    gridColumn: 'span 2',
+                  }),
+                }}
+              >
+                <KPICard
+                  loading={false}
+                  value={`${(eq.co2_equivalent || 0).toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })}`}
+                  unit=""
+                  title={eq.metric || `Metric ${index + 1}`}
+                  icon={iconMap[eqKey]}
+                  colorScheme={scheme}
+                  style={{
+                    height: '100%',
+                    width: '100%',
+                  }}
+                  tooltip={eq.equivalence_label}
+                />
+              </Box>
+            );
+          })}
         </Box>
       </Box>
     ))}

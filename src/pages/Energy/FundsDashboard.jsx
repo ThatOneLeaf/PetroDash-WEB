@@ -14,6 +14,7 @@ import {
   Button,
   ToggleButton, ToggleButtonGroup
 } from "@mui/material";
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -53,6 +54,7 @@ import ForestIcon from '@mui/icons-material/Forest';
 import VerticalStackedBarChartComponent from "../../components/charts/VerticalStackedBar";
 import HorizontalGroupedBarChartComponent from "../../components/charts/HorizontalGrouped";
 import GenericResponsiveTable from "../../components/DashboardComponents/ResponsiveTable";
+import { useAuth } from "../../contexts/AuthContext";
 
 
 
@@ -148,6 +150,12 @@ function roundUpToNiceNumber(num) {
 
 function FundsDashboard() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const { getUserRole } = useAuth();
+  const {getUserCompanyId} = useAuth();
+  const{getUserPowerPlantId}=useAuth();
+  const role = getUserRole();
+  const companyId = getUserCompanyId();
+  const powerPlantId = getUserPowerPlantId();
 
 
   const [zoomModal, setZoomModal] = useState({
@@ -334,6 +342,8 @@ const fetchData = async () => {
     const params = { x, y };
 
     if (filters.company) params.p_company_id = filters.company;
+    // Always pass companyId for R04
+    if (role === 'R04' && companyId) params.p_company_id = companyId;
     if (filters.powerPlant) params.p_power_plant_id = filters.powerPlant;
 
     if (startDate) {
@@ -455,6 +465,31 @@ useEffect(() => {
     endDate !== null;
 
 
+// Filter data by companyId if role is R04
+useEffect(() => {
+  if (role === 'R04' && companyId) {
+    setCompanyFilter([companyId]);
+  }
+  // If you want to clear the filter for other roles, you can add an else block
+  // else {
+  //   setCompanyFilter([]);
+  // }
+}, [role, companyId]);
+
+
+
+// Compute filtered power plant options for R04
+const filteredPowerPlantOptions = React.useMemo(() => {
+  if (role === 'R04' && companyId && plantMetadata.length > 0) {
+    return plantMetadata
+      .filter(item => item.company_id === companyId)
+      .map(item => ({ value: item.power_plant_id, label: item.power_plant_id }));
+  }
+  return powerPlantOptions;
+}, [role, companyId, plantMetadata, powerPlantOptions]);
+
+
+
 if (loading) {
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
@@ -533,11 +568,13 @@ return (
             },
           }}
         >
-          <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
-          <MultiSelectWithChips label="Power Plants" options={powerPlantOptions} selectedValues={powerPlantFilter} onChange={setPowerPlantFilter} placeholder="All Power Projects" />
+          {role !== 'R04' && (
+            <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
+          )}
+          <MultiSelectWithChips label="Power Plants" options={filteredPowerPlantOptions} selectedValues={powerPlantFilter} onChange={setPowerPlantFilter} placeholder="All Power Projects" />
           <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
 
-          {showClearButton && <ClearButton onClick={clearAllFilters} />}
+          {role !== 'R04' && showClearButton && <ClearButton onClick={clearAllFilters} />}
 
           <Box sx={{ flexGrow: 1, minWidth: 10 }} />
           <SingleSelectDropdown label="Group By" options={xOptions} selectedValue={x} onChange={setX} />
@@ -657,7 +694,7 @@ return (
         )
       }
     >
-      🔍
+      <ZoomInIcon fontSize="small" />
     </Button>
   </Paper>
 </Box>
@@ -717,7 +754,7 @@ return (
             )
           }
         >
-          🔍
+          <ZoomInIcon fontSize="small" />
         </Button>
       </Paper>
     </Box>
@@ -834,7 +871,7 @@ return (
         )
       }
     >
-      🔍
+      <ZoomInIcon fontSize="small" />
     </Button>
   </Paper>
 </Box>
@@ -904,7 +941,7 @@ return (
             )
           }
         >
-          🔍
+          <ZoomInIcon fontSize="small" />
         </Button>
       </Paper>
     </Box>
