@@ -44,12 +44,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
     { 
       label: "Energy", 
       icon: EnergyIcon, 
-      to: "/energy", // default
-      dropdown: [
-        { label: "Energy KPIS", to: "/energy" },
-        { label: "Energy Dashboard", to: "/energy/dashboard" }
-      ],
-      repository: { label: "Energy", to: "/energy/power-generation" }
+      to: mode === "dashboard" ? "/energy" : "/energy/power-generation"
     },
     { label: "Economic", icon: EconomicsIcon, to: "/economic" },
     {
@@ -105,27 +100,13 @@ function SideBar({ collapsed: collapsedProp = false }) {
     }
   };
 
-  // Helper to get correct Energy dropdown based on mode
-  const getEnergyDropdown = () => {
-    if (mode === "dashboard") {
-      return [
-        { label: "Energy KPIS", to: "/energy" },
-        { label: "Energy Dashboard", to: "/energy/dashboard" }
-      ];
-    } else {
-      return [
-        { label: "Energy Repository", to: "/energy/power-generation" }
-      ];
-    }
-  };
-
   const isSelected = (item) =>
     item.label === "Environment"
       ? getEnvironmentDropdown().some((sub) => location.pathname.startsWith(sub.to))
       : item.label === "Social"
         ? getSocialDropdown().some((sub) => location.pathname.startsWith(sub.to))
         : item.label === "Energy"
-          ? getEnergyDropdown().some((sub) => location.pathname.startsWith(sub.to))
+          ? location.pathname.startsWith(item.to)
           : item.dropdown
             ? item.dropdown.some((sub) => location.pathname.startsWith(sub.to))
             : location.pathname.startsWith(item.to);
@@ -232,6 +213,19 @@ function SideBar({ collapsed: collapsedProp = false }) {
   const userEmail = getUserEmail();
   const userRole = getUserRoleName();
 
+  // Add state for profile image from localStorage (if any)
+  const [profileImg, setProfileImg] = React.useState(() => {
+    return localStorage.getItem('profileImg') || null;
+  });
+  // Listen for changes to profileImg in localStorage (for cross-tab sync)
+  React.useEffect(() => {
+    function syncProfileImg() {
+      setProfileImg(localStorage.getItem('profileImg') || null);
+    }
+    window.addEventListener('storage', syncProfileImg);
+    return () => window.removeEventListener('storage', syncProfileImg);
+  }, []);
+
   return (
     <>
       {isExpanded && (
@@ -260,7 +254,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
           flexDirection: "column",
           justifyContent: "space-between",
           borderRight: "1px solid #eee",
-          transition: "width 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1), position 0s linear 0.35s",
+          transition: collapsed
+            ? "none"
+            : "width 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1), position 0s linear 0.35s",
           boxShadow: collapsed
             ? "4px 0 12px 0 rgba(44,62,80,0.22)"
             : "8px 0 24px 0 rgba(44,62,80,0.22)",
@@ -384,252 +380,92 @@ function SideBar({ collapsed: collapsedProp = false }) {
           >
             {navItems.map((item) =>
               item.label === "Energy" ? (
-                mode === "dashboard" ? (
-                  // DASHBOARD MODE: Energy is a dropdown styled like Environment
-                  <React.Fragment key={item.label}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: collapsed ? "center" : "flex-start",
-                        px: collapsed ? 0 : 4,
-                        py: 1.5,
-                        gap: collapsed ? 0 : 2,
-                        cursor: "pointer",
-                        transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                        bgcolor:
-                          (energyOpen && !collapsed)
-                            ? "#2B8C37"
-                            : (isSelected(item) && !collapsed)
-                              ? "rgba(43,140,55,0.5)"
-                              : "transparent",
-                        borderRadius: (energyOpen && !collapsed) || (isSelected(item) && !collapsed) ? 0 : undefined,
-                        position: "relative",
-                        "&::before": isSelected(item) ? {
-                          content: '""',
-                          position: "absolute",
-                          left: 0,
-                          top: 4,
-                          bottom: 4,
-                          width: 6,
-                          background: "#000",
-                          borderTopRightRadius: 12,
-                          borderBottomRightRadius: 12,
-                          zIndex: 2,
-                        } : {},
-                        "&:hover": {
-                          bgcolor: "rgba(43,140,55,0.5)",
-                        },
-                        "&:hover span": {
-                          color: "#fff",
-                          fontWeight: 700,
-                        },
-                        "&:hover img": {
-                          filter:
-                            "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                        },
-                      }}
-                      onClick={() => {
-                        if (!collapsed) handleDropdownToggle("energy");
-                        else {
-                          navigate("/energy");
-                        }
-                      }}
-                    >
-                      <img
-                        src={item.icon}
-                        alt={item.label}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          transition: "filter 0.2s, margin 0.3s",
-                          marginLeft: 0,
-                          marginRight: 0,
-                          filter:
-                            ((energyOpen && !collapsed) || (isSelected(item) && !collapsed))
-                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
-                        }}
-                      />
-                      {collapsed ? null : (
-                        <>
-                          <span
-                            style={{
-                              fontSize: 18,
-                              fontWeight: (energyOpen || (isSelected(item) && !collapsed)) ? 700 : 400,
-                              color: (energyOpen || (isSelected(item) && !collapsed)) ? "#fff" : "#1a3365",
-                              transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
-                              opacity: 1,
-                              marginLeft: 4,
-                              whiteSpace: "nowrap",
-                              flex: 1,
-                            }}
-                          >
-                            {item.label}
-                          </span>
-                          <img
-                            src={DropDownIcon}
-                            alt="Expand"
-                            style={{
-                              width: 22,
-                              height: 22,
-                              marginLeft: 2,
-                              transition: "transform 0.3s, filter 0.2s",
-                              transform: energyOpen ? "rotate(180deg)" : "rotate(0deg)",
-                              filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                            }}
-                          />
-                        </>
-                      )}
-                    </Box>
-                    {!collapsed && energyOpen && (
-                      <Box
-                        sx={{
-                          pl: 4,
-                          pr: 2,
-                          py: 1,
-                          bgcolor: "#fff",
-                          boxShadow: "0 4px 16px 0 rgba(44,62,80,0.10)",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
-                          gap: 1,
-                          mb: 1,
-                          borderRadius: 2,
-                          border: "1px solid #e0e0e0",
-                          position: "relative",
-                          zIndex: 101,
-                          transition: "all 0.3s cubic-bezier(.4,0,.2,1)",
-                        }}
-                      >
-                        {getEnergyDropdown().map((sub) => (
-                          <Link
-                            key={sub.label}
-                            to={sub.to}
-                            style={{
-                              textDecoration: "none",
-                              color: "#1a3365",
-                              width: "100%",
-                            }}
-                            onClick={() => setEnergyOpen(false)}
-                          >
-                            <Box
-                              sx={{
-                                py: 0.8,
-                                px: 1,
-                                borderRadius: 2,
-                                transition: "background 0.2s, color 0.2s, font-weight 0.2s",
-                                bgcolor: isDropdownSelected(sub) ? "#182959" : "transparent",
-                                color: isDropdownSelected(sub) ? "#fff" : "#1a3365",
-                                fontWeight: isDropdownSelected(sub) ? 700 : 400,
-                                borderLeft: isDropdownSelected(sub) ? "6px solid #182959" : "6px solid transparent",
-                                borderTopRightRadius: isDropdownSelected(sub) ? 12 : 0,
-                                borderBottomRightRadius: isDropdownSelected(sub) ? 12 : 0,
-                                "&:hover": {
-                                  bgcolor: "#182959",
-                                  color: "#fff",
-                                  fontWeight: 700,
-                                },
-                                fontSize: 16,
-                                letterSpacing: 0.2,
-                                textAlign: "left",
-                                width: "100%",
-                              }}
-                            >
-                              {sub.label}
-                            </Box>
-                          </Link>
-                        ))}
-                      </Box>
-                    )}
-                  </React.Fragment>
-                ) : (
-                  // REPOSITORY MODE: Energy is a normal tab
-                  <Link
-                    key={item.label}
-                    to={item.repository.to}
-                    style={{
-                      textDecoration: "none",
-                      color: "#1a3365",
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate(item.repository.to);
-                      setEnergyOpen(false);
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  style={{
+                    textDecoration: "none",
+                    color: "#1a3365",
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(item.to);
+                    setEnergyOpen(false);
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: collapsed ? "center" : "flex-start",
+                      px: collapsed ? 0 : 4,
+                      py: 1.5,
+                      gap: collapsed ? 0 : 2,
+                      cursor: "pointer",
+                      transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
+                      bgcolor: isSelected(item) && !collapsed
+                        ? (mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)")
+                        : "transparent",
+                      position: "relative",
+                      "&::before": isSelected(item) ? {
+                        content: '""',
+                        position: "absolute",
+                        left: 0,
+                        top: 4,
+                        bottom: 4,
+                        width: 6,
+                        background: "#000",
+                        borderTopRightRadius: 12,
+                        borderBottomRightRadius: 12,
+                        zIndex: 2,
+                      } : {},
+                      "&:hover": {
+                        bgcolor: mode === "repository" ? "rgba(26,51,101,0.32)" : "rgba(43,140,55,0.5)",
+                      },
+                      "&:hover span": {
+                        color: "#fff",
+                        fontWeight: 700,
+                      },
+                      "&:hover img": {
+                        filter:
+                          "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
+                      },
                     }}
                   >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: collapsed ? "center" : "flex-start",
-                        px: collapsed ? 0 : 4,
-                        py: 1.5,
-                        gap: collapsed ? 0 : 2,
-                        cursor: "pointer",
-                        transition: "background 0.25s, color 0.25s, padding 0.35s cubic-bezier(.4,0,.2,1)",
-                        bgcolor: isSelected(item) && !collapsed
-                          ? "rgba(26,51,101,0.32)"
-                          : "transparent",
-                        position: "relative",
-                        "&::before": isSelected(item) ? {
-                          content: '""',
-                          position: "absolute",
-                          left: 0,
-                          top: 4,
-                          bottom: 4,
-                          width: 6,
-                          background: "#000",
-                          borderTopRightRadius: 12,
-                          borderBottomRightRadius: 12,
-                          zIndex: 2,
-                        } : {},
-                        "&:hover": {
-                          bgcolor: "rgba(26,51,101,0.32)",
-                        },
-                        "&:hover span": {
-                          color: "#fff",
-                          fontWeight: 700,
-                        },
-                        "&:hover img": {
-                          filter:
-                            "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)",
-                        },
+                    <img
+                      src={item.icon}
+                      alt={item.label}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        transition: "filter 0.2s, margin 0.3s",
+                        marginLeft: 0,
+                        marginRight: 0,
+                        filter:
+                          (isSelected(item) && !collapsed)
+                            ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
+                            : mode === "repository"
+                              ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
+                              : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
                       }}
-                    >
-                      <img
-                        src={item.icon}
-                        alt={item.label}
+                    />
+                    {collapsed ? null : (
+                      <span
                         style={{
-                          width: 28,
-                          height: 28,
-                          transition: "filter 0.2s, margin 0.3s",
-                          marginLeft: 0,
-                          marginRight: 0,
-                          filter:
-                            (isSelected(item) && !collapsed)
-                              ? "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)"
-                              : "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)",
+                          fontSize: 18,
+                          fontWeight: (isSelected(item) && !collapsed) ? 700 : 400,
+                          color: (isSelected(item) && !collapsed) ? "#fff" : "#1a3365",
+                          transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
+                          opacity: 1,
+                          marginLeft: 4,
+                          whiteSpace: "nowrap",
                         }}
-                      />
-                      {collapsed ? null : (
-                        <span
-                          style={{
-                            fontSize: 18,
-                            fontWeight: (isSelected(item) && !collapsed) ? 700 : 400,
-                            color: (isSelected(item) && !collapsed) ? "#fff" : "#1a3365",
-                            transition: "color 0.2s, font-weight 0.2s, opacity 0.3s, margin 0.3s",
-                            opacity: 1,
-                            marginLeft: 4,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {item.repository.label}
-                        </span>
-                      )}
-                    </Box>
-                  </Link>
-                )
+                      >
+                        {item.label}
+                      </span>
+                    )}
+                  </Box>
+                </Link>
               ) : item.label === "Environment" ? (
                 <React.Fragment key={item.label}>
                   <Box
@@ -894,8 +730,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         flexDirection: "column",
                         alignItems: "flex-start",
                         gap: 1,
-                        mb: 1,
-                        borderRadius: 2,
                         border: "1px solid #e0e0e0",
                         position: "relative",
                         zIndex: 101,
@@ -1050,90 +884,48 @@ function SideBar({ collapsed: collapsedProp = false }) {
           </Box>
         </Box>
         <Box sx={{ mb: 3 }}>
-          {/* User Info Section */}
-          {!collapsed && userEmail && (
-            <Box
-              sx={{
-                px: 4,
-                py: 2,
-                mb: 2,
-                bgcolor: "#f8f9fa",
-                borderRadius: 2,
-                mx: 2,
-                border: "1px solid #e9ecef",
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#1a3365",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  mb: 0.5,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {userEmail}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "#6c757d",
-                  fontSize: 12,
-                  fontWeight: 500,
-                }}
-              >
-                {userRole}
-              </Typography>
-            </Box>
-          )}
+          {/* User Info with Icon (icon above credentials) */}
           <Box
+            component={Link}
+            to="/profile"
             sx={{
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
-              justifyContent: collapsed ? "center" : "flex-start",
+              justifyContent: "center",
               px: collapsed ? 0 : 4,
               py: 1.5,
-              gap: collapsed ? 0 : 2,
-              cursor: "pointer",
-              transition: "padding 0.35s cubic-bezier(.4,0,.2,1)",
-              "&:hover": { bgcolor: "#f5f5f5" },
-              "&:hover span": {
-                fontWeight: 700,
-                textDecoration: "underline",
-              },
-              "&:hover img": {
-                filter:
-                  "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
-              },
+              mb: 1,
+              mt: 2,
+              bgcolor: collapsed ? 'transparent' : '#f8f9fa', // Remove bg when collapsed
+              borderRadius: 2,
+              transition: 'background 0.2s',
             }}
           >
             <img
-              src={ProfileIcon}
-              alt="Profile"
+              src={profileImg || ProfileIcon}
+              alt="Account"
               style={{
-                width: 28,
-                height: 28,
-                transition: "margin 0.3s, filter 0.2s",
-                marginLeft: 0,
-                marginRight: 0,
+                width: 32,
+                height: 32,
+                marginBottom: !collapsed ? 6 : 0,
+                opacity: 0.85,
+                borderRadius: "50%",
+                border: profileImg ? "2px solid #388E3C" : undefined,
+                objectFit: "cover",
+                background: 'transparent',
+                filter: !profileImg ? 'brightness(0) saturate(100%) invert(18%) sepia(16%) saturate(1162%) hue-rotate(186deg) brightness(90%) contrast(97%)' : undefined,
               }}
             />
-            {collapsed ? null : (
-              <span
-                style={{
-                  fontSize: 18,
-                  color: "#1a3365",
-                  transition: "font-weight 0.2s, text-decoration 0.2s, opacity 0.3s, margin 0.3s",
-                  opacity: 1,
-                  marginLeft: 4,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                My Profile
-              </span>
+            {!collapsed && (
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <Typography variant="body2" sx={{ color: "#1a3365", fontWeight: 600, textAlign: "center" }}>
+                  {userEmail}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "#6c757d", fontSize: 12, fontWeight: 500, textAlign: "center" }}>
+                  {userRole}
+                </Typography>
+              </Box>
             )}
           </Box>
           <Box

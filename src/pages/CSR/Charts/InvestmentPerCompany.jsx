@@ -67,11 +67,29 @@ const InvestmentPerCompany = ({ year: yearProp, height, width }) => {
     return <span style={{ fontSize }}>{name}</span>;
   };
 
-  // Helper: generate a color palette (extend as needed)
+  
+  // Use colors that do NOT overlap with the KPI/program/project colors
   const COLORS = [
-    "#1976d2", "#388e3c", "#fbc02d", "#d32f2f", "#7b1fa2", "#0288d1", "#c2185b",
-    "#ffa000", "#388e3c", "#455a64", "#f57c00", "#0288d1", "#afb42b", "#6d4c41",
-    "#00897b", "#c62828", "#5d4037", "#303f9f", "#0097a7", "#fbc02d"
+    "#8e44ad", // purple
+    "#16a085", // teal
+    "#e67e22", // orange
+    "#2c3e50", // dark blue
+    "#e84393", // pink
+    "#00b894", // green
+    "#fdcb6e", // yellow
+    "#636e72", // gray
+    "#fd79a8", // light pink
+    "#00cec9", // cyan
+    "#6c5ce7", // indigo
+    "#fab1a0", // light orange
+    "#d35400", // dark orange
+    "#0984e3", // blue
+    "#b2bec3", // light gray
+    "#2d3436", // blackish
+    "#ff7675", // coral
+    "#00b894", // green
+    "#ffeaa7", // pale yellow
+    "#636e72"  // gray
   ];
 
   // Helper: get color for a company index

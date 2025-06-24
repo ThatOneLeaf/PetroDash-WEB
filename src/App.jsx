@@ -25,6 +25,7 @@ import EnvironmentEnergyDash from "./pages/Envi/EnvironmentEnergyDash";
 import EnvironmentWasteDash from "./pages/Envi/EnvironmentWasteDash";
 import HELPDash from "./pages/CSR/HELPDash";
 import FundsDashboard from "./pages/Energy/FundsDashboard";
+import ProfilePage from "./pages/Profile_page/Profile_page";
 
 function App() {
   return (
@@ -198,6 +199,15 @@ function App() {
                 element={
                   <ProtectedRoute requiredRoles={["R05", "R04", "R03"]}>
                     <HRDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
                   </ProtectedRoute>
                 }
               />

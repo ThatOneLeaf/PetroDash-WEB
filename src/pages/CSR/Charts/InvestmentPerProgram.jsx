@@ -18,10 +18,10 @@ import api from "../../../services/api";
 
 // Program color map
 const programColorMap = {
-  health: "#ef4444",
-  education: "#1976d2",
-  livelihood: "#fbbf24",
-  default: "#a3a3a3"
+  health: "#f8bcbc",      
+  education: "#b6d4f7",   
+  livelihood: "#fff3b0", 
+  default: "#e2e8f0"      
 };
 
 // Helper to get program from programName
