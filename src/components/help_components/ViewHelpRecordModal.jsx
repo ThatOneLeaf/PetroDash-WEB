@@ -34,8 +34,16 @@ const ViewHelpRecordModal = ({
   const [projectOptions, setProjectOptions] = useState({}); // { [programId]: [{label, value}] }
 
   // Readonly if status is approved
-  const isReadOnly = (fetchedRecord?.statusId || '').toUpperCase() === 'APPROVED';
-  console.log(isReadOnly)
+  const isReadOnly = (fetchedRecord?.statusId || '').toUpperCase() === 'APPROVED' || (fetchedRecord?.statusId || '').toUpperCase() === 'UNDER REVIEW (SITE)' || (fetchedRecord?.statusId || '').toUpperCase() === 'UNDER REVIEW (HEAD)';
+  const getStatus = () => {
+    if (fetchedRecord.statusId.toUpperCase() === 'APPROVED') {
+      return "Approved";
+    } else if (fetchedRecord.statusId.toUpperCase() === 'UNDER REVIEW (SITE)') {
+      return "Under Review (Site Level)"
+    } else if (fetchedRecord.statusId === 'UNDER REVIEW (HEAD)') {
+      return "Under Review (Head Level)"
+    }
+  }
   // Check if any changes were made
   const isUnchanged = JSON.stringify(fetchedRecord) === JSON.stringify(editedRecord);
 
@@ -211,7 +219,7 @@ const ViewHelpRecordModal = ({
       {/* Show warning if record is approved */}
       {isReadOnly && (
         <Typography variant="caption" color="error">
-          This record has been approved and cannot be edited.
+          This record has a status of <b>{getStatus()}</b> and cannot be edited.
         </Typography>
       )}
       {/* Record fields */}

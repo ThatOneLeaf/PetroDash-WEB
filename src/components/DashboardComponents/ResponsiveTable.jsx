@@ -59,7 +59,7 @@ const GenericResponsiveTable = ({ data }) => {
                   fontSize,
                   fontWeight: 'bold',
                   color: '#fff',
-                  background: 'linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%)',
+                  background: '#182959',
                   borderRight: '1px solid #e0e7ef',
                   letterSpacing: 1,
                   textTransform: 'capitalize',
