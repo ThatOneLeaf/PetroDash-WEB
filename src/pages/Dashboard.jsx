@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -32,6 +32,9 @@ import HELPINvestments from "./CSR/Charts/InvestmentKPI";
 import EnergyTable from "../components/EnergyOverallTable";
 
 import HROverview from "../pages/HR/OverviewHR";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 function Dashboard() {
   const { logout } = useAuth();
@@ -43,6 +46,9 @@ function Dashboard() {
   const [economicData, setEconomicData] = useState([]);
   const [economicLoading, setEconomicLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  // Ref for export
+  const dashboardRef = useRef();
 
   // Utils
   const formatDateTime = (date) => format(date, "PPPpp");
@@ -90,6 +96,19 @@ function Dashboard() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Export handler (PDF)
+  const handleExportData = async () => {
+    const input = dashboardRef.current;
+    if (!input) return;
+    const canvas = await html2canvas(input, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("dashboard_export.pdf");
+  };
+
   // Show header/sidebar, and loading spinner in content area (like HELPDash)
   return (
     <Box sx={{ display: "flex" }}>
@@ -98,10 +117,8 @@ function Dashboard() {
         sx={{
           flexGrow: 1,
           height: "100vh",
-          overflow: "auto",
-          px: 3,
-          py: 1,
-          backgroundColor: "#ffff",
+          overflow: "hidden",
+          bgcolor: "#f5f5f5",
           display: "flex",
           flexDirection: "column",
         }}
@@ -111,105 +128,128 @@ function Dashboard() {
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
-            mb: 1,
+            px: 2,
+            pt: 2,
             flexShrink: 0,
           }}
         >
           <DashboardHeader
-            title="Overview"
+            title="Dashboard"
             lastUpdated={lastUpdated}
             formatDateTime={formatDateTime}
           />
-          <Button
-            variant="outlined"
-            onClick={logout}
-            sx={{ color: "#666", borderColor: "#666", mt: "15px" }}
-          >
-            Logout
-          </Button>
+          <Box sx={{ display: "flex", gap: 1, mt: "15px" }}>
+            <Button
+              variant="contained"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExportData}
+              sx={{
+                backgroundColor: "#182959",
+                borderRadius: "8px",
+                fontWeight: 700,
+                fontSize: 13,
+                px: 2,
+                py: 0.5,
+                minHeight: "32px",
+                height: "32px",
+                "&:hover": { backgroundColor: "#0f1a3c" },
+              }}
+            >
+              Export Data
+            </Button>
+          </Box>
         </Box>
 
         {/* Main Content */}
-        {loading ? (
-          <Box
-            sx={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "transparent",
-              minHeight: 0,
-            }}
-          >
-            <CircularProgress size={48} thickness={5} />
-            <Typography
-              sx={{ mt: 2, fontWeight: 600, color: "#666", fontSize: 18 }}
-            >
-              Loading The Overview Dashboard
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            {/* Dashboard Grid Layout - 2 Rows */}
+        <Box
+          ref={dashboardRef}
+          sx={{
+            flex: 1,
+            p: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {loading ? (
             <Box
               sx={{
+                flex: 1,
                 display: "flex",
                 flexDirection: "column",
-                gap: 2,
-                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                background: "transparent",
                 minHeight: 0,
               }}
             >
-              {/* First Row - Energy Section (Full Width) */}
-              <Paper
-                elevation={1}
+              <CircularProgress size={48} thickness={5} />
+              <Typography
+                sx={{ mt: 2, fontWeight: 600, color: "#666", fontSize: 18 }}
+              >
+                Loading The Overview Dashboard
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {/* Dashboard Grid Layout - 2 Rows */}
+              <Box
                 sx={{
-                  p: 2,
-                  border: "2px solid #333",
-                  borderRadius: 2,
-                  backgroundColor: "white",
-                  position: "relative",
-                  flex: "0 0 auto",
-                  minHeight: "200px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  flex: 1,
+                  minHeight: 0,
                 }}
               >
-                {/* Floating label */}
-                <Typography
-                  variant="h6"
+                {/* First Row - Energy Section (Full Width) */}
+                <Paper
+                  elevation={1}
                   sx={{
-                    position: "absolute",
-                    top: -14,
-                    left: 16,
+                    p: 2,
+                    border: "2px solid #333",
+                    borderRadius: 2,
                     backgroundColor: "white",
-                    px: 1,
-                    fontWeight: "bold",
-                    color: "#333",
-                    zIndex: 2,
+                    position: "relative",
+                    flex: "0 0 auto",
+                    minHeight: "200px",
                   }}
                 >
-                  ENERGY
-                </Typography>
+                  {/* Floating label */}
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      position: "absolute",
+                      top: -14,
+                      left: 16,
+                      backgroundColor: "white",
+                      px: 1,
+                      fontWeight: "bold",
+                      color: "#333",
+                      zIndex: 2,
+                    }}
+                  >
+                    ENERGY
+                  </Typography>
 
-                {/* Padding top so ENERGY label doesn't overlap table */}
-                <Box
-                  sx={{
-                    pt: 0.3,
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <EnergyTable />
-                </Box>
-              </Paper>
+                  {/* Padding top so ENERGY label doesn't overlap table */}
+                  <Box
+                    sx={{
+                      pt: 0.3,
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <EnergyTable />
+                  </Box>
+                </Paper>
 
-              {/* Second Row - 2 Columns */}
-              <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
-                {/* Left Column - Economics */}
-                                  <Paper
+                {/* Second Row - 2 Columns */}
+                <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
+                  {/* Left Column - Economics */}
+                  <Paper
                     elevation={1}
                     sx={{
                       flex: 1,
@@ -221,324 +261,324 @@ function Dashboard() {
                       minHeight: 0,
                     }}
                   >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      position: "absolute",
-                      top: -12,
-                      left: 16,
-                      backgroundColor: "white",
-                      px: 1,
-                      fontWeight: "bold",
-                      color: "#333",
-                    }}
-                  >
-                    ECONOMIC
-                  </Typography>
-                  <Box sx={{ pt: 2, height: "100%" }}>
-                    {economicLoading ? (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: "100%",
-                        }}
-                      >
-                        <Typography variant="body2" color="text.secondary">
-                          Loading economic data...
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Box
-                        sx={{
-                          height: "100%",
-                          display: "flex",
-                          flexDirection: "column",
-                        }}
-                      >
-                        {/* KPI Cards Row - Compact fit-content height */}
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        position: "absolute",
+                        top: -12,
+                        left: 16,
+                        backgroundColor: "white",
+                        px: 1,
+                        fontWeight: "bold",
+                        color: "#333",
+                      }}
+                    >
+                      ECONOMIC
+                    </Typography>
+                    <Box sx={{ pt: 2, height: "100%" }}>
+                      {economicLoading ? (
                         <Box
-                          sx={{ height: "fit-content", mb: 1, flexShrink: 0 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: "100%",
+                          }}
                         >
-                          <Grid container spacing={1}>
-                            {/* Value Generated Card */}
-                            <Grid size={4}>
-                              <Card
-                                sx={{
-                                  borderRadius: 2,
-                                  boxShadow: 1,
-                                  bgcolor: "#2B8C37",
-                                  height: "fit-content",
-                                }}
-                              >
-                                <CardContent
-                                  sx={{
-                                    textAlign: "center",
-                                    py: 1,
-                                    px: 1,
-                                    "&:last-child": { pb: 1 },
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    minHeight: "unset",
-                                  }}
-                                >
-                                  <Typography
-                                    variant="h5"
-                                    sx={{
-                                      color: "white",
-                                      fontWeight: "bold",
-                                      fontSize: "1.1rem",
-                                      mb: 0.2,
-                                      lineHeight: 1.2,
-                                    }}
-                                  >
-                                    {currentYearMetrics
-                                      ? currentYearMetrics.totalGenerated.toLocaleString()
-                                      : "0"}
-                                  </Typography>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      color: "white",
-                                      fontSize: "0.7rem",
-                                      mb: 0.2,
-                                      lineHeight: 1.1,
-                                    }}
-                                  >
-                                    Value Generated
-                                  </Typography>
-                                  {previousYearMetrics && (
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        color: "white",
-                                        fontSize: "0.6rem",
-                                        lineHeight: 1,
-                                      }}
-                                    >
-                                      ▲
-                                      {calculateGrowth(
-                                        currentYearMetrics?.totalGenerated,
-                                        previousYearMetrics?.totalGenerated
-                                      )}
-                                      % from last year
-                                    </Typography>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            </Grid>
-
-                            {/* Value Distributed Card */}
-                            <Grid size={4}>
-                              <Card
-                                sx={{
-                                  borderRadius: 2,
-                                  boxShadow: 1,
-                                  bgcolor: "#FF8042",
-                                  height: "fit-content",
-                                }}
-                              >
-                                <CardContent
-                                  sx={{
-                                    textAlign: "center",
-                                    py: 1,
-                                    px: 1,
-                                    "&:last-child": { pb: 1 },
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    minHeight: "unset",
-                                  }}
-                                >
-                                  <Typography
-                                    variant="h5"
-                                    sx={{
-                                      color: "white",
-                                      fontWeight: "bold",
-                                      fontSize: "1.1rem",
-                                      mb: 0.2,
-                                      lineHeight: 1.2,
-                                    }}
-                                  >
-                                    {currentYearMetrics
-                                      ? currentYearMetrics.totalDistributed.toLocaleString()
-                                      : "0"}
-                                  </Typography>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      color: "white",
-                                      fontSize: "0.7rem",
-                                      mb: 0.2,
-                                      lineHeight: 1.1,
-                                    }}
-                                  >
-                                    Value Distributed
-                                  </Typography>
-                                  {previousYearMetrics && (
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        color: "white",
-                                        fontSize: "0.6rem",
-                                        lineHeight: 1,
-                                      }}
-                                    >
-                                      ▲
-                                      {calculateGrowth(
-                                        currentYearMetrics?.totalDistributed,
-                                        previousYearMetrics?.totalDistributed
-                                      )}
-                                      % from last year
-                                    </Typography>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            </Grid>
-
-                            {/* Value Retained Card */}
-                            <Grid size={4}>
-                              <Card
-                                sx={{
-                                  borderRadius: 2,
-                                  boxShadow: 1,
-                                  bgcolor: "#182959",
-                                  height: "fit-content",
-                                }}
-                              >
-                                <CardContent
-                                  sx={{
-                                    textAlign: "center",
-                                    py: 1,
-                                    px: 1,
-                                    "&:last-child": { pb: 1 },
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    minHeight: "unset",
-                                  }}
-                                >
-                                  <Typography
-                                    variant="h5"
-                                    sx={{
-                                      color: "white",
-                                      fontWeight: "bold",
-                                      fontSize: "1.1rem",
-                                      mb: 0.2,
-                                      lineHeight: 1.2,
-                                    }}
-                                  >
-                                    {currentYearMetrics
-                                      ? currentYearMetrics.valueRetained.toLocaleString()
-                                      : "0"}
-                                  </Typography>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      color: "white",
-                                      fontSize: "0.7rem",
-                                      mb: 0.2,
-                                      lineHeight: 1.1,
-                                    }}
-                                  >
-                                    Value Retained
-                                  </Typography>
-                                  {previousYearMetrics && (
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        color: "white",
-                                        fontSize: "0.6rem",
-                                        lineHeight: 1,
-                                      }}
-                                    >
-                                      {previousYearMetrics.valueRetained >
-                                      currentYearMetrics?.valueRetained
-                                        ? "▼"
-                                        : "▲"}
-                                      {Math.abs(
-                                        calculateGrowth(
-                                          currentYearMetrics?.valueRetained,
-                                          previousYearMetrics?.valueRetained
-                                        )
-                                      )}
-                                      % from last year
-                                    </Typography>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            </Grid>
-                          </Grid>
+                          <Typography variant="body2" color="text.secondary">
+                            Loading economic data...
+                          </Typography>
                         </Box>
-
-                        {/* Chart Area - 2/3 of height */}
-                        <Box sx={{ flex: 1, minHeight: 0 }}>
+                      ) : (
+                        <Box
+                          sx={{
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                          }}
+                        >
+                          {/* KPI Cards Row - Compact fit-content height */}
                           <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              mb: 1,
-                            }}
+                            sx={{ height: "fit-content", mb: 1, flexShrink: 0 }}
                           >
+                            <Grid container spacing={1}>
+                              {/* Value Generated Card */}
+                              <Grid size={4}>
+                                <Card
+                                  sx={{
+                                    borderRadius: 2,
+                                    boxShadow: 1,
+                                    bgcolor: "#2B8C37",
+                                    height: "fit-content",
+                                  }}
+                                >
+                                  <CardContent
+                                    sx={{
+                                      textAlign: "center",
+                                      py: 1,
+                                      px: 1,
+                                      "&:last-child": { pb: 1 },
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      minHeight: "unset",
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="h5"
+                                      sx={{
+                                        color: "white",
+                                        fontWeight: "bold",
+                                        fontSize: "1.1rem",
+                                        mb: 0.2,
+                                        lineHeight: 1.2,
+                                      }}
+                                    >
+                                      {currentYearMetrics
+                                        ? currentYearMetrics.totalGenerated.toLocaleString()
+                                        : "0"}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "white",
+                                        fontSize: "0.7rem",
+                                        mb: 0.2,
+                                        lineHeight: 1.1,
+                                      }}
+                                    >
+                                      Value Generated
+                                    </Typography>
+                                    {previousYearMetrics && (
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          color: "white",
+                                          fontSize: "0.6rem",
+                                          lineHeight: 1,
+                                        }}
+                                      >
+                                        ▲
+                                        {calculateGrowth(
+                                          currentYearMetrics?.totalGenerated,
+                                          previousYearMetrics?.totalGenerated
+                                        )}
+                                        % from last year
+                                      </Typography>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </Grid>
+
+                              {/* Value Distributed Card */}
+                              <Grid size={4}>
+                                <Card
+                                  sx={{
+                                    borderRadius: 2,
+                                    boxShadow: 1,
+                                    bgcolor: "#FF8042",
+                                    height: "fit-content",
+                                  }}
+                                >
+                                  <CardContent
+                                    sx={{
+                                      textAlign: "center",
+                                      py: 1,
+                                      px: 1,
+                                      "&:last-child": { pb: 1 },
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      minHeight: "unset",
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="h5"
+                                      sx={{
+                                        color: "white",
+                                        fontWeight: "bold",
+                                        fontSize: "1.1rem",
+                                        mb: 0.2,
+                                        lineHeight: 1.2,
+                                      }}
+                                    >
+                                      {currentYearMetrics
+                                        ? currentYearMetrics.totalDistributed.toLocaleString()
+                                        : "0"}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "white",
+                                        fontSize: "0.7rem",
+                                        mb: 0.2,
+                                        lineHeight: 1.1,
+                                      }}
+                                    >
+                                      Value Distributed
+                                    </Typography>
+                                    {previousYearMetrics && (
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          color: "white",
+                                          fontSize: "0.6rem",
+                                          lineHeight: 1,
+                                        }}
+                                      >
+                                        ▲
+                                        {calculateGrowth(
+                                          currentYearMetrics?.totalDistributed,
+                                          previousYearMetrics?.totalDistributed
+                                        )}
+                                        % from last year
+                                      </Typography>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </Grid>
+
+                              {/* Value Retained Card */}
+                              <Grid size={4}>
+                                <Card
+                                  sx={{
+                                    borderRadius: 2,
+                                    boxShadow: 1,
+                                    bgcolor: "#182959",
+                                    height: "fit-content",
+                                  }}
+                                >
+                                  <CardContent
+                                    sx={{
+                                      textAlign: "center",
+                                      py: 1,
+                                      px: 1,
+                                      "&:last-child": { pb: 1 },
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      minHeight: "unset",
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="h5"
+                                      sx={{
+                                        color: "white",
+                                        fontWeight: "bold",
+                                        fontSize: "1.1rem",
+                                        mb: 0.2,
+                                        lineHeight: 1.2,
+                                      }}
+                                    >
+                                      {currentYearMetrics
+                                        ? currentYearMetrics.valueRetained.toLocaleString()
+                                        : "0"}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "white",
+                                        fontSize: "0.7rem",
+                                        mb: 0.2,
+                                        lineHeight: 1.1,
+                                      }}
+                                    >
+                                      Value Retained
+                                    </Typography>
+                                    {previousYearMetrics && (
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          color: "white",
+                                          fontSize: "0.6rem",
+                                          lineHeight: 1,
+                                        }}
+                                      >
+                                        {previousYearMetrics.valueRetained >
+                                        currentYearMetrics?.valueRetained
+                                          ? "▼"
+                                          : "▲"}
+                                        {Math.abs(
+                                          calculateGrowth(
+                                            currentYearMetrics?.valueRetained,
+                                            previousYearMetrics?.valueRetained
+                                          )
+                                        )}
+                                        % from last year
+                                      </Typography>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </Grid>
+                            </Grid>
+                          </Box>
+
+                          {/* Chart Area - 2/3 of height */}
+                          <Box sx={{ flex: 1, minHeight: 0 }}>
                             <Box
                               sx={{
-                                width: 4,
-                                height: 20,
-                                bgcolor: "#2B8C37",
-                                mr: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                mb: 1,
                               }}
-                            />
-                            <Typography
-                              variant="h6"
-                              sx={{ fontWeight: "bold", fontSize: "0.9rem" }}
                             >
-                              Annual Economic Value Analysis
-                            </Typography>
-                          </Box>
-                          <Box sx={{ height: "calc(100% - 40px)" }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <ComposedChart data={flowData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="year" tick={{ fontSize: 9 }} />
-                                <YAxis tick={{ fontSize: 9 }} />
-                                <Tooltip
-                                  formatter={(value) => [
-                                    value.toLocaleString(),
-                                    "",
-                                  ]}
-                                />
-                                <Legend wrapperStyle={{ fontSize: "10px" }} />
-                                <Bar
-                                  dataKey="economic_value_generated"
-                                  fill="#2B8C37"
-                                  name="Value Generated"
-                                />
-                                <Bar
-                                  dataKey="economic_value_distributed"
-                                  fill="#FF8042"
-                                  name="Value Distributed"
-                                />
-                                <Bar
-                                  dataKey="economic_value_retained"
-                                  fill="#182959"
-                                  name="Value Retained"
-                                />
-                              </ComposedChart>
-                            </ResponsiveContainer>
+                              <Box
+                                sx={{
+                                  width: 4,
+                                  height: 20,
+                                  bgcolor: "#2B8C37",
+                                  mr: 1,
+                                }}
+                              />
+                              <Typography
+                                variant="h6"
+                                sx={{ fontWeight: "bold", fontSize: "0.9rem" }}
+                              >
+                                Annual Economic Value Analysis
+                              </Typography>
+                            </Box>
+                            <Box sx={{ height: "calc(100% - 40px)" }}>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={flowData}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="year" tick={{ fontSize: 9 }} />
+                                  <YAxis tick={{ fontSize: 9 }} />
+                                  <Tooltip
+                                    formatter={(value) => [
+                                      value.toLocaleString(),
+                                      "",
+                                    ]}
+                                  />
+                                  <Legend wrapperStyle={{ fontSize: "10px" }} />
+                                  <Bar
+                                    dataKey="economic_value_generated"
+                                    fill="#2B8C37"
+                                    name="Value Generated"
+                                  />
+                                  <Bar
+                                    dataKey="economic_value_distributed"
+                                    fill="#FF8042"
+                                    name="Value Distributed"
+                                  />
+                                  <Bar
+                                    dataKey="economic_value_retained"
+                                    fill="#182959"
+                                    name="Value Retained"
+                                  />
+                                </ComposedChart>
+                              </ResponsiveContainer>
+                            </Box>
                           </Box>
                         </Box>
-                      </Box>
-                    )}
-                  </Box>
-                </Paper>
+                      )}
+                    </Box>
+                  </Paper>
 
-                {/* Right Column - Environment and Social stacked */}
-                                  <Box
+                  {/* Right Column - Environment and Social stacked */}
+                  <Box
                     sx={{
                       display: "flex",
                       flexDirection: "column",
@@ -547,7 +587,7 @@ function Dashboard() {
                       minHeight: 0,
                     }}
                   >
-                                      {/* Environment Section */}
+                    {/* Environment Section */}
                     <Paper
                       elevation={1}
                       sx={{
@@ -560,39 +600,39 @@ function Dashboard() {
                         minHeight: 0,
                       }}
                     >
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        position: "absolute",
-                        top: -12,
-                        left: 16,
-                        backgroundColor: "white",
-                        px: 1,
-                        fontWeight: "bold",
-                        color: "#333",
-                        zIndex: 1,
-                      }}
-                    >
-                      ENVIRONMENT
-                    </Typography>
-                    <Box
-                      sx={{
-                        pt: 3,
-                        height: "100%",
-                        width: "100%",
-                        px: 2,
-                        pb: 1,
-                        display: "flex",
-                        alignItems: "stretch",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <EnviOverview />
-                    </Box>
-                  </Paper>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          position: "absolute",
+                          top: -12,
+                          left: 16,
+                          backgroundColor: "white",
+                          px: 1,
+                          fontWeight: "bold",
+                          color: "#333",
+                          zIndex: 1,
+                        }}
+                      >
+                        ENVIRONMENT
+                      </Typography>
+                      <Box
+                        sx={{
+                          pt: 3,
+                          height: "100%",
+                          width: "100%",
+                          px: 2,
+                          pb: 1,
+                          display: "flex",
+                          alignItems: "stretch",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <EnviOverview />
+                      </Box>
+                    </Paper>
 
-                  {/* Social Section */}
-                                      <Paper
+                    {/* Social Section */}
+                    <Paper
                       elevation={1}
                       sx={{
                         flex: 1,
@@ -604,39 +644,40 @@ function Dashboard() {
                         minHeight: 0,
                       }}
                     >
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        position: "absolute",
-                        top: -12,
-                        left: 16,
-                        backgroundColor: "white",
-                        px: 1,
-                        fontWeight: "bold",
-                        color: "#333",
-                      }}
-                    >
-                      SOCIAL
-                    </Typography>
-                    <Box
-                      sx={{
-                        pt: 2,
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <HELPINvestments />
-                      <HROverview />
-                    </Box>
-                  </Paper>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          position: "absolute",
+                          top: -12,
+                          left: 16,
+                          backgroundColor: "white",
+                          px: 1,
+                          fontWeight: "bold",
+                          color: "#333",
+                        }}
+                      >
+                        SOCIAL
+                      </Typography>
+                      <Box
+                        sx={{
+                          pt: 2,
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <HELPINvestments />
+                        <HROverview />
+                      </Box>
+                    </Paper>
+                  </Box>
                 </Box>
               </Box>
-            </Box>
-          </>
-        )}
+            </>
+          )}
+        </Box>
       </Box>
     </Box>
   );
