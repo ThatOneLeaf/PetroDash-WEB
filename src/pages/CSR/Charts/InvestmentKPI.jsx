@@ -2,6 +2,17 @@ import { Paper } from '@mui/material';
 import React, { useEffect, useState } from "react";
 import api from "../../../services/api";
 
+// Map program/project to color
+const PROGRAM_COLORS = {
+    health: '#f8bcbc',
+    education: '#b6d4f7',
+    livelihood: '#fff3b0',
+    // Add more mappings if needed
+};
+
+// Helper to get color by program
+const getColor = (program) => PROGRAM_COLORS[program?.toLowerCase?.()] || '#e2e8f0';
+
 // Accept year and company as props
 export default function InvestmentKPI({ year: yearProp, companyId }) {
     const [data, setData] = useState({});
@@ -77,8 +88,8 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
         <Paper
             elevation={0}
             sx={{
-            background: '#f8bcbc',
-            border: '2px solid #f8bcbc',
+            background: getColor('health'),
+            border: `2px solid ${getColor('health')}`,
             borderRadius: '14px',
             px: 3,
             py: 2,
@@ -146,8 +157,8 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
         <Paper
             elevation={0}
             sx={{
-            background: '#b6d4f7',
-            border: '2px solid #b6d4f7',
+            background: getColor('education'),
+            border: `2px solid ${getColor('education')}`,
             borderRadius: '14px',
             px: 3,
             py: 2,
@@ -215,8 +226,8 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
         <Paper
             elevation={0}
             sx={{
-            background: '#fff3b0',
-            border: '2px solid #fff3b0',
+            background: getColor('livelihood'),
+            border: `2px solid ${getColor('livelihood')}`,
             borderRadius: '14px',
             px: 3,
             py: 2,

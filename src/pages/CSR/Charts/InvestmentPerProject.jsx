@@ -20,10 +20,10 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
 
   // Define program colors (should match KPI colors)
   const PROGRAM_COLORS = {
-    health: "#ef4444",      // red-500
-    education: "#1976d2",   // blue-700
-    livelihood: "#fbbf24",  // yellow-400
-    default: "#a3a3a3"      // neutral-400
+    health: "#f8bcbc",     
+    education: "#b6d4f7",   
+    livelihood: "#fff3b0", 
+    default: "#e2e8f0"     
   };
 
   // Helper to determine program by project/program name
@@ -38,7 +38,7 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
       project.includes('nutrition') ||
       project.includes('feeding') ||
       project.includes('supplement') ||
-      project.includes('mobile clinic') // Add detection for mobile clinic
+      project.includes('mobile clinic') 
     ) {
       return 'health';
     }
@@ -53,7 +53,12 @@ const InvestmentPerProject = ({ year: yearProp, companyId, height, width }) => {
     ) {
       return 'education';
     }
-    if (program.includes('livelihood') || project.includes('livelihood')) {
+    if (
+      program.includes('livelihood') ||
+      project.includes('livelihood') ||
+      program.includes('individual recipient') ||
+      project.includes('individual recipient')
+    ) {
       return 'livelihood';
     }
     return 'default';
