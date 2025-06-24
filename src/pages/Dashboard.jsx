@@ -134,7 +134,7 @@ function Dashboard() {
           }}
         >
           <DashboardHeader
-            title="Dashboard"
+            title="DASHBOARD"
             lastUpdated={lastUpdated}
             formatDateTime={formatDateTime}
           />

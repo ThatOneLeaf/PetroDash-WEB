@@ -12,17 +12,6 @@ const DashboardHeader = ({ title, lastUpdated, formatDateTime }) => {
       }}
     >
       <div>
-        <div
-          style={{
-            color: '#64748b',
-            fontSize: '12px',
-            fontWeight: 500,
-            marginBottom: '3px',
-          }}
-        >
-          DASHBOARD
-        </div>
-
         <h1
           style={{
             fontSize: '24px',
