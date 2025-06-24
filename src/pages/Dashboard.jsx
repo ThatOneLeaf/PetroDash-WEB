@@ -354,12 +354,14 @@ function Dashboard() {
                                     <Typography
                                       variant="caption"
                                       sx={{
-                                        color: calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '#4CAF50' : '#F44336',
+                                        color: "white",
                                         fontSize: "0.6rem",
                                         lineHeight: 1,
                                       }}
                                     >
-                                      {calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '▲' : '▼'}
+                                      <span style={{ color: calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '#4CAF50' : '#F44336' }}>
+                                        {calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '▲' : '▼'}
+                                      </span>
                                       {Math.abs(calculateGrowth(
                                         currentYearMetrics?.totalGenerated,
                                         previousYearMetrics?.totalGenerated
@@ -500,12 +502,14 @@ function Dashboard() {
                                       <Typography
                                         variant="caption"
                                         sx={{
-                                          color: isImprovement ? '#4CAF50' : '#F44336',
+                                          color: "white",
                                           fontSize: "0.6rem",
                                           lineHeight: 1,
                                         }}
                                       >
-                                        {isImprovement ? '▲' : '▼'}
+                                        <span style={{ color: isImprovement ? '#4CAF50' : '#F44336' }}>
+                                          {isImprovement ? '▲' : '▼'}
+                                        </span>
                                         {Math.abs(growthRate)}% from last year
                                       </Typography>
                                     );

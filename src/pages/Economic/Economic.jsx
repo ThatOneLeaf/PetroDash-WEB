@@ -431,10 +431,12 @@ function Economic() {
                     </Typography>
                     {previousYearMetrics && (
                       <Typography variant="caption" sx={{ 
-                        color: calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '#4CAF50' : '#F44336', 
+                        color: 'white', 
                         fontSize: '0.5rem' 
                       }}>
-                        {calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '▲' : '▼'}
+                        <span style={{ color: calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '#4CAF50' : '#F44336' }}>
+                          {calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated) >= 0 ? '▲' : '▼'}
+                        </span>
                         {Math.abs(calculateGrowth(currentYearMetrics?.totalGenerated, previousYearMetrics?.totalGenerated))}% from last year
                       </Typography>
                     )}
@@ -475,10 +477,12 @@ function Economic() {
                       
                       return (
                         <Typography variant="caption" sx={{ 
-                          color: isImprovement ? '#4CAF50' : '#F44336', 
+                          color: 'white', 
                           fontSize: '0.5rem' 
                         }}>
-                          {isImprovement ? '▲' : '▼'}
+                          <span style={{ color: isImprovement ? '#4CAF50' : '#F44336' }}>
+                            {isImprovement ? '▲' : '▼'}
+                          </span>
                           {Math.abs(growthRate)}% from last year
                         </Typography>
                       );
