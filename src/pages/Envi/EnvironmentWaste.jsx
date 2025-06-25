@@ -53,6 +53,7 @@ function EnvironmentWaste() {
   const [showBulkReviseModal, setShowBulkReviseModal] = useState(false);
   const [showRemarksRequiredModal, setShowRemarksRequiredModal] = useState(false);
   const statuses = ["URS","FRS","URH","FRH","APP"];
+  const [bulkUpdatedStatusMessage, setBulkUpdatedStatusMessage] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: 'year',
     direction: 'desc'
@@ -72,6 +73,17 @@ function EnvironmentWaste() {
     unit: '',
     status: '',
   });
+
+  const getStatusDisplayText = (statusCode) => {
+    const statusMap = {
+      "URS": "submitted for review (site)",
+      "FRS": "sent for revision (site)", 
+      "URH": "submitted for review (head level)",
+      "FRH": "sent for revision (head level)",
+      "APP": "approved"
+    };
+    return statusMap[statusCode] || statusCode;
+  };
 
   const resetFiltersToNull = () => {
     const nullFilters = Object.keys(filters).reduce((acc, key) => {
@@ -473,6 +485,9 @@ function EnvironmentWaste() {
       refreshCurrentData();
       setSelectedRowIds([]);
       setRemarks("");
+      
+      // Set the dynamic message based on the new status
+      setBulkUpdatedStatusMessage(getStatusDisplayText(newStatus));
       setShowApproveSuccessModal(true);
     } catch (error) {
       alert(error?.response?.data?.detail || "Update Status Failed.");
@@ -1060,14 +1075,14 @@ function EnvironmentWaste() {
                   color: '#182959',
                   mb: 2
                 }}>
-                  Record(s) Approved Successfully!
+                  Record(s) Status Updated Successfully!
                 </Typography>
                 <Typography sx={{ 
                   fontSize: '1rem',
                   color: '#666',
                   mb: 3
                 }}>
-                  The selected record(s) have been successfully approved.
+                  The selected record(s) have been successfully {bulkUpdatedStatusMessage}.
                 </Typography>
               </Box>
               <Box sx={{

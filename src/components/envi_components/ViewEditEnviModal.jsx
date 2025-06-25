@@ -40,6 +40,7 @@ const ViewEditRecordModal = ({
   const [nextStatus, setNextStatus] = useState("");
   const [remarks, setRemarks] = useState("");
   const recordIdKey = Object.keys(record)[0];
+  const [updatedStatusMessage, setUpdatedStatusMessage] = useState("");
 
   // Updated permanentlyReadOnlyFields to include metrics and unit for hazard tables
   // Also include property and type for Diesel table
@@ -266,6 +267,17 @@ const ViewEditRecordModal = ({
       }
     }
   }, [source]);
+
+  const getStatusDisplayText = (statusCode) => {
+    const statusMap = {
+      "URS": "submitted for review (site)",
+      "FRS": "sent for revision (site)", 
+      "URH": "submitted for review (head level)",
+      "FRH": "sent for revision (head level)",
+      "APP": "approved"
+    };
+    return statusMap[statusCode] || statusCode;
+  };
 
   const handleChange = (key, value) => {
     let newValue = value;
@@ -504,6 +516,9 @@ const ViewEditRecordModal = ({
         remarks: remarks.trim(),
       };
       const response = await api.post("/usable_apis/update_status", payload);
+      
+      // Set the dynamic message based on the new status
+      setUpdatedStatusMessage(getStatusDisplayText(newStatus));
       setShowApproveSuccessModal(true);
     } catch (error) {
       alert(error?.response?.data?.detail || "Update Status Failed.");
@@ -1183,7 +1198,7 @@ const ViewEditRecordModal = ({
                   mb: 2,
                 }}
               >
-                Record Approved Successfully!
+                Record Status Updated Successfully!
               </Typography>
               <Typography
                 sx={{
@@ -1192,7 +1207,7 @@ const ViewEditRecordModal = ({
                   mb: 3,
                 }}
               >
-                The record has been successfully approved.
+                The record has been successfully {updatedStatusMessage}.
               </Typography>
             </Box>
             <Box
