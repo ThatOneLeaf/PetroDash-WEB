@@ -122,12 +122,13 @@ function Dashboard() {
       <Box
         sx={{
           flexGrow: 1,
-          height: { xs: 'auto', md: "100vh" },
+          height: { xs: 'auto', md: "auto" },
           minHeight: { xs: '100vh', md: 'auto' },
           overflow: { xs: 'visible', md: "hidden" },
           bgcolor: "#f5f5f5",
           display: "flex",
           flexDirection: "column",
+          zoom:0.8
         }}
       >        {/* Header */}
         <Box

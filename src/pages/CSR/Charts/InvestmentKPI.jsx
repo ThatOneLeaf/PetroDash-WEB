@@ -68,11 +68,11 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
 
 
     if (loading) {
-    return (
-        <div style={{ display: 'flex', gap: 16, width: '100%', marginBottom: 24, justifyContent: 'center', alignItems: 'center', minHeight: 90 }}>
-        Loading...
-        </div>
-    );
+        return (
+            <div style={{ display: 'flex', gap: 16, width: '100%', marginBottom: 24, justifyContent: 'center', alignItems: 'center', minHeight: 0, height: '100%' }}>
+                Loading...
+            </div>
+        );
     }
 
     // Helper to format date as MONTH-YEAR
@@ -83,214 +83,214 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
     };
 
     return (
-        <div style={{ display: 'flex', gap: 8, width: '100%', marginBottom: 8 }}>
-        {/* Health KPI */}
-        <Paper
-            elevation={0}
-            sx={{
-            background: getColor('health'),
-            border: `2px solid ${getColor('health')}`,
-            borderRadius: '14px',
-            px: 3,
-            py: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-            fontSize: 18,
-            boxShadow: 'none',
-            width: '100%',
-            minWidth: 0,
-            minHeight: 90,
-            height: 90,
-            textAlign: 'center',
-            flex: 1
-            }}
-        >
-            <div
-            style={{
-                fontSize: 22, 
-                fontWeight: 900,
-                marginBottom: 2,
-                textAlign: 'center',
-                color: '#182959',
-                letterSpacing: 0.5,
-                lineHeight: 1.1,
-            }}
-            >
-            {data?.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-            </div>
-            <div
-            style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 1.2,
-                letterSpacing: 0.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-            }}
-            >
-            Health
-            </div>
-            <div
-                style={{
-                    fontSize: 10,
-                    color: '#94a3b8',
-                    textAlign: 'center',
-                    marginTop: 2,
+        <div style={{ display: 'flex', gap: 8, width: '100%', marginBottom: 8, height: '100%', minHeight: 0 }}>
+            {/* Health KPI */}
+            <Paper
+                elevation={0}
+                sx={{
+                    background: getColor('health'),
+                    border: `2px solid ${getColor('health')}`,
+                    borderRadius: '14px',
+                    px: 3,
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    boxShadow: 'none',
                     width: '100%',
-                    fontStyle: 'italic',
-                    letterSpacing: 0.2,
-                    fontWeight: 400,
+                    minWidth: 0,
+                    minHeight: 0,
+                    height: '100%',
+                    textAlign: 'center',
+                    flex: 1
                 }}
             >
-                {dates?.health && (
-                    <>As of: {formatMonthYear(dates.health)}</>
-                )}
-            </div>
-        </Paper>
-        {/* Education KPI */}
-        <Paper
-            elevation={0}
-            sx={{
-            background: getColor('education'),
-            border: `2px solid ${getColor('education')}`,
-            borderRadius: '14px',
-            px: 3,
-            py: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-            fontSize: 18,
-            boxShadow: 'none',
-            width: '100%',
-            minWidth: 0,
-            minHeight: 90,
-            height: 90,
-            textAlign: 'center',
-            flex: 1
-            }}
-        >
-            <div
-            style={{
-                fontSize: 22,
-                fontWeight: 900,
-                marginBottom: 2,
-                textAlign: 'center',
-                color: '#182959',
-                letterSpacing: 0.5,
-                lineHeight: 1.1,
-            }}
-            >
-            {data?.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-            </div>
-            <div
-            style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 1.2,
-                letterSpacing: 0.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-            }}
-            >
-            Education
-            </div>
-            <div
+                <div
                 style={{
-                    fontSize: 10,
-                    color: '#94a3b8',
+                    fontSize: 22, 
+                    fontWeight: 900,
+                    marginBottom: 2,
                     textAlign: 'center',
-                    marginTop: 2,
-                    width: '100%',
-                    fontStyle: 'italic',
+                    color: '#182959',
+                    letterSpacing: 0.5,
+                    lineHeight: 1.1,
+                }}
+                >
+                {data?.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                </div>
+                <div
+                style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#64748b',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
                     letterSpacing: 0.2,
-                    fontWeight: 400,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                }}
+                >
+                Health
+                </div>
+                <div
+                    style={{
+                        fontSize: 10,
+                        color: '#94a3b8',
+                        textAlign: 'center',
+                        marginTop: 2,
+                        width: '100%',
+                        fontStyle: 'italic',
+                        letterSpacing: 0.2,
+                        fontWeight: 400,
+                    }}
+                >
+                    {dates?.health && (
+                        <>As of: {formatMonthYear(dates.health)}</>
+                    )}
+                </div>
+            </Paper>
+            {/* Education KPI */}
+            <Paper
+                elevation={0}
+                sx={{
+                    background: getColor('education'),
+                    border: `2px solid ${getColor('education')}`,
+                    borderRadius: '14px',
+                    px: 3,
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    boxShadow: 'none',
+                    width: '100%',
+                    minWidth: 0,
+                    minHeight: 0,
+                    height: '100%',
+                    textAlign: 'center',
+                    flex: 1
                 }}
             >
-                {dates?.education && (
-                    <>As of: {formatMonthYear(dates.education)}</>
-                )}
-            </div>
-        </Paper>
-        {/* Livelihood KPI */}
-        <Paper
-            elevation={0}
-            sx={{
-            background: getColor('livelihood'),
-            border: `2px solid ${getColor('livelihood')}`,
-            borderRadius: '14px',
-            px: 3,
-            py: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-            fontSize: 18,
-            boxShadow: 'none',
-            width: '100%',
-            minWidth: 0,
-            minHeight: 90,
-            height: 90,
-            textAlign: 'center',
-            flex: 1
-            }}
-        >
-            <div
-            style={{
-                fontSize: 22,
-                fontWeight: 900,
-                marginBottom: 2,
-                textAlign: 'center',
-                color: '#182959',
-                letterSpacing: 0.5,
-                lineHeight: 1.1,
-            }}
-            >
-            {data?.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-            </div>
-            <div
-            style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 1.2,
-                letterSpacing: 0.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-            }}
-            >
-            Livelihood
-            </div>
-            <div
+                <div
                 style={{
-                    fontSize: 10,
-                    color: '#94a3b8',
+                    fontSize: 22,
+                    fontWeight: 900,
+                    marginBottom: 2,
                     textAlign: 'center',
-                    marginTop: 2,
-                    width: '100%',
-                    fontStyle: 'italic',
+                    color: '#182959',
+                    letterSpacing: 0.5,
+                    lineHeight: 1.1,
+                }}
+                >
+                {data?.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                </div>
+                <div
+                style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#64748b',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
                     letterSpacing: 0.2,
-                    fontWeight: 400,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                }}
+                >
+                Education
+                </div>
+                <div
+                    style={{
+                        fontSize: 10,
+                        color: '#94a3b8',
+                        textAlign: 'center',
+                        marginTop: 2,
+                        width: '100%',
+                        fontStyle: 'italic',
+                        letterSpacing: 0.2,
+                        fontWeight: 400,
+                    }}
+                >
+                    {dates?.education && (
+                        <>As of: {formatMonthYear(dates.education)}</>
+                    )}
+                </div>
+            </Paper>
+            {/* Livelihood KPI */}
+            <Paper
+                elevation={0}
+                sx={{
+                    background: getColor('livelihood'),
+                    border: `2px solid ${getColor('livelihood')}`,
+                    borderRadius: '14px',
+                    px: 3,
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    boxShadow: 'none',
+                    width: '100%',
+                    minWidth: 0,
+                    minHeight: 0,
+                    height: '100%',
+                    textAlign: 'center',
+                    flex: 1
                 }}
             >
-                {dates?.livelihood && (
-                    <>As of: {formatMonthYear(dates.livelihood)}</>
-                )}
-            </div>
-        </Paper>
+                <div
+                style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    marginBottom: 2,
+                    textAlign: 'center',
+                    color: '#182959',
+                    letterSpacing: 0.5,
+                    lineHeight: 1.1,
+                }}
+                >
+                {data?.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                </div>
+                <div
+                style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#64748b',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
+                    letterSpacing: 0.2,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                }}
+                >
+                Livelihood
+                </div>
+                <div
+                    style={{
+                        fontSize: 10,
+                        color: '#94a3b8',
+                        textAlign: 'center',
+                        marginTop: 2,
+                        width: '100%',
+                        fontStyle: 'italic',
+                        letterSpacing: 0.2,
+                        fontWeight: 400,
+                    }}
+                >
+                    {dates?.livelihood && (
+                        <>As of: {formatMonthYear(dates.livelihood)}</>
+                    )}
+                </div>
+            </Paper>
         </div>
     );
 }
