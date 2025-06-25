@@ -1157,11 +1157,14 @@ function Energy() {
           }
           canApprove={
             role === 'R04'
-              ? ['URS', 'FRS'].includes(selectedRecord.status)
+              ? ['URS'].includes(selectedRecord.status)
               : role === 'R03'
-                ? ['URH', 'FRH'].includes(selectedRecord.status)
+                ? ['URH'].includes(selectedRecord.status)
                 : canApprove
           }
+          role={role}
+          power_plant_id={powerPlantId}
+          company_id={companyId}
         />
         </Overlay>
       )}
