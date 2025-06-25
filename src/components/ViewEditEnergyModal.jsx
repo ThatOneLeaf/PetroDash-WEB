@@ -58,6 +58,15 @@ const ViewEditEnergyModal = ({
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectRemarks, setRejectRemarks] = useState('');
 
+  // Approve Confirm state
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [showApproveSuccess, setShowApproveSuccess] = useState(false);
+  const [approveSuccessMessage, setApproveSuccessMessage] = useState('');
+
+  // Unsaved Changes Confirm state
+  const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
+  const [pendingClose, setPendingClose] = useState(false);
+
   const isReadOnly = status === 'Approved';
   const isUnchanged = JSON.stringify(record) === JSON.stringify(editedRecord);
 
@@ -161,28 +170,33 @@ const handleSave = async () => {
 
 
 const handleApprove = async () => {
-  const confirm = window.confirm('Are you sure you want to approve this record?');
-  if (!confirm) return;
+  setShowApproveConfirm(true);
+};
 
+const handleApproveConfirm = async () => {
+  setShowApproveConfirm(false);
   try {
     const formData = new FormData();
     formData.append('energy_id', energyId);
     formData.append('checker_id', '01JW5F4N9M7E9RG9MW3VX49ES5');
-    formData.append('remarks', '');  // Required by backend
+    formData.append('remarks', ''); // Required by backend
     formData.append('action', 'approve');
 
     const response = await api.post('/energy/update_status', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
-    alert(response.data.message || 'Record approved successfully.');
-    if (updateStatus) updateStatus('APP');
-    onClose();  // CLOSE MODAL HERE
+    if (response.data.message) {
+      setApproveSuccessMessage(response.data.message);
+      setShowApproveSuccess(true);
+    }
+
   } catch (error) {
     const msg = error.response?.data?.detail || error.message;
     alert(`Failed to approve: ${msg}`);
   }
 };
+
 
 const handleRejectConfirm = async () => {
   if (!rejectRemarks.trim()) {
@@ -240,8 +254,9 @@ const handleRejectConfirm = async () => {
 
   const handleCloseClick = () => {
     if (isEditing && !isUnchanged) {
-      const confirmClose = window.confirm('You have unsaved changes. Close anyway?');
-      if (!confirmClose) return;
+      setShowUnsavedConfirm(true);
+      setPendingClose(true);
+      return;
     }
     if (updateStatus) updateStatus(isUnchanged);
     onClose();
@@ -626,6 +641,190 @@ const handleRejectConfirm = async () => {
                 },
               }}
               onClick={() => setShowErrorModal(false)}
+            >
+              OK
+            </Button>
+          </Paper>
+        </Overlay>
+      )}
+      {showApproveConfirm && (
+        <Overlay onClose={() => setShowApproveConfirm(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Typography sx={{
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                color: '#182959',
+                mb: 2
+              }}>
+                Confirm Record Approval
+              </Typography>
+              <Typography sx={{
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                Are you sure you want to approve this power generation record?
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 3
+            }}>
+              <Button
+                variant="outlined"
+                sx={{
+                  borderRadius: '999px',
+                  px: 3,
+                  py: 1,
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  mr: 2
+                }}
+                onClick={() => setShowApproveConfirm(false)}
+              >
+                CANCEL
+              </Button>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: '#2B8C37',
+                  borderRadius: '999px',
+                  px: 3,
+                  py: 1,
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  '&:hover': { backgroundColor: '#256d2f' },
+                }}
+                onClick={handleApproveConfirm}
+              >
+                CONFIRM
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      {showUnsavedConfirm && (
+        <Overlay onClose={() => { setShowUnsavedConfirm(false); setPendingClose(false); }}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            outline: 'none',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              mb: 3
+            }}>
+              <Typography sx={{
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                color: '#e4a728',
+                mb: 2
+              }}>
+                Unsaved Changes
+              </Typography>
+              <Typography sx={{
+                fontSize: '1rem',
+                color: '#666',
+                mb: 3
+              }}>
+                You have unsaved changes. Close anyway?
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 3
+            }}>
+              <Button
+                variant="outlined"
+                sx={{
+                  borderRadius: '999px',
+                  px: 3,
+                  py: 1,
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  mr: 2
+                }}
+                onClick={() => { setShowUnsavedConfirm(false); setPendingClose(false); }}
+              >
+                CANCEL
+              </Button>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: '#e4a728',
+                  borderRadius: '999px',
+                  px: 3,
+                  py: 1,
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  '&:hover': { backgroundColor: '#bd8a21' },
+                }}
+                onClick={() => {
+                  setShowUnsavedConfirm(false);
+                  setPendingClose(false);
+                  if (updateStatus) updateStatus(isUnchanged);
+                  onClose();
+                }}
+              >
+                CLOSE ANYWAY
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
+      {showApproveSuccess && (
+        <Overlay onClose={() => setShowApproveSuccess(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            textAlign: 'center'
+          }}>
+            <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#2B8C37', mb: 2 }}>
+              Success
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', color: '#444', mb: 3 }}>
+              {approveSuccessMessage}
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#2B8C37',
+                borderRadius: '999px',
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#256d2f',
+                },
+              }}
+              onClick={() => {
+                setShowApproveSuccess(false);
+                if (updateStatus) updateStatus('APP');
+                onClose(); // <- Now close the modal AFTER the success message is shown
+              }}
             >
               OK
             </Button>
