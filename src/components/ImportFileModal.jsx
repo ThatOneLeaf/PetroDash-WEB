@@ -19,7 +19,8 @@ function ImportFileModal({
   title,
   downloadPath,
   uploadPath,
-  fileType = "xlsx"
+  fileType = "xlsx",
+  onSuccess,
 }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -39,10 +40,12 @@ function ImportFileModal({
       setDownloadingTemplate(true);
       const response = await api.get(downloadPath, {
         params: { include_examples: true },
-        responseType: "blob"
+        responseType: "blob",
       });
 
-      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"],
+      });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -51,7 +54,9 @@ function ImportFileModal({
 
       const disposition = response.headers["content-disposition"];
       const filenameMatch = disposition?.match(/filename="?(.+)"?/);
-      const filename = filenameMatch ? filenameMatch[1] : `${file}_template.${fileType}`;
+      const filename = filenameMatch
+        ? filenameMatch[1]
+        : `${file}_template.${fileType}`;
 
       link.setAttribute("download", filename);
       document.body.appendChild(link);
@@ -88,21 +93,22 @@ function ImportFileModal({
       // Handle successful upload
       setUploadSuccess(true);
       setUploadResult({
-        type: 'success',
-        message: response.data.message || 'File uploaded successfully!',
+        type: "success",
+        message: response.data.message || "File uploaded successfully!",
         details: response.data.details || null,
         summary: response.data.summary || null,
       });
 
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error uploading file:", error);
       setUploadSuccess(false);
-      
-      let errorMessage = 'Upload failed. Please try again.';
+
+      let errorMessage = "Upload failed. Please try again.";
       let errorDetails = null;
 
       if (error.response?.data) {
-        if (typeof error.response.data === 'string') {
+        if (typeof error.response.data === "string") {
           errorMessage = error.response.data;
         } else if (error.response.data.detail) {
           errorMessage = error.response.data.detail;
@@ -114,7 +120,7 @@ function ImportFileModal({
       }
 
       setUploadResult({
-        type: 'error',
+        type: "error",
         message: errorMessage,
         details: errorDetails,
       });
@@ -131,18 +137,18 @@ function ImportFileModal({
   const renderUploadResult = () => {
     if (!uploadResult) return null;
 
-    const isSuccess = uploadResult.type === 'success';
-    
+    const isSuccess = uploadResult.type === "success";
+
     return (
-      <Alert 
-        severity={isSuccess ? 'success' : 'error'}
+      <Alert
+        severity={isSuccess ? "success" : "error"}
         icon={isSuccess ? <CheckCircleIcon /> : <ErrorIcon />}
         sx={{ mt: 2, mb: 2 }}
       >
-        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+        <Typography variant="body2" sx={{ fontWeight: "bold" }}>
           {uploadResult.message}
         </Typography>
-        
+
         {uploadResult.summary && (
           <Box sx={{ mt: 1 }}>
             <Typography variant="caption" display="block">
@@ -159,46 +165,59 @@ function ImportFileModal({
           </Box>
         )}
 
-        {uploadResult.details && Array.isArray(uploadResult.details) && uploadResult.details.length > 0 && (
-          <Box sx={{ mt: 1 }}>
-            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-              Issues found:
-            </Typography>
-            {uploadResult.details.slice(0, 3).map((detail, index) => (
-              <Typography key={index} variant="caption" display="block" sx={{ ml: 1 }}>
-                • {detail.message || detail}
+        {uploadResult.details &&
+          Array.isArray(uploadResult.details) &&
+          uploadResult.details.length > 0 && (
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                Issues found:
               </Typography>
-            ))}
-            {uploadResult.details.length > 3 && (
-              <Typography variant="caption" display="block" sx={{ ml: 1 }}>
-                ... and {uploadResult.details.length - 3} more issues
-              </Typography>
-            )}
-          </Box>
-        )}
+              {uploadResult.details.slice(0, 3).map((detail, index) => (
+                <Typography
+                  key={index}
+                  variant="caption"
+                  display="block"
+                  sx={{ ml: 1 }}
+                >
+                  • {detail.message || detail}
+                </Typography>
+              ))}
+              {uploadResult.details.length > 3 && (
+                <Typography variant="caption" display="block" sx={{ ml: 1 }}>
+                  ... and {uploadResult.details.length - 3} more issues
+                </Typography>
+              )}
+            </Box>
+          )}
       </Alert>
     );
   };
 
   return (
-    <Paper sx={{
-      p: 4,
-      width: "450px",
-      borderRadius: "16px",
-      bgcolor: "white",
-      maxHeight: "80vh",
-      overflow: "auto",
-    }}>
-      <Box sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        mb: 3
-      }}>
-        <Typography sx={{ fontSize: '0.75rem', fontWeight: 800 }}>
+    <Paper
+      sx={{
+        p: 4,
+        width: "450px",
+        borderRadius: "16px",
+        bgcolor: "white",
+        maxHeight: "80vh",
+        overflow: "auto",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          mb: 3,
+        }}
+      >
+        <Typography sx={{ fontSize: "0.75rem", fontWeight: 800 }}>
           IMPORT DATA
         </Typography>
-        <Typography sx={{ fontSize: '2rem', color: '#182959', fontWeight: 800 }}>
+        <Typography
+          sx={{ fontSize: "2rem", color: "#182959", fontWeight: 800 }}
+        >
           {title}
         </Typography>
       </Box>
@@ -239,35 +258,41 @@ function ImportFileModal({
       />
 
       <label htmlFor="file-input">
-        <Box sx={{
-          bgcolor: uploading ? "#f5f5f5" : "#e0e0e0",
-          borderRadius: 2,
-          p: 3,
-          textAlign: "center",
-          mb: 3,
-          border: "4px dotted #9e9e9e",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: uploading ? "not-allowed" : "pointer",
-          opacity: uploading ? 0.6 : 1,
-        }}>
+        <Box
+          sx={{
+            bgcolor: uploading ? "#f5f5f5" : "#e0e0e0",
+            borderRadius: 2,
+            p: 3,
+            textAlign: "center",
+            mb: 3,
+            border: "4px dotted #9e9e9e",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: uploading ? "not-allowed" : "pointer",
+            opacity: uploading ? 0.6 : 1,
+          }}
+        >
           <UploadFileIcon sx={{ mr: 1 }} />
           <Typography variant="body1" color="textSecondary">
-            {selectedFile ? selectedFile.name : `Click to Upload .${fileType.toUpperCase()} File`}
+            {selectedFile
+              ? selectedFile.name
+              : `Click to Upload .${fileType.toUpperCase()} File`}
           </Typography>
         </Box>
       </label>
 
       {selectedFile && (
-        <Box sx={{
-          display: "flex",
-          alignItems: "center",
-          color: "#1a237e",
-          mb: 3,
-          fontWeight: "bold",
-          justifyContent: "center",
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            color: "#1a237e",
+            mb: 3,
+            fontWeight: "bold",
+            justifyContent: "center",
+          }}
+        >
           <InsertDriveFileIcon sx={{ mr: 1 }} />
           <Typography variant="body2" noWrap maxWidth="300px">
             {selectedFile.name}
@@ -278,24 +303,26 @@ function ImportFileModal({
       {/* Upload Result */}
       {renderUploadResult()}
 
-      <Box sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 2,
-        mt: 2,
-      }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 2,
+          mt: 2,
+        }}
+      >
         {uploadSuccess ? (
           <Button
             variant="contained"
             onClick={handleClose}
             sx={{
-              backgroundColor: '#182959',
-              borderRadius: '999px',
-              padding: '9px 18px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              '&:hover': { backgroundColor: '#0f1a3c' },
+              backgroundColor: "#182959",
+              borderRadius: "999px",
+              padding: "9px 18px",
+              fontSize: "1rem",
+              fontWeight: "bold",
+              "&:hover": { backgroundColor: "#0f1a3c" },
             }}
           >
             DONE
@@ -307,15 +334,15 @@ function ImportFileModal({
               onClick={handleClose}
               disabled={uploading}
               sx={{
-                borderColor: '#182959',
-                color: '#182959',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                '&:hover': { 
-                  borderColor: '#0f1a3c',
-                  backgroundColor: 'rgba(24, 41, 89, 0.04)',
+                borderColor: "#182959",
+                color: "#182959",
+                borderRadius: "999px",
+                padding: "9px 18px",
+                fontSize: "1rem",
+                fontWeight: "bold",
+                "&:hover": {
+                  borderColor: "#0f1a3c",
+                  backgroundColor: "rgba(24, 41, 89, 0.04)",
                 },
               }}
             >
@@ -326,16 +353,16 @@ function ImportFileModal({
               onClick={handleSubmit}
               disabled={!selectedFile || uploading}
               sx={{
-                backgroundColor: '#2B8C37',
-                borderRadius: '999px',
-                padding: '9px 18px',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                display: 'flex',
-                alignItems: 'center',
+                backgroundColor: "#2B8C37",
+                borderRadius: "999px",
+                padding: "9px 18px",
+                fontSize: "1rem",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
                 gap: 1,
-                '&:hover': { backgroundColor: '#256d2f' },
-                '&:disabled': { backgroundColor: '#ccc' },
+                "&:hover": { backgroundColor: "#256d2f" },
+                "&:disabled": { backgroundColor: "#ccc" },
               }}
             >
               {uploading ? (
@@ -344,7 +371,7 @@ function ImportFileModal({
                   UPLOADING...
                 </>
               ) : (
-                'IMPORT'
+                "IMPORT"
               )}
             </Button>
           </>

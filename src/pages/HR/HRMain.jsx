@@ -93,6 +93,7 @@ function HRMain() {
                   downloadPath="hr/template-employability"
                   uploadPath="hr/bulk_upload_employability"
                   onClose={() => setIsImportModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
                 />
               </Overlay>
             )}
@@ -117,6 +118,7 @@ function HRMain() {
                   downloadPath="hr/template-parental-leave"
                   uploadPath="hr/bulk_upload_parental_leave"
                   onClose={() => setIsImportModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
                 />
               </Overlay>
             )}
@@ -140,6 +142,7 @@ function HRMain() {
                   downloadPath="hr/template-safety-workdata"
                   uploadPath="hr/bulk_upload_safety_workdata"
                   onClose={() => setIsImportModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
                 />
               </Overlay>
             )}
@@ -163,6 +166,7 @@ function HRMain() {
                   downloadPath="hr/template-training"
                   uploadPath="hr/bulk_upload_training"
                   onClose={() => setIsImportModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
                 />
               </Overlay>
             )}
@@ -187,6 +191,7 @@ function HRMain() {
                   downloadPath="hr/template-osh"
                   uploadPath="hr/bulk_occupational_safety_health"
                   onClose={() => setIsImportModalOpen(false)}
+                  onSuccess={() => setShouldReload(true)}
                 />
               </Overlay>
             )}
