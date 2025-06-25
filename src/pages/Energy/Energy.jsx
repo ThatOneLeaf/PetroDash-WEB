@@ -55,10 +55,7 @@ function Energy() {
   const [statuses, setStatuses] = useState([]);
   const listOfStatuses = ["URS","FRS","URH","FRH","APP"];
   const [searchTerm, setSearchTerm] = useState("");
-    const [sortConfig, setSortConfig] = useState({
-    key: 'date',
-    direction: 'desc'
-  });
+
 
   const [filters, setFilters] = useState({
     company: "",
@@ -218,22 +215,7 @@ function Energy() {
     });
 
   // Sort the entire filteredData before paginating
-  const sortedData = [...filteredData].sort((a, b) => {
-    const { key, direction } = sortConfig;
-    if (key === 'date') {
-      const dateA = dayjs(a.date);
-      const dateB = dayjs(b.date);
-      if (dateA.isBefore(dateB)) return direction === 'asc' ? -1 : 1;
-      if (dateA.isAfter(dateB)) return direction === 'asc' ? 1 : -1;
-      return 0;
-    } else {
-      // Generic string/number sort
-      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
-      return 0;
-    }
-  });
-
+  const sortedData = filteredData;
   // Only paginate after sorting the full data
   const paginatedData = sortedData.slice(
     (page - 1) * rowsPerPage,
@@ -275,13 +257,6 @@ function Energy() {
     </IconButton>
   );
 
-  const handleSort = (key) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
-    }));
-    setPage(1); // Reset to first page on sort
-  };
 
   const handleChangePage = (newPage) => {
     setPage(newPage);
@@ -702,8 +677,6 @@ function Energy() {
               rows={sortedData}
               filteredData={filteredData}
               rowsPerPage={rowsPerPage}
-              onSort={handleSort}
-              sortConfig={sortConfig}
               emptyMessage="No energy data found."
               maxHeight={'75vh'}
               scrollable
