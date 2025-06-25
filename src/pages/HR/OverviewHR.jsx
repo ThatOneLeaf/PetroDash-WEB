@@ -1,6 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { Box, Typography, Paper } from "@mui/material";
 import api from "../../services/api";
+import EngineeringIcon from "@mui/icons-material/Engineering";
+import GroupsIcon from "@mui/icons-material/Groups";
+import PsychologyIcon from '@mui/icons-material/Psychology';
+
+
+const KPI_STYLES = {
+  manhours: {
+    bg: "#b2e0e6", // pastel teal
+  },
+  manpower: {
+    bg: "#d1b3e6", // pastel purple
+  },
+  training: {
+    bg: "#b7e6c7", // pastel green
+  },
+};
+
+const KPI_ICON_COLORS = {
+  manhours: "#17808a", // deep teal for pastel teal
+  manpower: "#7c3aad", // deep purple for pastel purple
+  training: "#228b4e", // deep green for pastel green
+};
 
 const HROverview = () => {
   const [loading, setLoading] = useState(true);
@@ -47,49 +69,82 @@ const HROverview = () => {
     if (isNaN(parsed)) return "N/A";
     return parsed.toLocaleString();
   };
-  const MetricCard = ({ title, value, unit, color }) => (
+
+  const MetricCard = ({ title, value, unit, bg }) => (
     <Paper
       elevation={0}
       sx={{
-        backgroundColor: color,
+        backgroundColor: bg,
         borderRadius: 3,
         p: 2,
-        color: "white",
         textAlign: "center",
         height: "100%",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
+        alignItems: "center",
         position: "relative",
         overflow: "hidden",
       }}
     >
-      <Typography
-        variant="h5"
+      <Box
         sx={{
-          fontWeight: "bold",
-          fontSize: "1.5rem",
+          display: "flex",
+          alignItems: "center",
+          width: "100%",
+          height: "100%",
+          justifyContent: "center",
+          gap: "0.8", 
         }}
       >
-        {loading ? "######" : formatNumber(value)}
-        {!loading && unit && (
-          <Typography component="span" sx={{ fontSize: "0.8rem", ml: 0.5 }}>
-            {unit}
-          </Typography>
+        {title === "Safety Manhours" && (
+          <EngineeringIcon sx={{ fontSize: 36, color: KPI_ICON_COLORS.manhours }} />
         )}
-      </Typography>
-
-      <Typography
-        variant="body2"
-        sx={{
-          fontSize: "0.75rem",
-          fontWeight: "bold",
-          mt: 0.5, // margin-top instead of mb
-          letterSpacing: "0.5px",
-        }}
-      >
-        {title}
-      </Typography>
+        {title === "Safety Manpower" && (
+          <GroupsIcon sx={{ fontSize: 36, color: KPI_ICON_COLORS.manpower }} />
+        )}
+        {title === "Training Hours" && (
+          <PsychologyIcon sx={{ fontSize: 36, color: KPI_ICON_COLORS.training }} />
+        )}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "clamp(1rem, 3vw, 1.5rem)",
+              fontWeight: 900,
+              marginBottom: 2,
+              textAlign: "center",
+              color: "#182959",
+              letterSpacing: 0.5,
+              lineHeight: 1.1,
+            }}
+          >
+            {loading ? "######" : formatNumber(value)}
+          </div>
+          <div
+            style={{
+              fontSize: "clamp(0.6rem, 1.5vw, 1rem)",
+              fontWeight: 700,
+              color: "#222",
+              textAlign: "center",
+              lineHeight: 1.2,
+              letterSpacing: 0.2,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {title}
+          </div>
+        </div>
+      </Box>
     </Paper>
   );
 
@@ -108,19 +163,19 @@ const HROverview = () => {
         }}
       >
         <MetricCard
-          title="Total Safety Manhours"
+          title="Safety Manhours"
           value={totalSafetyManhours}
-          color="#2E4057"
+          bg={KPI_STYLES.manhours.bg}
         />
         <MetricCard
-          title="Total Safety Manpower"
+          title="Safety Manpower"
           value={totalSafetyPower}
-          color="#2E4057"
+          bg={KPI_STYLES.manpower.bg}
         />
         <MetricCard
-          title="Total Training Hours"
+          title="Training Hours"
           value={totalTrainingHours}
-          color="#2E4057"
+          bg={KPI_STYLES.training.bg}
         />
       </Box>
     </Box>

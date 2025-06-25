@@ -1,6 +1,9 @@
 import { Paper } from '@mui/material';
 import React, { useEffect, useState } from "react";
 import api from "../../../services/api";
+import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
+import SchoolIcon from '@mui/icons-material/School';
+import WorkIcon from '@mui/icons-material/Work';
 
 // Map program/project to color
 const PROGRAM_COLORS = {
@@ -82,6 +85,14 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
         return `${date.toLocaleString('default', { month: 'long' })}, ${date.getFullYear()}`;
     };
 
+    // Helper to get icon color by program (deep version of pastel)
+    const PROGRAM_ICON_COLORS = {
+        health: '#b91c1c',      // deep red for pastel pink
+        education: '#1e3a8a',  // deep blue for pastel blue
+        livelihood: '#b45309', // deep gold/brown for pastel yellow
+    };
+    const getIconColor = (program) => PROGRAM_ICON_COLORS[program?.toLowerCase?.()] || '#334155';
+
     return (
         <div style={{ display: 'flex', gap: 8, width: '100%', marginBottom: 8, height: '100%', minHeight: 0 }}>
             {/* Health KPI */}
@@ -108,49 +119,38 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     flex: 1
                 }}
             >
-                <div
-                style={{
-                    fontSize: 22, 
-                    fontWeight: 900,
-                    marginBottom: 2,
-                    textAlign: 'center',
-                    color: '#182959',
-                    letterSpacing: 0.5,
-                    lineHeight: 1.1,
-                }}
-                >
-                {data?.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                </div>
-                <div
-                style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#64748b',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                    letterSpacing: 0.2,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                }}
-                >
-                Health
-                </div>
-                <div
-                    style={{
-                        fontSize: 10,
-                        color: '#94a3b8',
-                        textAlign: 'center',
-                        marginTop: 2,
-                        width: '100%',
-                        fontStyle: 'italic',
-                        letterSpacing: 0.2,
-                        fontWeight: 400,
-                    }}
-                >
-                    {dates?.health && (
-                        <>As of: {formatMonthYear(dates.health)}</>
-                    )}
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', justifyContent: 'center', gap: '2px' }}>
+                    <HealthAndSafetyIcon sx={{ fontSize: 40, color: getIconColor('health') }} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <div
+                            style={{
+                                fontSize: 'clamp(1rem, 3vw, 1.5rem)', // responsive main value
+                                fontWeight: 900,
+                                marginBottom: 2,
+                                textAlign: 'center',
+                                color: '#182959',
+                                letterSpacing: 0.5,
+                                lineHeight: 1.1,
+                            }}
+                        >
+                            {data?.health?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 'clamp(0.6rem, 1.5vw, 1rem)', // responsive label
+                                fontWeight: 700,
+                                color: '#222',
+                                textAlign: 'center',
+                                lineHeight: 1.2,
+                                letterSpacing: 0.2,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
+                            Health
+                        </div>
+                    </div>
                 </div>
             </Paper>
             {/* Education KPI */}
@@ -177,49 +177,38 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     flex: 1
                 }}
             >
-                <div
-                style={{
-                    fontSize: 22,
-                    fontWeight: 900,
-                    marginBottom: 2,
-                    textAlign: 'center',
-                    color: '#182959',
-                    letterSpacing: 0.5,
-                    lineHeight: 1.1,
-                }}
-                >
-                {data?.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                </div>
-                <div
-                style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#64748b',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                    letterSpacing: 0.2,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                }}
-                >
-                Education
-                </div>
-                <div
-                    style={{
-                        fontSize: 10,
-                        color: '#94a3b8',
-                        textAlign: 'center',
-                        marginTop: 2,
-                        width: '100%',
-                        fontStyle: 'italic',
-                        letterSpacing: 0.2,
-                        fontWeight: 400,
-                    }}
-                >
-                    {dates?.education && (
-                        <>As of: {formatMonthYear(dates.education)}</>
-                    )}
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', justifyContent: 'center', gap: '2px' }}>
+                    <SchoolIcon sx={{ fontSize: 32, color: getIconColor('education') }} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <div
+                            style={{
+                                fontSize: 'clamp(1rem, 3vw, 1.5rem)', // responsive main value
+                                fontWeight: 900,
+                                marginBottom: 2,
+                                textAlign: 'center',
+                                color: '#182959', // main value: dark blue
+                                letterSpacing: 0.5,
+                                lineHeight: 1.1,
+                            }}
+                        >
+                            {data?.education?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 'clamp(0.6rem, 1.5vw, 1rem)', // responsive label
+                                fontWeight: 700,
+                                color: '#222', // label: very dark for contrast
+                                textAlign: 'center',
+                                lineHeight: 1.2,
+                                letterSpacing: 0.2,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
+                            Education
+                        </div>
+                    </div>
                 </div>
             </Paper>
             {/* Livelihood KPI */}
@@ -246,49 +235,54 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     flex: 1
                 }}
             >
-                <div
-                style={{
-                    fontSize: 22,
-                    fontWeight: 900,
-                    marginBottom: 2,
-                    textAlign: 'center',
-                    color: '#182959',
-                    letterSpacing: 0.5,
-                    lineHeight: 1.1,
-                }}
-                >
-                {data?.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
-                </div>
-                <div
-                style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#64748b',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                    letterSpacing: 0.2,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                }}
-                >
-                Livelihood
-                </div>
-                <div
-                    style={{
-                        fontSize: 10,
-                        color: '#94a3b8',
-                        textAlign: 'center',
-                        marginTop: 2,
-                        width: '100%',
-                        fontStyle: 'italic',
-                        letterSpacing: 0.2,
-                        fontWeight: 400,
-                    }}
-                >
-                    {dates?.livelihood && (
-                        <>As of: {formatMonthYear(dates.livelihood)}</>
-                    )}
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', justifyContent: 'center', gap: '2px' }}>
+                    <WorkIcon sx={{ fontSize: 32, color: getIconColor('livelihood') }} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <div
+                            style={{
+                                fontSize: 'clamp(1rem, 3vw, 1.5rem)', // responsive main value
+                                fontWeight: 900,
+                                marginBottom: 2,
+                                textAlign: 'center',
+                                color: '#182959', // main value: dark blue
+                                letterSpacing: 0.5,
+                                lineHeight: 1.1,
+                            }}
+                        >
+                            {data?.livelihood?.toLocaleString?.('en-US', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }) ?? '₱0'}
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 'clamp(0.6rem, 1.5vw, 1rem)', // responsive label
+                                fontWeight: 700,
+                                color: '#222', // label: very dark for contrast
+                                textAlign: 'center',
+                                lineHeight: 1.2,
+                                letterSpacing: 0.2,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
+                            Livelihood
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 'clamp(0.4rem, 1vw, 0.8rem)', // responsive date
+                                color: '#374151', // date: medium-dark for contrast
+                                textAlign: 'center',
+                                marginTop: 2,
+                                width: '100%',
+                                fontStyle: 'italic',
+                                letterSpacing: 0.2,
+                                fontWeight: 400,
+                            }}
+                        >
+                            {dates?.livelihood && (
+                                <>As of: {formatMonthYear(dates.livelihood)}</>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </Paper>
         </div>
