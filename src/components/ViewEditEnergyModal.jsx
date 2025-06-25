@@ -63,6 +63,10 @@ const ViewEditEnergyModal = ({
   const [showApproveSuccess, setShowApproveSuccess] = useState(false);
   const [approveSuccessMessage, setApproveSuccessMessage] = useState('');
 
+  // Reject Confirm state
+  const [showRejectSuccess, setShowRejectSuccess] = useState(false);
+  const [rejectSuccessMessage, setRejectSuccessMessage] = useState('');
+
   // Unsaved Changes Confirm state
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
@@ -186,10 +190,8 @@ const handleApproveConfirm = async () => {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
-    if (response.data.message) {
-      setApproveSuccessMessage(response.data.message);
-      setShowApproveSuccess(true);
-    }
+    setApproveSuccessMessage('Record status updated successfully.');
+    setShowApproveSuccess(true);
 
   } catch (error) {
     const msg = error.response?.data?.detail || error.message;
@@ -215,10 +217,11 @@ const handleRejectConfirm = async () => {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
-    alert(response.data.message || 'Record rejected successfully.');
-    if (updateStatus) updateStatus('REJ');
+    setRejectSuccessMessage('Record status updated successfully.');
+    setShowRejectSuccess(true);
     setRejectDialogOpen(false);
-    onClose();  // CLOSE MODAL HERE
+    setRejectRemarks(''); // Clear remarks after successful rejection
+    
   } catch (error) {
     const msg = error.response?.data?.detail || error.message;
     alert(`Failed to reject: ${msg}`);
@@ -824,6 +827,44 @@ const handleRejectConfirm = async () => {
                 setShowApproveSuccess(false);
                 if (updateStatus) updateStatus('APP');
                 onClose(); // <- Now close the modal AFTER the success message is shown
+              }}
+            >
+              OK
+            </Button>
+          </Paper>
+        </Overlay>
+      )}
+      {showRejectSuccess && (
+        <Overlay onClose={() => setShowRejectSuccess(false)}>
+          <Paper sx={{
+            p: 4,
+            width: '400px',
+            borderRadius: '16px',
+            bgcolor: 'white',
+            textAlign: 'center'
+          }}>
+            <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#2B8C37', mb: 2 }}>
+              Success
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', color: '#444', mb: 3 }}>
+              {rejectSuccessMessage}
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#2B8C37',
+                borderRadius: '999px',
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#256d2f',
+                },
+              }}
+              onClick={() => {
+                setShowRejectSuccess(false);
+                if (updateStatus) updateStatus('REJ');
+                onClose();
               }}
             >
               OK
