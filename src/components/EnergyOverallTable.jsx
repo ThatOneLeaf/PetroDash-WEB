@@ -57,16 +57,17 @@ const EnergyTable = () => {
                 "&:hover": {
                   backgroundColor: "#e3f2fd",
                 },
+                fontWeight: index === energyData.length - 1 ? "bold" : "normal",
               }}
             >
-              <TableCell>{row.company_id}</TableCell>
-              <TableCell align="right">
+              <TableCell sx={{ fontWeight: index === energyData.length - 1 ? "bold" : "normal" }}>{row.company_id}</TableCell>
+              <TableCell align="right" sx={{ fontWeight: index === energyData.length - 1 ? "bold" : "normal" }}>
                 {row.total_energy_generated.toLocaleString()}
               </TableCell>
-              <TableCell align="right">
+              <TableCell align="right" sx={{ fontWeight: index === energyData.length - 1 ? "bold" : "normal" }}>
                 {row.total_co2_avoided.toFixed(2)}
               </TableCell>
-              <TableCell align="right">
+              <TableCell align="right" sx={{ fontWeight: index === energyData.length - 1 ? "bold" : "normal" }}>
                 {row.total_est_house_powered.toLocaleString()}
               </TableCell>
             </TableRow>
