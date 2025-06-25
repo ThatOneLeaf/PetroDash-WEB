@@ -18,7 +18,7 @@ export const CO2Provider = ({ children }) => {
   const fetchPublicCO2Data = useCallback(async () => {
     try {
       // Create a temporary axios instance without auth headers for public data
-      const response = await fetch('http://localhost:8000/energy/energy_dashboard', {
+      const response = await fetch('http://10.1.1.190:8000/energy/energy_dashboard', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
