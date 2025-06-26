@@ -576,6 +576,23 @@ function EnvironmentWaste() {
           </Box>
           
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
+            <Button
+              variant="contained"
+              onClick={() => selectedRowIds.length > 0 ? exportToExcel(selectedRows) : exportToExcel(filteredData)}
+              startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+            >
+              EXPORT DATA
+            </Button>
             {selectedRowIds.length > 0 && !isApprove && ((canApproveOrRevise && isSiteApprover) || (canApproveOrRevise && isHeadApprover)) ? (
               <>
                 <Button 
@@ -615,23 +632,6 @@ function EnvironmentWaste() {
               </>
             ) : (
               <>
-                <Button
-                  variant="contained"
-                  onClick={() => selectedRowIds.length > 0 ? exportToExcel(selectedRows) : exportToExcel(filteredData)}
-                  startIcon={<FileUploadIcon />}
-                  sx={{
-                    backgroundColor: '#182959',
-                    borderRadius: '999px',
-                    padding: '9px 18px',
-                    fontSize: '0.85rem',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#0f1a3c',
-                    },
-                  }}
-                >
-                  EXPORT DATA
-                </Button>
                 {canAddOrImport && (
                   <>
                     <Button
