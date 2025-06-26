@@ -928,7 +928,7 @@ const ViewEditRecordModal = ({
                   {isEditing ? "SAVE" : "EDIT"}
                 </Button>
               )}
-            {((canApproveOrRevise && isSiteApprover) || (canApproveOrRevise && isHeadApprover)) && (
+            {((canApproveOrRevise && isSiteApprover) || (canApproveOrRevise && isHeadApprover))  && !isEditing && (
               <Box>
                 <Button
                   variant="contained"
