@@ -20,6 +20,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import StatusChip from "../../components/StatusChip";
 
+import { useAuth } from "../../contexts/AuthContext";
 //added
 import Overlay from "../../components/modal";
 
@@ -71,6 +72,19 @@ const ViewUpdateTrainingModal = ({
   });
 
   const [editedRecord, setEditedRecord] = useState(getRecordWithStatus(record));
+  const { user } = useAuth();
+  const canApproveOrRevise =
+    Array.isArray(user?.roles) &&
+    user.roles.some((role) => ["R03", "R04"].includes(role));
+  const isSiteApprover =
+    ["Under review (site)", "For Revision (Site)"].includes(
+      editedRecord.status
+    ) && user.roles.includes("R04");
+
+  const isHeadApprover =
+    ["Under review (head level)", "For Revision (Head)"].includes(
+      editedRecord.status
+    ) && user.roles.includes("R03");
 
   const summaryData = [
     { label: "Company ID", value: String(editedRecord.company_id || "N/A") },
@@ -604,51 +618,54 @@ const ViewUpdateTrainingModal = ({
               )}
 
             {/* APPROVE & REVISE buttons */}
-            <Box>
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: "#2B8C37",
-                  borderRadius: "999px",
-                  padding: "9px 18px",
-                  fontSize: "1rem",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    backgroundColor: "#256d2f",
-                  },
-                }}
-                onClick={() => {
-                  setModalType("approve");
-                  setIsModalOpen(true);
-                }}
-              >
-                Approve
-              </Button>
+            {((canApproveOrRevise && isSiteApprover) ||
+              (canApproveOrRevise && isHeadApprover)) && (
+              <Box>
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#2B8C37",
+                    borderRadius: "999px",
+                    padding: "9px 18px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    "&:hover": {
+                      backgroundColor: "#256d2f",
+                    },
+                  }}
+                  onClick={() => {
+                    setModalType("approve");
+                    setIsModalOpen(true);
+                  }}
+                >
+                  Approve
+                </Button>
 
-              {editedRecord.status !== "For Revision (Site)" &&
-                editedRecord.status !== "For Revision (Head)" && (
-                  <Button
-                    variant="contained"
-                    sx={{
-                      marginLeft: 1,
-                      backgroundColor: "#182959",
-                      borderRadius: "999px",
-                      padding: "9px 18px",
-                      fontSize: "1rem",
-                      fontWeight: "bold",
-                      "&:hover": {
-                        backgroundColor: "#0f1a3c",
-                      },
-                    }}
-                    onClick={() => {
-                      setModalType("revise");
-                      setIsModalOpen(true);
-                    }}
-                  >
-                    Revise
-                  </Button>
-                )}
-            </Box>
+                {editedRecord.status !== "For Revision (Site)" &&
+                  editedRecord.status !== "For Revision (Head)" && (
+                    <Button
+                      variant="contained"
+                      sx={{
+                        marginLeft: 1,
+                        backgroundColor: "#182959",
+                        borderRadius: "999px",
+                        padding: "9px 18px",
+                        fontSize: "1rem",
+                        fontWeight: "bold",
+                        "&:hover": {
+                          backgroundColor: "#0f1a3c",
+                        },
+                      }}
+                      onClick={() => {
+                        setModalType("revise");
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      Revise
+                    </Button>
+                  )}
+              </Box>
+            )}
           </Box>
         )}
 
