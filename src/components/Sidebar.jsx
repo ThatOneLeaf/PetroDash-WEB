@@ -320,20 +320,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
     window.addEventListener('storage', syncProfileImg);
     return () => window.removeEventListener('storage', syncProfileImg);
   }, []);
-  // Add a handler to toggle sidebar open/close
-  const handleSidebarToggle = (e) => {
-    e.stopPropagation();
-    setCollapsed((prev) => !prev);
-    if (!collapsed) {
-      setEnvOpen(false);
-      setSocialOpen(false);
-      setEnergyOpen(false);
-    }
-  };
-
   return (
     <>
-      {/* Overlay for closing sidebar when open */}
       {(isExpanded || (isMobile && !collapsed)) && (
         <Box
           onClick={() => {
@@ -386,34 +374,22 @@ function SideBar({ collapsed: collapsedProp = false }) {
           pointerEvents: "auto",
           maxHeight: "100vh", // Ensure it doesn't exceed viewport height
         }}
-        // Remove onMouseEnter/onMouseLeave
-        // Remove onClick that opens sidebar on any click
-      >        {/* Hamburger/collapse icon for toggling sidebar */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: collapsed ? "center" : "flex-end",
-            px: collapsed ? (isMobile ? 0.5 : 1) : (isMobile ? 2 : 3),
-            pt: 2,
-            pb: 1,
-            cursor: "pointer",
-            userSelect: "none"
-          }}
-          onClick={handleSidebarToggle}
-        >
-          {/* Simple hamburger icon or X for close */}
-          <span style={{
-            fontSize: 28,
-            color: "#1a3365",
-            fontWeight: 700,
-            transition: "transform 0.2s",
-            transform: collapsed ? "rotate(0deg)" : "rotate(90deg)"
-          }}>
-            {collapsed ? "☰" : "×"}
-          </span>
-        </Box>
-        <Box>
+        onMouseEnter={() => !isMobile && setCollapsed(false)}
+        onMouseLeave={() => {
+          if (!isMobile) {
+            setCollapsed(true);
+            setEnvOpen(false);
+            setSocialOpen(false);
+            setEnergyOpen(false);
+          }
+        }}
+        onClick={() => {
+          // On mobile, toggle sidebar when clicking anywhere
+          if (isMobile && collapsed) {
+            setCollapsed(false);
+          }
+        }}
+      >        <Box>
           <Box
             sx={{
               display: "flex",
