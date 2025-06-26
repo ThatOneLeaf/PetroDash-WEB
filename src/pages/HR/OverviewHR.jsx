@@ -3,8 +3,7 @@ import { Box, Typography, Paper } from "@mui/material";
 import api from "../../services/api";
 import EngineeringIcon from "@mui/icons-material/Engineering";
 import GroupsIcon from "@mui/icons-material/Groups";
-import PsychologyIcon from '@mui/icons-material/Psychology';
-
+import PsychologyIcon from "@mui/icons-material/Psychology";
 
 const KPI_STYLES = {
   manhours: {
@@ -37,9 +36,9 @@ const HROverview = () => {
       try {
         const [totalManHoursRes, totalSafetyPowerRes, totalTrainingHoursRes] =
           await Promise.all([
-            api.get("hr/total_safety_manpower"),
-            api.get("hr/total_safety_manhours"),
-            api.get("hr/total_training_hours"),
+            api.get("hr/overview_safety_manpower"),
+            api.get("hr/overview_safety_manhours"),
+            api.get("hr/overview_training"),
           ]);
 
         setTotalSafetyPower(
@@ -94,17 +93,21 @@ const HROverview = () => {
           width: "100%",
           height: "100%",
           justifyContent: "center",
-          gap: "0.8", 
+          gap: "0.8",
         }}
       >
         {title === "Safety Manhours" && (
-          <EngineeringIcon sx={{ fontSize: 36, color: KPI_ICON_COLORS.manhours }} />
+          <EngineeringIcon
+            sx={{ fontSize: 36, color: KPI_ICON_COLORS.manhours }}
+          />
         )}
         {title === "Safety Manpower" && (
           <GroupsIcon sx={{ fontSize: 36, color: KPI_ICON_COLORS.manpower }} />
         )}
         {title === "Training Hours" && (
-          <PsychologyIcon sx={{ fontSize: 36, color: KPI_ICON_COLORS.training }} />
+          <PsychologyIcon
+            sx={{ fontSize: 36, color: KPI_ICON_COLORS.training }}
+          />
         )}
         <div
           style={{
