@@ -569,13 +569,14 @@ return (
             />
           )}
           <MultiSelectWithChips
-  label="Power Plants"
-  options={filteredPowerPlantOptions}
-  selectedValues={powerPlantFilter}
-  onChange={setPowerPlantFilter}
-  placeholder="All Power Projects"
-/>
-          <MultiSelectWithChips label="Generation Sources" options={generationSourceOptions} selectedValues={generationSourceFilter} onChange={setGenerationSourceFilter} placeholder="All Sources" />
+            label="Power Plants"
+            options={filteredPowerPlantOptions}
+            selectedValues={powerPlantFilter}
+            onChange={setPowerPlantFilter}
+            placeholder="All Power Projects"
+          />
+          {role !== 'R04' && (
+          <MultiSelectWithChips label="Generation Sources" options={generationSourceOptions} selectedValues={generationSourceFilter} onChange={setGenerationSourceFilter} placeholder="All Sources" />)}
           <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
 
           {showClearButton && <ClearButton onClick={clearAllFilters} />}
