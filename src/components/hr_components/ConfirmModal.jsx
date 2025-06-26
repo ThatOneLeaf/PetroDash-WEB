@@ -54,6 +54,8 @@ const ConfirmModal = ({
               borderRadius: "8px",
               width: "100%",
               mb: 3,
+              maxHeight: 300,
+              overflowY: "auto",
             }}
           >
             {summaryData.map(({ label, value }, index) => (
