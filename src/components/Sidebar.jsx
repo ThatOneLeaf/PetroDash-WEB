@@ -702,7 +702,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       }}
                       onClick={() => {
                         if (!item.hasAccess) return;
-                        if (!collapsed) handleDropdownToggle("env");
+                        if (collapsed) {
+                          setCollapsed(false);
+                          setTimeout(() => setEnvOpen(true), 150);
+                        } else {
+                          handleDropdownToggle("env");
+                        }
                       }}
                     >
                     <img
@@ -865,7 +870,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       }}
                       onClick={() => {
                         if (!item.hasAccess) return;
-                        if (!collapsed) handleDropdownToggle("social");
+                        if (collapsed) {
+                          setCollapsed(false);
+                          setTimeout(() => setSocialOpen(true), 150);
+                        } else {
+                          handleDropdownToggle("social");
+                        }
                       }}
                     >
                       <img
@@ -975,7 +985,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       ))}
                     </Box>
                   )}
-                </React.Fragment>) : (
+                </React.Fragment>
+              ) : (
                 <Box
                   key={item.label}
                   sx={{
