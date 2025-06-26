@@ -222,6 +222,20 @@ function Energy() {
     page * rowsPerPage
   );
 
+  const filteredPowerPlantOptions = useMemo(() => {
+  if (role === 'R04') {
+    // Find all power plants in the data that match the user's companyId
+    const companyPowerPlants = data
+      .filter(item => item.companyId === companyId)
+      .map(item => item.powerPlant);
+    // Remove duplicates
+    const uniquePowerPlants = Array.from(new Set(companyPowerPlants));
+    return uniquePowerPlants.map(val => ({ label: val, value: val }));
+  }
+  // Default: show all
+  return powerPlantOptions;
+}, [role, data, companyId, powerPlantOptions]);
+
   const columns = [
     { key: "powerPlant", label: "Power Project" },
     {
@@ -615,8 +629,15 @@ function Energy() {
               <Filter label="Company" placeholder="Company" options={[{ label: "All Companies", value: "" }, ...companyOptions]} value={filters.company} onChange={(val) => { setFilters((prev) => ({ ...prev, company: val })); setPage(1); }} />
             )}
             {(role === 'R03' || role === 'R04') && (
-              <Filter label="Power Project" placeholder="Power Project" options={[{ label: "All Power Projects", value: "" }, ...powerPlantOptions]} value={filters.powerPlant} onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }} />
+              <Filter
+                label="Power Project"
+                placeholder="Power Project"
+                options={[{ label: "All Power Projects", value: "" }, ...filteredPowerPlantOptions]}
+                value={filters.powerPlant}
+                onChange={(val) => { setFilters((prev) => ({ ...prev, powerPlant: val })); setPage(1); }}
+              />
             )}
+
             {role === 'R03' && (
               <Filter label="Generation Source" placeholder="Source" options={[{ label: "All Sources", value: "" }, ...generationSourceOptions]} value={filters.generationSource} onChange={(val) => { setFilters((prev) => ({ ...prev, generationSource: val })); setPage(1); }} />
             )}
