@@ -236,7 +236,7 @@ export default function ProfilePage() {
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               PaperProps={{ sx: { borderRadius: 2, minWidth: 180, mt: 1 } }}
             >
-              <MenuItem onClick={handleEditPicture}>Update/Change Profile Picture</MenuItem>
+              <MenuItem onClick={handleEditPicture}>Change Profile Picture</MenuItem>
               {profileImg && <MenuItem onClick={handleRemovePicture} sx={{ color: 'error.main' }}>Remove Profile Picture</MenuItem>}
             </Menu>
           </>
