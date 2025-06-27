@@ -1,11 +1,9 @@
 // Simplified Authentication Service - Works with AuthContext
 import api, { setupAuthInterceptors } from "./api";
 
-const AUTH_API_URL = "http://localhost:8000/auth";
-
 // Activity tracking
 let activityTimeout = null;
-const ACTIVITY_CHECK_INTERVAL = 10000; // Check every 10 seconds
+const ACTIVITY_CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
 
 // Token management functions
 export const getToken = () => {
