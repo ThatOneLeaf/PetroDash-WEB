@@ -14,30 +14,22 @@ export const useCO2 = () => {
 export const CO2Provider = ({ children }) => {
   const [totalCO2Avoided, setTotalCO2Avoided] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
+
   // Fetch public CO2 data for the widget (without authentication)
   const fetchPublicCO2Data = useCallback(async () => {
     try {
-      // Create a temporary axios instance without auth headers for public data
-      const response = await fetch('http://10.1.1.190:8000/energy/energy_dashboard', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await api.get('/energy/energy_dashboard');
+      const data = response.data;
+      const energyData = data?.energy_data || {};
+      const totalCO2 = energyData?.totals?.total_co2_avoidance || 0;
       
-      if (response.ok) {
-        const data = await response.json();
-        const energyData = data?.energy_data || {};
-        const totalCO2 = energyData?.totals?.total_co2_avoidance || 0;
-        
-        if (totalCO2 > 0) {
-          const updatedTime = new Date();
-          setTotalCO2Avoided(totalCO2);
-          setLastUpdated(updatedTime);
-        }
+      if (totalCO2 > 0) {
+        const updatedTime = new Date();
+        setTotalCO2Avoided(totalCO2);
+        setLastUpdated(updatedTime);
       }
     } catch (error) {
-      console.log('Could not fetch public CO2 data:', error.message);
+      console.error('Could not fetch public CO2 data:', error.message);
       // Keep existing values or set defaults
     }
   }, []);
@@ -51,6 +43,7 @@ export const CO2Provider = ({ children }) => {
     setTotalCO2Avoided(co2Value || 0);
     setLastUpdated(updatedTime || new Date());
   }, []);
+
   const value = {
     totalCO2Avoided,
     lastUpdated,
