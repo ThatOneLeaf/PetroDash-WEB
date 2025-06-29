@@ -95,7 +95,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
   const [companyFilter, setCompanyFilter] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [group, setGroup] = useState("monthly");
+  const [group, setGroup] = useState("yearly");
   const [companyColors, setCompanyColors] = useState({});
 
   // Helper: Get x-axis label based on group
@@ -238,14 +238,14 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
     setCompanyFilter([]);
     setStartDate(null);
     setEndDate(null);
-    setGroup("monthly");
+    setGroup("yearly");
   };
 
   const showClearButton =
     companyFilter.length > 0 ||
     startDate !== null ||
     endDate !== null ||
-    group != "monthly";
+    group != "yearly";
 
   const [zoomModal, setZoomModal] = useState({
     open: false,
@@ -520,14 +520,17 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               onChange={setGroup}
             />
           </Stack>
-        </Box>        {/* KPI Cards */}
-        <Box sx={{ 
-          display: "flex", 
-          gap: isMobile ? 1 : 2, 
-          flexWrap: isMobile ? "wrap" : "nowrap", 
-          pb: 2,
-          px: isMobile ? 1 : 0,
-        }}>
+        </Box>{" "}
+        {/* KPI Cards */}
+        <Box
+          sx={{
+            display: "flex",
+            gap: isMobile ? 1 : 2,
+            flexWrap: isMobile ? "wrap" : "nowrap",
+            pb: 2,
+            px: isMobile ? 1 : 0,
+          }}
+        >
           <KPICard
             loading={false}
             value={totalManpower}
@@ -538,10 +541,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ 
-              flex: isMobile ? "1 1 calc(50% - 4px)" : 1, 
-              minHeight: isMobile ? "80px" : "100px", 
-              fontSize: isMobile ? "14px" : "18px" 
+            style={{
+              flex: isMobile ? "1 1 calc(50% - 4px)" : 1,
+              minHeight: isMobile ? "80px" : "100px",
+              fontSize: isMobile ? "14px" : "18px",
             }}
           />
           <KPICard
@@ -554,10 +557,10 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ 
-              flex: isMobile ? "1 1 calc(50% - 4px)" : 1, 
-              minHeight: isMobile ? "80px" : "100px", 
-              fontSize: isMobile ? "14px" : "18px" 
+            style={{
+              flex: isMobile ? "1 1 calc(50% - 4px)" : 1,
+              minHeight: isMobile ? "80px" : "100px",
+              fontSize: isMobile ? "14px" : "18px",
             }}
           />
           <KPICard
@@ -570,9 +573,9 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ 
-              flex: isMobile ? "1 1 calc(50% - 4px)" : 1, 
-              minHeight: isMobile ? "80px" : "100px" 
+            style={{
+              flex: isMobile ? "1 1 calc(50% - 4px)" : 1,
+              minHeight: isMobile ? "80px" : "100px",
             }}
           />
           <KPICard
@@ -585,19 +588,20 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               textColor: "#FFFFFF",
               iconColor: "#FFFFFF",
             }}
-            style={{ 
-              flex: isMobile ? "1 1 calc(50% - 4px)" : 1, 
-              minHeight: isMobile ? "80px" : "100px" 
+            style={{
+              flex: isMobile ? "1 1 calc(50% - 4px)" : 1,
+              minHeight: isMobile ? "80px" : "100px",
             }}
           />
-        </Box>        {/* Charts */}
+        </Box>{" "}
+        {/* Charts */}
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: isMobile 
-              ? "1fr" 
-              : isTablet 
-              ? "repeat(2, 1fr)" 
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : isTablet
+              ? "repeat(2, 1fr)"
               : "repeat(3, 1fr)",
             gap: isMobile ? 1 : 2,
             minHeight: 0,
@@ -607,7 +611,7 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           }}
         >
           {/* Safety Manpower */}
-          
+
           <Box
             sx={{
               backgroundColor: "white",
@@ -624,80 +628,89 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               transition: "box-shadow 0.2s",
               overflow: "hidden",
               position: "relative",
-            }}>
+            }}
+          >
             <IconButton
               size="small"
-              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
+              sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
               onClick={() =>
-              openZoomModal(
-                "Safety Manpower (per Company)",
-                "manpower-per-company",
-                () => (
-                  <Box
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <Box sx={{ height: 400 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={transformCompanySeries(
-                              monthlyManpower,
-                              group,
-                              "total_monthly_safety_manpower"
-                           )}
-                           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                              dataKey="label"
-                              angle={0}
-                              textAnchor="middle"
-                              height={40}
-                            />
-                            <YAxis
-                              allowDecimals={false}
-                              domain={[0, "dataMax + 10"]}
-                            />
-                            <Tooltip />
-                            <Legend />
-                            {[
-                              ...new Set(
-                                monthlyManpower.map((item) => item.company_name)
-                              ),
-                            ].map((company, idx) => (
-                              <Line
-                                key={company}
-                                type="monotone"
-                                dataKey={company}
-                                stroke={
-                                  companyColors[company] ||
-                                  COLORS[idx % COLORS.length]
-                                }
-                                dot={{
-                                  fill:
-                                    companyColors[company] ||
-                                    COLORS[idx % COLORS.length],
-                                }}
-                                name={company}
-                                strokeWidth={4}
+                openZoomModal(
+                  "Safety Manpower (per Company)",
+                  "manpower-per-company",
+                  () => (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <Box sx={{ flex: 1, minHeight: 0 }}>
+                        <Box sx={{ height: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                              data={transformCompanySeries(
+                                monthlyManpower,
+                                group,
+                                "total_monthly_safety_manpower"
+                              )}
+                              margin={{
+                                top: 20,
+                                right: 30,
+                                left: 20,
+                                bottom: 5,
+                              }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis
+                                dataKey="label"
+                                angle={0}
+                                textAnchor="middle"
+                                height={40}
                               />
-                            ))}
-                          </LineChart>
-                        </ResponsiveContainer>
+                              <YAxis
+                                allowDecimals={false}
+                                domain={[0, "dataMax + 10"]}
+                              />
+                              <Tooltip />
+                              <Legend />
+                              {[
+                                ...new Set(
+                                  monthlyManpower.map(
+                                    (item) => item.company_name
+                                  )
+                                ),
+                              ].map((company, idx) => (
+                                <Line
+                                  key={company}
+                                  type="monotone"
+                                  dataKey={company}
+                                  stroke={
+                                    companyColors[company] ||
+                                    COLORS[idx % COLORS.length]
+                                  }
+                                  dot={{
+                                    fill:
+                                      companyColors[company] ||
+                                      COLORS[idx % COLORS.length],
+                                  }}
+                                  name={company}
+                                  strokeWidth={4}
+                                />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </Box>
                       </Box>
                     </Box>
-                  </Box>
+                  )
                 )
-              )
-            }
-              >
-                <ZoomInIcon fontSize="small" />
-            </IconButton>            <Typography
+              }
+            >
+              <ZoomInIcon fontSize="small" />
+            </IconButton>{" "}
+            <Typography
               sx={{
                 fontSize: isMobile ? "11px" : "13px",
                 fontWeight: 600,
@@ -791,75 +804,83 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           >
             <IconButton
               size="small"
-              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
+              sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
               onClick={() =>
-              openZoomModal(
-                "Safety Manhours (per Company)",
-                "manhour-per-company",
-                () => (
-                  <Box
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <Box sx={{ flex: 1, minHeight: 0 }}>
-                      <Box sx={{ height: 400 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={transformCompanySeries(
-                              monthlyManhour,
-                              group,
-                              "manhours"
-                            )}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                              dataKey="label"
-                              angle={0}
-                              textAnchor="middle"
-                              height={40}
-                            />
-                            <YAxis
-                              allowDecimals={false}
-                              domain={[0, "dataMax + 10000"]}
-                            />
-                            <Tooltip />
-                            <Legend />
-                            {[
-                              ...new Set(
-                                monthlyManhour.map((item) => item.company_name)
-                              ),
-                            ].map((company, idx) => (
-                              <Line
-                                key={company}
-                                type="monotone"
-                                dataKey={company}
-                                stroke={
-                                  companyColors[company] ||
-                                  COLORS[idx % COLORS.length]
-                                }
-                                dot={{
-                                  fill:
-                                    companyColors[company] ||
-                                    COLORS[idx % COLORS.length],
-                                }}
-                                name={company}
-                                strokeWidth={4}
+                openZoomModal(
+                  "Safety Manhours (per Company)",
+                  "manhour-per-company",
+                  () => (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <Box sx={{ flex: 1, minHeight: 0 }}>
+                        <Box sx={{ height: 400 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                              data={transformCompanySeries(
+                                monthlyManhour,
+                                group,
+                                "manhours"
+                              )}
+                              margin={{
+                                top: 20,
+                                right: 30,
+                                left: 20,
+                                bottom: 5,
+                              }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis
+                                dataKey="label"
+                                angle={0}
+                                textAnchor="middle"
+                                height={40}
                               />
-                            ))}
-                          </LineChart>
-                        </ResponsiveContainer>
+                              <YAxis
+                                allowDecimals={false}
+                                domain={[0, "dataMax + 10000"]}
+                              />
+                              <Tooltip />
+                              <Legend />
+                              {[
+                                ...new Set(
+                                  monthlyManhour.map(
+                                    (item) => item.company_name
+                                  )
+                                ),
+                              ].map((company, idx) => (
+                                <Line
+                                  key={company}
+                                  type="monotone"
+                                  dataKey={company}
+                                  stroke={
+                                    companyColors[company] ||
+                                    COLORS[idx % COLORS.length]
+                                  }
+                                  dot={{
+                                    fill:
+                                      companyColors[company] ||
+                                      COLORS[idx % COLORS.length],
+                                  }}
+                                  name={company}
+                                  strokeWidth={4}
+                                />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </Box>
                       </Box>
                     </Box>
-                  </Box>
+                  )
                 )
-              )
-            }>
-                <ZoomInIcon fontSize="small" />
+              }
+            >
+              <ZoomInIcon fontSize="small" />
             </IconButton>
             <Typography
               sx={{
@@ -958,61 +979,61 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
           >
             <IconButton
               size="small"
-              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
+              sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
               onClick={() =>
-              openZoomModal("Incidents Count", "incidents-count", () => (
-                <Box
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <Box sx={{ flex: 1, minHeight: 0 }}>
-                    <Box sx={{ height: 400 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={transformIncidentData(incidentCount, group)}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="label"
-                            angle={0}
-                            textAnchor="middle"
-                            height={40}
-                          />
-                          <YAxis
-                            allowDecimals={false}
-                            domain={[0, "dataMax + 2"]}
-                          />
-                          <Tooltip />
-                          <Legend />
-                          {[
-                            ...new Set(
-                              incidentCount.map((i) => i.incident_title)
-                            ),
-                          ].map((type, idx) => (
-                            <Bar
-                              key={type}
-                              dataKey={type}
-                              stackId="a"
-                              fill={barColors[idx % barColors.length]}
-                              name={type}
-                              barSize={12}
+                openZoomModal("Incidents Count", "incidents-count", () => (
+                  <Box
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
+                      <Box sx={{ height: 400 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={transformIncidentData(incidentCount, group)}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              dataKey="label"
+                              angle={0}
+                              textAnchor="middle"
+                              height={40}
                             />
-                          ))}
-                        </BarChart>
-                      </ResponsiveContainer>
+                            <YAxis
+                              allowDecimals={false}
+                              domain={[0, "dataMax + 2"]}
+                            />
+                            <Tooltip />
+                            <Legend />
+                            {[
+                              ...new Set(
+                                incidentCount.map((i) => i.incident_title)
+                              ),
+                            ].map((type, idx) => (
+                              <Bar
+                                key={type}
+                                dataKey={type}
+                                stackId="a"
+                                fill={barColors[idx % barColors.length]}
+                                name={type}
+                                barSize={12}
+                              />
+                            ))}
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </Box>
                     </Box>
                   </Box>
-                </Box>
-              ))
-            }
-          >
+                ))
+              }
+            >
               <ZoomInIcon fontSize="small" />
-          </IconButton>
+            </IconButton>
             <Typography
               sx={{
                 fontSize: "13px",
@@ -1104,40 +1125,41 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
               }}
             >
               <IconButton
-              size="small"
-              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
-              onClick={() =>
-                openZoomModal(
-                  "Gender Distribution by Position",
-                  "gender-distribution",
-                  () => (
-                    <Box
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <Box sx={{ height: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={genderDistribution}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="position" />
-                              <YAxis />
-                              <Tooltip itemStyle={{ color: "#000" }} />
-                              <Legend />
-                              <Bar dataKey="Male" fill="#4285F4" />
-                              <Bar dataKey="Female" fill="#EA4335" />
-                            </BarChart>
-                          </ResponsiveContainer>
+                size="small"
+                sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
+                onClick={() =>
+                  openZoomModal(
+                    "Gender Distribution by Position",
+                    "gender-distribution",
+                    () => (
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
+                      >
+                        <Box sx={{ flex: 1, minHeight: 0 }}>
+                          <Box sx={{ height: 400 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={genderDistribution}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="position" />
+                                <YAxis />
+                                <Tooltip itemStyle={{ color: "#000" }} />
+                                <Legend />
+                                <Bar dataKey="Male" fill="#4285F4" />
+                                <Bar dataKey="Female" fill="#EA4335" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
+                    )
                   )
-                )
-              }>
+                }
+              >
                 <ZoomInIcon fontSize="small" />
               </IconButton>
               <Typography
@@ -1198,63 +1220,68 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 maxWidth: "100%",
                 overflow: "hidden",
                 position: "relative",
-              }}>
+              }}
+            >
               <IconButton
-              size="small"
-              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
-              onClick={() =>
-                openZoomModal(
-                  "Age Group Distribution",
-                  "age-distribution",
-                  () => (
-                    <Box
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <Box sx={{ height: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={ageDistribution}
-                                dataKey="count"
-                                nameKey="age_group"
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                label={({ name, percent }) =>
-                                  `${name}: ${(percent * 100).toFixed(0)}%`
-                                }
-                                outerRadius="80%"
-                                innerRadius="40%"
-                                fill="#8884d8"
-                                paddingAngle={2}
-                                startAngle={90}
-                                endAngle={450}
-                              >
-                                {ageDistribution.map((entry, index) => (
-                                  <Cell
-                                    key={`cell-${index}`}
-                                    fill={COLORS[index % COLORS.length]}
-                                  />
-                                ))}
-                              </Pie>
-                              <Tooltip
-                                formatter={(value, name) => [`${value}`, name]}
-                              />
-                              <Legend iconType="square" />
-                            </PieChart>
-                          </ResponsiveContainer>
+                size="small"
+                sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
+                onClick={() =>
+                  openZoomModal(
+                    "Age Group Distribution",
+                    "age-distribution",
+                    () => (
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
+                      >
+                        <Box sx={{ flex: 1, minHeight: 0 }}>
+                          <Box sx={{ height: 400 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={ageDistribution}
+                                  dataKey="count"
+                                  nameKey="age_group"
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  label={({ name, percent }) =>
+                                    `${name}: ${(percent * 100).toFixed(0)}%`
+                                  }
+                                  outerRadius="80%"
+                                  innerRadius="40%"
+                                  fill="#8884d8"
+                                  paddingAngle={2}
+                                  startAngle={90}
+                                  endAngle={450}
+                                >
+                                  {ageDistribution.map((entry, index) => (
+                                    <Cell
+                                      key={`cell-${index}`}
+                                      fill={COLORS[index % COLORS.length]}
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  formatter={(value, name) => [
+                                    `${value}`,
+                                    name,
+                                  ]}
+                                />
+                                <Legend iconType="square" />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
+                    )
                   )
-                )
-              }>
+                }
+              >
                 <ZoomInIcon fontSize="small" />
               </IconButton>
               <Typography
@@ -1336,52 +1363,56 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
                 transition: "box-shadow 0.2s",
                 overflow: "hidden",
                 position: "relative",
-              }}>
+              }}
+            >
               <IconButton
-              size="small"
-              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, }}
-              onClick={() =>
-                openZoomModal(
-                  "Employee Count Per Company",
-                  "employee-count-company",
-                  () => (
-                    <Box
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <Box sx={{ height: 400 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={employeeCountByCompany}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="company" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend />
-                              <Bar dataKey="count" name="Employee Count">
-                                {employeeCountByCompany.map((entry, index) => (
-                                  <Cell
-                                    key={`cell-${index}`}
-                                    fill={
-                                      companyColors[entry.company] ||
-                                      COLORS[index % COLORS.length]
-                                    }
-                                    className="recharts-sector"
-                                  />
-                                ))}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
+                size="small"
+                sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
+                onClick={() =>
+                  openZoomModal(
+                    "Employee Count Per Company",
+                    "employee-count-company",
+                    () => (
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
+                      >
+                        <Box sx={{ flex: 1, minHeight: 0 }}>
+                          <Box sx={{ height: 400 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={employeeCountByCompany}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="company" />
+                                <YAxis />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="count" name="Employee Count">
+                                  {employeeCountByCompany.map(
+                                    (entry, index) => (
+                                      <Cell
+                                        key={`cell-${index}`}
+                                        fill={
+                                          companyColors[entry.company] ||
+                                          COLORS[index % COLORS.length]
+                                        }
+                                        className="recharts-sector"
+                                      />
+                                    )
+                                  )}
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
+                    )
                   )
-                )
-              }>
+                }
+              >
                 <ZoomInIcon fontSize="small" />
               </IconButton>
               <Typography
@@ -1438,7 +1469,6 @@ function DemographicsDash({ shouldReload, setShouldReload }) {
             </Box>
           </Box>
         </Box>
-
         <ZoomModal
           open={zoomModal.open}
           title={zoomModal.title}

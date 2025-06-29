@@ -802,6 +802,33 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
           }}
         />
 
+        {editedRecord.status === "For Revision (Head)" ? (
+          <TextField
+            label="Remarks"
+            variant="outlined"
+            fullWidth
+            multiline
+            maxRows={4}
+            rows={4}
+            value={editedRecord.remarks}
+            type="text"
+            InputProps={{
+              readOnly: true,
+              sx: {
+                color: isEditing ? "black" : "#182959",
+              },
+            }}
+            InputLabelProps={{
+              sx: {
+                color: isEditing ? "#182959" : "grey",
+              },
+            }}
+            sx={{
+              gridColumn: "1 / -1",
+            }}
+          />
+        ) : null}
+
         {/*added */}
         <Box
           sx={{
@@ -980,6 +1007,7 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 multiline
+                maxRows={4}
               />
               <Box
                 sx={{
