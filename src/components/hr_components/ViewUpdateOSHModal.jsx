@@ -338,21 +338,12 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
 
       // Show appropriate modal for revision
       if (action === "revise") {
-        if (newStatus === "FRS") {
-          setSuccessMessage("Revision (Site) Requested!");
-          setSuccessTitle("The record has been sent for revision (site).");
-          setSuccessColor("#FFA000");
-          setIsSuccessModalOpen(true);
-        } else if (newStatus === "FRH") {
-          setSuccessMessage("Revision (Head) Requested!");
-          setSuccessTitle("The record has been sent for revision (head).");
-          setSuccessColor("#182959");
-          setIsSuccessModalOpen(true);
-        }
+        setSuccessMessage("Revision (Head) Requested!");
+        setSuccessTitle("The record has been sent for revision (head).");
+        setSuccessColor("#182959");
+        setIsSuccessModalOpen(true);
 
-        if (onSuccess) {
-          onSuccess();
-        }
+        setShouldReset(true);
       } else {
         if (onSuccess) {
           onSuccess();
@@ -379,10 +370,7 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
       setSuccessMessage("Record Approved Successfully!");
       setSuccessTitle("The record has been successfully approved.");
       setIsSuccessModalOpen(true);
-
-      if (onSuccess) {
-        onSuccess();
-      }
+      setShouldReset(true);
     } catch (error) {
       alert(error?.response?.data?.detail || "Update Status Failed.");
     }
@@ -392,9 +380,11 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
     <Paper
       sx={{
         p: 4,
-        width: "600px",
+        width: "90vh",
         borderRadius: "16px",
         bgcolor: "white",
+        maxHeight: "100vh", //added
+        overflowY: "auto",
       }}
     >
       <Box

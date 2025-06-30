@@ -203,6 +203,8 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
         width: "500px",
         borderRadius: "16px",
         bgcolor: "white",
+        maxHeight: "100vh", //added
+        overflowY: "auto",
       }}
     >
       <Box

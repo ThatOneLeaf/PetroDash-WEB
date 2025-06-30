@@ -297,7 +297,7 @@ function Demographics({
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-        minHeight: "100vh",
+        height: "100%", //added
         p: { xs: 1, sm: 2 },
       }}
     >

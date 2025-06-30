@@ -58,6 +58,7 @@ const ViewUpdateEmployeeModal = ({
   const [remarks, setRemarks] = useState("");
   const recordIdKey = Object.keys(record)[0];
   const [shouldReset, setShouldReset] = useState(false);
+  const [pendingSuccessCallback, setPendingSuccessCallback] = useState(null);
 
   const statusIdToName = {
     URH: "Under review (head level)",
@@ -360,21 +361,11 @@ const ViewUpdateEmployeeModal = ({
 
       // Show appropriate modal for revision
       if (action === "revise") {
-        if (newStatus === "FRS") {
-          setSuccessMessage("Revision (Site) Requested!");
-          setSuccessTitle("The record has been sent for revision (site).");
-          setSuccessColor("#FFA000");
-          setIsSuccessModalOpen(true);
-        } else if (newStatus === "FRH") {
-          setSuccessMessage("Revision (Head) Requested!");
-          setSuccessTitle("The record has been sent for revision (head).");
-          setSuccessColor("#182959");
-          setIsSuccessModalOpen(true);
-        }
-
-        if (onSuccess) {
-          onSuccess();
-        }
+        setSuccessMessage("Revision (Head) Requested!");
+        setSuccessTitle("The record has been sent for revision (head).");
+        setSuccessColor("#182959");
+        setIsSuccessModalOpen(true);
+        setShouldReset(true);
       } else {
         if (onSuccess) {
           onSuccess();
@@ -401,10 +392,7 @@ const ViewUpdateEmployeeModal = ({
       setSuccessMessage("Record Approved Successfully!");
       setSuccessTitle("The record has been successfully approved.");
       setIsSuccessModalOpen(true);
-
-      if (onSuccess) {
-        onSuccess();
-      }
+      setShouldReset(true);
     } catch (error) {
       alert(error?.response?.data?.detail || "Update Status Failed.");
     }
@@ -414,9 +402,11 @@ const ViewUpdateEmployeeModal = ({
     <Paper
       sx={{
         p: 4,
-        width: "600px",
+        width: "90vh", //added
         borderRadius: "16px",
         bgcolor: "white",
+        maxHeight: "100vh", //added
+        overflowY: "auto", //added
       }}
     >
       <Box

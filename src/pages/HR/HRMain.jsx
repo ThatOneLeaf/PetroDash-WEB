@@ -522,7 +522,11 @@ function HRMain() {
     }));
   console.log("Render Check", selectedRowIds.length, isApprove);
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box
+      sx={{
+        display: "flex",
+      }}
+    >
       <Sidebar />
       <Box sx={{ flexGrow: 1, height: "100vh", overflow: "auto" }}>
         <Box sx={{ p: 4 }}>
