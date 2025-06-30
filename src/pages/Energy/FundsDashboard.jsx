@@ -189,10 +189,18 @@ function FundsDashboard() {
   const [powerPlantFilter, setPowerPlantFilter] = useState([]);
   const [generationSourceFilter, setGenerationSourceFilter] = useState([]);
   const [provinceFilter, setProvinceFilter] = useState([]);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
   const [x, setX] = useState('power_plant_id');
   const [y, setY] = useState('monthly');
+  const [startDate, setStartDate] = useState(
+    y === 'quarterly'
+      ? dayjs().startOf('quarter').subtract(8, 'quarter')
+      : dayjs().startOf('month').subtract(11, 'month')
+  );
+  const [endDate, setEndDate] = useState(
+    y === 'quarterly'
+      ? dayjs().startOf('quarter')
+      : dayjs().startOf('month')
+  );
   const [filters, setFilters] = useState({
     company: '',
     powerPlant: '',
@@ -397,12 +405,47 @@ const fetchData = async () => {
     fetchData();
   };
 
-  const clearAllFilters = () => {
-    setCompanyFilter([]);
-    setPowerPlantFilter([]);
-    setStartDate(null);
-    setEndDate(null);
+  const [userChangedFilters, setUserChangedFilters] = useState(false);
+    // Handler wrappers to detect manual filter changes
+  const handleCompanyFilter = (val) => {
+    setUserChangedFilters(true);
+    setCompanyFilter(val);
   };
+  const handlePowerPlantFilter = (val) => {
+    setUserChangedFilters(true);
+    setPowerPlantFilter(val);
+  };
+  const handleGenerationSourceFilter = (val) => {
+    setUserChangedFilters(true);
+    setGenerationSourceFilter(val);
+  };
+  const handleProvinceFilter = (val) => {
+    setUserChangedFilters(true);
+    setProvinceFilter(val);
+  };
+  const handleStartDate = (val) => {
+    setUserChangedFilters(true);
+    setStartDate(val);
+  };
+  const handleEndDate = (val) => {
+    setUserChangedFilters(true);
+    setEndDate(val);
+  };
+
+const clearAllFilters = () => {
+  setCompanyFilter([]);
+  setPowerPlantFilter([]);
+  setGenerationSourceFilter([]);
+  setProvinceFilter([]);
+  if (y === 'quarterly') {
+    setStartDate(dayjs().startOf('quarter').subtract(8, 'quarter'));
+    setEndDate(dayjs().startOf('quarter'));
+  } else {
+    setStartDate(dayjs().startOf('month').subtract(11, 'month'));
+    setEndDate(dayjs().startOf('month'));
+  }
+  setUserChangedFilters(false);
+};
 useEffect(() => {
   const loadColors = async () => {
     const colors = await getPowerPlantColors();
@@ -587,12 +630,12 @@ return (
           }}
         >
           {role !== 'R04' && (
-            <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
+            <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={handleCompanyFilter} placeholder="All Companies" />
           )}
-          <MultiSelectWithChips label="Power Plants" options={filteredPowerPlantOptions} selectedValues={powerPlantFilter} onChange={setPowerPlantFilter} placeholder="All Power Projects" />
-          <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+          <MultiSelectWithChips label="Power Plants" options={filteredPowerPlantOptions} selectedValues={powerPlantFilter} onChange={handlePowerPlantFilter} placeholder="All Power Projects" />
+          <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={handleStartDate} setEndDate={handleEndDate} />
 
-          {role !== 'R04' && showClearButton && <ClearButton onClick={clearAllFilters} />}
+          {role !== 'R04' && userChangedFilters && showClearButton && <ClearButton onClick={clearAllFilters} />}
 
           <Box sx={{ flexGrow: 1, minWidth: 10 }} />
           <SingleSelectDropdown label="Group By" options={xOptions} selectedValue={x} onChange={setX} />
