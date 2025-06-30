@@ -55,7 +55,7 @@ import HorizontalGroupedBarChartComponent from "../../components/charts/Horizont
 import { useAuth } from "../../contexts/AuthContext";
 import { useCO2 } from "../../contexts/CO2Context";
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
-
+import dayjs from "dayjs";
 
 // Utils
 const formatDateTime = (date) => format(date, "PPPpp");
@@ -176,14 +176,22 @@ function PowerDashboard() {
 
 
   // Filter values
+  const [y, setY] = useState('monthly');
+  const [startDate, setStartDate] = useState(
+    y === 'quarterly'
+      ? dayjs().startOf('quarter').subtract(8, 'quarter')
+      : dayjs().startOf('month').subtract(11, 'month')
+  );
+  const [endDate, setEndDate] = useState(
+    y === 'quarterly'
+      ? dayjs().startOf('quarter')
+      : dayjs().startOf('month')
+  );
   const [companyFilter, setCompanyFilter] = useState([]);
   const [powerPlantFilter, setPowerPlantFilter] = useState([]);
   const [generationSourceFilter, setGenerationSourceFilter] = useState([]);
   const [provinceFilter, setProvinceFilter] = useState([]);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
   const [x, setX] = useState('power_plant_id');
-  const [y, setY] = useState('monthly');
   const [filters, setFilters] = useState({
     company: '',
     powerPlant: '',
@@ -352,14 +360,49 @@ const fetchData = async () => {
     fetchData();
   };
 
-  const clearAllFilters = () => {
-    setCompanyFilter([]);
-    setPowerPlantFilter([]);
-    setGenerationSourceFilter([]);
-    setProvinceFilter([]);
-    setStartDate(null);
-    setEndDate(null);
+  // Track if user has manually changed any filter
+  const [userChangedFilters, setUserChangedFilters] = useState(false);
+
+  // Handler wrappers to detect manual filter changes
+  const handleCompanyFilter = (val) => {
+    setUserChangedFilters(true);
+    setCompanyFilter(val);
   };
+  const handlePowerPlantFilter = (val) => {
+    setUserChangedFilters(true);
+    setPowerPlantFilter(val);
+  };
+  const handleGenerationSourceFilter = (val) => {
+    setUserChangedFilters(true);
+    setGenerationSourceFilter(val);
+  };
+  const handleProvinceFilter = (val) => {
+    setUserChangedFilters(true);
+    setProvinceFilter(val);
+  };
+  const handleStartDate = (val) => {
+    setUserChangedFilters(true);
+    setStartDate(val);
+  };
+  const handleEndDate = (val) => {
+    setUserChangedFilters(true);
+    setEndDate(val);
+  };
+  // Reset userChangedFilters when clearing all
+const clearAllFilters = () => {
+  setCompanyFilter([]);
+  setPowerPlantFilter([]);
+  setGenerationSourceFilter([]);
+  setProvinceFilter([]);
+  if (y === 'quarterly') {
+    setStartDate(dayjs().startOf('quarter').subtract(8, 'quarter'));
+    setEndDate(dayjs().startOf('quarter'));
+  } else {
+    setStartDate(dayjs().startOf('month').subtract(11, 'month'));
+    setEndDate(dayjs().startOf('month'));
+  }
+  setUserChangedFilters(false);
+};
 useEffect(() => {
   const loadColors = async () => {
     const colors = await getPowerPlantColors();
@@ -564,7 +607,7 @@ return (
               label="Companies"
               options={companyOptions}
               selectedValues={companyFilter}
-              onChange={setCompanyFilter}
+              onChange={handleCompanyFilter}
               placeholder="All Companies"
             />
           )}
@@ -572,14 +615,14 @@ return (
             label="Power Plants"
             options={filteredPowerPlantOptions}
             selectedValues={powerPlantFilter}
-            onChange={setPowerPlantFilter}
+            onChange={handlePowerPlantFilter}
             placeholder="All Power Projects"
           />
           {role !== 'R04' && (
-          <MultiSelectWithChips label="Generation Sources" options={generationSourceOptions} selectedValues={generationSourceFilter} onChange={setGenerationSourceFilter} placeholder="All Sources" />)}
-          <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+            <MultiSelectWithChips label="Generation Sources" options={generationSourceOptions} selectedValues={generationSourceFilter} onChange={handleGenerationSourceFilter} placeholder="All Sources" />)}
+          <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={handleStartDate} setEndDate={handleEndDate} />
 
-          {showClearButton && <ClearButton onClick={clearAllFilters} />}
+          {userChangedFilters && showClearButton && <ClearButton onClick={clearAllFilters} />}
 
           <Box sx={{ flexGrow: 1, minWidth: 10 }} />
           <SingleSelectDropdown label="Group By" options={xOptions} selectedValue={x} onChange={setX} />
