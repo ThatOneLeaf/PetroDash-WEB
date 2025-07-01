@@ -140,6 +140,66 @@ function roundUpToNiceNumber(num) {
   }
 }
 
+// Utility to fill missing months with zero values for stacked bar charting
+function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', valueKeys = []) {
+  const months = [];
+  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+  while (current <= end) {
+    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
+    current.setMonth(current.getMonth() + 1);
+  }
+  if (valueKeys.length === 0 && dataArray.length > 0) {
+    valueKeys = Object.keys(dataArray[0]).filter(k => k !== keyName);
+  }
+  const allValueKeys = new Set(valueKeys);
+  dataArray.forEach(item => {
+    Object.keys(item).forEach(k => {
+      if (k !== keyName) allValueKeys.add(k);
+    });
+  });
+  const allKeysArr = Array.from(allValueKeys);
+  const dataMap = {};
+  dataArray.forEach(item => {
+    dataMap[item[keyName]] = item;
+  });
+  return months.map(month => {
+    if (dataMap[month]) {
+      const filled = { ...dataMap[month] };
+      allKeysArr.forEach(k => {
+        if (!(k in filled)) filled[k] = 0;
+      });
+      return filled;
+    }
+    const zeroObj = { [keyName]: month };
+    allKeysArr.forEach(k => {
+      zeroObj[k] = 0;
+    });
+    return zeroObj;
+  });
+}
+
+// Helper for line chart series: fills missing months for each series
+function fillLineSeriesWithZeroes(seriesArray, startDate, endDate) {
+  if (!Array.isArray(seriesArray)) return [];
+  // Get all months in range
+  const months = [];
+  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+  while (current <= end) {
+    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
+    current.setMonth(current.getMonth() + 1);
+  }
+  return seriesArray.map(series => {
+    const dataMap = {};
+    (series.data || []).forEach(d => { dataMap[d.x] = d.y; });
+    return {
+      ...series,
+      data: months.map(month => ({ x: month, y: dataMap[month] !== undefined ? dataMap[month] : 0 }))
+    };
+  });
+}
+
 
 
 
@@ -548,6 +608,19 @@ if (loading) {
   );
 }
 
+  // Compute filled chart data for all months in range (define before return!)
+  const filledLineData = (startDate && endDate && data?.line_graph?.total_energy_generated?.length > 0)
+    ? fillLineSeriesWithZeroes(data.line_graph.total_energy_generated, new Date(startDate), new Date(endDate))
+    : (data?.line_graph?.total_energy_generated || []);
+  const filledCo2Data = (startDate && endDate && data?.line_graph?.total_co2_avoidance?.length > 0)
+    ? fillLineSeriesWithZeroes(data.line_graph.total_co2_avoidance, new Date(startDate), new Date(endDate))
+    : (data?.line_graph?.total_co2_avoidance || []);
+  const filledStackedBarData = (startDate && endDate && data?.stacked_bar?.length > 0)
+    ? fillMissingMonths(data.stacked_bar, new Date(startDate), new Date(endDate), 'period')
+    : (data?.stacked_bar || []);
+  const filledHousePowerStackedBar = (startDate && endDate && housePowerData?.stacked_bar?.length > 0)
+    ? fillMissingMonths(housePowerData.stacked_bar, new Date(startDate), new Date(endDate), 'period')
+    : (housePowerData?.stacked_bar || []);
 
 return (
   <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -707,7 +780,7 @@ return (
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <LineChartComponent
                       title={generateFullChartTitle("Power Generation Over Time", x, y, filters, startDate, endDate)}
-                      data={data?.line_graph?.total_energy_generated || []}
+                      data={filledLineData}
                       unit="kWh"
                       colorMap={
                         chartReady
@@ -732,7 +805,7 @@ return (
                           type: "line",
                           props: {
                             title: generateFullChartTitle("Power Generation Over Time", x, y, filters, startDate, endDate),
-                            data: data?.line_graph?.total_energy_generated || [],
+                            data: filledLineData,
                             unit: "kWh",
                             colorMap: chartReady
                               ? getColorMapForGroupBy(
@@ -812,7 +885,7 @@ return (
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <VerticalStackedBarChartComponent
                       title={generateFullChartTitle("Cumulative Power Generation", x, y, filters, startDate, endDate)}
-                      data={data?.stacked_bar || []}
+                      data={filledStackedBarData}
                       legendName="Cumulative Power Generation"
                       unit="kWh"
                       colorMap={
@@ -839,7 +912,7 @@ return (
                           type: "verticalBar",
                           props: {
                             title: generateFullChartTitle("Cumulative Power Generation", x, y, filters, startDate, endDate),
-                            data: data?.stacked_bar || [],
+                            data: filledStackedBarData,
                             legendName: "Cumulative Power Generation",
                             unit: "kWh",
                             colorMap: chartReady
@@ -867,7 +940,7 @@ return (
                   <Box sx={{ width: '100%', height: '100%' }}>
                     <VerticalStackedBarChartComponent
                       title={generateFullChartTitle("Number of Households Powered", x, y, filters, startDate, endDate)}
-                      data={housePowerData?.stacked_bar || []}
+                      data={filledHousePowerStackedBar}
                       legendName="Total Energy Generated"
                       yAxisLabel={"No. of Household"}
                       colorMap={
@@ -894,7 +967,7 @@ return (
                           type: "verticalBar",
                           props: {
                             title: generateFullChartTitle("Number of Households Powered", x, y, filters, startDate, endDate),
-                            data: housePowerData?.stacked_bar || [],
+                            data: filledHousePowerStackedBar,
                             legendName: "Total Energy Generated",
                             yAxisLabel: "No. of Household",
                             colorMap: chartReady
@@ -944,7 +1017,7 @@ return (
     >
       <LineChartComponent
         title={generateFullChartTitle("CO₂ Avoidance Over Time", x, y, filters, startDate, endDate)}
-        data={data?.line_graph?.total_co2_avoidance || []}
+        data={filledCo2Data}
         yAxisLabel="tons CO2"
         unit="tons CO2"
         colorMap={
@@ -970,7 +1043,7 @@ return (
               type: "line",
               props: {
                 title: generateFullChartTitle("CO₂ Avoidance Over Time", x, y, filters, startDate, endDate),
-                data: data?.line_graph?.total_co2_avoidance || [],
+                data: filledCo2Data,
                 yAxisLabel: "tons CO2",
                 unit: "tons CO2",
                 colorMap: chartReady

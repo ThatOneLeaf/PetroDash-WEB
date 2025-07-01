@@ -143,6 +143,56 @@ function roundUpToNiceNumber(num) {
   }
 }
 
+// Utility to fill missing months with zero values for stacked bar charting
+function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', valueKeys = []) {
+  // Get all months between startDate and endDate in "YYYY-MM" format
+  const months = [];
+  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+  while (current <= end) {
+    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  // If valueKeys is empty, use all keys except keyName
+  if (valueKeys.length === 0 && dataArray.length > 0) {
+    valueKeys = Object.keys(dataArray[0]).filter(k => k !== keyName);
+  }
+
+  // Collect all possible valueKeys from the data (for dynamic group keys)
+  const allValueKeys = new Set(valueKeys);
+  dataArray.forEach(item => {
+    Object.keys(item).forEach(k => {
+      if (k !== keyName) allValueKeys.add(k);
+    });
+  });
+  const allKeysArr = Array.from(allValueKeys);
+
+  // Map existing data for quick lookup
+  const dataMap = {};
+  dataArray.forEach(item => {
+    dataMap[item[keyName]] = item;
+  });
+
+  // Build filled array
+  return months.map(month => {
+    if (dataMap[month]) {
+      // Ensure all group keys are present (fill missing with 0)
+      const filled = { ...dataMap[month] };
+      allKeysArr.forEach(k => {
+        if (!(k in filled)) filled[k] = 0;
+      });
+      return filled;
+    }
+    // Build a zeroed object for all valueKeys
+    const zeroObj = { [keyName]: month };
+    allKeysArr.forEach(k => {
+      zeroObj[k] = 0;
+    });
+    return zeroObj;
+  });
+}
+
 
 
 
@@ -697,9 +747,17 @@ return (
       <VerticalStackedBarChartComponent
         title={generateFullChartTitle("Breakdown of Primary Allocation of Funds", x, y, filters, startDate, endDate)}
         data={
-            lineView === 'period'
-            ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
-            : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || []
+          (() => {
+            const rawData = lineView === 'period'
+              ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
+              : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || [];
+            if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
+              // Get all value keys except 'period'
+              const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
+              return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+            }
+            return rawData;
+          })()
         }
         legendName="Total Energy Generated"
         yAxisLabel={"Pesos"}
@@ -731,9 +789,17 @@ return (
           <VerticalStackedBarChartComponent
             title={generateFullChartTitle("Breakdown of Primary Allocation of Funds", x, y, filters, startDate, endDate)}
             data={
-                lineView === 'period'
-                ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
-                : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || []
+              (() => {
+                const rawData = lineView === 'period'
+                  ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
+                  : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || [];
+                if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
+                  // Get all value keys except 'period'
+                  const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
+                  return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+                }
+                return rawData;
+              })()
             }
             legendName="Total Energy Generated"
             yAxisLabel={"Pesos"}
@@ -874,9 +940,16 @@ return (
       <VerticalStackedBarChartComponent
         title={generateFullChartTitle("Breakdown of Funds Allocation for Beneficiaries", x, y, filters, startDate, endDate)}
         data={
-            lineView === 'period'
-            ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
-            : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || []
+          (() => {
+            const rawData = lineView === 'period'
+              ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
+              : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || [];
+            if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
+              const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
+              return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+            }
+            return rawData;
+          })()
         }
         legendName="Total Energy Generated"
         yAxisLabel={"Pesos"}
@@ -908,9 +981,16 @@ return (
           <VerticalStackedBarChartComponent
         title={generateFullChartTitle("Breakdown of Funds Allocation for Beneficiaries", x, y, filters, startDate, endDate)}
         data={
-            lineView === 'period'
-            ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
-            : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || []
+          (() => {
+            const rawData = lineView === 'period'
+              ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
+              : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || [];
+            if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
+              const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
+              return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+            }
+            return rawData;
+          })()
         }
         legendName="Total Energy Generated"
         yAxisLabel={"Pesos"}
