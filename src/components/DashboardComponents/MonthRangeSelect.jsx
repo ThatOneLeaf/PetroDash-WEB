@@ -112,7 +112,11 @@ const MonthRangeSelect = ({
                 value={startDate}
                 onChange={(newValue) => setStartDate(newValue)}
                 minDate={dayjs('2000-01-01')}
-                maxDate={endDate || dayjs()}
+                maxDate={
+                  endDate && endDate.isBefore(dayjs(), 'month')
+                    ? endDate
+                    : dayjs() // Prevent selecting future months
+                }
                 slotProps={{
                   textField: {
                     size: "small",
@@ -132,6 +136,7 @@ const MonthRangeSelect = ({
                 value={endDate}
                 onChange={(newValue) => setEndDate(newValue)}
                 minDate={startDate || dayjs()}
+                maxDate={dayjs()} // Prevent selecting future months
                 slotProps={{
                   textField: {
                     size: "small",
