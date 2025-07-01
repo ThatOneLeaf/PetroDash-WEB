@@ -307,73 +307,74 @@ function Energy() {
     return newStatus;
   }
   
-  const handleApproveConfirm = async () => {
+const handleApproveConfirm = async () => {
+  setIsModalOpen(false);
+  // Call the bulk update directly, but skip opening the modal again
+  await handleBulkStatusUpdate('approve', { skipModal: true });
+};
+
+const handleBulkStatusUpdate = async (action, options = {}) => {
+  let currentStatus = null;
+  if (selectedRowIds.length > 0) {
+    const firstRow = filteredData.find(row => row['energyId'] === selectedRowIds[0]);
+    currentStatus = firstRow?.status || null;
+  } else {
+    setShowStatusErrorModal(true);
+    return;
+  }
+
+  const newStatus = fetchNextStatus(action, currentStatus);
+
+  if (newStatus) {
+    console.log("Updated status to:", newStatus);
+  } else {
+    console.warn("No matching status transition found.");
+  }
+
+  try {
+    if (action === 'revise') {
+      if (!remarks){
+        setShowRemarksRequiredModal(true);
+        return;
+      }
+    } else if (action === 'approve' && !options.skipModal) {
+      // Show the modal instead of window.confirm
+      setIsModalOpen(true);
+      setModalType('approve');
+      return; // Wait for modal confirmation
+    }
+
+    const payload = {
+      record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
+      new_status: newStatus.trim(),
+      remarks: remarks.trim(),
+    };
+
+    const response = await api.post(
+      "/usable_apis/bulk_update_status",
+      payload
+    );
+
+    // Use the helper function to refresh data
+    fetchEnergyData();
+
     setIsModalOpen(false);
-    handleBulkStatusUpdate('approve');
-  };
+    setSelectedRowIds([]);
+    setRemarks("");
 
-  const handleBulkStatusUpdate = async (action) => {
-    let currentStatus = null;
-    if (selectedRowIds.length > 0) {
-      const firstRow = filteredData.find(row => row['energyId'] === selectedRowIds[0]);
-      currentStatus = firstRow?.status || null;
-    } else {
-      setShowStatusErrorModal(true);
-      return;
+    // Show bulk revise modal if action is revise
+    if (action === 'revise') {
+      setShowBulkReviseModal(true);
     }
-  
-    const newStatus = fetchNextStatus(action, currentStatus);
-
-    if (newStatus) {
-      console.log("Updated status to:", newStatus);
-    } else {
-      console.warn("No matching status transition found.");
+    // Show approve success modal if action is approve
+    if (action === 'approve') {
+      setShowApproveSuccessModal(true);
     }
-
-    try {
-      if (action === 'revise') {
-        if (!remarks){
-          setShowRemarksRequiredModal(true);
-          return;
-        }
-      } else if (action === 'approve') {
-        // Show the modal instead of window.confirm
-        setIsModalOpen(true);
-        setModalType('approve');
-        return; // Wait for modal confirmation
-      }
-
-      const payload = {
-        record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
-        new_status: newStatus.trim(),
-        remarks: remarks.trim(),
-      };
-
-      const response = await api.post(
-        "/usable_apis/bulk_update_status",
-        payload
-      );
-
-      // Use the helper function to refresh data
-      fetchEnergyData();
-
-      setIsModalOpen(false);
-      setSelectedRowIds([]);
-      setRemarks("");
-
-      // Show bulk revise modal if action is revise
-      if (action === 'revise') {
-        setShowBulkReviseModal(true);
-      }
-      // Show approve success modal if action is approve
-      if (action === 'approve') {
-        setShowApproveSuccessModal(true);
-      }
-    } catch (error) {
-      console.error("Error updating record status:", error);
-      alert(error);
-    }  
-  };
+  } catch (error) {
+    console.error("Error updating record status:", error);
+    alert(error);
+  }  
+};
 
 
   useEffect(() => {
