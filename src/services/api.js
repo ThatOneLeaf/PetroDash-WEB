@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://10.1.1.190:8000", // Your FastAPI backend URL
-  // baseURL: "http://localhost:8000",
+  // baseURL: "http://10.1.1.190:8000", // Your FastAPI backend URL
+  baseURL: "http://localhost:8000",
   headers: {
     "Content-Type": "application/json",
   },
@@ -25,10 +25,11 @@ export const setupAuthInterceptors = (getToken, logout) => {
     async (error) => {
       const originalRequest = error.config;
 
-      // If error is 401 and it's not an activity update request
+      // If error is 401 and it's not a login request or activity update request
       if (
         error.response?.status === 401 &&
         !originalRequest._retry &&
+        !originalRequest.url.includes("/auth/token") && // Don't logout on login failures
         !originalRequest.url.includes("/auth/update-activity")
       ) {
         originalRequest._retry = true;
