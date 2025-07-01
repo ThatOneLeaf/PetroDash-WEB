@@ -67,9 +67,22 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
   }, [companyId, powerPlantId]);
 
   const handleChange = (field) => (event) => {
+    let value = event.target.value;
+    if (field === 'energyGenerated') {
+      // Only allow positive numbers, no alphabets, no negative, no e/E
+      value = value.replace(/[^0-9.]/g, '');
+      // Prevent multiple dots
+      const parts = value.split('.');
+      if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
+      // Prevent negative
+      if (value.startsWith('-')) value = value.replace('-', '');
+      // Prevent leading zeros (except for "0." case)
+      if (/^0[0-9]+/.test(value)) value = value.replace(/^0+/, '');
+      // Allow 0 as input (remove the line that clears value if value === '0')
+    }
     setFormData((prev) => ({
       ...prev,
-      [field]: event.target.value
+      [field]: value
     }));
   };
 
@@ -82,9 +95,14 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
 
   const handleShowConfirm = () => {
     // Validate energyGenerated before showing confirmation
-    if (!formData.energyGenerated || isNaN(formData.energyGenerated)) {
-      //alert('Please enter a valid energy generated value.');
-      setShowInvalid(true)
+    const val = formData.energyGenerated;
+    if (
+      val === '' ||
+      isNaN(val) ||
+      Number(val) < 0 ||
+      /[a-zA-Z]/.test(val)
+    ) {
+      setShowInvalid(true);
       return;
     }
     setShowConfirm(true);
@@ -240,10 +258,15 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
             label="Energy Generated"
             value={formData.energyGenerated}
             onChange={handleChange('energyGenerated')}
-            type="number"
+            type="text"
             size="medium"
             fullWidth
             required
+            inputProps={{
+              inputMode: 'decimal',
+              pattern: '[0-9.]*',
+              min: 0,
+            }}
             helperText={!formData.energyGenerated ? 'Required field' : ''}
           />
           <FormControl fullWidth>

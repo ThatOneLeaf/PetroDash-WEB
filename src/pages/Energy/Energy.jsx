@@ -523,9 +523,9 @@ const handleBulkStatusUpdate = async (action, options = {}) => {
                     const allSameStatus = statusList.length > 0 && statusList.every(status => status === statusList[0]);
                     let canShowApprove = false;
                     if (role === 'R04') {
-                      canShowApprove = allSameStatus && ['URS', 'FRS'].includes(statusList[0]);
+                      canShowApprove = allSameStatus && ['URS'].includes(statusList[0]);
                     } else if (role === 'R03') {
-                      canShowApprove = allSameStatus && ['URH', 'FRH'].includes(statusList[0]);
+                      canShowApprove = allSameStatus && ['URH'].includes(statusList[0]);
                     } else {
                       canShowApprove = canApprove && allSameStatus && statusList[0] !== 'APP';
                     }
@@ -551,9 +551,9 @@ const handleBulkStatusUpdate = async (action, options = {}) => {
                     const allSameStatus = statusList.length > 0 && statusList.every(status => status === statusList[0]);
                     let canShowRevise = false;
                     if (role === 'R04') {
-                      canShowRevise = allSameStatus && ['URS', 'FRS'].includes(statusList[0]);
+                      canShowRevise = allSameStatus && ['URS'].includes(statusList[0]);
                     } else if (role === 'R03') {
-                      canShowRevise = allSameStatus && ['URH', 'FRH'].includes(statusList[0]);
+                      canShowRevise = allSameStatus && ['URH'].includes(statusList[0]);
                     } else {
                       canShowRevise = canApprove && allSameStatus && statusList[0] !== 'APP' && !['FRS', 'FRH'].includes(statusList[0]);
                     }
