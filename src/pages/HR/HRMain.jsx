@@ -18,6 +18,8 @@ import AddSafetyWorkDataModal from "../../components/hr_components/AddSafetyWork
 
 import ImportFileModal from "../../components/ImportFileModal";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 import HREmployability from "./HR";
 import HRParental from "./HRParentalLeave";
 import HRSafetyWorkData from "./HRSafetyWorkData";
@@ -64,6 +66,12 @@ function HRMain() {
     "Training",
     "Occupational Safety Health",
   ];
+
+  const { user } = useAuth();
+
+  const isEncoder =
+    Array.isArray(user?.roles) &&
+    user.roles.some((role) => ["R05"].includes(role));
 
   const handleFilteredDataFromChild = (data) => {
     setFilteredExportData(data); // Set data for EXPORT
@@ -617,39 +625,45 @@ function HRMain() {
                   >
                     EXPORT DATA
                   </Button>
-                  <Button
-                    variant="contained"
-                    sx={{
-                      backgroundColor: "#182959",
-                      borderRadius: "999px",
-                      padding: "9px 18px",
-                      fontSize: "0.85rem",
-                      fontWeight: "bold",
-                      "&:hover": {
-                        backgroundColor: "#0f1a3c",
-                      },
-                    }}
-                    onClick={() => setIsImportModalOpen(true)}
-                  >
-                    IMPORT
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    sx={{
-                      backgroundColor: "#2B8C37",
-                      borderRadius: "999px",
-                      padding: "9px 18px",
-                      fontSize: "0.85rem",
-                      fontWeight: "bold",
-                      "&:hover": {
-                        backgroundColor: "#256d2f",
-                      },
-                    }}
-                    onClick={() => setIsAddModalOpen(true)}
-                  >
-                    ADD RECORD
-                  </Button>
+
+                  {isEncoder && (
+                    <>
+                      <Button
+                        variant="contained"
+                        sx={{
+                          backgroundColor: "#182959",
+                          borderRadius: "999px",
+                          padding: "9px 18px",
+                          fontSize: "0.85rem",
+                          fontWeight: "bold",
+                          "&:hover": {
+                            backgroundColor: "#0f1a3c",
+                          },
+                        }}
+                        onClick={() => setIsImportModalOpen(true)}
+                      >
+                        IMPORT
+                      </Button>
+
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        sx={{
+                          backgroundColor: "#2B8C37",
+                          borderRadius: "999px",
+                          padding: "9px 18px",
+                          fontSize: "0.85rem",
+                          fontWeight: "bold",
+                          "&:hover": {
+                            backgroundColor: "#256d2f",
+                          },
+                        }}
+                        onClick={() => setIsAddModalOpen(true)}
+                      >
+                        ADD RECORD
+                      </Button>
+                    </>
+                  )}
                 </>
               )}
             </div>
