@@ -119,8 +119,30 @@ const ViewEditEnergyModal = ({
   const handleChange = (key, value) => {
     let newValue = value;
     if (key === 'energy_generated') {
-      newValue = parseFloat(value);
-      if (isNaN(newValue)) newValue = '';
+      // Only allow numbers and a single dot, no negative, no letters, allow 0
+      // Accept empty string for controlled input
+      if (typeof value === 'string') {
+        // Remove all except digits and one dot
+        newValue = value.replace(/[^\d.]/g, '');
+        // Prevent multiple dots
+        const parts = newValue.split('.');
+        if (parts.length > 2) {
+          newValue = parts[0] + '.' + parts.slice(1).join('');
+        }
+        // Prevent leading zeros unless it's '0' or '0.xxx'
+        if (newValue.length > 1 && newValue[0] === '0' && newValue[1] !== '.') {
+          newValue = newValue.replace(/^0+/, '');
+          if (newValue === '') newValue = '0';
+        }
+        // Prevent negative sign
+        if (value.includes('-')) {
+          newValue = newValue.replace(/-/g, '');
+        }
+        // Prevent input like '.'
+        if (newValue === '.') newValue = '';
+      }
+      setEditedRecord((prev) => ({ ...prev, [key]: newValue }));
+      return;
     }
     setEditedRecord((prev) => ({ ...prev, [key]: newValue }));
   };
@@ -232,7 +254,6 @@ const handleRejectConfirm = async () => {
     setShowErrorModal(true);
   }
 };
-
 
 
   if (loading) {
@@ -381,7 +402,7 @@ const handleRejectConfirm = async () => {
 
           <TextField
             label="Energy Generated"
-            type="number"
+            type="text"
             value={editedRecord.energy_generated !== undefined ? editedRecord.energy_generated : ''}
             onChange={(e) => handleChange('energy_generated', e.target.value)}
             fullWidth
