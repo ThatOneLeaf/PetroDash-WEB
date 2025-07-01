@@ -78,6 +78,7 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
       if (value.startsWith('-')) value = value.replace('-', '');
       // Prevent leading zeros (except for "0." case)
       if (/^0[0-9]+/.test(value)) value = value.replace(/^0+/, '');
+      // Allow 0 as input (remove the line that clears value if value === '0')
     }
     setFormData((prev) => ({
       ...prev,
@@ -96,9 +97,9 @@ function AddEnergyGenerationModal({ onClose, companyId, powerPlantId }) {
     // Validate energyGenerated before showing confirmation
     const val = formData.energyGenerated;
     if (
-      !val ||
+      val === '' ||
       isNaN(val) ||
-      Number(val) <= 0 ||
+      Number(val) < 0 ||
       /[a-zA-Z]/.test(val)
     ) {
       setShowInvalid(true);
