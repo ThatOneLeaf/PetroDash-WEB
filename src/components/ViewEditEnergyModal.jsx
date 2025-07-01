@@ -84,7 +84,8 @@ const ViewEditEnergyModal = ({
       const response = await api.get(url);
       setPowerPlants(response.data);
     } catch (error) {
-      alert('Failed to load power plants');
+      setErrorMessage('Failed to load power plants');
+      setShowErrorModal(true);
     }
   };
   fetchPowerPlants();
@@ -105,7 +106,8 @@ const ViewEditEnergyModal = ({
         setRecord(response.data);
         setEditedRecord(response.data);
       } catch (error) {
-        alert('Failed to load energy record from API.');
+        setErrorMessage('Failed to load energy record from API.');
+        setShowErrorModal(true);
       } finally {
         setLoading(false);
       }
@@ -195,14 +197,16 @@ const handleApproveConfirm = async () => {
 
   } catch (error) {
     const msg = error.response?.data?.detail || error.message;
-    alert(`Failed to approve: ${msg}`);
+    setErrorMessage(`Failed to approve: ${msg}`);
+    setShowErrorModal(true);
   }
 };
 
 
 const handleRejectConfirm = async () => {
   if (!rejectRemarks.trim()) {
-    alert('Please enter remarks before rejecting.');
+    setErrorMessage('Please enter remarks before rejecting.');
+    setShowErrorModal(true);
     return;
   }
 
@@ -224,7 +228,8 @@ const handleRejectConfirm = async () => {
     
   } catch (error) {
     const msg = error.response?.data?.detail || error.message;
-    alert(`Failed to reject: ${msg}`);
+    setErrorMessage(`Failed to reject: ${msg}`);
+    setShowErrorModal(true);
   }
 };
 

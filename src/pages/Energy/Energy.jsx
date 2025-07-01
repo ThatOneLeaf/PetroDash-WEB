@@ -309,37 +309,7 @@ function Energy() {
   
   const handleApproveConfirm = async () => {
     setIsModalOpen(false);
-    let currentStatus = null;
-    if (selectedRowIds.length > 0) {
-      const firstRow = filteredData.find(row => row['energyId'] === selectedRowIds[0]);
-      currentStatus = firstRow?.status || null;
-    } else {
-      setShowStatusErrorModal(true);
-      return;
-    }
-    const newStatus = fetchNextStatus('approve', currentStatus);
-    if (!newStatus) {
-      alert('No matching status transition found.');
-      return;
-    }
-    try {
-      const payload = {
-        record_ids: Array.isArray(selectedRowIds) ? selectedRowIds : [selectedRowIds],
-        new_status: newStatus.trim(),
-        remarks: remarks.trim(),
-      };
-      await api.post(
-        "/usable_apis/bulk_update_status",
-        payload
-      );
-      fetchEnergyData();
-      setSelectedRowIds([]);
-      setRemarks("");
-      setShowApproveSuccessModal(true);
-    } catch (error) {
-      alert(error?.response?.data?.detail || "Update Status Failed.");
-      //alert(error)
-    }
+    handleBulkStatusUpdate('approve');
   };
 
   const handleBulkStatusUpdate = async (action) => {
@@ -366,9 +336,11 @@ function Energy() {
           setShowRemarksRequiredModal(true);
           return;
         }
-      } else {
-        const confirm = window.confirm('Are you sure you want to approve this record?');
-          if (!confirm) return;
+      } else if (action === 'approve') {
+        // Show the modal instead of window.confirm
+        setIsModalOpen(true);
+        setModalType('approve');
+        return; // Wait for modal confirmation
       }
 
       const payload = {
@@ -376,7 +348,6 @@ function Energy() {
         new_status: newStatus.trim(),
         remarks: remarks.trim(),
       };
-
 
       const response = await api.post(
         "/usable_apis/bulk_update_status",
@@ -394,9 +365,12 @@ function Energy() {
       if (action === 'revise') {
         setShowBulkReviseModal(true);
       }
+      // Show approve success modal if action is approve
+      if (action === 'approve') {
+        setShowApproveSuccessModal(true);
+      }
     } catch (error) {
       console.error("Error updating record status:", error);
-      //alert(error?.response?.data?.detail || "Update Status Failed.");
       alert(error);
     }  
   };
