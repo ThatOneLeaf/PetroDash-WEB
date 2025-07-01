@@ -143,6 +143,56 @@ function roundUpToNiceNumber(num) {
   }
 }
 
+// Utility to fill missing months with zero values for stacked bar charting
+function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', valueKeys = []) {
+  // Get all months between startDate and endDate in "YYYY-MM" format
+  const months = [];
+  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+  while (current <= end) {
+    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  // If valueKeys is empty, use all keys except keyName
+  if (valueKeys.length === 0 && dataArray.length > 0) {
+    valueKeys = Object.keys(dataArray[0]).filter(k => k !== keyName);
+  }
+
+  // Collect all possible valueKeys from the data (for dynamic group keys)
+  const allValueKeys = new Set(valueKeys);
+  dataArray.forEach(item => {
+    Object.keys(item).forEach(k => {
+      if (k !== keyName) allValueKeys.add(k);
+    });
+  });
+  const allKeysArr = Array.from(allValueKeys);
+
+  // Map existing data for quick lookup
+  const dataMap = {};
+  dataArray.forEach(item => {
+    dataMap[item[keyName]] = item;
+  });
+
+  // Build filled array
+  return months.map(month => {
+    if (dataMap[month]) {
+      // Ensure all group keys are present (fill missing with 0)
+      const filled = { ...dataMap[month] };
+      allKeysArr.forEach(k => {
+        if (!(k in filled)) filled[k] = 0;
+      });
+      return filled;
+    }
+    // Build a zeroed object for all valueKeys
+    const zeroObj = { [keyName]: month };
+    allKeysArr.forEach(k => {
+      zeroObj[k] = 0;
+    });
+    return zeroObj;
+  });
+}
+
 
 
 
@@ -189,10 +239,18 @@ function FundsDashboard() {
   const [powerPlantFilter, setPowerPlantFilter] = useState([]);
   const [generationSourceFilter, setGenerationSourceFilter] = useState([]);
   const [provinceFilter, setProvinceFilter] = useState([]);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
   const [x, setX] = useState('power_plant_id');
   const [y, setY] = useState('monthly');
+  const [startDate, setStartDate] = useState(
+    y === 'quarterly'
+      ? dayjs().startOf('quarter').subtract(8, 'quarter')
+      : dayjs().startOf('month').subtract(11, 'month')
+  );
+  const [endDate, setEndDate] = useState(
+    y === 'quarterly'
+      ? dayjs().startOf('quarter')
+      : dayjs().startOf('month')
+  );
   const [filters, setFilters] = useState({
     company: '',
     powerPlant: '',
@@ -397,12 +455,47 @@ const fetchData = async () => {
     fetchData();
   };
 
-  const clearAllFilters = () => {
-    setCompanyFilter([]);
-    setPowerPlantFilter([]);
-    setStartDate(null);
-    setEndDate(null);
+  const [userChangedFilters, setUserChangedFilters] = useState(false);
+    // Handler wrappers to detect manual filter changes
+  const handleCompanyFilter = (val) => {
+    setUserChangedFilters(true);
+    setCompanyFilter(val);
   };
+  const handlePowerPlantFilter = (val) => {
+    setUserChangedFilters(true);
+    setPowerPlantFilter(val);
+  };
+  const handleGenerationSourceFilter = (val) => {
+    setUserChangedFilters(true);
+    setGenerationSourceFilter(val);
+  };
+  const handleProvinceFilter = (val) => {
+    setUserChangedFilters(true);
+    setProvinceFilter(val);
+  };
+  const handleStartDate = (val) => {
+    setUserChangedFilters(true);
+    setStartDate(val);
+  };
+  const handleEndDate = (val) => {
+    setUserChangedFilters(true);
+    setEndDate(val);
+  };
+
+const clearAllFilters = () => {
+  setCompanyFilter([]);
+  setPowerPlantFilter([]);
+  setGenerationSourceFilter([]);
+  setProvinceFilter([]);
+  if (y === 'quarterly') {
+    setStartDate(dayjs().startOf('quarter').subtract(8, 'quarter'));
+    setEndDate(dayjs().startOf('quarter'));
+  } else {
+    setStartDate(dayjs().startOf('month').subtract(11, 'month'));
+    setEndDate(dayjs().startOf('month'));
+  }
+  setUserChangedFilters(false);
+};
 useEffect(() => {
   const loadColors = async () => {
     const colors = await getPowerPlantColors();
@@ -587,12 +680,12 @@ return (
           }}
         >
           {role !== 'R04' && (
-            <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={setCompanyFilter} placeholder="All Companies" />
+            <MultiSelectWithChips label="Companies" options={companyOptions} selectedValues={companyFilter} onChange={handleCompanyFilter} placeholder="All Companies" />
           )}
-          <MultiSelectWithChips label="Power Plants" options={filteredPowerPlantOptions} selectedValues={powerPlantFilter} onChange={setPowerPlantFilter} placeholder="All Power Projects" />
-          <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+          <MultiSelectWithChips label="Power Plants" options={filteredPowerPlantOptions} selectedValues={powerPlantFilter} onChange={handlePowerPlantFilter} placeholder="All Power Projects" />
+          <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={handleStartDate} setEndDate={handleEndDate} />
 
-          {role !== 'R04' && showClearButton && <ClearButton onClick={clearAllFilters} />}
+          {role !== 'R04' && userChangedFilters && showClearButton && <ClearButton onClick={clearAllFilters} />}
 
           <Box sx={{ flexGrow: 1, minWidth: 10 }} />
           <SingleSelectDropdown label="Group By" options={xOptions} selectedValue={x} onChange={setX} />
@@ -654,9 +747,17 @@ return (
       <VerticalStackedBarChartComponent
         title={generateFullChartTitle("Breakdown of Primary Allocation of Funds", x, y, filters, startDate, endDate)}
         data={
-            lineView === 'period'
-            ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
-            : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || []
+          (() => {
+            const rawData = lineView === 'period'
+              ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
+              : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || [];
+            if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
+              // Get all value keys except 'period'
+              const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
+              return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+            }
+            return rawData;
+          })()
         }
         legendName="Total Energy Generated"
         yAxisLabel={"Pesos"}
@@ -688,9 +789,17 @@ return (
           <VerticalStackedBarChartComponent
             title={generateFullChartTitle("Breakdown of Primary Allocation of Funds", x, y, filters, startDate, endDate)}
             data={
-                lineView === 'period'
-                ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
-                : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || []
+              (() => {
+                const rawData = lineView === 'period'
+                  ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
+                  : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || [];
+                if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
+                  // Get all value keys except 'period'
+                  const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
+                  return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+                }
+                return rawData;
+              })()
             }
             legendName="Total Energy Generated"
             yAxisLabel={"Pesos"}
@@ -831,9 +940,16 @@ return (
       <VerticalStackedBarChartComponent
         title={generateFullChartTitle("Breakdown of Funds Allocation for Beneficiaries", x, y, filters, startDate, endDate)}
         data={
-            lineView === 'period'
-            ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
-            : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || []
+          (() => {
+            const rawData = lineView === 'period'
+              ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
+              : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || [];
+            if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
+              const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
+              return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+            }
+            return rawData;
+          })()
         }
         legendName="Total Energy Generated"
         yAxisLabel={"Pesos"}
@@ -865,9 +981,16 @@ return (
           <VerticalStackedBarChartComponent
         title={generateFullChartTitle("Breakdown of Funds Allocation for Beneficiaries", x, y, filters, startDate, endDate)}
         data={
-            lineView === 'period'
-            ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
-            : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || []
+          (() => {
+            const rawData = lineView === 'period'
+              ? data?.funds_allocated_peso?.beneficiaries?.stacked_by_period || []
+              : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || [];
+            if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
+              const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
+              return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+            }
+            return rawData;
+          })()
         }
         legendName="Total Energy Generated"
         yAxisLabel={"Pesos"}
