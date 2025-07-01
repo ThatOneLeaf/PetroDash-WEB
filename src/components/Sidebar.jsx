@@ -8,6 +8,7 @@ import { Typography } from "@mui/material";
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import DashboardIcon from "../assets/Icons/dashboard.svg";
 import { useAuth } from "../contexts/AuthContext";
+import Tooltip from "@mui/material/Tooltip";
 
 // Import icons and logos
 import PetroDashLogo from "../assets/petrodashlogo.png";
@@ -578,6 +579,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       setEnergyOpen(false);
                     }}
                   >
+                    <Tooltip title="Energy" placement="right" disableHoverListener={!collapsed}>
                     <Box
                       sx={{
                         display: "flex",
@@ -650,6 +652,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       </span>
                     )}
                     </Box>
+                    </Tooltip>
                   </Link>
                 </Box>              ) : item.label === "Environment" ? (
                 <React.Fragment key={item.label}>
@@ -658,6 +661,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       position: "relative",
                     }}
                   >
+                    <Tooltip title="Environment" placement="right" disableHoverListener={!collapsed}>
                     <Box
                       sx={{
                         display: "flex",
@@ -759,6 +763,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       </>
                     )}
                   </Box>
+                  </Tooltip>
                   </Box>
                   {!collapsed && envOpen && item.hasAccess && (
                     <Box
@@ -826,6 +831,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       position: "relative",
                     }}
                   >
+                    <Tooltip title="Social" placement="right" disableHoverListener={!collapsed}>
                     <Box
                       sx={{
                         display: "flex",
@@ -927,6 +933,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         </>
                       )}
                     </Box>
+                    </Tooltip>
                   </Box>
                   {!collapsed && socialOpen && item.hasAccess && (
                     <Box
@@ -1011,6 +1018,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       handleNav(item);
                     }}
                   >
+                    <Tooltip title="Economic" placement="right" disableHoverListener={!collapsed}>
                     <Box
                       sx={{
                         display: "flex",
@@ -1102,6 +1110,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                         </span>
                       )}
                     </Box>
+                    </Tooltip>
                   </Link>
                   {!item.hasAccess && !collapsed && (
                     <span style={{ 
