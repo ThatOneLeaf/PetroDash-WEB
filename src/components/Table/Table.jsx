@@ -298,6 +298,7 @@ const Table = ({
               {safeColumns.map((col) => {
                 const words = col.label.replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
                 const isAbbreviated = words.length > 2;
+                const isSortable = col.sortable !== false; // Default to true unless explicitly set to false
                 const headerContent = isAbbreviated
                   ? (
                     <Tooltip
@@ -341,11 +342,11 @@ const Table = ({
                   <TableCell
                     key={col.key}
                     align="center"
-                    onClick={() => handleSort(col.key)}
+                    onClick={isSortable ? () => handleSort(col.key) : undefined}
                     sx={{
-                      cursor: "pointer",
+                      cursor: isSortable ? "pointer" : "default",
                       userSelect: "none",
-                      "&:hover": { background: "#22347a" },
+                      "&:hover": isSortable ? { background: "#22347a" } : {},
                       transition: "background 0.15s",
                       fontSize: 15,
                       px: 2,
@@ -359,7 +360,7 @@ const Table = ({
                   >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, justifyContent: "center" }}>
                       {headerContent}
-                      {renderSortIcon(col.key)}
+                      {isSortable && renderSortIcon(col.key)}
                     </Box>
                   </TableCell>
                 );

@@ -12,6 +12,7 @@ import {
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AddIcon from '@mui/icons-material/Add';
 import LaunchIcon from '@mui/icons-material/Launch';
+import ClearIcon from '@mui/icons-material/Clear';
 import api from '../../services/api';
 import exportData from '../../services/export';
 import Overlay from '../../components/modal';
@@ -165,13 +166,13 @@ export default function EconomicRepository() {
         return [
           { key: 'comp', label: 'Company ID' },
           { key: 'year', label: 'Year' },
-          { key: 'government', label: 'Government', render: (val, row) => renderSplitCell(row, 'government') },
-          { key: 'localSupplierSpending', label: 'Local Suppliers', render: (val, row) => renderSplitCell(row, 'localSupplierSpending') },
-          { key: 'foreignSupplierSpending', label: 'Foreign Suppliers', render: (val, row) => renderSplitCell(row, 'foreignSupplierSpending') },
-          { key: 'employee', label: 'Employee', render: (val, row) => renderSplitCell(row, 'employee') },
-          { key: 'community', label: 'Community', render: (val, row) => renderSplitCell(row, 'community') },
+          { key: 'government', label: 'Government', render: (val, row) => renderSplitCell(row, 'government'), sortable: false },
+          { key: 'localSupplierSpending', label: 'Local Suppliers', render: (val, row) => renderSplitCell(row, 'localSupplierSpending'), sortable: false },
+          { key: 'foreignSupplierSpending', label: 'Foreign Suppliers', render: (val, row) => renderSplitCell(row, 'foreignSupplierSpending'), sortable: false },
+          { key: 'employee', label: 'Employee', render: (val, row) => renderSplitCell(row, 'employee'), sortable: false },
+          { key: 'community', label: 'Community', render: (val, row) => renderSplitCell(row, 'community'), sortable: false },
           { key: 'totalDistributed', label: 'Total Distributed (₱)', render: (val, row) => `₱ ${Number(row.totalDistributed || 0).toLocaleString()}` },
-          { key: 'internal', label: 'Internal', render: (val, row) => renderInternalCell(row) },
+          { key: 'internal', label: 'Internal', render: (val, row) => renderInternalCell(row), sortable: false },
           { key: 'totalExpenditures', label: 'Total Expenditures (₱)', render: (val, row) => `₱ ${Number(row.totalExpenditures || 0).toLocaleString()}` },
         ];
       
@@ -492,6 +493,20 @@ export default function EconomicRepository() {
     }
   }, [sidebarMode, navigate]);
 
+  // Add these new functions
+  const hasActiveFilters = () => {
+    return filters.year.length > 0 || 
+           filters.type !== '' || 
+           filters.company.length > 0 || 
+           searchTerm !== '';
+  };
+
+  const clearAllFilters = () => {
+    setFilters({ year: [], type: '', company: [] });
+    setSearchTerm('');
+    setPage(1);
+  };
+
   if (loading) return (
     <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100vh', bgcolor: '#f5f7fa' }}>
       <Box sx={{ textAlign: 'center' }}>
@@ -507,8 +522,8 @@ export default function EconomicRepository() {
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar mode={sidebarMode} onModeChange={setSidebarMode} />
-      <Box sx={{ flexGrow: 1, height: '100vh', overflow: 'auto' }}>
-        <div style={{ padding: '2rem' }}>
+      <Box sx={{ flexGrow: 1, height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -579,7 +594,7 @@ export default function EconomicRepository() {
           </div>
 
           {/* Navigation Buttons */}
-          <Box sx={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <Box sx={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
             {sections.map((section) => (
               <Button
                 key={section.key}
@@ -605,7 +620,7 @@ export default function EconomicRepository() {
           </Box>
 
           {/* Search and Filters */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', gap: 2, mb: 1.5, alignItems: 'center' }}>
             <Search
               onSearch={val => {
                 setSearchTerm(val);
@@ -796,14 +811,36 @@ export default function EconomicRepository() {
                 </Box>
               </>
             )}
+            
+            {hasActiveFilters() && (
+              <Button
+                variant="outline"
+                startIcon={<ClearIcon />}
+                onClick={clearAllFilters}
+                sx={{ 
+                  color: '#182959',
+                  borderRadius: '999px',
+                  padding: '9px 18px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                }}
+              >
+                Clear
+              </Button>
+            )}
           </Box>
 
           {/* Table */}
           <Box sx={{
             width: '100%',
-            overflowX: 'auto',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
             '& .MuiTableContainer-root': {
-              minWidth: '1200px'
+              minWidth: '1200px',
+              flex: 1,
+              maxHeight: 'calc(100vh - 280px)'
             },
             '& .MuiTableCell-root:last-child': {
               width: '120px !important',
@@ -825,7 +862,7 @@ export default function EconomicRepository() {
           </Box>
 
           {/* Pagination */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, flexShrink: 0 }}>
             {/* Row Count Display */}
             <Typography sx={{ fontSize: '0.85rem'}}>
               Total of {getCurrentData().length} {getCurrentData().length === 1 ? 'record' : 'records'}
