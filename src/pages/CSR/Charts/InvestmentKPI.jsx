@@ -93,8 +93,21 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
     };
     const getIconColor = (program) => PROGRAM_ICON_COLORS[program?.toLowerCase?.()] || '#334155';
 
+    // Responsive KPI card layout: max width, min width, gap, and smaller padding
     return (
-        <div style={{ display: 'flex', gap: 8, width: '100%', marginBottom: 8, height: '100%', minHeight: 0 }}>
+        <div
+            style={{
+                display: 'flex',
+                gap: 16,
+                width: '100%',
+                margin: '0 0 16px 0',
+                height: 'auto',
+                minHeight: 0,
+                justifyContent: 'center',
+                alignItems: 'stretch',
+                flexWrap: 'wrap',
+            }}
+        >
             {/* Health KPI */}
             <Paper
                 elevation={0}
@@ -102,29 +115,30 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     background: getColor('health'),
                     border: `2px solid ${getColor('health')}`,
                     borderRadius: '14px',
-                    px: 3,
-                    py: 2,
+                    px: { xs: 1.5, sm: 2, md: 3 },
+                    py: { xs: 1.5, sm: 2 },
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: 700,
-                    fontSize: 18,
+                    fontSize: 16,
                     boxShadow: 'none',
                     width: '100%',
                     minWidth: 0,
                     minHeight: 0,
-                    height: '100%',
+                    height: 'auto',
                     textAlign: 'center',
-                    flex: 1
+                    flex: 1,
+                    maxWidth: '100%',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', justifyContent: 'center', gap: '2px' }}>
-                    <HealthAndSafetyIcon sx={{ fontSize: 40, color: getIconColor('health') }} />
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 8 }}>
+                    <HealthAndSafetyIcon sx={{ fontSize: 32, color: getIconColor('health') }} />
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <div
                             style={{
-                                fontSize: 'clamp(1rem, 3vw, 1.5rem)', // responsive main value
+                                fontSize: 'clamp(1rem, 2.2vw, 1.3rem)',
                                 fontWeight: 900,
                                 marginBottom: 2,
                                 textAlign: 'center',
@@ -137,7 +151,7 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                         </div>
                         <div
                             style={{
-                                fontSize: 'clamp(0.6rem, 1.5vw, 1rem)', // responsive label
+                                fontSize: 'clamp(0.7rem, 1.2vw, 1rem)',
                                 fontWeight: 700,
                                 color: '#222',
                                 textAlign: 'center',
@@ -160,33 +174,34 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     background: getColor('education'),
                     border: `2px solid ${getColor('education')}`,
                     borderRadius: '14px',
-                    px: 3,
-                    py: 2,
+                    px: { xs: 1.5, sm: 2, md: 3 },
+                    py: { xs: 1.5, sm: 2 },
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: 700,
-                    fontSize: 18,
+                    fontSize: 16,
                     boxShadow: 'none',
                     width: '100%',
                     minWidth: 0,
                     minHeight: 0,
-                    height: '100%',
+                    height: 'auto',
                     textAlign: 'center',
-                    flex: 1
+                    flex: 1,
+                    maxWidth: '100%',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', justifyContent: 'center', gap: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 8 }}>
                     <SchoolIcon sx={{ fontSize: 32, color: getIconColor('education') }} />
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <div
                             style={{
-                                fontSize: 'clamp(1rem, 3vw, 1.5rem)', // responsive main value
+                                fontSize: 'clamp(1rem, 2.2vw, 1.3rem)',
                                 fontWeight: 900,
                                 marginBottom: 2,
                                 textAlign: 'center',
-                                color: '#182959', // main value: dark blue
+                                color: '#182959',
                                 letterSpacing: 0.5,
                                 lineHeight: 1.1,
                             }}
@@ -195,9 +210,9 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                         </div>
                         <div
                             style={{
-                                fontSize: 'clamp(0.6rem, 1.5vw, 1rem)', // responsive label
+                                fontSize: 'clamp(0.7rem, 1.2vw, 1rem)',
                                 fontWeight: 700,
-                                color: '#222', // label: very dark for contrast
+                                color: '#222',
                                 textAlign: 'center',
                                 lineHeight: 1.2,
                                 letterSpacing: 0.2,
@@ -218,33 +233,34 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     background: getColor('livelihood'),
                     border: `2px solid ${getColor('livelihood')}`,
                     borderRadius: '14px',
-                    px: 3,
-                    py: 2,
+                    px: { xs: 1.5, sm: 2, md: 3 },
+                    py: { xs: 1.5, sm: 2 },
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: 700,
-                    fontSize: 18,
+                    fontSize: 16,
                     boxShadow: 'none',
                     width: '100%',
                     minWidth: 0,
                     minHeight: 0,
-                    height: '100%',
+                    height: 'auto',
                     textAlign: 'center',
-                    flex: 1
+                    flex: 1,
+                    maxWidth: '100%',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', justifyContent: 'center', gap: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 8 }}>
                     <WorkIcon sx={{ fontSize: 32, color: getIconColor('livelihood') }} />
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <div
                             style={{
-                                fontSize: 'clamp(1rem, 3vw, 1.5rem)', // responsive main value
+                                fontSize: 'clamp(1rem, 2.2vw, 1.3rem)',
                                 fontWeight: 900,
                                 marginBottom: 2,
                                 textAlign: 'center',
-                                color: '#182959', // main value: dark blue
+                                color: '#182959',
                                 letterSpacing: 0.5,
                                 lineHeight: 1.1,
                             }}
@@ -253,9 +269,9 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                         </div>
                         <div
                             style={{
-                                fontSize: 'clamp(0.6rem, 1.5vw, 1rem)', // responsive label
+                                fontSize: 'clamp(0.7rem, 1.2vw, 1rem)',
                                 fontWeight: 700,
-                                color: '#222', // label: very dark for contrast
+                                color: '#222',
                                 textAlign: 'center',
                                 lineHeight: 1.2,
                                 letterSpacing: 0.2,
@@ -268,8 +284,8 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                         </div>
                         <div
                             style={{
-                                fontSize: 'clamp(0.4rem, 1vw, 0.8rem)', // responsive date
-                                color: '#374151', // date: medium-dark for contrast
+                                fontSize: 'clamp(0.5rem, 1vw, 0.8rem)',
+                                color: '#374151',
                                 textAlign: 'center',
                                 marginTop: 2,
                                 width: '100%',
