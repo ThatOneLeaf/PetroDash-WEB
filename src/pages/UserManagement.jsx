@@ -29,8 +29,22 @@ const columns = [
     },
   },
   { key: "email", label: "Email" },
-  { key: "company_id", label: "Company ID" },
-  { key: "power_plant_id", label: "Power Plant ID" },
+  { key: "company_id", label: "Company" },
+{ 
+  key: "power_plant_id", 
+  label: "Power Plant ID", 
+  render: (val, row) => (
+    !val || val.trim() === "" ? (
+      <Typography variant="body2" color="text.secondary">
+        None
+      </Typography>
+    ) : (
+      <Typography variant="body2">
+        {val}
+      </Typography>
+    )
+  )
+},
   { key: "account_role", label: "Role" },
   {
     key: "account_status",
@@ -43,7 +57,7 @@ const columns = [
       return (
         <Typography
           variant="body2"
-          color={val?.toLowerCase() === "active" ? "success.main" : "text.secondary"}
+          color={val?.toLowerCase() === "active" ? "success.main" : "error.main"}
           fontWeight={600}
           textTransform="capitalize"
         >
@@ -95,9 +109,18 @@ const UserManagement = () => {
   };
   const [users, setUsers] = useState([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
+  const [bulkForm, setBulkForm] = useState({
+    role: '',
+    company_id: '',
+    power_plant_id: '',
+    file: null,
+  });
   const [formLoading, setFormLoading] = useState(false);
+  const [bulkFormLoading, setBulkFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [bulkFormError, setBulkFormError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const rowsPerPage = 15;
@@ -107,8 +130,14 @@ const UserManagement = () => {
 
   // New: Company and Power Plant options
   const [companyOptions, setCompanyOptions] = useState([]);
+  const [companyIdToName, setCompanyIdToName] = useState({});
   const [allPowerPlantOptions, setAllPowerPlantOptions] = useState([]); // all plants from API
   const [powerPlantOptions, setPowerPlantOptions] = useState([]); // filtered by company
+  const [plantIdToSiteName, setPlantIdToSiteName] = useState({});
+
+  // New: Bulk preview state
+  const [bulkPreview, setBulkPreview] = useState(null);
+  const [bulkPreviewLoading, setBulkPreviewLoading] = useState(false);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -149,6 +178,19 @@ const UserManagement = () => {
         setCompanyOptions(companies);
         setAllPowerPlantOptions(plants);
         setPowerPlantOptions(plants); // initially show all
+        // Build a map for company_id to company_name
+        const idToName = {};
+        const plantIdToSite = {};
+        (res.data || []).forEach(item => {
+          if (item.company_id && item.company_name) {
+            idToName[item.company_id] = item.company_name;
+          }
+          if (item.power_plant_id && item.site_name) {
+            plantIdToSite[item.power_plant_id] = item.site_name;
+          }
+        });
+        setCompanyIdToName(idToName);
+        setPlantIdToSiteName(plantIdToSite);
       } catch (err) {
         setCompanyOptions([]);
         setAllPowerPlantOptions([]);
@@ -171,12 +213,24 @@ const UserManagement = () => {
     }
   }, [form.company_id, allPowerPlantOptions]);
 
+  // Filter power plant options for bulk modal
+  useEffect(() => {
+    if (bulkForm.company_id) {
+      setBulkForm(f => ({ ...f, power_plant_id: '' }));
+    }
+  }, [bulkForm.company_id]);
+
   const filteredData = useMemo(() => {
     if (!searchTerm) return users;
     const lower = searchTerm.toLowerCase();
-    return users.filter((row) =>
-      columns.some((col) => String(row[col.key] ?? "").toLowerCase().includes(lower))
-    );
+    return users.filter((row) => {
+      // Check all columns as before
+      let match = columns.some((col) => String(row[col.key] ?? "").toLowerCase().includes(lower));
+      if (match) return true;
+      // Additionally, check if any part of the name matches
+      const nameParts = [row.first_name, row.middle_name, row.last_name, row.suffix].filter(Boolean).map(String);
+      return nameParts.some(part => part.toLowerCase().includes(lower));
+    });
   }, [searchTerm, users]);
 
   const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -192,12 +246,108 @@ const UserManagement = () => {
     // Here you would call your backend API to deactivate users
   };
 
+  // Handle bulk submit
+  const handleBulkSubmit = async (e) => {
+    e.preventDefault();
+    setBulkFormLoading(true);
+    setBulkFormError("");
+    try {
+      if (!bulkForm.file) {
+        setBulkFormError("Please select a CSV file.");
+        setBulkFormLoading(false);
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", bulkForm.file);
+      formData.append("account_role", bulkForm.role);
+      if (bulkForm.company_id) formData.append("company_id", bulkForm.company_id);
+      if (bulkForm.power_plant_id) formData.append("power_plant_id", bulkForm.power_plant_id);
+      const response = await api.post("/accounts/bulk", formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (response && response.data) {
+        setUsers(prev => [...response.data, ...prev]);
+        setBulkModalOpen(false);
+        setBulkForm({ role: '', company_id: '', power_plant_id: '', file: null });
+      } else {
+        // fallback: refresh users
+        const data = await fetchUsers();
+        setUsers(data);
+        setBulkModalOpen(false);
+      }
+    } catch (err) {
+      setBulkFormError(err?.response?.data?.detail || "Failed to upload users");
+      alert('Bulk add error: ' + (err?.response?.data?.detail || err.message || err));
+    } finally {
+      setBulkFormLoading(false);
+    }
+  };
+
+  const handleAddUserSubmit = async (e) => {
+    e.preventDefault();
+    console.log('Form state before submit:', form);
+    const confirmed = window.confirm("Are you sure you want to add this user?");
+    if (!confirmed) return;
+    setFormLoading(true);
+    setFormError("");
+    try {
+      // Ensure birthdate is a string in YYYY-MM-DD format or null
+      const birthdate = form.birthdate
+        ? new Date(form.birthdate).toISOString().split("T")[0]
+        : null;
+
+      const payload = {
+        email: form.email,
+        account_role: form.account_role,
+        company_id: form.company_id,
+        power_plant_id: form.power_plant_id,
+        account_status: form.account_status,
+        profile: {
+          emp_id: form.emp_id,
+          first_name: form.first_name,
+          last_name: form.last_name,
+          middle_name: form.middle_name,
+          suffix: form.suffix,
+          contact_number: form.contact_number,
+          address: form.address,
+          birthdate: birthdate,
+          gender: form.gender,
+        }
+      };
+      console.log('Submitting user payload:', payload);
+      const response = await api.post("/accounts/add", payload, {
+        headers: { "Content-Type": "application/json" }
+      });
+      console.log('API response:', response);
+      setAddModalOpen(false);
+      setForm(initialForm);
+      // Insert new user at the top of the list
+      if (response && response.data) {
+        setUsers(prev => [response.data, ...prev]);
+      } else {
+        // fallback: refresh users
+        const data = await fetchUsers();
+        setUsers(data);
+      }
+    } catch (err) {
+      console.error('User add error:', err, err?.response);
+      setFormError(err?.response?.data?.detail || "Failed to create user");
+      // Optionally show error in alert for debugging
+      alert('User add error: ' + (err?.response?.data?.detail || err.message || err));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   if (loading) {
     return <Box p={4}><Typography>Loading users...</Typography></Box>;
   }
   if (error) {
     return <Box p={4}><Typography color="error">{error}</Typography></Box>;
   }
+
+  // Helper: roles that should disable power plant
+  const disablePowerPlantRoles = ["R02", "R03", "R04"];
 
   return (
     <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden" }}>
@@ -232,10 +382,10 @@ const UserManagement = () => {
               {selectedRowIds.length === 0 ? (
                 <>
                   <ButtonComp
-                    label="Add Multiple"
+                    label="Import Users"
                     rounded
                     color="blue"
-                    onClick={() => alert("Add multiple users")}
+                    onClick={() => setBulkModalOpen(true)}
                     sx={{ minWidth: 150, fontWeight: 600, fontSize: 16 }}
                   />
                   <ButtonComp
@@ -252,7 +402,17 @@ const UserManagement = () => {
       {/* Add New User Modal */}
       <Modal
         open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        onClose={() => {
+          // If there are unsaved changes in the add user form, confirm with the user
+          const hasDraft = Object.values(form).some(val => val && val !== initialForm[Object.keys(form).find(k => form[k] === val)]);
+          if (hasDraft) {
+            const confirmed = window.confirm('You have unsaved changes in the add user form. Are you sure you want to cancel? All data will be lost.');
+            if (!confirmed) return;
+          }
+          setAddModalOpen(false);
+          setForm(initialForm);
+          setFormError("");
+        }}
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -276,61 +436,7 @@ const UserManagement = () => {
             <Typography variant="h6" fontWeight={700}>Add New User</Typography>
             <Typography variant="body2" color="#cfd8ff">Fill in the details below to create a new user account.</Typography>
           </Box>
-          <Box component="form" sx={{ px: 4, py: 3, bgcolor: '#f8fafd', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }} onSubmit={async (e) => {
-            e.preventDefault();
-            console.log('Form state before submit:', form);
-            const confirmed = window.confirm("Are you sure you want to add this user?");
-            if (!confirmed) return;
-            setFormLoading(true);
-            setFormError("");
-            try {
-              // Ensure birthdate is a string in YYYY-MM-DD format or null
-              const birthdate = form.birthdate
-                ? new Date(form.birthdate).toISOString().split("T")[0]
-                : null;
-
-              const payload = {
-                email: form.email,
-                account_role: form.account_role,
-                company_id: form.company_id,
-                power_plant_id: form.power_plant_id,
-                account_status: form.account_status,
-                profile: {
-                  emp_id: form.emp_id,
-                  first_name: form.first_name,
-                  last_name: form.last_name,
-                  middle_name: form.middle_name,
-                  suffix: form.suffix,
-                  contact_number: form.contact_number,
-                  address: form.address,
-                  birthdate: birthdate,
-                  gender: form.gender,
-                }
-              };
-              console.log('Submitting user payload:', payload);
-              const response = await api.post("/accounts/add", payload, {
-                headers: { "Content-Type": "application/json" }
-              });
-              console.log('API response:', response);
-              setAddModalOpen(false);
-              setForm(initialForm);
-              // Insert new user at the top of the list
-              if (response && response.data) {
-                setUsers(prev => [response.data, ...prev]);
-              } else {
-                // fallback: refresh users
-                const data = await fetchUsers();
-                setUsers(data);
-              }
-            } catch (err) {
-              console.error('User add error:', err, err?.response);
-              setFormError(err?.response?.data?.detail || "Failed to create user");
-              // Optionally show error in alert for debugging
-              alert('User add error: ' + (err?.response?.data?.detail || err.message || err));
-            } finally {
-              setFormLoading(false);
-            }
-          }}>
+          <Box component="form" sx={{ px: 4, py: 3, bgcolor: '#f8fafd', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }} onSubmit={handleAddUserSubmit}>
             {/* Email and Role */}
             <Box display="flex" gap={2} mb={2}>
               <Box flex={1}>
@@ -456,7 +562,16 @@ const UserManagement = () => {
               <Button
                 variant="outlined"
                 color="inherit"
-                onClick={() => setAddModalOpen(false)}
+                onClick={() => {
+                  const hasDraft = Object.values(form).some(val => val && val !== initialForm[Object.keys(form).find(k => form[k] === val)]);
+                  if (hasDraft) {
+                    const confirmed = window.confirm('You have unsaved changes in the add user form. Are you sure you want to cancel? All data will be lost.');
+                    if (!confirmed) return;
+                  }
+                  setAddModalOpen(false);
+                  setForm(initialForm);
+                  setFormError("");
+                }}
                 disabled={formLoading}
                 sx={{ minWidth: 100, fontWeight: 600, fontSize: 16, mr: 1 }}
               >
@@ -466,10 +581,259 @@ const UserManagement = () => {
                 variant="contained"
                 color="success"
                 type="submit"
-                disabled={formLoading}
+                disabled={
+                  formLoading ||
+                  !form.email ||
+                  !form.account_role ||
+                  !form.first_name ||
+                  !form.last_name
+                }
                 sx={{ minWidth: 100, fontWeight: 600, fontSize: 16 }}
               >
                 {formLoading ? "Saving..." : "Save"}
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      </Modal>
+
+      {/* Bulk Add Users Modal */}
+      <Modal
+        open={bulkModalOpen}
+        onClose={() => {
+          // If there is unfinished business, confirm with the user
+          if (
+            bulkForm.file ||
+            bulkForm.role ||
+            bulkForm.company_id ||
+            bulkForm.power_plant_id ||
+            bulkPreview ||
+            bulkFormError
+          ) {
+            const confirmed = window.confirm('You have unsaved changes in the bulk add form. Are you sure you want to cancel? All data will be lost.');
+            if (!confirmed) return;
+          }
+          setBulkModalOpen(false);
+          setBulkForm({ role: '', company_id: '', power_plant_id: '', file: null });
+          setBulkPreview(null);
+          setBulkFormError('');
+        }}
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Paper
+          sx={{
+            p: 0,
+            width: '100%',
+            maxWidth: { xs: 400, sm: 700, md: 900, lg: 1200 },
+            minWidth: { xs: '95vw', sm: 600, md: 700 },
+            mx: 'auto',
+            my: 4,
+            outline: 'none',
+            borderRadius: 4,
+            boxShadow: 8,
+          }}
+        >
+          <Box sx={{ bgcolor: '#22347a', color: '#fff', px: 4, py: 2, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+            <Typography variant="h6" fontWeight={700}>Bulk Add Users</Typography>
+            <Typography variant="body2" color="#cfd8ff">Select role, company, power plant, and upload a CSV file to add multiple users.</Typography>
+          </Box>
+          <Box component="form" sx={{ px: 4, py: 3, bgcolor: '#f8fafd', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }} onSubmit={handleBulkSubmit}>
+            <Box display="flex" gap={2} mb={2}>
+              <Box flex={1}>
+                <Typography fontWeight={600} mb={0.5}>Role <span style={{color:'#e53935'}}>*</span></Typography>
+                <select
+                  required
+                  value={bulkForm.role}
+                  onChange={e => setBulkForm(f => ({ ...f, role: e.target.value }))}
+                  style={{ width: "100%", padding: 10, borderRadius: 6, border: '1px solid #cfd8dc', marginBottom: 4, fontSize: 16, background: '#fff' }}
+                >
+                  <option value="" disabled>Select role</option>
+                  <option value="R02">Executive</option>
+                  <option value="R03">Head-Office Level Checker</option>
+                  <option value="R04">Site-Level Checker</option>
+                  <option value="R05">Encoder</option>
+                </select>
+              </Box>
+              <Box flex={1}>
+                <Typography fontWeight={600} mb={0.5}>Company</Typography>
+                <select
+                  value={bulkForm.company_id}
+                  onChange={e => setBulkForm(f => ({ ...f, company_id: e.target.value }))}
+                  style={{ width: "100%", padding: 10, borderRadius: 6, border: '1px solid #cfd8dc', marginBottom: 4, fontSize: 16, background: '#fff' }}
+                >
+                  <option value="" disabled>Select company</option>
+                  {companyOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </Box>
+              <Box flex={1}>
+                <Typography fontWeight={600} mb={0.5}>Power Plant</Typography>
+                <select
+                  value={bulkForm.power_plant_id}
+                  onChange={e => setBulkForm(f => ({ ...f, power_plant_id: e.target.value }))}
+                  style={{ width: "100%", padding: 10, borderRadius: 6, border: '1px solid #cfd8dc', marginBottom: 4, fontSize: 16, background: '#fff' }}
+                  disabled={!bulkForm.company_id || disablePowerPlantRoles.includes(bulkForm.role)}
+                >
+                  <option value="" disabled>{bulkForm.company_id ? "Select power plant" : "Select company first"}</option>
+                  {powerPlantOptions
+                    .filter(opt => !bulkForm.company_id || opt.company_id === bulkForm.company_id)
+                    .map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
+              </Box>
+            </Box>
+            <Box mb={2}>
+              <Typography fontWeight={600} mb={0.5}>CSV File <span style={{color:'#e53935'}}>*</span></Typography>
+              <input
+                required
+                type="file"
+                accept=".csv"
+                onChange={async e => {
+                  const file = e.target.files[0];
+                  setBulkForm(f => ({ ...f, file }));
+                  setBulkPreview(null);
+                  setBulkFormError("");
+                  if (file) {
+                    setBulkPreviewLoading(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      formData.append("account_role", bulkForm.role);
+                      if (bulkForm.company_id) formData.append("company_id", bulkForm.company_id);
+                      if (bulkForm.power_plant_id) formData.append("power_plant_id", bulkForm.power_plant_id);
+                      const res = await api.post("/accounts/bulk/preview", formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                      });
+                      setBulkPreview(res.data);
+                    } catch (err) {
+                      setBulkPreview(null);
+                      setBulkFormError(err?.response?.data?.detail || "Failed to preview file");
+                    } finally {
+                      setBulkPreviewLoading(false);
+                    }
+                  }
+                }}
+                style={{ width: "100%", padding: 10, borderRadius: 6, border: '1px solid #cfd8dc', background: '#fff' }}
+              />
+              <Typography variant="caption" color="textSecondary">
+                Download template{' '}
+                <a
+                  href="#"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    try {
+                      const res = await api.get("/accounts/bulk/template", { responseType: "blob" });
+                      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.setAttribute('download', 'account_bulk_template.csv');
+                      document.body.appendChild(link);
+                      link.click();
+                      link.parentNode.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      alert("Failed to download template");
+                    }
+                  }}
+                  style={{ textDecoration: 'underline', color: '#22347a', cursor: 'pointer' }}
+                >
+                  here
+                </a>.
+              </Typography>
+            </Box>
+            {bulkPreviewLoading && (
+              <Box mb={2}><Typography>Loading preview...</Typography></Box>
+            )}
+            {bulkPreview && bulkPreview.valid && (
+              <Box mb={2}>
+                <Typography fontWeight={600} mb={1}>Preview Data</Typography>
+                <div style={{ maxHeight: 300, overflow: 'auto', border: '1px solid #cfd8dc', borderRadius: 6 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                    <thead>
+                      <tr>
+                        {Object.keys(bulkPreview.rows[0] || {}).map(key => (
+                          <th key={key} style={{ border: '1px solid #e0e0e0', padding: 6, background: '#f5f5f5', fontWeight: 600 }}>{key}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkPreview.rows.map((row, idx) => (
+                        <tr key={idx}>
+                          {Object.entries(row).map(([key, val], i) => {
+                            // Format contact fields as 09XX-XXX-XXXX, preserving leading zeros
+                            let displayVal = val;
+                            if (key.toLowerCase().includes('contact')) {
+                              let str = val !== undefined && val !== null ? String(val).replace(/[^0-9]/g, '') : '';
+                              if (str.length === 11 && str.startsWith('09')) {
+                                displayVal = `${str.slice(0,4)}-${str.slice(4,7)}-${str.slice(7,11)}`;
+                              } else {
+                                displayVal = `${"0"}${str.slice(0,3)}-${str.slice(3,6)}-${str.slice(6,10)}`;
+                              }
+                            }
+                            return (
+                              <td key={i} style={{ border: '1px solid #e0e0e0', padding: 6 }}>{displayVal}</td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Box>
+            )}
+            {bulkPreview && !bulkPreview.valid && (
+              <Box mb={2}>
+                <Typography color="error" fontWeight={600}>File contains errors:</Typography>
+                <ul style={{ color: '#e53935', margin: 0, paddingLeft: 20 }}>
+                  {bulkPreview.errors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </Box>
+            )}
+            {bulkFormError && <Typography color="error" mb={1}>{bulkFormError}</Typography>}
+            <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={() => {
+                  if (
+                    bulkForm.file ||
+                    bulkForm.role ||
+                    bulkForm.company_id ||
+                    bulkForm.power_plant_id ||
+                    bulkPreview ||
+                    bulkFormError
+                  ) {
+                    const confirmed = window.confirm('You have unsaved changes in the bulk add form. Are you sure you want to cancel? All data will be lost.');
+                    if (!confirmed) return;
+                  }
+                  setBulkModalOpen(false);
+                  setBulkForm({ role: '', company_id: '', power_plant_id: '', file: null });
+                  setBulkPreview(null);
+                  setBulkFormError('');
+                }}
+                disabled={bulkFormLoading}
+                sx={{ minWidth: 100, fontWeight: 600, fontSize: 16, mr: 1 }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                type="submit"
+                disabled={
+                  bulkFormLoading ||
+                  !bulkForm.role ||
+                  !bulkForm.file ||
+                  ((bulkForm.role === 'R05') && (!bulkForm.company_id || !bulkForm.power_plant_id)) ||
+                  ((bulkForm.role === 'R03' || bulkForm.role === 'R04') && !bulkForm.company_id)
+                }
+                sx={{ minWidth: 100, fontWeight: 600, fontSize: 16 }}
+              >
+                {bulkFormLoading ? "Uploading..." : "Upload"}
               </Button>
             </Box>
           </Box>
@@ -482,7 +846,7 @@ const UserManagement = () => {
                     {selectedRowIds.length} selected
                   </Typography>
                   <ButtonComp
-                    label="Bulk Deactivate"
+                    label="Deactivate"
                     rounded
                     color="blue"
                     onClick={handleBulkDeactivate}
@@ -540,28 +904,6 @@ const UserManagement = () => {
             </MenuItem>
             <MenuItem
               onClick={async () => {
-                // Reset password logic (placeholder)
-                if (!selectedUser) return;
-                const confirmed = window.confirm(`Reset password for ${selectedUser.email}?`);
-                if (!confirmed) return;
-                try {
-                  // TODO: Replace with actual API call
-                  alert(`Password reset link sent to ${selectedUser.email}`);
-                  handleMenuClose();
-                } catch (err) {
-                  alert('Failed to reset password');
-                  handleMenuClose();
-                }
-              }}
-            >
-              <ListItemIcon>
-                {/* LockResetIcon from MUI */}
-                <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20" style={{ color: '#1976d2' }}><path d="M0 0h24v24H0z" fill="none"/><path d="M13 3c-4.97 0-9 4.03-9 9 0 1.64.44 3.17 1.21 4.5l-1.2 1.2c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.2-1.2C7.83 19.56 9.36 20 11 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 14c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm1-7h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
-              </ListItemIcon>
-              <ListItemText primary="Reset Password" />
-            </MenuItem>
-            <MenuItem
-              onClick={async () => {
                 console.log('Deactivate clicked', selectedUser);
                 if (selectedUser && selectedUser.account_status === 'active') {
                   try {
@@ -588,27 +930,166 @@ const UserManagement = () => {
             </MenuItem>
           </Menu>
 
-          {/* Modal for user details */}
-          <Modal open={modalOpen} onClose={handleModalClose}>
-            <Paper sx={{ p: 4, maxWidth: 400, mx: 'auto', my: 8, outline: 'none' }}>
-              <Typography variant="h6" mb={2}>User Details</Typography>
-              {selectedUser && (
-                <Box>
-                  <Typography><b>Email:</b> {selectedUser.email}</Typography>
-                  <Typography><b>Role:</b> {selectedUser.account_role}</Typography>
-                  <Typography><b>Company ID:</b> {selectedUser.company_id}</Typography>
-                  <Typography><b>Power Plant ID:</b> {selectedUser.power_plant_id}</Typography>
-                  <Typography><b>First Name:</b> {selectedUser.first_name}</Typography>
-                  <Typography><b>Last Name:</b> {selectedUser.last_name}</Typography>
-                  <Typography><b>Middle Name:</b> {selectedUser.middle_name}</Typography>
-                  <Typography><b>Suffix:</b> {selectedUser.suffix}</Typography>
-                  <Typography><b>Contact Number:</b> {selectedUser.contact_number}</Typography>
-                  <Typography><b>Address:</b> {selectedUser.address}</Typography>
-                  <Typography><b>Birthdate:</b> {selectedUser.birthdate}</Typography>
-                  <Typography><b>Gender:</b> {selectedUser.gender}</Typography>
-                  <Typography><b>Status:</b> {selectedUser.account_status}</Typography>
-                </Box>
-              )}
+          {/* Modal for user details - improved UI */}
+          <Modal
+            open={modalOpen}
+            onClose={handleModalClose}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: { xs: 1, sm: 2 },
+            }}
+          >
+            <Paper
+              sx={{
+                p: 0,
+                width: '100%',
+                maxWidth: { xs: 380, sm: 600, md: 800, lg: 1000 },
+                minWidth: { xs: '95vw', sm: 400, md: 600 },
+                mx: 'auto',
+                outline: 'none',
+                borderRadius: 4,
+                boxShadow: 8,
+                maxHeight: { xs: '98vh', sm: '95vh' },
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Box sx={{ bgcolor: '#22347a', color: '#fff', px: { xs: 2, sm: 4 }, py: 2, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+                <Typography variant="h6" fontWeight={700}>User Details</Typography>
+              </Box>
+              <Box sx={{ px: { xs: 2, sm: 4 }, py: 3, bgcolor: '#f8fafd', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }}>
+                {selectedUser && (
+                  <Box>
+                    {/* Group 1: Account Info */}
+                    <Box mb={2} sx={{ background: '#e3eafc', borderRadius: 2, p: 2 }}>
+                      <Typography fontWeight={600} color="primary" mb={1}>Account Information</Typography>
+                      <Box display="flex" gap={2} mb={1}>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Email</Typography>
+                          <Typography fontWeight={500}>{selectedUser.email || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Role</Typography>
+                          <Typography fontWeight={500}>
+                            {(() => {
+                              const roleMap = {
+                                R02: 'Executive',
+                                R03: 'Head-Office Level Checker',
+                                R04: 'Site-Level Checker',
+                                R05: 'Encoder',
+                              };
+                              if (!selectedUser.account_role) return <span style={{color:'#aaa'}}>N/A</span>;
+                              const code = selectedUser.account_role;
+                              return `${roleMap[code] || code} (${code})`;
+                            })()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box display="flex" gap={2}>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Company</Typography>
+                          <Typography fontWeight={500}>
+                            {(() => {
+                              if (!selectedUser.company_id) return <span style={{color:'#aaa'}}>N/A</span>;
+                              const name = companyIdToName[selectedUser.company_id];
+                              return name ? `${name} (${selectedUser.company_id})` : selectedUser.company_id;
+                            })()}
+                          </Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Power Plant</Typography>
+                          <Typography fontWeight={500}>
+                            {(() => {
+                              if (!selectedUser.power_plant_id) return <span style={{color:'#aaa'}}>N/A</span>;
+                              const site = plantIdToSiteName[selectedUser.power_plant_id];
+                              return site ? `${site} (${selectedUser.power_plant_id})` : selectedUser.power_plant_id;
+                            })()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    {/* Group 2: Personal Info */}
+                    <Box mb={2} sx={{ background: '#f7fbe7', borderRadius: 2, p: 2 }}>
+                      <Typography fontWeight={600} color="primary" mb={1}>Personal Information</Typography>
+                      <Box display="flex" gap={2} mb={1}>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">First Name</Typography>
+                          <Typography fontWeight={500}>{selectedUser.first_name || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Middle Name</Typography>
+                          <Typography fontWeight={500}>{selectedUser.middle_name || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Last Name</Typography>
+                          <Typography fontWeight={500}>{selectedUser.last_name || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Suffix</Typography>
+                          <Typography fontWeight={500}>{selectedUser.suffix || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                      </Box>
+                      <Box display="flex" gap={2}>
+                        <Box flex={2}>
+                          <Typography variant="body2" color="text.secondary">Gender</Typography>
+                          <Typography fontWeight={500}>{selectedUser.gender || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                        <Box flex={2}>
+                          <Typography variant="body2" color="text.secondary">Birthdate</Typography>
+                          <Typography fontWeight={500}>{selectedUser.birthdate || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    {/* Group 3: Contact & Other Info */}
+                    <Box mb={2} sx={{ background: '#fceee7', borderRadius: 2, p: 2 }}>
+                      <Typography fontWeight={600} color="primary" mb={1}>Contact & Other Details</Typography>
+                      <Box display="flex" gap={2} mb={1}>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Contact Number</Typography>
+                          <Typography fontWeight={500}>
+                            {(() => {
+                              const val = selectedUser.contact_number;
+                              if (!val) return <span style={{color:'#aaa'}}>N/A</span>;
+                              const str = String(val).replace(/[^0-9]/g, '');
+                              if (str.length === 11 && str.startsWith('09')) {
+                                return `${str.slice(0,4)}-${str.slice(4,7)}-${str.slice(7,11)}`;
+                              } else if (str.length === 10 && str.startsWith('9')) {
+                                return `0${str.slice(0,3)}-${str.slice(3,6)}-${str.slice(6,10)}`;
+                              } else {
+                                return str;
+                              }
+                            })()}
+                          </Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Address</Typography>
+                          <Typography fontWeight={500}>{selectedUser.address || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                      </Box>
+                      <Box display="flex" gap={2}>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Emp ID</Typography>
+                          <Typography fontWeight={500}>{selectedUser.emp_id || <span style={{color:'#aaa'}}>N/A</span>}</Typography>
+                        </Box>
+                        <Box flex={1}>
+                          <Typography variant="body2" color="text.secondary">Status</Typography>
+                          <Typography fontWeight={600} color={selectedUser.account_status?.toLowerCase() === 'active' ? 'success.main' : 'error.main'}>
+                            {selectedUser.account_status ? (selectedUser.account_status.charAt(0).toUpperCase() + selectedUser.account_status.slice(1)) : <span style={{color:'#aaa'}}>N/A</span>}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    <Box display="flex" justifyContent="flex-end" mt={3}>
+                      <Button variant="contained" color="primary" onClick={handleModalClose} sx={{ minWidth: 100, fontWeight: 600, fontSize: 16 }}>
+                        Close
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
             </Paper>
           </Modal>
 
