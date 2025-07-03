@@ -34,13 +34,14 @@ const ViewHelpRecordModal = ({
   const [projectOptions, setProjectOptions] = useState({}); // { [programId]: [{label, value}] }
 
   // Readonly if status is approved
-  const isReadOnly = (fetchedRecord?.statusId || '').toUpperCase() === 'APPROVED' || (fetchedRecord?.statusId || '').toUpperCase() === 'UNDER REVIEW (SITE)' || (fetchedRecord?.statusId || '').toUpperCase() === 'UNDER REVIEW (HEAD)';
+  const isReadOnly = (fetchedRecord?.statusId || '').toUpperCase() === 'APPROVED' || (fetchedRecord?.statusId || '').toUpperCase() === 'UNDER REVIEW (SITE)' || (fetchedRecord?.statusId || '').toUpperCase() === 'UNDER REVIEW (HEAD LEVEL)';
+  console.log(fetchedRecord?.statusId)
   const getStatus = () => {
     if (fetchedRecord.statusId.toUpperCase() === 'APPROVED') {
       return "Approved";
     } else if (fetchedRecord.statusId.toUpperCase() === 'UNDER REVIEW (SITE)') {
       return "Under Review (Site Level)"
-    } else if (fetchedRecord.statusId === 'UNDER REVIEW (HEAD)') {
+    } else if (fetchedRecord.statusId.toUpperCase() === 'UNDER REVIEW (HEAD LEVEL)') {
       return "Under Review (Head Level)"
     }
   }
