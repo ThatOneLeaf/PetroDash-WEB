@@ -357,7 +357,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
             display: isMobile ? (collapsed ? "none" : "block") : "block",
           }}
         />
-      )}<Box
+      )}
+      <Box
         sx={{
           width: collapsed ? (isMobile ? 56 : 72) : (isMobile ? 220 : 240),
           bgcolor: "#fff",
@@ -387,33 +388,14 @@ function SideBar({ collapsed: collapsedProp = false }) {
           pointerEvents: "auto",
           maxHeight: "100vh", // Ensure it doesn't exceed viewport height
         }}
-        // Remove onMouseEnter/onMouseLeave
-        // Remove onClick that opens sidebar on any click
-      >        {/* Hamburger/collapse icon for toggling sidebar */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: collapsed ? "center" : "flex-end",
-            px: collapsed ? (isMobile ? 0.5 : 1) : (isMobile ? 2 : 3),
-            pt: 2,
-            pb: 1,
-            cursor: "pointer",
-            userSelect: "none"
-          }}
-          onClick={handleSidebarToggle}
-        >
-          {/* Simple hamburger icon or X for close */}
-          <span style={{
-            fontSize: 28,
-            color: "#1a3365",
-            fontWeight: 700,
-            transition: "transform 0.2s",
-            transform: collapsed ? "rotate(0deg)" : "rotate(90deg)"
-          }}>
-            {collapsed ? "☰" : "×"}
-          </span>
-        </Box>
+        onClick={() => {
+          if (collapsed) {
+            setCollapsed(false);
+          }
+        }}
+        style={{ cursor: collapsed ? "pointer" : "default" }}
+      >
+
         <Box>
           <Box
             sx={{
