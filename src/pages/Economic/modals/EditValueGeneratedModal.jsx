@@ -202,6 +202,11 @@ function EditValueGeneratedModal({ onClose, selectedRecord }) {
           size="medium"
           disabled={submitLoading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -212,6 +217,11 @@ function EditValueGeneratedModal({ onClose, selectedRecord }) {
           size="medium"
           disabled={submitLoading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -222,6 +232,11 @@ function EditValueGeneratedModal({ onClose, selectedRecord }) {
           size="medium"
           disabled={submitLoading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -232,6 +247,11 @@ function EditValueGeneratedModal({ onClose, selectedRecord }) {
           size="medium"
           disabled={submitLoading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -243,6 +263,11 @@ function EditValueGeneratedModal({ onClose, selectedRecord }) {
           disabled={submitLoading}
           fullWidth
           sx={{ gridColumn: 'span 2' }}
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -254,6 +279,11 @@ function EditValueGeneratedModal({ onClose, selectedRecord }) {
           disabled={submitLoading}
           fullWidth
           sx={{ gridColumn: 'span 2' }}
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
       </Box>
 

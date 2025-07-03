@@ -17,6 +17,7 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [recordData, setRecordData] = useState(null);
+  const [originalFormData, setOriginalFormData] = useState({});
 
   // Form data for both types - will be populated from API
   const [formData, setFormData] = useState({});
@@ -53,6 +54,7 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
         });
         
         setFormData(initialFormData);
+        setOriginalFormData(initialFormData);
         
       } catch (error) {
         console.error('Error fetching record data:', error);
@@ -145,11 +147,21 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
   };
 
   const isFormValid = () => {
-    return Object.keys(formData).every(typeName => {
-      const data = formData[typeName];
-      return data && Object.entries(data)
+    // Check if any values have actually changed from the original data
+    return Object.keys(formData).some(typeName => {
+      const currentData = formData[typeName];
+      const originalData = originalFormData[typeName];
+      
+      if (!currentData || !originalData) return false;
+      
+      // Check if any field has changed
+      return Object.entries(currentData)
         .filter(([key]) => key !== 'type_id')
-        .some(([_, value]) => value !== '' && Number(value) > 0);
+        .some(([key, value]) => {
+          const currentValue = Number(value) || 0;
+          const originalValue = Number(originalData[key]) || 0;
+          return currentValue !== originalValue;
+        });
     });
   };
 
@@ -280,6 +292,11 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
                 size="medium"
                 disabled={submitLoading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -290,6 +307,11 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
                 size="medium"
                 disabled={submitLoading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -300,6 +322,11 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
                 size="medium"
                 disabled={submitLoading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -310,6 +337,11 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
                 size="medium"
                 disabled={submitLoading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -320,6 +352,11 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
                 size="medium"
                 disabled={submitLoading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -330,6 +367,11 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
                 size="medium"
                 disabled={submitLoading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -340,6 +382,11 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
                 size="medium"
                 disabled={submitLoading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -350,6 +397,11 @@ function EditEconExpendituresModal({ onClose, selectedRecord }) {
                 size="medium"
                 disabled={submitLoading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
             </Box>
 

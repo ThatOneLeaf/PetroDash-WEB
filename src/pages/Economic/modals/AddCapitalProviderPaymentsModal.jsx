@@ -12,6 +12,7 @@ import {
   InputLabel
 } from '@mui/material';
 import api from '../../../services/api';
+import ConfirmOverwriteModal from '../../../components/ConfirmOverwriteModal';
 
 function AddCapitalProviderModal({ onClose }) {
   const currentYear = new Date().getFullYear();
@@ -26,6 +27,7 @@ function AddCapitalProviderModal({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showOverwriteModal, setShowOverwriteModal] = useState(false);
 
   // Calculate total whenever form data changes
   const calculateTotal = (data) => {
@@ -48,12 +50,47 @@ function AddCapitalProviderModal({ onClose }) {
     setSuccess('');
   };
 
+  const checkExistingRecord = async () => {
+    try {
+      const response = await api.get(`/economic/check-capital-provider/${formData.year}`);
+      return response.data.exists;
+    } catch (error) {
+      console.error('Error checking existing record:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
       setError('');
       setSuccess('');
       
+      // Check if record already exists
+      const recordExists = await checkExistingRecord();
+      
+      if (recordExists) {
+        setLoading(false);
+        setShowOverwriteModal(true);
+        return;
+      }
+      
+      // Proceed with creation if no existing record
+      await createRecord();
+      
+    } catch (error) {
+      setLoading(false);
+      console.error('Error in handleSubmit:', error);
+      setError(
+        error.response?.data?.detail || 
+        error.message || 
+        'An error occurred while creating the record'
+      );
+    }
+  };
+
+  const createRecord = async () => {
+    try {
       console.log('Submitting capital provider payment data:', formData);
       
       await api.post('/economic/capital-provider-payments', formData);
@@ -75,6 +112,17 @@ function AddCapitalProviderModal({ onClose }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOverwriteConfirm = async () => {
+    setShowOverwriteModal(false);
+    setLoading(true);
+    await createRecord();
+  };
+
+  const handleOverwriteCancel = () => {
+    setShowOverwriteModal(false);
+    setLoading(false);
   };
 
   const isFormValid = () => {
@@ -145,6 +193,11 @@ function AddCapitalProviderModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -155,6 +208,11 @@ function AddCapitalProviderModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -165,6 +223,11 @@ function AddCapitalProviderModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
       </Box>
 
@@ -215,6 +278,16 @@ function AddCapitalProviderModal({ onClose }) {
           </Button>
         </Box>
       </Box>
+
+      {showOverwriteModal && (
+        <ConfirmOverwriteModal
+          isOpen={showOverwriteModal}
+          onConfirm={handleOverwriteConfirm}
+          onCancel={handleOverwriteCancel}
+          recordType="Capital Provider Payment"
+          recordDetails={`Year ${formData.year}`}
+        />
+      )}
     </Paper>
   );
 }

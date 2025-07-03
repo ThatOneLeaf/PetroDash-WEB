@@ -92,9 +92,9 @@ function Dashboard() {
   // Prepare chart data for Economic Analysis chart
   const flowData = economicData.map((item) => ({
     year: item.year,
-    economic_value_generated: item.totalGenerated,
-    economic_value_distributed: item.totalDistributed,
-    economic_value_retained: item.valueRetained,
+    economic_value_generated: Math.round(item.totalGenerated),
+    economic_value_distributed: Math.round(item.totalDistributed),
+    economic_value_retained: Math.round(item.valueRetained),
   }));
 
   useEffect(() => {
@@ -352,8 +352,8 @@ function Dashboard() {
                                       }}
                                     >
                                       {currentYearMetrics
-                                        ? currentYearMetrics.totalGenerated.toLocaleString()
-                                        : "0"}
+                                        ? `₱${Math.round(currentYearMetrics.totalGenerated).toLocaleString()}`
+                                        : "₱0"}
                                     </Typography>
                                     <Typography
                                       variant="body2"
@@ -420,8 +420,8 @@ function Dashboard() {
                                       }}
                                     >
                                       {currentYearMetrics
-                                        ? currentYearMetrics.totalDistributed.toLocaleString()
-                                        : "0"}
+                                        ? `₱${Math.round(currentYearMetrics.totalDistributed).toLocaleString()}`
+                                        : "₱0"}
                                     </Typography>
                                     <Typography
                                       variant="body2"
@@ -484,8 +484,8 @@ function Dashboard() {
                                       }}
                                     >
                                       {currentYearMetrics
-                                        ? currentYearMetrics.valueRetained.toLocaleString()
-                                        : "0"}
+                                        ? `₱${Math.round(currentYearMetrics.valueRetained).toLocaleString()}`
+                                        : "₱0"}
                                     </Typography>
                                     <Typography
                                       variant="body2"

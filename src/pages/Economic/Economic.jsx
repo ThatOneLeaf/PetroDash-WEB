@@ -52,6 +52,7 @@ function Economic() {
   
   // State for chart tab management (only for first chart)
   const [firstChartTab, setFirstChartTab] = useState(0);
+  const [modalTab, setModalTab] = useState(0);
   
   // State for zoom modal
   const [zoomModal, setZoomModal] = useState({ 
@@ -253,9 +254,9 @@ function Economic() {
   // Prepare chart data
   const flowData = summaryData.map(item => ({
     year: item.year,
-    economic_value_generated: item.totalGenerated,
-    economic_value_distributed: item.totalDistributed,
-    economic_value_retained: item.valueRetained
+    economic_value_generated: Math.round(item.totalGenerated),
+    economic_value_distributed: Math.round(item.totalDistributed),
+    economic_value_retained: Math.round(item.valueRetained)
   }));
 
   const pieChartData = distributedDetails
@@ -289,8 +290,36 @@ function Economic() {
     setFirstChartTab(newValue);
   };
 
+  const handleModalTabChange = (event, newValue) => {
+    setModalTab(newValue);
+    // Update modal content immediately with new tab value
+    const newContent = generateModalContent.economicAnalysis(
+      flowData, 
+      retentionData, 
+      summaryData, 
+      newValue, 
+      handleModalTabChange
+    );
+    setZoomModal(prev => ({
+      ...prev,
+      content: newContent
+    }));
+  };
+
   const openZoomModal = (title, fileName, content) => {
-    setZoomModal({ open: true, title, fileName, content });
+    setModalTab(firstChartTab); // Reset modal tab to match main chart
+    setZoomModal({ 
+      open: true, 
+      title, 
+      fileName, 
+      content: generateModalContent.economicAnalysis(
+        flowData, 
+        retentionData, 
+        summaryData, 
+        firstChartTab, 
+        handleModalTabChange
+      )
+    });
   };
 
   if (loading) {
@@ -424,7 +453,7 @@ function Economic() {
                               <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#2B8C37', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                      {currentYearMetrics ? `₱${currentYearMetrics.totalGenerated.toLocaleString()}` : '₱0'}
+                      {currentYearMetrics ? `₱${Math.round(currentYearMetrics.totalGenerated).toLocaleString()}` : '₱0'}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'white', fontSize: '0.6rem' }}>
                       Value Generated
@@ -445,7 +474,7 @@ function Economic() {
                               <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#FF8042', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                      {currentYearMetrics ? `₱${currentYearMetrics.totalDistributed.toLocaleString()}` : '₱0'}
+                      {currentYearMetrics ? `₱${Math.round(currentYearMetrics.totalDistributed).toLocaleString()}` : '₱0'}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'white', fontSize: '0.6rem' }}>
                       Value Distributed
@@ -460,7 +489,7 @@ function Economic() {
                               <Card sx={{ borderRadius: 2, boxShadow: 2, bgcolor: '#182959', flex: 1, minHeight: 60 }}>
                   <CardContent sx={{ textAlign: 'center', py: 1, px: 1, '&:last-child': { pb: 0.25 } }}>
                     <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-                      {currentYearMetrics ? `₱${currentYearMetrics.valueRetained.toLocaleString()}` : '₱0'}
+                      {currentYearMetrics ? `₱${Math.round(currentYearMetrics.valueRetained).toLocaleString()}` : '₱0'}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'white', fontSize: '0.6rem' }}>
                       Value Retained
@@ -500,7 +529,7 @@ function Economic() {
                 chartRef={chart1Ref}
                 title="Annual Economic Value Analysis"
                 fileName="economic_value_analysis"
-                modalContent={generateModalContent.economicAnalysis(flowData, retentionData, summaryData, firstChartTab, handleFirstChartTabChange)}
+                modalContent={generateModalContent.economicAnalysis(flowData, retentionData, summaryData, modalTab, handleModalTabChange)}
                 openZoomModal={openZoomModal}
               >
                 <EconomicAnalysisChart 
