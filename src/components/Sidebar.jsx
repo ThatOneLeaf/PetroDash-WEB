@@ -104,7 +104,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
   };  // Get all navigation items with access status - always show all items
   const getAllNavItems = () => {
     const allItems = [];
-    
     // Overview - only show in dashboard mode
     if (mode === "dashboard") {
       allItems.push({ 
@@ -114,7 +113,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
         hasAccess: hasModuleAccess("Overview")
       });
     }
-    
     // Energy - always show
     allItems.push({ 
       label: "Energy", 
@@ -122,7 +120,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
       to: mode === "dashboard" ? "/energy" : "/energy/power-generation",
       hasAccess: hasModuleAccess("Energy")
     });
-    
     // Economic - always show
     allItems.push({ 
       label: "Economic", 
@@ -130,7 +127,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
       to: "/economic",
       hasAccess: hasModuleAccess("Economic")
     });
-    
     // Environment - always show
     allItems.push({
       label: "Environment",
@@ -138,7 +134,6 @@ function SideBar({ collapsed: collapsedProp = false }) {
       to: "/environment",
       hasAccess: hasModuleAccess("Environment")
     });
-    
     // Social - always show
     allItems.push({
       label: "Social",
@@ -147,7 +142,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
       dropdown: [],
       hasAccess: hasModuleAccess("Social")
     });
-    
+    // FundsDashboard - removed from sidebar in repository mode as per latest requirements
     return allItems;
   };
 
@@ -185,8 +180,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
     } else {
       return [
         { label: "H.R.", to: "/social/hr" }, // REPOSITORY mode
-        { label: "H.E.L.P", to: "/social/help" },
-        { label: "ER1-94 Fund Allocations", to: "/social/er1-94" },
+        { label: "H.E.L.P", to: "/social/help" }
+        // ER1-94 Fund Allocations is NOT shown in repository mode
       ];
     }
   };
@@ -286,14 +281,16 @@ function SideBar({ collapsed: collapsedProp = false }) {
   const handleToggleMode = () => {
     // Only allow toggle if user has access to both modes
     if (allowedModes.length <= 1) return;
-    
     const newMode = mode === "dashboard" ? "repository" : "dashboard";
-    
     // Ensure the new mode is allowed for this user
     if (!allowedModes.includes(newMode)) return;
-    
+    // If user is on ER 1-94 Funds Allocation page and changes view, redirect to energy repository page
+    if (location.pathname === "/social/er1-94") {
+      setMode(newMode);
+      navigate("/energy/power-generation");
+      return;
+    }
     setMode(newMode);
-
     // Try to map current path to the toggled mode
     const toggledPath = getToggledPath(location.pathname, newMode);
     if (toggledPath !== location.pathname) {

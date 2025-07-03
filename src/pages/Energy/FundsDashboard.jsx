@@ -200,10 +200,16 @@ function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', va
 
 
 
+import { useLocation, useNavigate } from "react-router-dom";
+
 function FundsDashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
+  // Do not redirect if not in repository mode (requirement update)
 
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const { getUserRole } = useAuth();
