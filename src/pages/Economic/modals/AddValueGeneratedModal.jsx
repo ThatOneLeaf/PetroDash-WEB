@@ -12,6 +12,7 @@ import {
   InputLabel
 } from '@mui/material';
 import api from '../../../services/api';
+import ConfirmOverwriteModal from '../../../components/ConfirmOverwriteModal';
 
 function AddValueGeneratedModal({ onClose }) {
   const currentYear = new Date().getFullYear();
@@ -29,6 +30,7 @@ function AddValueGeneratedModal({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showOverwriteModal, setShowOverwriteModal] = useState(false);
 
   // Calculate total revenue whenever form data changes
   const calculateTotal = (data) => {
@@ -50,12 +52,47 @@ function AddValueGeneratedModal({ onClose }) {
     setSuccess('');
   };
 
+  const checkExistingRecord = async () => {
+    try {
+      const response = await api.get(`/economic/check-value-generated/${formData.year}`);
+      return response.data.exists;
+    } catch (error) {
+      console.error('Error checking existing record:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
       setError('');
       setSuccess('');
       
+      // Check if record already exists
+      const recordExists = await checkExistingRecord();
+      
+      if (recordExists) {
+        setLoading(false);
+        setShowOverwriteModal(true);
+        return;
+      }
+      
+      // Proceed with creation if no existing record
+      await createRecord();
+      
+    } catch (error) {
+      setLoading(false);
+      console.error('Error in handleSubmit:', error);
+      setError(
+        error.response?.data?.detail || 
+        error.message || 
+        'An error occurred while creating the record'
+      );
+    }
+  };
+
+  const createRecord = async () => {
+    try {
       console.log('Submitting value generated data:', formData);
       
       const response = await api.post('/economic/value-generated', formData);
@@ -78,6 +115,17 @@ function AddValueGeneratedModal({ onClose }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOverwriteConfirm = async () => {
+    setShowOverwriteModal(false);
+    setLoading(true);
+    await createRecord();
+  };
+
+  const handleOverwriteCancel = () => {
+    setShowOverwriteModal(false);
+    setLoading(false);
   };
 
   const isFormValid = () => {
@@ -147,6 +195,11 @@ function AddValueGeneratedModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -157,6 +210,11 @@ function AddValueGeneratedModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -167,6 +225,11 @@ function AddValueGeneratedModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -177,6 +240,11 @@ function AddValueGeneratedModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -187,6 +255,11 @@ function AddValueGeneratedModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
 
         <TextField
@@ -197,6 +270,11 @@ function AddValueGeneratedModal({ onClose }) {
           size="medium"
           disabled={loading}
           fullWidth
+          onKeyDown={(e) => {
+            if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+              e.preventDefault();
+            }
+          }}
         />
       </Box>
 
@@ -247,6 +325,16 @@ function AddValueGeneratedModal({ onClose }) {
           </Button>
         </Box>
       </Box>
+
+      {showOverwriteModal && (
+        <ConfirmOverwriteModal
+          isOpen={showOverwriteModal}
+          onConfirm={handleOverwriteConfirm}
+          onCancel={handleOverwriteCancel}
+          recordType="Value Generated"
+          recordDetails={`Year ${formData.year}`}
+        />
+      )}
     </Paper>
   );
 }

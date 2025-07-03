@@ -13,6 +13,7 @@ import {
   Divider
 } from '@mui/material';
 import api from '../../../services/api';
+import ConfirmOverwriteModal from '../../../components/ConfirmOverwriteModal';
 
 function AddExpendituresModal({ onClose }) {
   const currentYear = new Date().getFullYear();
@@ -21,6 +22,8 @@ function AddExpendituresModal({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showOverwriteModal, setShowOverwriteModal] = useState(false);
+  const [existingRecords, setExistingRecords] = useState([]);
 
   // Form data for both types
   const [formData, setFormData] = useState({
@@ -111,12 +114,64 @@ function AddExpendituresModal({ onClose }) {
     setSuccess('');
   };
 
+  const checkExistingRecords = async () => {
+    try {
+      const existingChecks = [];
+      
+      // Check each type for existing records
+      for (const typeName of Object.keys(formData.types)) {
+        const typeId = types.find(t => t.name === typeName)?.id;
+        if (typeId) {
+          try {
+            const response = await api.get(`/economic/check-expenditure/${formData.comp}/${formData.year}/${typeId}`);
+            if (response.data.exists) {
+              existingChecks.push(typeName);
+            }
+          } catch (error) {
+            console.error(`Error checking existing record for ${typeName}:`, error);
+          }
+        }
+      }
+      
+      return existingChecks;
+    } catch (error) {
+      console.error('Error checking existing records:', error);
+      return [];
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
       setError('');
       setSuccess('');
       
+      // Check if any records already exist
+      const existingRecordTypes = await checkExistingRecords();
+      
+      if (existingRecordTypes.length > 0) {
+        setExistingRecords(existingRecordTypes);
+        setLoading(false);
+        setShowOverwriteModal(true);
+        return;
+      }
+      
+      // Proceed with creation if no existing records
+      await createRecords();
+      
+    } catch (error) {
+      setLoading(false);
+      console.error('Error in handleSubmit:', error);
+      setError(
+        error.response?.data?.detail || 
+        error.message || 
+        'An error occurred while creating the expenditure records'
+      );
+    }
+  };
+
+  const createRecords = async () => {
+    try {
       console.log('Submitting expenditure data:', formData);
       
       // Create both records simultaneously
@@ -158,6 +213,18 @@ function AddExpendituresModal({ onClose }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOverwriteConfirm = async () => {
+    setShowOverwriteModal(false);
+    setLoading(true);
+    await createRecords();
+  };
+
+  const handleOverwriteCancel = () => {
+    setShowOverwriteModal(false);
+    setExistingRecords([]);
+    setLoading(false);
   };
 
   const isFormValid = () => {
@@ -319,6 +386,11 @@ function AddExpendituresModal({ onClose }) {
                 size="medium"
                 disabled={loading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -329,6 +401,11 @@ function AddExpendituresModal({ onClose }) {
                 size="medium"
                 disabled={loading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -339,6 +416,11 @@ function AddExpendituresModal({ onClose }) {
                 size="medium"
                 disabled={loading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -349,6 +431,11 @@ function AddExpendituresModal({ onClose }) {
                 size="medium"
                 disabled={loading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -359,6 +446,11 @@ function AddExpendituresModal({ onClose }) {
                 size="medium"
                 disabled={loading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -369,6 +461,11 @@ function AddExpendituresModal({ onClose }) {
                 size="medium"
                 disabled={loading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -379,6 +476,11 @@ function AddExpendituresModal({ onClose }) {
                 size="medium"
                 disabled={loading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <TextField
@@ -389,6 +491,11 @@ function AddExpendituresModal({ onClose }) {
                 size="medium"
                 disabled={loading}
                 fullWidth
+                onKeyDown={(e) => {
+                  if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                  }
+                }}
               />
             </Box>
 
@@ -443,6 +550,17 @@ function AddExpendituresModal({ onClose }) {
           {loading ? 'ADDING...' : 'ADD'}
         </Button>
       </Box>
+
+      {showOverwriteModal && (
+        <ConfirmOverwriteModal
+          isOpen={showOverwriteModal}
+          onConfirm={handleOverwriteConfirm}
+          onCancel={handleOverwriteCancel}
+          recordType="Expenditure"
+          recordDetails={`Company ${formData.comp}, Year ${formData.year} (${existingRecords.join(', ')})`}
+          title={`${existingRecords.length > 1 ? 'Records' : 'Record'} Already Exist`}
+        />
+      )}
     </Paper>
   );
 }
