@@ -13,6 +13,8 @@ import Overlay from "../components/modal";
 
 // Import icons and logos
 import PetroDashLogo from "../assets/petrodashlogo.png";
+import ManageAccountsIcon from "../assets/Icons/user.svg"; // Use a custom manage accounts icon
+import HistoryIcon from "../assets/Icons/history.svg"; // Use a custom history icon
 import PetroEnergyLogo from "../assets/PetroEnergy_Logo.png";
 import EnergyIcon from "../assets/Icons/energy.svg";
 import EconomicsIcon from "../assets/Icons/economics.svg";
@@ -50,6 +52,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
     }
   }, [isMobile]);  // Determine allowed modes based on role
   const getAllowedModes = () => {
+    if (userRole === 'R01') return ['admin']; // Admin only
     if (userRole === 'R02') return ['dashboard']; // Dashboard only
     if (['R03', 'R04'].includes(userRole)) return ['dashboard', 'repository']; // Both modes
     if (userRole === 'R05') return ['repository']; // Repository only
@@ -60,7 +63,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
   
   const [mode, setMode] = useState(() => {
     // Read from localStorage on initial mount, but ensure it's allowed for the user role
-    const savedMode = localStorage.getItem("sidebarMode") || "dashboard";
+    const savedMode = localStorage.getItem("sidebarMode") || (userRole === 'R01' ? 'admin' : 'dashboard');
     return allowedModes.includes(savedMode) ? savedMode : allowedModes[0];
   });
   const hasModuleAccess = (label) => {
@@ -106,8 +109,25 @@ function SideBar({ collapsed: collapsedProp = false }) {
   };  // Get all navigation items with access status - always show all items
   const getAllNavItems = () => {
     const allItems = [];
-    // Overview - only show in dashboard mode
-    if (mode === "dashboard") {
+    // Admin mode navigation for R01
+    if (mode === "admin" && userRole === "R01") {
+      allItems.push({
+        label: "User Management",
+        icon: ManageAccountsIcon,
+        to: "/user-management",
+        hasAccess: true
+      });
+      allItems.push({
+        label: "Audit Trail",
+        icon: HistoryIcon,
+        to: "/audit-trail",
+        hasAccess: true
+      });
+      // Add more admin-only items here if needed
+      return allItems;
+    }
+    // ...existing code for dashboard/repository modes...
+    if (mode === "dashboard" && ["R02", "R03", "R04","R05"].includes(userRole)) {
       allItems.push({ 
         label: "Overview", 
         icon: AssessmentIcon, 
@@ -115,36 +135,33 @@ function SideBar({ collapsed: collapsedProp = false }) {
         hasAccess: hasModuleAccess("Overview")
       });
     }
-    // Energy - always show
-    allItems.push({ 
-      label: "Energy", 
-      icon: EnergyIcon, 
-      to: mode === "dashboard" ? "/energy" : "/energy/power-generation",
-      hasAccess: hasModuleAccess("Energy")
-    });
-    // Economic - always show
-    allItems.push({ 
-      label: "Economic", 
-      icon: EconomicsIcon, 
-      to: "/economic",
-      hasAccess: hasModuleAccess("Economic")
-    });
-    // Environment - always show
-    allItems.push({
-      label: "Environment",
-      icon: EnvironmentIcon,
-      to: "/environment",
-      hasAccess: hasModuleAccess("Environment")
-    });
-    // Social - always show
-    allItems.push({
-      label: "Social",
-      icon: SocialIcon,
-      to: "/social",
-      dropdown: [],
-      hasAccess: hasModuleAccess("Social")
-    });
-    // FundsDashboard - removed from sidebar in repository mode as per latest requirements
+    if (["R02", "R03", "R04","R05"].includes(userRole)) {
+      allItems.push({ 
+        label: "Energy", 
+        icon: EnergyIcon, 
+        to: mode === "dashboard" ? "/energy" : "/energy/power-generation",
+        hasAccess: hasModuleAccess("Energy")
+      });
+      allItems.push({ 
+        label: "Economic", 
+        icon: EconomicsIcon, 
+        to: "/economic",
+        hasAccess: hasModuleAccess("Economic")
+      });
+      allItems.push({
+        label: "Environment",
+        icon: EnvironmentIcon,
+        to: "/environment",
+        hasAccess: hasModuleAccess("Environment")
+      });
+      allItems.push({
+        label: "Social",
+        icon: SocialIcon,
+        to: "/social",
+        dropdown: [],
+        hasAccess: hasModuleAccess("Social")
+      });
+    }
     return allItems;
   };
 
@@ -224,8 +241,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
     setSocialOpen(false);
   };
 
-  // Helper: map current path to dashboard/repository equivalent
+  // Helper: map current path to dashboard/repository/admin equivalent
   const getToggledPath = (pathname, newMode) => {
+    // Admin mode: always go to user management as default
+    if (newMode === "admin") {
+      return "/user-management";
+    }
     // Overview Dashboard to Energy Repository
     if (pathname === "/dashboard" && newMode === "repository") {
       return "/energy/power-generation";
@@ -281,10 +302,11 @@ function SideBar({ collapsed: collapsedProp = false }) {
   };
   // Toggle mode and navigate to correct economics page if on economics
   const handleToggleMode = () => {
-    // Only allow toggle if user has access to both modes
+    // Only allow toggle if user has access to more than one mode
     if (allowedModes.length <= 1) return;
-    const newMode = mode === "dashboard" ? "repository" : "dashboard";
-    // Ensure the new mode is allowed for this user
+    // Cycle through allowed modes
+    const currentIndex = allowedModes.indexOf(mode);
+    const newMode = allowedModes[(currentIndex + 1) % allowedModes.length];
     if (!allowedModes.includes(newMode)) return;
     // If user is on ER 1-94 Funds Allocation page and changes view, redirect to energy repository page
     if (location.pathname === "/social/er1-94") {
@@ -494,7 +516,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
             {collapsed ? (
               <img
                 src={DashboardIcon}
-                alt="Dashboard"
+                alt="Mode"
                 style={{
                   width: isMobile ? 24 : 28,
                   height: isMobile ? 24 : 28,
@@ -505,7 +527,9 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   filter:
                     mode === "dashboard"
                       ? "brightness(0) saturate(100%) invert(17%) sepia(24%) saturate(1877%) hue-rotate(191deg) brightness(97%) contrast(92%)"
-                      : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
+                      : mode === "admin"
+                        ? "brightness(0) saturate(100%) invert(60%) sepia(80%) saturate(500%) hue-rotate(10deg) brightness(90%) contrast(100%)"
+                        : "brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(469%) hue-rotate(83deg) brightness(93%) contrast(92%)",
                 }}
                 onClick={allowedModes.length > 1 ? handleToggleMode : undefined}
               />
@@ -514,7 +538,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                 fullWidth
                 variant="contained"
                 sx={{
-                  bgcolor: mode === "dashboard" ? "#1a3365" : "#2B8C37",
+                  bgcolor: mode === "dashboard" ? "#1a3365" : mode === "admin" ? "#b71c1c" : "#2B8C37",
                   color: "#fff",
                   borderRadius: 999,
                   height: isMobile ? 36 : 40,
@@ -526,7 +550,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                   alignItems: "center",
                   justifyContent: "center",
                   "&:hover": allowedModes.length > 1 ? { 
-                    bgcolor: mode === "dashboard" ? "#162a52" : "#23702b" 
+                    bgcolor: mode === "dashboard" ? "#162a52" : mode === "admin" ? "#a31515" : "#23702b" 
                   } : {},
                   transition: "all 0.2s",
                   mb: 1,
@@ -534,7 +558,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                 }}
                 onClick={allowedModes.length > 1 ? handleToggleMode : undefined}
               >
-                {mode === "dashboard" ? "Dashboard" : "Repository"}
+                {mode === "dashboard" ? "Dashboard" : mode === "admin" ? "Admin" : "Repository"}
               </Button>
             )}
           </Box>

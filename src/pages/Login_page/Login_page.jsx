@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -33,19 +33,37 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const { getUserRole, user } = useAuth();
+  const [loggedIn, setLoggedIn] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");    try {
-      await login(email, password);
+// Step 1: Try login
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+
+  try {
+    await login(email, password); // This triggers setUser inside AuthContext
+    setLoggedIn(true); // signal that login was successful
+  } catch (error) {
+    setError(error.message || "Login failed. Please check your credentials.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Step 2: After user is set by AuthContext, navigate based on role
+useEffect(() => {
+  if (loggedIn && user) {
+    const role = getUserRole();
+    console.log("User role after login:", role);
+    if (role === "R01") {
+      navigate("/admin");
+    } else {
       navigate("/");
-    } catch (error) {
-      setError(error.message || "Login failed. Please check your credentials.");
-    } finally {
-      setLoading(false);
     }
-  };
+  }
+}, [loggedIn, user]);
 
   return (
     <Box
