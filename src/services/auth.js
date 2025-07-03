@@ -123,11 +123,11 @@ export const loginAPI = async (email, password) => {
 
 export const logoutAPI = async () => {
   try {
+    clearAuthData();
     await api.post("/auth/logout");
   } catch (error) {
     console.error("[Auth] Logout failed:", error);
   } finally {
-    clearAuthData();
     window.location.href = "/";
   }
 };

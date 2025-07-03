@@ -4,11 +4,12 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import { Typography } from "@mui/material";
+import { Typography, Paper} from "@mui/material";
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import DashboardIcon from "../assets/Icons/dashboard.svg";
 import { useAuth } from "../contexts/AuthContext";
 import Tooltip from "@mui/material/Tooltip";
+import Overlay from "../components/modal";
 
 // Import icons and logos
 import PetroDashLogo from "../assets/petrodashlogo.png";
@@ -27,6 +28,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
   const [envOpen, setEnvOpen] = useState(false);
   const [socialOpen, setSocialOpen] = useState(false);
   const [energyOpen, setEnergyOpen] = useState(false);
+  const [confirmLogoutModal, setConfirmLogoutModal] = useState(false);
   
   // Get user role for access control
   const userRole = getUserRole();
@@ -328,6 +330,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
       setEnergyOpen(false);
     }
   };
+  
+  useEffect(() => {
+    if (confirmLogoutModal){
+      setCollapsed(true);
+    }
+  })
 
   return (
     <>
@@ -1189,7 +1197,8 @@ function SideBar({ collapsed: collapsedProp = false }) {
               },
             }}
             onClick={() => {
-              logout();
+              setCollapsed(true);
+              setConfirmLogoutModal(true);
             }}
           >
             <img
@@ -1220,6 +1229,118 @@ function SideBar({ collapsed: collapsedProp = false }) {
           </Box>
         </Box>
       </Box>
+
+      {confirmLogoutModal && (
+        <Overlay onClose={() => setConfirmLogoutModal(false)}>
+          <Paper
+            sx={{
+              p: 4,
+              width: "400px",
+              borderRadius: "16px",
+              bgcolor: "white",
+              outline: "none",
+              textAlign: "center",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                mb: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "50%",
+                  backgroundColor: "#FF9800",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: "white",
+                    fontSize: "2rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  !
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  mb: 3,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: "1.5rem",
+                    fontWeight: 800,
+                    lineHeight: '2rem',
+                    color: "#182959",
+                    mb: 2,
+                  }}
+                >
+                  Are you sure you want to log out?
+                </Typography>
+              </Box>
+            </Box>
+            
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 3,
+                mt: 3,
+              }}
+            >
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "#182959",
+                  borderRadius: "999px",
+                  padding: "10px 24px",
+                  fontSize: "1rem",
+                  fontWeight: "bold",
+                  "&:hover": {
+                    backgroundColor: "#256d2f",
+                  },
+                }}
+                onClick={() => setConfirmLogoutModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "#2B8C37",
+                  borderRadius: "999px",
+                  padding: "10px 24px",
+                  fontSize: "1rem",
+                  fontWeight: "bold",
+                  "&:hover": {
+                    backgroundColor: "#256d2f",
+                  },
+                }}
+                onClick={() => {
+                  setConfirmLogoutModal(false);
+                  logout();
+                }}
+              >
+                Log out
+              </Button>
+            </Box>
+          </Paper>
+        </Overlay>
+      )}
     </>
   );
 }
