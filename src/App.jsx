@@ -29,6 +29,10 @@ import HELPDash from "./pages/CSR/HELPDash";
 import FundsDashboard from "./pages/Energy/FundsDashboard";
 import ProfilePage from "./pages/Profile_page/Profile_page";
 
+import AdminLanding from "./pages/AdminLanding";
+import UserManagement from "./pages/UserManagement";
+import AuditTrail from "./pages/AuditTrail/AuditTrail";
+
 function App() {
   return (
     <AuthProvider>
@@ -39,6 +43,16 @@ function App() {
               <Route path="/" element={<SmartLanding />} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/login" element={<LoginPage />} />
+
+              {/* Admin Landing Page */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requiredRoles={["R01"]}>
+                    <AdminLanding />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected Routes Economics - Removed duplicates, proper roles defined below */}
 
@@ -214,6 +228,30 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requiredRoles={["R01"]}>
+                    <AdminLanding />
+                  </ProtectedRoute>
+                }></Route>
+
+              <Route 
+                path="/user-management"
+                element={
+                  <ProtectedRoute requiredRoles={["R01"]}>
+                    <UserManagement/>
+                  </ProtectedRoute>
+                }></Route>
+
+              <Route
+                path="/audit-trail"
+                element={
+                  <ProtectedRoute requiredRoles={["R01", "R04", "R03"]}>
+                    <AuditTrail />
+                  </ProtectedRoute>
+                }
+              />
 
               <Route
                 path="/dashboard"
@@ -222,7 +260,7 @@ function App() {
                     <Dashboard />
                   </ProtectedRoute>
                 }
-              />            </Routes>
+              /></Routes>
           </main>
         </div>
       </Router>
