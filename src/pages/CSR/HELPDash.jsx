@@ -329,15 +329,21 @@ export default function HELPDash() {
     title: '',
     fileName: ''
   });
+  const [yearOptions, setYearOptions] = useState([]);
+  const [companyOptions, setCompanyOptions] = useState([]);
 
-  // Fetch HELP activities data from API
-  const fetchData = () => {
+  // Fetch HELP activities data from API, with optional filters
+  const fetchData = (year = '', company = '') => {
     setLoading(true);
-    api.get('help/help-report')
+    // Build query string for filters
+    let query = [];
+    if (year) query.push(`year=${encodeURIComponent(year)}`);
+    if (company) query.push(`company_id=${encodeURIComponent(company)}`);
+    const queryString = query.length ? `?${query.join('&')}` : '';
+    api.get(`help/help-report${queryString}`)
       .then(res => {
         setData(res.data);
         setLastUpdated(new Date());
-        // console.log('HELPDash API data:', res.data); // For debugging
       })
       .catch(() => {
         setData([]);
@@ -346,19 +352,35 @@ export default function HELPDash() {
       .finally(() => setLoading(false));
   };
 
+  // Fetch available years and company names from /help/activities (unfiltered)
   useEffect(() => {
-    fetchData();
+    api.get('help/activities')
+      .then(res => {
+        const activities = res.data || [];
+        const years = [...new Set(activities.map(d => d.projectYear).filter(Boolean))].sort((a, b) => b - a);
+        // Use companyId for filter values, but display companyName in dropdown
+        const companies = [];
+        const seen = new Set();
+        activities.forEach(d => {
+          if (d.companyId && d.companyName && !seen.has(d.companyId)) {
+            companies.push({ id: d.companyId, name: d.companyName });
+            seen.add(d.companyId);
+          }
+        });
+        setYearOptions(years);
+        setCompanyOptions(companies);
+      })
+      .catch(() => {
+        setYearOptions([]);
+        setCompanyOptions([]);
+      });
   }, []);
 
-  // Memoized filter options for dropdowns
-  const yearOptions = useMemo(
-    () => [...new Set(data.map(d => d.projectYear).filter(Boolean))].sort((a, b) => b - a),
-    [data]
-  );
-  const companyOptions = useMemo(
-    () => [...new Set(data.map(d => d.companyName).filter(Boolean))].sort(),
-    [data]
-  );
+  // Fetch data on mount and whenever filters or activeTab changes
+  useEffect(() => {
+    fetchData(filters.year, filters.company);
+    // eslint-disable-next-line
+  }, [filters.year, filters.company, activeTab]);
 
   // Handle filter change
   const handleFilter = (key, value) => {
@@ -383,25 +405,24 @@ export default function HELPDash() {
     }
   };
 
-  // Memoized filtered data for HELP: if no filter, show most recent year
+  // Memoized filtered data for HELP and Investments tabs
   const filteredData = useMemo(() => {
-    if (activeTab === 'HELP' && !filters.year) {
-      // Find most recent year in data
-      const years = data.map(d => d.projectYear).filter(Boolean);
-      if (years.length === 0) return [];
-      const mostRecentYear = Math.max(...years);
-      return data.filter(row => String(row.projectYear) === String(mostRecentYear));
+    if (activeTab === 'HELP' || activeTab === 'Investments') {
+      return data.filter(row => {
+        // Use loose equality to handle number/string mismatch for year
+        if (filters.year && row.projectYear != filters.year) return false;
+        if (filters.company && row.companyId !== filters.company) return false;
+        return true;
+      });
     }
-    return data.filter(row => {
-      if (filters.year && String(row.projectYear) !== String(filters.year)) return false;
-      if (filters.company && row.companyName !== filters.company) return false;
-      return true;
-    });
+    return data;
   }, [data, filters, activeTab]);
 
   // Memoized KPI and investment values
   const kpi = useMemo(() => aggregateKPI(filteredData), [filteredData]);
   const investments = useMemo(() => aggregateInvestments(filteredData), [filteredData]);
+
+  console.log(filteredData)
 
   // Helper to open modal with chart content
   const openZoomModal = (title, fileName, content) => {
@@ -560,7 +581,7 @@ export default function HELPDash() {
                   height: isSmallScreen ? '24px' : '28px'
                 }}
               >
-                {/* No "All Years" option for HELP */}
+                <option value="">All Years</option>
                 {yearOptions.map(y => (
                   <option key={y} value={y}>{y}</option>
                 ))}
@@ -585,7 +606,7 @@ export default function HELPDash() {
               >
                 <option value="">All Companies</option>
                 {companyOptions.map(c => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
 
@@ -737,7 +758,7 @@ export default function HELPDash() {
               >
                 <option value="">All Companies</option>
                 {companyOptions.map(c => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
 
@@ -763,10 +784,11 @@ export default function HELPDash() {
             </Box>
 
             {/* KPI Row - 3 columns */}
-            <InvestmentKPI
+            {/* <InvestmentKPI
               year={filters.year}
               companyId={filters.company}
-            />            {/* Graph Containers Layout */}
+            />          */}
+               {/* Graph Containers Layout */}
             <Box
               sx={{
                 display: 'flex',

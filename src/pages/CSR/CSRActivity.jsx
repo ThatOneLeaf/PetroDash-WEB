@@ -477,10 +477,27 @@ function CSR() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: '0.5rem' }}>
+            <Button
+              variant="contained"
+              onClick={handleExport}
+              startIcon={<FileUploadIcon />}
+              sx={{
+                backgroundColor: '#182959',
+                borderRadius: '999px',
+                padding: '9px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: '#0f1a3c',
+                },
+              }}
+            >
+              EXPORT DATA
+            </Button>
             {/* Add/Import/Export buttons for canAddOrImport */}
             {canAddOrImport && (
               <>
-                <Button
+                {/* <Button
                   variant="contained"
                   onClick={handleExport}
                   startIcon={<FileUploadIcon />}
@@ -496,7 +513,7 @@ function CSR() {
                   }}
                 >
                   EXPORT DATA
-                </Button>
+                </Button> */}
                 <Button
                   variant="contained"
                   sx={{ 
@@ -621,7 +638,7 @@ function CSR() {
             options={statusIdOptions}
             value={filters.statusId}
             onChange={val => setFilters(f => ({ ...f, statusId: val }))}
-            placeholder="Approval Status"
+            placeholder="Status"
           />
           <Filter
             label="Program"
