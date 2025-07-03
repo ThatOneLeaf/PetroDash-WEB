@@ -784,10 +784,10 @@ export default function HELPDash() {
             </Box>
 
             {/* KPI Row - 3 columns */}
-            {/* <InvestmentKPI
+            <InvestmentKPI
               year={filters.year}
               companyId={filters.company}
-            />          */}
+            />         
                {/* Graph Containers Layout */}
             <Box
               sx={{

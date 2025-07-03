@@ -18,6 +18,7 @@ const getColor = (program) => PROGRAM_COLORS[program?.toLowerCase?.()] || '#e2e8
 
 // Accept year and company as props
 export default function InvestmentKPI({ year: yearProp, companyId }) {
+    const [availableYears, setAvailableYears] = useState();
     const [data, setData] = useState({});
     const [dates, setDates] = useState({});
     const [loading, setLoading] = useState(false);
