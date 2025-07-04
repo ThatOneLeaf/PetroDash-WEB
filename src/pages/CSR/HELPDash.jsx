@@ -431,16 +431,19 @@ export default function HELPDash() {
   return (
     <Box sx={{ 
       display: 'flex', 
-      minHeight: '100vh', 
+      height: '100vh', 
       background: '#f4f6fb',
-      flexDirection: { xs: 'column', md: 'row' }
+      flexDirection: { xs: 'column', md: 'row' },
+      overflow: 'hidden'
     }}>
       <Sidebar />
       <Box sx={{ 
         flexGrow: 1, 
-        p: { xs: 1, sm: 2, md: 4 },
+        p: { xs: 1, sm: 1.5, md: 2 },
         maxWidth: '100%',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         {/* Header Row */}
         <Box sx={{
@@ -448,8 +451,9 @@ export default function HELPDash() {
           flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
           alignItems: { xs: 'flex-start', sm: 'center' },
-          mb: 2,
-          gap: { xs: 2, sm: 0 }
+          mb: 1,
+          gap: { xs: 1, sm: 0 },
+          flexShrink: 0
         }}>
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ 
@@ -502,7 +506,7 @@ export default function HELPDash() {
         <Box sx={{
           display: 'flex',
           gap: '6px',
-          mb: 1.5,
+          mb: 1,
           flexShrink: 0,
           flexWrap: 'wrap'
         }}>
@@ -704,12 +708,19 @@ export default function HELPDash() {
 
         {/* Investments Tab */}
         {activeTab === 'Investments' && (
-          <>            {/* Filters Row (reuse HELP filters) */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            flex: 1, 
+            minHeight: 0,
+            overflow: 'hidden'
+          }}>
+            {/* Filters Row */}
             <Box
               sx={{
                 display: 'flex',
                 gap: isSmallScreen ? '5px' : '7px',
-                mb: 2,
+                mb: 1,
                 flexWrap: 'wrap',
                 alignItems: 'center',
                 flexShrink: 0,
@@ -784,21 +795,24 @@ export default function HELPDash() {
             </Box>
 
             {/* KPI Row - 3 columns */}
-            <InvestmentKPI
-              year={filters.year}
-              companyId={filters.company}
-            />         
-               {/* Graph Containers Layout */}
+            <Box sx={{ mb: 1, flexShrink: 0 }}>
+              <InvestmentKPI
+                year={filters.year}
+                companyId={filters.company}
+              />
+            </Box>
+         
+            {/* Graph Containers Layout */}
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
-                gap: { xs: 1.5, md: 2 },
+                gap: { xs: 1, md: 1.5 },
                 width: '100%',
                 alignItems: 'stretch',
+                flex: 1,
                 minHeight: 0,
-                height: isMobile ? 'auto' : `calc(100vh - 64px - 48px - 32px - 120px - 48px)`, // subtract header, tabs, filters, KPI, margins
-                // 64px header, 48px tabs/filters, 120px KPI, 48px margins (adjust as needed)
+                overflow: 'hidden'
               }}
             >
               {/* Left: Large Chart Container (Investments per Projects) */}
@@ -1097,7 +1111,7 @@ export default function HELPDash() {
                 </Box>
               </Box>
             </ZoomModal>
-          </>
+          </Box>
         )}
       </Box>
     </Box>
