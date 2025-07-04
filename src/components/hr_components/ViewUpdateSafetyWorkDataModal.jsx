@@ -422,6 +422,7 @@ const ViewUpdateSafetyWorkDataModal = ({
                   "Date"
                 )
               }
+              views={["year", "month"]}
               value={editedRecord.date ? dayjs(editedRecord.date) : null}
               onChange={handleDateChange("date")}
               minDate={dayjs("1994-09-29")}
@@ -437,7 +438,7 @@ const ViewUpdateSafetyWorkDataModal = ({
             fullWidth
             value={
               editedRecord.date
-                ? dayjs(editedRecord.date).format("MM/DD/YYYY")
+                ? dayjs(editedRecord.date).format("MMMM YYYY")
                 : ""
             }
             onChange={(e) => handleChange("date", e.target.value)}

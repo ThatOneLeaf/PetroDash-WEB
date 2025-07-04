@@ -17,6 +17,8 @@ import StatusChip from "../../components/StatusChip";
 
 import dayjs from "dayjs";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 import ViewUpdateSafetyWorkDataModal from "../../components/hr_components/ViewUpdateSafetyWorkDataModal";
 
 import CustomTable from "../../components/Table/Table";
@@ -40,11 +42,24 @@ function SafetyWorkData({
 
   const [selectedRowIds, setSelectedRowIds] = useState([]);
 
+  const { user } = useAuth();
+
+  const isEncoder =
+    Array.isArray(user?.roles) &&
+    user.roles.some((role) => ["R05"].includes(role));
+
+  const companyId = isEncoder ? user?.company_id : null;
+
   // DATA -- CHANGE PER PAGE
   const fetchSafetyWorkData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("hr/safety_workdata_records_by_status");
+
+      const params = companyId ? { company_id: companyId } : {};
+
+      const response = await api.get("hr/safety_workdata_records_by_status", {
+        params,
+      });
       console.log("Safety Work Data from API:", response.data);
       setData(response.data);
     } catch (error) {
@@ -56,8 +71,10 @@ function SafetyWorkData({
   };
 
   useEffect(() => {
-    fetchSafetyWorkData();
-  }, []);
+    if (user) {
+      fetchSafetyWorkData();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (shouldReload) {
@@ -74,7 +91,7 @@ function SafetyWorkData({
     {
       key: "date",
       label: "Date",
-      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MMMM YYYY") : "N/A"),
     },
     { key: "manpower", label: "Manpower" },
     { key: "manhours", label: "Manhours" },

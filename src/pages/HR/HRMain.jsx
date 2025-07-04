@@ -73,6 +73,10 @@ function HRMain() {
     Array.isArray(user?.roles) &&
     user.roles.some((role) => ["R05"].includes(role));
 
+  const isHead =
+    Array.isArray(user?.roles) &&
+    user.roles.some((role) => ["R03"].includes(role));
+
   const handleFilteredDataFromChild = (data) => {
     setFilteredExportData(data); // Set data for EXPORT
   };
@@ -563,7 +567,7 @@ function HRMain() {
             </div>
 
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              {selectedRowIds.length > 0 && !isApprove ? (
+              {selectedRowIds.length > 0 && !isApprove && isHead ? (
                 <>
                   <Button
                     variant="contained"
@@ -584,7 +588,7 @@ function HRMain() {
                   >
                     Approve
                   </Button>
-                  {selectedRowIds.length > 0 && !isForRevision && (
+                  {selectedRowIds.length > 0 && !isForRevision && isHead && (
                     <Button
                       variant="contained"
                       sx={{

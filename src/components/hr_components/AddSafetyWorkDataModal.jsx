@@ -270,6 +270,7 @@ function AddSafetyWorkDataModal({ onClose, onSuccess }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date"
+            views={["year", "month"]}
             value={formData.date ? dayjs(formData.date) : null}
             onChange={handleDateChange("date")}
             minDate={dayjs("1994-09-29")}

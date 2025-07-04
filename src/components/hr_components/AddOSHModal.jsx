@@ -9,6 +9,10 @@ import {
   FormControl,
   InputLabel,
   Autocomplete,
+  RadioGroup,
+  FormLabel,
+  FormControlLabel,
+  Radio,
   Box,
 } from "@mui/material";
 import Overlay from "../../components/modal";
@@ -155,7 +159,18 @@ function AddOSHModal({ onClose, onSuccess }) {
       return val;
     };
 
-    const isValidLostTime = isInOptions(parseBoolean(lost_time), "lost_time");
+    const uniqueBoolOptions = (field) => {
+      if (field === "lost_time") {
+        return [
+          { label: "Yes", value: true },
+          { label: "No", value: false },
+        ];
+      }
+    };
+
+    const isValidLostTime = uniqueBoolOptions("lost_time").some(
+      (opt) => opt.value === parseBoolean(lost_time)
+    );
 
     const isValidDate =
       date && dayjs(date).isValid() && dayjs(date).isAfter(MIN_DATE);
@@ -319,25 +334,22 @@ function AddOSHModal({ onClose, onSuccess }) {
           )}
         />
 
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Lost Time</InputLabel>
-          <Select
+        <FormControl component="fieldset" sx={{ mt: 2 }}>
+          <FormLabel component="legend">Lost Time</FormLabel>
+          <RadioGroup
+            row
             value={formData.lost_time}
             onChange={handleChange("lost_time")}
-            label="Lost Time"
-            sx={{ height: "55px" }}
           >
-            {uniqueBoolOptions("lost_time").map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
+            <FormControlLabel value={true} control={<Radio />} label="Yes" />
+            <FormControlLabel value={false} control={<Radio />} label="No" />
+          </RadioGroup>
         </FormControl>
 
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date"
+            views={["year", "month"]}
             value={formData.date ? dayjs(formData.date) : null}
             onChange={handleDateChange("date")}
             minDate={dayjs("1994-09-29")}

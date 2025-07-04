@@ -16,6 +16,8 @@ import Search from "../../components/Filter/Search";
 import Overlay from "../../components/modal";
 import StatusChip from "../../components/StatusChip";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 import dayjs from "dayjs";
 
 import ViewUpdateOSHModal from "../../components/hr_components/ViewUpdateOSHModal";
@@ -42,12 +44,23 @@ function OSH({
 
   const [selectedRowIds, setSelectedRowIds] = useState([]);
 
+  const { user } = useAuth();
+
+  const isEncoder =
+    Array.isArray(user?.roles) &&
+    user.roles.some((role) => ["R05"].includes(role));
+
+  const companyId = isEncoder ? user?.company_id : null;
+
   // DATA -- CHANGE PER PAGE
   const fetchOSHData = async () => {
     try {
       setLoading(true);
+
+      const params = companyId ? { company_id: companyId } : {};
       const response = await api.get(
-        "hr/occupational_safety_health_records_by_status"
+        "hr/occupational_safety_health_records_by_status",
+        { params }
       );
       console.log("OSH Data from API:", response.data);
       setData(response.data);
@@ -60,8 +73,11 @@ function OSH({
   };
 
   useEffect(() => {
-    fetchOSHData();
-  }, []);
+    console.log("User inside useEffect:", user);
+    if (user) {
+      fetchOSHData();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (shouldReload) {
@@ -83,7 +99,7 @@ function OSH({
     {
       key: "date",
       label: "Date",
-      render: (val) => (val ? dayjs(val).format("MM/DD/YYYY") : "N/A"),
+      render: (val) => (val ? dayjs(val).format("MMMM YYYY") : "N/A"),
     },
     { key: "incident_type", label: "Incident Type" },
     { key: "incident_title", label: "Incident Title" },
@@ -116,12 +132,10 @@ function OSH({
     new Set(data.map((item) => item.workforce_type))
   ).map((val) => ({ label: val, value: val }));
 
-  const lostTimeOptions = Array.from(
-    new Set(data.map((item) => item.lost_time))
-  ).map((val) => ({
-    label: val ? "Yes" : "No",
-    value: val,
-  }));
+  const lostTimeOptions = [
+    { label: "Yes", value: true },
+    { label: "No", value: false },
+  ];
 
   const incidentTypeOptions = Array.from(
     new Set(data.map((item) => item.incident_type))

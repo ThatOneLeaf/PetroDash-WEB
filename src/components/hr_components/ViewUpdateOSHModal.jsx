@@ -8,6 +8,10 @@ import {
   TextField,
   FormControl,
   InputLabel,
+  RadioGroup,
+  FormLabel,
+  FormControlLabel,
+  Radio,
   Autocomplete,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -172,6 +176,7 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
   };
 
   const handleSave = async () => {
+    console.log(editedRecord);
     /* VALIDATION */
     const MIN_DATE = dayjs("1994-09-28");
     const {
@@ -195,7 +200,18 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
       return val;
     };
 
-    const isValidLostTime = isInOptions(parseBoolean(lost_time), "lost_time");
+    const uniqueBoolOptions = (field) => {
+      if (field === "lost_time") {
+        return [
+          { label: "Yes", value: true },
+          { label: "No", value: false },
+        ];
+      }
+    };
+
+    const isValidLostTime = uniqueBoolOptions("lost_time").some(
+      (opt) => opt.value === parseBoolean(lost_time)
+    );
 
     const isValidDate =
       date && dayjs(date).isValid() && dayjs(date).isAfter(MIN_DATE);
@@ -245,7 +261,8 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
         osh_id: editedRecord.osh_id,
         company_id: editedRecord.company_id,
         workforce_type: editedRecord.workforce_type,
-        lost_time: editedRecord.lost_time,
+        lost_time:
+          editedRecord.lost_time === "true" || editedRecord.lost_time === true,
         date: editedRecord.date,
         incident_type: editedRecord.incident_type,
         incident_title: editedRecord.incident_title,
@@ -510,50 +527,53 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
         />
 
         {isEditing ? (
-          <FormControl fullWidth sx={{ minWidth: 120 }}>
-            <InputLabel>
-              {isEditing && !permanentlyReadOnlyFields.includes("lost_time") ? (
-                <>
-                  <span style={{ color: isEditing ? "#182959" : "grey" }}>
-                    Lost Time
-                  </span>
-                  <span style={{ color: "red" }}>*</span>
-                </>
-              ) : (
-                "Lost Time"
-              )}
-            </InputLabel>
-            <Select
-              label={
-                isEditing &&
-                !permanentlyReadOnlyFields.includes("lost_time") ? (
-                  <>
-                    <span style={{ color: isEditing ? "#182959" : "grey" }}>
-                      Lost Time
-                    </span>
-                    <span style={{ color: "red" }}>*</span>
-                  </>
-                ) : (
-                  "Lost Time"
-                )
-              }
-              value={editedRecord.lost_time ?? ""}
-              onChange={(e) => handleChange("lost_time")(e)}
-              sx={{ height: "55px" }}
-              fullWidth
+          <FormControl fullWidth sx={{ position: "relative" }}>
+            {/* Simulated floating label */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: "-5px", // lowered from -10px
+                left: "12px",
+                px: "4px",
+                backgroundColor: "#fff",
+                fontSize: "0.75rem",
+                color: "#6b6b6b",
+                zIndex: 1,
+              }}
             >
-              {uniqueOptions("lost_time").map((option) => {
-                let label = option.label;
-                if (option.value === true) label = "Yes";
-                else if (option.value === false) label = "No";
+              Lost Time <span style={{ color: "red" }}>*</span>
+            </Box>
 
-                return (
-                  <MenuItem key={option.value} value={option.value}>
-                    {label}
-                  </MenuItem>
-                );
-              })}
-            </Select>
+            {/* Bordered container to simulate TextField */}
+            <Box
+              sx={{
+                border: "1px solid rgba(0, 0, 0, 0.23)",
+                borderRadius: "4px",
+                px: 2,
+                py: 1.5,
+                display: "flex",
+                alignItems: "center",
+                height: "56px",
+              }}
+            >
+              <RadioGroup
+                row
+                value={editedRecord.lost_time}
+                onChange={handleChange("lost_time")}
+                sx={{ gap: 2 }}
+              >
+                <FormControlLabel
+                  value={true}
+                  control={<Radio />}
+                  label="Yes"
+                />
+                <FormControlLabel
+                  value={false}
+                  control={<Radio />}
+                  label="No"
+                />
+              </RadioGroup>
+            </Box>
           </FormControl>
         ) : (
           <TextField
@@ -565,9 +585,12 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
                 ? "Yes"
                 : editedRecord.lost_time === false
                 ? "No"
+                : editedRecord.lost_time === "true"
+                ? "Yes"
+                : editedRecord.lost_time === "false"
+                ? "No"
                 : editedRecord.lost_time
             }
-            onChange={(e) => handleChange("gender", e.target.value)}
             type="text"
             InputProps={{
               readOnly:
@@ -583,7 +606,6 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
             }}
           />
         )}
-
         {isEditing ? (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
@@ -599,8 +621,10 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
                   "Date"
                 )
               }
+              views={["year", "month"]}
               value={editedRecord.date ? dayjs(editedRecord.date) : null}
               onChange={handleDateChange("date")}
+              minDate={dayjs("1994-09-29")}
               slotProps={{
                 textField: { fullWidth: true, size: "medium" },
               }}
@@ -613,7 +637,7 @@ const ViewUpdateOSHModal = ({ title, record, onClose, status, onSuccess }) => {
             fullWidth
             value={
               editedRecord.date
-                ? dayjs(editedRecord.date).format("MM/DD/YYYY")
+                ? dayjs(editedRecord.date).format("MMMM YYYY")
                 : ""
             }
             onChange={(e) => handleChange("date", e.target.value)}
