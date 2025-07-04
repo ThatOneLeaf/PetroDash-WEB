@@ -590,7 +590,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       setEnergyOpen(false);
                     }}
                   >
-                    <Tooltip title="Energy" placement="right" disableHoverListener={!collapsed}>
+                    <Tooltip title={item.label} placement="right" disableHoverListener={!collapsed}>
                     <Box
                       sx={{
                         display: "flex",
@@ -672,7 +672,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       position: "relative",
                     }}
                   >
-                    <Tooltip title="Environment" placement="right" disableHoverListener={!collapsed}>
+                    <Tooltip title={item.label} placement="right" disableHoverListener={!collapsed}>
                     <Box
                       sx={{
                         display: "flex",
@@ -842,7 +842,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       position: "relative",
                     }}
                   >
-                    <Tooltip title="Social" placement="right" disableHoverListener={!collapsed}>
+                    <Tooltip title={item.label} placement="right" disableHoverListener={!collapsed}>
                     <Box
                       sx={{
                         display: "flex",
@@ -1029,7 +1029,7 @@ function SideBar({ collapsed: collapsedProp = false }) {
                       handleNav(item);
                     }}
                   >
-                    <Tooltip title="Economic" placement="right" disableHoverListener={!collapsed}>
+                    <Tooltip title={item.label} placement="right" disableHoverListener={!collapsed}>
                     <Box
                       sx={{
                         display: "flex",

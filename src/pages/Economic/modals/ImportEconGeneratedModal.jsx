@@ -10,10 +10,13 @@ import {
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import api from "../../../services/api";
+import SuccessDialog from "../../../components/SuccessDialog";
 
 function ImportEconGeneratedModal({ onClose }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const templateURL = "economic_generated_template.xlsx";
 
   const handleFileChange = (event) => {
@@ -90,8 +93,8 @@ function ImportEconGeneratedModal({ onClose }) {
       
       // Success case
       console.log("Economic generated data file uploaded successfully");
-      alert(`Import completed successfully! ${result.successful_imports} records imported.`);
-      onClose();
+      setSuccessMessage(`Import completed successfully! ${result.successful_imports} records imported.`);
+      setShowSuccess(true);
       
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -200,24 +203,13 @@ function ImportEconGeneratedModal({ onClose }) {
         </Box>
       )}
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mt: 2,
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
         <Button
           variant="outlined"
           onClick={onClose}
           sx={{
             color: "#666",
             borderColor: "#666",
-            borderRadius: "999px",
-            padding: "9px 18px",
-            fontSize: "0.85rem",
-            fontWeight: "bold",
             "&:hover": {
               borderColor: "#333",
               color: "#333",
@@ -231,18 +223,25 @@ function ImportEconGeneratedModal({ onClose }) {
           onClick={handleSubmit}
           disabled={!selectedFile || isUploading}
           sx={{
-            bgcolor: "#2B8C37",
-            borderRadius: "999px",
-            padding: "9px 18px",
-            fontSize: "0.85rem",
-            fontWeight: "bold",
-            "&:hover": { bgcolor: "#256d2f" },
-            "&:disabled": { bgcolor: "#ccc" },
+            backgroundColor: "#2B8C37",
+            "&:hover": {
+              backgroundColor: "#256d2f",
+            },
           }}
         >
           {isUploading ? "IMPORTING..." : "IMPORT"}
         </Button>
       </Box>
+
+      <SuccessDialog
+        open={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          onClose();
+        }}
+        title="Import Successful!"
+        message={successMessage}
+      />
     </Paper>
   );
 }

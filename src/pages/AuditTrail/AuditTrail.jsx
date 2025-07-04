@@ -69,9 +69,16 @@ function AuditTrail() {
 
   const filteredData = useMemo(() => {
     const arr = Array.isArray(data) ? data : [];
-    if (!searchTerm) return arr;
+    // First sort by timestamp in descending order
+    const sortedArr = [...arr].sort((a, b) => {
+      const dateA = dayjs(a.audit_timestamp);
+      const dateB = dayjs(b.audit_timestamp);
+      return dateB.valueOf() - dateA.valueOf(); // Descending order (newest first)
+    });
+    
+    if (!searchTerm) return sortedArr;
     const lower = searchTerm.toLowerCase();
-    return arr.filter((row) =>
+    return sortedArr.filter((row) =>
       columns.some((col) => {
         if (col.key === "audit_timestamp") {
           // Search both raw and formatted date
