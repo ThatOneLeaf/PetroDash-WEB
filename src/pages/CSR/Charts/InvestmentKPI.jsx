@@ -17,7 +17,7 @@ const PROGRAM_COLORS = {
 const getColor = (program) => PROGRAM_COLORS[program?.toLowerCase?.()] || '#e2e8f0';
 
 // Accept year and company as props
-export default function InvestmentKPI({ year: yearProp, companyId }) {
+export default function InvestmentKPI({ year: yearProp, companyId, isInDashboard }) {
     const [availableYears, setAvailableYears] = useState();
     const [data, setData] = useState({});
     const [dates, setDates] = useState({});
@@ -99,14 +99,14 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
         <div
             style={{
                 display: 'flex',
-                gap: 16,
+                gap: isInDashboard ? 16 : 8,
                 width: '100%',
-                margin: '0 0 16px 0',
-                height: 'auto',
-                minHeight: 0,
-                justifyContent: 'center',
-                alignItems: 'stretch',
+                height: isInDashboard ? '100%' : 'auto',
+                margin: 0,
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 flexWrap: 'wrap',
+                marginBottom: isInDashboard ? 0 : '8px'
             }}
         >
             {/* Health KPI */}
@@ -126,12 +126,12 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     fontSize: 16,
                     boxShadow: 'none',
                     width: '100%',
-                    minWidth: 0,
-                    minHeight: 0,
-                    height: 'auto',
+                    minWidth: { xs: '100%', sm: '30%' },
+                    height: isInDashboard ? '100%' : '100px',
                     textAlign: 'center',
-                    flex: 1,
-                    maxWidth: '100%',
+                    flex: { xs: '1 1 100%', sm: '1 1 0' },
+                    maxWidth: { xs: '100%', sm: '33.33%' },
+                    minHeight: isInDashboard ? '120px' : '100px',
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 8 }}>
@@ -139,11 +139,11 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <div
                             style={{
-                                fontSize: 'clamp(1rem, 2.2vw, 1.3rem)',
+                                fontSize: "clamp(1rem, 3vw, 1.5rem)",
                                 fontWeight: 900,
                                 marginBottom: 2,
-                                textAlign: 'center',
-                                color: '#182959',
+                                textAlign: "center",
+                                color: "#182959",
                                 letterSpacing: 0.5,
                                 lineHeight: 1.1,
                             }}
@@ -152,15 +152,15 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                         </div>
                         <div
                             style={{
-                                fontSize: 'clamp(0.7rem, 1.2vw, 1rem)',
+                                fontSize: "clamp(0.6rem, 1.5vw, 1rem)",
                                 fontWeight: 700,
-                                color: '#222',
-                                textAlign: 'center',
+                                color: "#222",
+                                textAlign: "center",
                                 lineHeight: 1.2,
                                 letterSpacing: 0.2,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
                             }}
                         >
                             Health
@@ -185,12 +185,12 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     fontSize: 16,
                     boxShadow: 'none',
                     width: '100%',
-                    minWidth: 0,
-                    minHeight: 0,
-                    height: 'auto',
+                    minWidth: { xs: '100%', sm: '30%' },
+                    height: isInDashboard ? '100%' : '100px',
                     textAlign: 'center',
-                    flex: 1,
-                    maxWidth: '100%',
+                    flex: { xs: '1 1 100%', sm: '1 1 0' },
+                    maxWidth: { xs: '100%', sm: '33.33%' },
+                    minHeight: isInDashboard ? '120px' : '100px',
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 8 }}>
@@ -198,11 +198,11 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <div
                             style={{
-                                fontSize: 'clamp(1rem, 2.2vw, 1.3rem)',
+                                fontSize: "clamp(1rem, 3vw, 1.5rem)",
                                 fontWeight: 900,
                                 marginBottom: 2,
-                                textAlign: 'center',
-                                color: '#182959',
+                                textAlign: "center",
+                                color: "#182959",
                                 letterSpacing: 0.5,
                                 lineHeight: 1.1,
                             }}
@@ -211,15 +211,15 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                         </div>
                         <div
                             style={{
-                                fontSize: 'clamp(0.7rem, 1.2vw, 1rem)',
+                                fontSize: "clamp(0.6rem, 1.5vw, 1rem)",
                                 fontWeight: 700,
-                                color: '#222',
-                                textAlign: 'center',
+                                color: "#222",
+                                textAlign: "center",
                                 lineHeight: 1.2,
                                 letterSpacing: 0.2,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
                             }}
                         >
                             Education
@@ -244,12 +244,12 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     fontSize: 16,
                     boxShadow: 'none',
                     width: '100%',
-                    minWidth: 0,
-                    minHeight: 0,
-                    height: 'auto',
+                    minWidth: { xs: '100%', sm: '30%' },
+                    height: isInDashboard ? '100%' : '100px',
                     textAlign: 'center',
-                    flex: 1,
-                    maxWidth: '100%',
+                    flex: { xs: '1 1 100%', sm: '1 1 0' },
+                    maxWidth: { xs: '100%', sm: '33.33%' },
+                    minHeight: isInDashboard ? '120px' : '100px',
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 8 }}>
@@ -257,11 +257,11 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <div
                             style={{
-                                fontSize: 'clamp(1rem, 2.2vw, 1.3rem)',
+                                fontSize: "clamp(1rem, 3vw, 1.5rem)",
                                 fontWeight: 900,
                                 marginBottom: 2,
-                                textAlign: 'center',
-                                color: '#182959',
+                                textAlign: "center",
+                                color: "#182959",
                                 letterSpacing: 0.5,
                                 lineHeight: 1.1,
                             }}
@@ -270,27 +270,27 @@ export default function InvestmentKPI({ year: yearProp, companyId }) {
                         </div>
                         <div
                             style={{
-                                fontSize: 'clamp(0.7rem, 1.2vw, 1rem)',
+                                fontSize: "clamp(0.6rem, 1.5vw, 1rem)",
                                 fontWeight: 700,
-                                color: '#222',
-                                textAlign: 'center',
+                                color: "#222",
+                                textAlign: "center",
                                 lineHeight: 1.2,
                                 letterSpacing: 0.2,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
                             }}
                         >
                             Livelihood
                         </div>
                         <div
                             style={{
-                                fontSize: 'clamp(0.5rem, 1vw, 0.8rem)',
-                                color: '#374151',
-                                textAlign: 'center',
+                                fontSize: "clamp(0.5rem, 1vw, 0.8rem)",
+                                color: "#374151",
+                                textAlign: "center",
                                 marginTop: 2,
-                                width: '100%',
-                                fontStyle: 'italic',
+                                width: "100%",
+                                fontStyle: "italic",
                                 letterSpacing: 0.2,
                                 fontWeight: 400,
                             }}

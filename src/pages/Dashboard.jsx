@@ -670,15 +670,18 @@ function Dashboard() {
                         sx={{
                           pt: 2,
                           height: "100%",
-                          display: "flex",
-                          flexDirection: { xs: 'column', sm: 'column' },
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: { xs: 1, sm: 0 },
+                          display: "grid",
+                          gridTemplateRows: "1fr 1fr",
+                          gap: 2,
+                          width: "100%",
                         }}
                       >
-                        <HELPINvestments />
-                        <HROverview />
+                        <Box sx={{ width: "100%" }}>
+                          <HELPINvestments isInDashboard={true} />
+                        </Box>
+                        <Box sx={{ width: "100%", height: "100%" }}>
+                          <HROverview />
+                        </Box>
                       </Box>
                     </Paper>
                   </Box>

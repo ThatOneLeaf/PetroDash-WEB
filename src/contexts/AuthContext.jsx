@@ -110,15 +110,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    // Clear localStorage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('token_expiry');
-    
-    // Clear memory state
-    setToken(null);
-    setUser(null);    // Redirect to landing page
-    window.location.href = '/landing';
+  const logout = async () => {
+    try {
+      // Get the current token
+      const currentToken = localStorage.getItem('access_token');
+      if (currentToken) {
+        // Call backend logout endpoint
+        await api.post('/auth/logout', null, {
+          headers: {
+            'Authorization': `Bearer ${currentToken}`
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Clear localStorage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_expiry');
+      
+      // Clear memory state
+      setToken(null);
+      setUser(null);
+      
+      // Redirect to landing page
+      window.location.href = '/landing';
+    }
   };
 
   const isLoggedIn = () => {

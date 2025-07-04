@@ -14,12 +14,15 @@ import {
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import api from "../../../services/api";
+import SuccessDialog from "../../../components/SuccessDialog";
 
 function ImportEconCapitalProviderModal({ onClose }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState({ title: '', message: '', type: 'info' });
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const showDialog = (title, message, type = 'info') => {
     setDialogContent({ title, message, type });
@@ -107,7 +110,8 @@ function ImportEconCapitalProviderModal({ onClose }) {
       
       // Success case
       console.log("Economic capital provider data file uploaded successfully");
-      showDialog('Import Successful', `Import completed successfully! ${result.successful_imports} records imported.`, 'success');
+      setSuccessMessage(`Import completed successfully! ${result.successful_imports} records imported.`);
+      setShowSuccess(true);
       
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -217,14 +221,7 @@ function ImportEconCapitalProviderModal({ onClose }) {
           </Box>
         )}
 
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mt: 2,
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
           <Button
             variant="outlined"
             onClick={onClose}
@@ -244,9 +241,10 @@ function ImportEconCapitalProviderModal({ onClose }) {
             onClick={handleSubmit}
             disabled={!selectedFile || isUploading}
             sx={{
-              bgcolor: "#2E7D32",
-              "&:hover": { bgcolor: "#1b5e20" },
-              "&:disabled": { bgcolor: "#ccc" },
+              backgroundColor: "#2B8C37",
+              "&:hover": {
+                backgroundColor: "#256d2f",
+              },
             }}
           >
             {isUploading ? "IMPORTING..." : "IMPORT"}
@@ -286,6 +284,16 @@ function ImportEconCapitalProviderModal({ onClose }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <SuccessDialog
+        open={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          onClose();
+        }}
+        title="Import Successful!"
+        message={successMessage}
+      />
     </>
   );
 }
