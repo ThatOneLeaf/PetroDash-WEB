@@ -573,7 +573,7 @@ function EnvironmentEnergy() {
               REPOSITORY
             </Typography>
             <Typography sx={{ fontSize: '2.25rem', color: '#182959', fontWeight: 800}}>
-              Environment - {selected}
+              Environment - Energy
             </Typography>
           </Box>
           
