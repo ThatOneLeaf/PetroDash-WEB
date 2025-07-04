@@ -184,7 +184,7 @@ function AdminLanding() {
             alignItems="center"
             sx={{ padding: "8px 16px", gap: 8 }}
           >
-            <RepositoryHeader label="ADMIN DASHBOARD" title="Admin Dashboard" />
+            <RepositoryHeader label="ADMIN" title="Dashboard" />
           </Box>
           {/* 1st row: widgets */}
           <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: 3, flexWrap: 'wrap', gap: 3 }}>
