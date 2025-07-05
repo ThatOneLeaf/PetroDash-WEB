@@ -75,11 +75,12 @@ function AdminLanding() {
     activeUsers: 0,
     deactivatedUsers: 0,    
   });
-  const [systemStatus] = useState({
-    api: "Running",
-    server: "Online",
-    lastBackup: "July 3, 2025 10:00 AM",
-    warnings: 0,
+  const [systemStatus, setSystemStatus] = useState({
+    api: "-",
+    server: "-",
+    database: "-",
+    apiResponseTimeMs: "-",
+    serverUptime: "-"
   });
   const [activityLog, setActivityLog] = useState([]);
 
@@ -133,6 +134,12 @@ function AdminLanding() {
     api.get("/reference/kpi-data")
       .then(res => {
         if (res.data) setUserStats(res.data);
+      })
+      .catch(() => {});
+    // Fetch System Health
+    api.get("/reference/system-health")
+      .then(res => {
+        if (res.data) setSystemStatus(res.data);
       })
       .catch(() => {});
   }, []);
@@ -289,15 +296,21 @@ return (
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Assessment color="primary" />
+          <CheckCircle color={systemStatus.database === "Online" ? "success" : "error"} />
           <Typography variant="body1">
-            Last Backup: <b>{systemStatus.lastBackup}</b>
+            Database: <b style={{ color: systemStatus.database === "Online" ? "#388e3c" : "#d32f2f" }}>{systemStatus.database}</b>
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Warning color={systemStatus.warnings > 0 ? "warning" : "disabled"} />
+          <Assessment color="primary" />
           <Typography variant="body1">
-            Warnings: <b>{systemStatus.warnings}</b>
+            API Response Time: <b>{systemStatus.apiResponseTimeMs} ms</b>
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Assessment color="primary" />
+          <Typography variant="body1">
+            Server Uptime: <b>{systemStatus.serverUptime}</b>
           </Typography>
         </Box>
       </Box>
