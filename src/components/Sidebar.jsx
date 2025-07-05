@@ -111,6 +111,12 @@ function SideBar({ collapsed: collapsedProp = false }) {
     const allItems = [];
     // Admin mode navigation for R01
     if (mode === "admin" && userRole === "R01") {
+      allItems.push({ 
+        label: "Overview", 
+        icon: AssessmentIcon, 
+        to: "/admin",
+        hasAccess: true
+      });
       allItems.push({
         label: "User Management",
         icon: ManageAccountsIcon,

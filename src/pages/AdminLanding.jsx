@@ -1,45 +1,60 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   CircularProgress,
   Box,
-  IconButton,
+  Paper,
+  Grid,
+  useTheme,
+  useMediaQuery,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  useTheme,
-  useMediaQuery,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Avatar,
 } from "@mui/material";
-import api from "../services/api";
+import {
+  CheckCircle,
+  Assessment,
+  Warning,
+  Group,
+  Settings,
+  ExitToApp,
+  Person,
+} from "@mui/icons-material";
 
+import api from "../services/api";
 import RepositoryHeader from "../components/RepositoryHeader";
 import SideBar from "../components/Sidebar";
-// import api from "../../services/api";
-import UserStatsWidgets from "../pages/AdminDashboard/UserStatsWidgets";
 
 function KPIWidget({ label, value, color }) {
   return (
-    <Paper elevation={2} sx={{
-      minWidth: 120,
-      minHeight: 80,
-      p: 2,
-      textAlign: 'center',
-      bgcolor: color || '#fff',
-      borderRadius: 2,
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}>
+    <Paper
+      elevation={2}
+      sx={{
+        width: "100%",         // fill full width of parent Grid item
+        height: "100%",        // fill full height of parent Box/Grid
+        minHeight: 120,        // increase if you want more vertical space
+        p: 2,
+        textAlign: "center",
+        bgcolor: color || "#fff",
+        borderRadius: 2,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <Typography variant="h5" fontWeight={700} color="primary.main">
         {value}
       </Typography>
-      <Typography variant="body2" color="textSecondary">
+      <Typography variant="body2" color="text.secondary">
         {label}
       </Typography>
     </Paper>
@@ -50,20 +65,42 @@ function AdminLanding() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(15);
-  const [searchTerm, setSearchTerm] = useState("");
   const [userStats, setUserStats] = useState({
-    activeUsers: 0,
-    deactivatedUsers: 0,
     totalUsers: 0,
     admins: 0,
+    executives: 0,
+    hoCheckers: 0,
+    siteCheckers: 0,
+    encoders: 0,
+    activeUsers: 0,
+    deactivatedUsers: 0,    
   });
+  const [systemStatus] = useState({
+    api: "Running",
+    server: "Online",
+    lastBackup: "July 3, 2025 10:00 AM",
+    warnings: 0,
+  });
+  const [activityLog, setActivityLog] = useState([]);
 
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Fetch audit trail data for the table
+  // Helper to format time as 'x minutes ago', 'now', etc.
+  function timeAgo(dateString) {
+    if (!dateString) return '';
+    const now = new Date();
+    const date = new Date(dateString);
+    const diff = Math.floor((now - date) / 1000); // seconds
+    if (diff < 5) return 'now';
+    if (diff < 60) return `${diff} seconds ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    const days = Math.floor(diff / 86400);
+    if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+    return date.toLocaleString();
+  }
+
   const fetchAuditTrail = async () => {
     setLoading(true);
     setError(null);
@@ -71,44 +108,47 @@ function AdminLanding() {
       const res = await api.get("/reference/audit-trail");
       let arr = res.data;
       if (!Array.isArray(arr)) {
-        if (arr && typeof arr === "object" && Array.isArray(arr.results)) {
-          arr = arr.results;
-        } else {
-          arr = [];
-        }
+        arr = Array.isArray(arr.results) ? arr.results : [];
       }
       setData(arr);
+      // Map audit trail to activity log (show latest 3)
+      const mapped = arr
+        .sort((a, b) => new Date(b.audit_timestamp) - new Date(a.audit_timestamp))
+        .slice(0, 3)
+        .map(row => ({
+          user: row.email || 'Unknown',
+          action: row.description || row.action_type || 'did something',
+          time: row.audit_timestamp ? timeAgo(row.audit_timestamp) : '',
+        }));
+      setActivityLog(mapped);
     } catch (err) {
       setError("Failed to fetch audit trail data.");
     }
     setLoading(false);
   };
 
-  // Dummy data for user stats
   useEffect(() => {
     fetchAuditTrail();
-    setUserStats({
-      activeUsers: 42,
-      deactivatedUsers: 7,
-      totalUsers: 49,
-      admins: 3,
-    });
+    // Fetch KPI data
+    api.get("/reference/kpi-data")
+      .then(res => {
+        if (res.data) setUserStats(res.data);
+      })
+      .catch(() => {});
   }, []);
 
-  // Table columns for audit trail
   const columns = [
     { key: "audit_timestamp", label: "Timestamp" },
     { key: "record_id", label: "Record ID" },
     { key: "description", label: "Description" },
   ];
 
-  // Render table rows
   const renderRows = () => {
     if (loading) {
       return (
         <TableRow>
           <TableCell colSpan={columns.length} align="center">
-            Loading...
+            <CircularProgress />
           </TableCell>
         </TableRow>
       );
@@ -116,7 +156,7 @@ function AdminLanding() {
     if (error) {
       return (
         <TableRow>
-          <TableCell colSpan={columns.length} align="center" style={{ color: 'red' }}>
+          <TableCell colSpan={columns.length} align="center" style={{ color: "red" }}>
             {error}
           </TableCell>
         </TableRow>
@@ -131,12 +171,7 @@ function AdminLanding() {
         </TableRow>
       );
     }
-    // Sort by timestamp descending (recent first)
-    const sorted = [...data].sort((a, b) => {
-      const ta = new Date(a.audit_timestamp).getTime();
-      const tb = new Date(b.audit_timestamp).getTime();
-      return tb - ta;
-    });
+    const sorted = [...data].sort((a, b) => new Date(b.audit_timestamp) - new Date(a.audit_timestamp));
     return sorted.map((row, idx) => (
       <TableRow key={idx}>
         {columns.map((col) => (
@@ -152,107 +187,198 @@ function AdminLanding() {
     ));
   };
 
-  return (
-    <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden" }}>
-      {/* Sidebar */}
-      <Box
-        sx={{
-          width: "auto",
-          flexShrink: 0,
-          borderRight: "1px solid #e0e0e0",
-          bgcolor: "background.paper",
-        }}
-      >
-        <SideBar />
-      </Box>
+  const kpiLabels = {
+  totalUsers: "Total Users",
+  admins: "Admins",
+  executives: "Executives",
+  hoCheckers: "HO Checkers",
+  siteCheckers: "Site Checkers",
+  encoders: "Encoders",
+  activeUsers: "Active Users",
+  deactivatedUsers: "Deactivated Users",
+};
 
-      {/* Main content */}
-      <Box
-        sx={{
-          padding: 2,
-          flex: 1,
-          overflow: "hidden",
-          bgcolor: "background.default",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Box sx={{ padding: 0 }}>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ padding: "8px 16px", gap: 8 }}
-          >
-            <RepositoryHeader label="ADMIN" title="Dashboard" />
-          </Box>
-          {/* 1st row: widgets */}
-          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: 3, flexWrap: 'wrap', gap: 3 }}>
-            {/* Big Active Users Square */}
-            <Paper elevation={4} sx={{
-              minWidth: 120,
-              minHeight: 120,
-              maxWidth: 180,
-              maxHeight: 180,
-              width: { xs: '36vw', sm: '16vw' },
-              height: { xs: '36vw', sm: '16vw' },
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: '#e3fcec',
-              borderRadius: 4,
-              boxShadow: 6,
-              flexShrink: 0,
-            }}>
-              <Typography variant="h2" color="primary" fontWeight={700} sx={{ fontSize: { xs: 32, sm: 40, md: 56 } }}>
-                {userStats.activeUsers}
-              </Typography>
-              <Typography variant="h6" color="textSecondary" fontWeight={500}>
-                Active Users
-              </Typography>
-            </Paper>
-            {/* KPIs beside the square */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2, flex: 1, minWidth: 220 }}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <KPIWidget label="Deactivated Users" value={userStats.deactivatedUsers} color="#ffeaea" />
-                <KPIWidget label="Admins" value={userStats.admins} color="#f3eaff" />
-                <KPIWidget label="Executives" value={userStats.executives ?? 0} color="#eaf4ff" />
-              </Box>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <KPIWidget label="HO Checkers" value={userStats.hoCheckers ?? 0} color="#e3fcec" />
-                <KPIWidget label="Site Checkers" value={userStats.siteCheckers ?? 0} color="#fffbe6" />
-                <KPIWidget label="Encoders" value={userStats.encoders ?? 0} color="#e6f7ff" />
-              </Box>
-            </Box>
-          </Box>
+return (
+  <Box sx={{ display: "flex", width: "100%" }}>
+    <SideBar />
+    <Box
+      sx={{
+        flex: 1,
+        minWidth: 0,
+        overflow: "auto",
+        bgcolor: "background.default",
+        display: "flex",
+        flexDirection: "column",
+        p: 2,
+        width: "100%",
+      }}
+    >
+      <RepositoryHeader label="ADMIN" title="Dashboard" />
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* Row 1: Welcome */}
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="primary.main">
+            Welcome, Admin!
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Quick overview of your system. Use the shortcuts to manage users and review logs.
+          </Typography>
         </Box>
-        {/* 2nd row: audit trail table always at the bottom */}
-        <Box sx={{ mt: 2, flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <TableContainer
-            component={Paper}
-            sx={{
-              maxHeight: isSmall ? 56 * 2.5 + 56 : 56 * 4 + 56,
-              overflowY: 'auto',
-            }}
-          >
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  {columns.map((col) => (
-                    <TableCell key={col.key}>{col.label}</TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {renderRows()}
-              </TableBody>
-            </Table>
-          </TableContainer>
+
+        {/* Row 2: KPI + System Health */}
+<Box
+  sx={{
+    display: "flex",
+    flexDirection: isSmall ? "column" : "row",
+    gap: 2,
+    alignItems: "stretch",
+    width: "100%",
+    height: "100%", // Fill parent
+  }}
+>
+ {/* KPI Section */}
+<Box sx={{ flex: 2, minWidth: 300, display: "flex", flexDirection: "column" }}>
+  <Paper sx={{ p: 2, borderRadius: 2, flex: 1 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 2,
+        width: "100%",
+      }}
+    >
+      {Object.entries(userStats).map(([key, val]) => (
+        <Box
+          key={key}
+          sx={{
+            flex: "1 1 250px", // grow, shrink, and base width
+            minWidth: "200px",
+            maxWidth: "100%",
+            height: "100%",
+          }}
+        >
+          <KPIWidget
+            label={kpiLabels[key] || key}
+            value={val}
+            color="#f5f5f5"
+          />
+        </Box>
+      ))}
+    </Box>
+  </Paper>
+</Box>
+
+  {/* System Health */}
+  <Box sx={{ flex: 1, minWidth: 280, display: "flex", flexDirection: "column" }}>
+    <Paper sx={{ p: 2, borderRadius: 2, flex: 1 }}>
+      <Typography variant="h6" fontWeight={600} gutterBottom>
+        System Health
+      </Typography>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <CheckCircle color="success" />
+          <Typography variant="body1">
+            API: <b style={{ color: "#388e3c" }}>{systemStatus.api}</b>
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <CheckCircle color="success" />
+          <Typography variant="body1">
+            Server: <b style={{ color: "#388e3c" }}>{systemStatus.server}</b>
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Assessment color="primary" />
+          <Typography variant="body1">
+            Last Backup: <b>{systemStatus.lastBackup}</b>
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Warning color={systemStatus.warnings > 0 ? "warning" : "disabled"} />
+          <Typography variant="body1">
+            Warnings: <b>{systemStatus.warnings}</b>
+          </Typography>
+        </Box>
+      </Box>
+    </Paper>
+  </Box>
+</Box>
+
+        {/* Row 3: Recent Activity + Quick Links */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: isSmall ? "column" : "row",
+            gap: 2,
+            width: "100%",
+            alignItems: "stretch",
+          }}
+        >
+          {/* Recent Activity */}
+          <Box sx={{ flex: 2, minWidth: 300 }}>
+            <Paper sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Recent Activity
+              </Typography>
+              <List>
+                {activityLog.map((item, idx) => (
+                  <ListItem key={idx}>
+                    <ListItemIcon>
+                      <Avatar
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          bgcolor: "#e3fcec",
+                          color: "primary.main",
+                          fontSize: 16,
+                        }}
+                      >
+                        <Person />
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={<span><b>{item.user}</b> {item.action}</span>}
+                      secondary={item.time}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          </Box>
+
+          {/* Quick Links */}
+          <Box sx={{ flex: 1, minWidth: 280 }}>
+            <Paper elevation={2} sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Quick Links
+              </Typography>
+              <List>
+                <ListItem button component="a" href="/user-management">
+                  <ListItemIcon><Group color="primary" /></ListItemIcon>
+                  <ListItemText primary="User Management" />
+                </ListItem>
+                <ListItem button component="a" href="/audit-trail">
+                  <ListItemIcon><Assessment color="primary" /></ListItemIcon>
+                  <ListItemText primary="Audit Trail" />
+                </ListItem>
+                <ListItem button component="a" href="#/settings">
+                  <ListItemIcon><Settings color="primary" /></ListItemIcon>
+                  <ListItemText primary="Settings" />
+                </ListItem>
+                <ListItem button component="a" href="#/logout">
+                  <ListItemIcon><ExitToApp color="primary" /></ListItemIcon>
+                  <ListItemText primary="Logout" />
+                </ListItem>
+              </List>
+            </Paper>
+          </Box>
         </Box>
       </Box>
     </Box>
-  );
+  </Box>
+);
+
 }
 
 export default AdminLanding;
