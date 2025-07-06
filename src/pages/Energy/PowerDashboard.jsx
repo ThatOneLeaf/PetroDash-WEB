@@ -291,12 +291,8 @@ function PowerDashboard() {
 
   // Filter values
   const [y, setY] = useState('monthly');
-  const [startDate, setStartDate] = useState(
-    dayjs().startOf('month').subtract(11, 'month')
-  );
-  const [endDate, setEndDate] = useState(
-    dayjs().startOf('month')
-  );
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [companyFilter, setCompanyFilter] = useState([]);
   const [powerPlantFilter, setPowerPlantFilter] = useState([]);
   const [generationSourceFilter, setGenerationSourceFilter] = useState([]);
@@ -334,33 +330,33 @@ function PowerDashboard() {
   
 
   const generateFullChartTitle = (baseTitle, xField, yField, filters, startDate, endDate) => {
-  const xLabelMap = {
-    power_plant_id: "Power Plant",
-    company_id: "Company",
-    generation_source: "Generation Source",
-  };
+    const xLabelMap = {
+      power_plant_id: "Power Plant",
+      company_id: "Company",
+      generation_source: "Generation Source",
+    };
 
-  const yLabelMap = {
-    monthly: "Monthly",
-    quarterly: "Quarterly",
-    yearly: "Yearly",
-  };
+    const yLabelMap = {
+      monthly: "Monthly",
+      quarterly: "Quarterly",
+      yearly: "Yearly",
+    };
 
-  const parts = [];
+    const parts = [];
 
+    if (startDate && endDate) {
+      // Defensive: ensure startDate/endDate are Date objects
+      const start = format(startDate instanceof Date ? startDate : new Date(startDate), 'MMM yyyy');
+      const end = format(endDate instanceof Date ? endDate : new Date(endDate), 'MMM yyyy');
+      parts.push(`Period: ${start} - ${end}`);
+    }
 
-  if (startDate && endDate) {
-    const start = format(new Date(startDate), 'MMM yyyy');
-    const end = format(new Date(endDate), 'MMM yyyy');
-    parts.push(`Period: ${start} - ${end}`);
-  }
+    const groupBy = xLabelMap[xField] || xField;
+    const timeLabel = yLabelMap[yField] || yField;
 
-  const groupBy = xLabelMap[xField] || xField;
-  const timeLabel = yLabelMap[yField] || yField;
+    const filterSuffix = parts.length ? ` | ${parts.join(' | ')}` : '';
 
-  const filterSuffix = parts.length ? ` | ${parts.join(' | ')}` : '';
-
-  return `${baseTitle} by ${groupBy} (${timeLabel})${filterSuffix}`;
+    return `${baseTitle} by ${groupBy} (${timeLabel})${filterSuffix}`;
 };
 
 
@@ -421,22 +417,19 @@ const fetchData = async () => {
     if (filters.generationSource) params.p_generation_source = filters.generationSource;
     if (filters.province) params.p_province = filters.province;
 
-    if (startDate) {
+    const isValidDate = (d) => {
+      if (!d) return false;
+      if (typeof d === "string") return d.trim() !== "" && !isNaN(new Date(d).getTime());
+      if (d instanceof Date) return !isNaN(d.getTime());
+      return false;
+    };
+
+    if (isValidDate(startDate)) {
       const start = new Date(startDate);
-      const end = endDate ? new Date(endDate) : new Date();
+      const end = isValidDate(endDate) ? new Date(endDate) : new Date();
 
-      const months = [];
-      const years = new Set();
-      const current = new Date(start.getFullYear(), start.getMonth(), 1);
-
-      while (current <= end) {
-        months.push(current.getMonth() + 1);
-        years.add(current.getFullYear());
-        current.setMonth(current.getMonth() + 1);
-      }
-
-      params.p_month = months;
-      params.p_year = Array.from(years);
+      params.p_date_from = start.toISOString().split("T")[0];
+      params.p_date_to = end.toISOString().split("T")[0];
     }
 
     const query = new URLSearchParams(params).toString();
@@ -474,6 +467,33 @@ const fetchData = async () => {
   // Track if user has manually changed any filter
   const [userChangedFilters, setUserChangedFilters] = useState(false);
 
+  // Set default date range based on y (time interval) on first load or y change, unless user changed filters
+  useEffect(() => {
+    if (!userChangedFilters) {
+      const today = new Date();
+      let newStartDate = null;
+      let newEndDate = today;
+
+      if (y === "monthly") {
+        // 12 months ago from today (start of month)
+        newStartDate = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+      } else if (y === "quarterly") {
+        // 4 quarters ago (start of quarter)
+        const startMonth = today.getMonth() - (2 * 4); // 3 months per quarter * 3 = 9 months ago
+        newStartDate = new Date(today.getFullYear(), startMonth, 1);
+      } else if (y === "yearly") {
+        // 5 years ago (start of year)
+        newStartDate = new Date(today.getFullYear() - 3, 0, 1);
+      }
+
+      // Always store as Date objects
+      setStartDate(newStartDate instanceof Date ? newStartDate : null);
+      setEndDate(newEndDate instanceof Date ? newEndDate : null);
+    }
+    // Only run when y changes or on first mount
+    // eslint-disable-next-line
+  }, [y]);
+
   // Handler wrappers to detect manual filter changes
   const handleCompanyFilter = (val) => {
     setUserChangedFilters(true);
@@ -493,11 +513,12 @@ const fetchData = async () => {
   };
   const handleStartDate = (val) => {
     setUserChangedFilters(true);
-    setStartDate(val);
+    // Defensive: always convert to Date if not null
+    setStartDate(val ? new Date(val) : null);
   };
   const handleEndDate = (val) => {
     setUserChangedFilters(true);
-    setEndDate(val);
+    setEndDate(val ? new Date(val) : null);
   };
   // Reset userChangedFilters when clearing all
 const clearAllFilters = () => {
@@ -505,16 +526,8 @@ const clearAllFilters = () => {
   setPowerPlantFilter([]);
   setGenerationSourceFilter([]);
   setProvinceFilter([]);
-  
-  // Apply 12 months ago only for monthly, otherwise null
-  if (y === 'monthly') {
-    setStartDate(dayjs().startOf('month').subtract(11, 'month'));
-    setEndDate(dayjs().startOf('month'));
-  } else {
-    setStartDate(null);
-    setEndDate(null);
-  }
-  
+  setStartDate(null);
+  setEndDate(null);
   setUserChangedFilters(false);
 };
 useEffect(() => {
@@ -591,19 +604,6 @@ useEffect(() => {
 
   setFilters(syncedFilters);
 }, [companyFilter, powerPlantFilter, generationSourceFilter, provinceFilter]);
-
-// Handle date changes when time interval changes
-useEffect(() => {
-  if (!userChangedFilters) {
-    if (y === 'monthly') {
-      setStartDate(dayjs().startOf('month').subtract(11, 'month'));
-      setEndDate(dayjs().startOf('month'));
-    } else {
-      setStartDate(null);
-      setEndDate(null);
-    }
-  }
-}, [y, userChangedFilters]);
 
 useEffect(() => {
   fetchData();
@@ -1341,7 +1341,7 @@ return (
               </div>
             )}
             {zoomModal.chartConfig?.type === "verticalBar" && (
-              <VerticalStackedBarChartComponent {...zoomModal.chartConfig.props} />
+              <VerticalStackedBarChartComponent {...zoomModal.chartConfig.props} zoom={true} />
             )}
           </div>
         </ZoomModal>

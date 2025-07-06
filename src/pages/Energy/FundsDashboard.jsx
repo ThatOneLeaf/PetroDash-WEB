@@ -1,3 +1,42 @@
+// Utility to fill missing years with zero values for stacked bar charting
+function fillMissingYears(dataArray, startDate, endDate, keyName = 'period', valueKeys = []) {
+  // Get all years between startDate and endDate in "YYYY" format
+  const years = [];
+  let current = new Date(startDate.getFullYear(), 0, 1);
+  const end = new Date(endDate.getFullYear(), 0, 1);
+  while (current <= end) {
+    years.push(`${current.getFullYear()}`);
+    current.setFullYear(current.getFullYear() + 1);
+  }
+  if (valueKeys.length === 0 && dataArray.length > 0) {
+    valueKeys = Object.keys(dataArray[0]).filter(k => k !== keyName);
+  }
+  const allValueKeys = new Set(valueKeys);
+  dataArray.forEach(item => {
+    Object.keys(item).forEach(k => {
+      if (k !== keyName) allValueKeys.add(k);
+    });
+  });
+  const allKeysArr = Array.from(allValueKeys);
+  const dataMap = {};
+  dataArray.forEach(item => {
+    dataMap[item[keyName]] = item;
+  });
+  return years.map(year => {
+    if (dataMap[year]) {
+      const filled = { ...dataMap[year] };
+      allKeysArr.forEach(k => {
+        if (!(k in filled)) filled[k] = 0;
+      });
+      return filled;
+    }
+    const zeroObj = { [keyName]: year };
+    allKeysArr.forEach(k => {
+      zeroObj[k] = 0;
+    });
+    return zeroObj;
+  });
+}
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -145,7 +184,6 @@ function roundUpToNiceNumber(num) {
 
 // Utility to fill missing months with zero values for stacked bar charting
 function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', valueKeys = []) {
-  // Get all months between startDate and endDate in "YYYY-MM" format
   const months = [];
   let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
   const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
@@ -153,13 +191,9 @@ function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', va
     months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
     current.setMonth(current.getMonth() + 1);
   }
-
-  // If valueKeys is empty, use all keys except keyName
   if (valueKeys.length === 0 && dataArray.length > 0) {
     valueKeys = Object.keys(dataArray[0]).filter(k => k !== keyName);
   }
-
-  // Collect all possible valueKeys from the data (for dynamic group keys)
   const allValueKeys = new Set(valueKeys);
   dataArray.forEach(item => {
     Object.keys(item).forEach(k => {
@@ -167,25 +201,62 @@ function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', va
     });
   });
   const allKeysArr = Array.from(allValueKeys);
-
-  // Map existing data for quick lookup
   const dataMap = {};
   dataArray.forEach(item => {
     dataMap[item[keyName]] = item;
   });
-
-  // Build filled array
   return months.map(month => {
     if (dataMap[month]) {
-      // Ensure all group keys are present (fill missing with 0)
       const filled = { ...dataMap[month] };
       allKeysArr.forEach(k => {
         if (!(k in filled)) filled[k] = 0;
       });
       return filled;
     }
-    // Build a zeroed object for all valueKeys
     const zeroObj = { [keyName]: month };
+    allKeysArr.forEach(k => {
+      zeroObj[k] = 0;
+    });
+    return zeroObj;
+  });
+}
+
+// Utility to fill missing quarters with zero values for stacked bar charting
+function fillMissingQuarters(dataArray, startDate, endDate, keyName = 'period', valueKeys = []) {
+  // Get all quarters between startDate and endDate in "YYYY-Qn" format
+  const quarters = [];
+  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+  while (current <= end) {
+    const year = current.getFullYear();
+    const q = Math.floor(current.getMonth() / 3) + 1;
+    quarters.push(`${year}-Q${q}`);
+    // Move to next quarter
+    current.setMonth(current.getMonth() + 3);
+  }
+  if (valueKeys.length === 0 && dataArray.length > 0) {
+    valueKeys = Object.keys(dataArray[0]).filter(k => k !== keyName);
+  }
+  const allValueKeys = new Set(valueKeys);
+  dataArray.forEach(item => {
+    Object.keys(item).forEach(k => {
+      if (k !== keyName) allValueKeys.add(k);
+    });
+  });
+  const allKeysArr = Array.from(allValueKeys);
+  const dataMap = {};
+  dataArray.forEach(item => {
+    dataMap[item[keyName]] = item;
+  });
+  return quarters.map(quarter => {
+    if (dataMap[quarter]) {
+      const filled = { ...dataMap[quarter] };
+      allKeysArr.forEach(k => {
+        if (!(k in filled)) filled[k] = 0;
+      });
+      return filled;
+    }
+    const zeroObj = { [keyName]: quarter };
     allKeysArr.forEach(k => {
       zeroObj[k] = 0;
     });
@@ -247,16 +318,34 @@ function FundsDashboard() {
   const [provinceFilter, setProvinceFilter] = useState([]);
   const [x, setX] = useState('power_plant_id');
   const [y, setY] = useState('monthly');
-  const [startDate, setStartDate] = useState(
-    y === 'quarterly'
-      ? dayjs().startOf('quarter').subtract(8, 'quarter')
-      : dayjs().startOf('month').subtract(11, 'month')
-  );
-  const [endDate, setEndDate] = useState(
-    y === 'quarterly'
-      ? dayjs().startOf('quarter')
-      : dayjs().startOf('month')
-  );
+  // Date range state (always JS Date objects)
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
+  // Set default date range based on y (time interval) on first load or y change, unless user changed filters
+  useEffect(() => {
+    if (!userChangedFilters) {
+      const today = new Date();
+      let newStartDate = null;
+      let newEndDate = today;
+
+      if (y === "monthly") {
+        newStartDate = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+        newEndDate = today;
+      } else if (y === "quarterly") {
+        const startQuarter = new Date(today.getFullYear(), today.getMonth(), 1);
+        startQuarter.setMonth(startQuarter.getMonth() - 2 * 4);
+        newStartDate = new Date(startQuarter.getFullYear(), startQuarter.getMonth(), 1);
+        newEndDate = new Date(today.getFullYear(), today.getMonth() - (today.getMonth() % 3), 1);
+      } else if (y === "yearly") {
+        newStartDate = new Date(today.getFullYear() - 5, 0, 1);
+        newEndDate = new Date(today.getFullYear(), 0, 1);
+      }
+
+      setStartDate(newStartDate instanceof Date ? newStartDate : null);
+      setEndDate(newEndDate instanceof Date ? newEndDate : null);
+    }
+  }, [y]);
   const [filters, setFilters] = useState({
     company: '',
     powerPlant: '',
@@ -411,33 +500,34 @@ const fetchData = async () => {
   try {
     const params = { x, y };
 
-    if (filters.company) params.p_company_id = filters.company;
     // Always pass companyId for R04
-    if (role === 'R04' && companyId) params.p_company_id = companyId;
+    if (role === 'R04' && companyId) {
+      params.p_company_id = companyId;
+    } else if (filters.company) {
+      params.p_company_id = filters.company;
+    }
     if (filters.powerPlant) params.p_power_plant_id = filters.powerPlant;
+    if (filters.generationSource) params.p_generation_source = filters.generationSource;
+    if (filters.province) params.p_province = filters.province;
 
-    if (startDate) {
+    // Send date range as p_start_date and p_end_date (YYYY-MM-DD)
+    const isValidDate = (d) => {
+      if (!d) return false;
+      if (typeof d === "string") return d.trim() !== "" && !isNaN(new Date(d).getTime());
+      if (d instanceof Date) return !isNaN(d.getTime());
+      return false;
+    };
+    if (isValidDate(startDate)) {
       const start = new Date(startDate);
-      const end = endDate ? new Date(endDate) : new Date();
-
-      const months = [];
-      const years = new Set();
-      const current = new Date(start.getFullYear(), start.getMonth(), 1);
-
-      while (current <= end) {
-        months.push(current.getMonth() + 1);
-        years.add(current.getFullYear());
-        current.setMonth(current.getMonth() + 1);
-      }
-
-      params.p_month = months;
-      params.p_year = Array.from(years);
+      const end = isValidDate(endDate) ? new Date(endDate) : new Date();
+      params.p_start_date = start.toISOString().split("T")[0];
+      params.p_end_date = end.toISOString().split("T")[0];
     }
 
     const query = new URLSearchParams(params).toString();
     const response = await api.get(`/energy/fund_allocation_dashboard?${query}`);
-    const raw = await response.data;
-    const energyData = raw.data || {};
+    const raw = response?.data;
+    const energyData = raw?.data || {};
     const rawData = energyData?.results || [];
 
     setData(energyData);
@@ -758,9 +848,14 @@ return (
               ? data?.funds_allocated_peso?.allocation?.stacked_by_period || []
               : data?.funds_allocated_peso?.allocation?.stacked_by_ffid || [];
             if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
-              // Get all value keys except 'period'
               const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
-              return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+              if (y === 'quarterly') {
+                return fillMissingQuarters(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+              } else if (y === 'yearly') {
+                return fillMissingYears(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+              } else {
+                return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+              }
             }
             return rawData;
           })()
@@ -952,7 +1047,13 @@ return (
               : data?.funds_allocated_peso?.beneficiaries?.stacked_by_ffid || [];
             if (lineView === 'period' && startDate && endDate && rawData.length > 0) {
               const valueKeys = Object.keys(rawData[0]).filter(k => k !== 'period');
-              return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+              if (y === 'quarterly') {
+                return fillMissingQuarters(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+              } else if (y === 'yearly') {
+                return fillMissingYears(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+              } else {
+                return fillMissingMonths(rawData, new Date(startDate), new Date(endDate), 'period', valueKeys);
+              }
             }
             return rawData;
           })()

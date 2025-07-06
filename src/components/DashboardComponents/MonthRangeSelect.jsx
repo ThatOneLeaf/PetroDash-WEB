@@ -3,7 +3,6 @@ import {
   Box,
   OutlinedInput,
   InputAdornment,
-  Typography,
   Popper,
   Paper,
   ClickAwayListener,
@@ -29,60 +28,71 @@ const MonthRangeSelect = ({
   const handleClose = () => setOpen(false);
   const hasDate = Boolean(startDate || endDate);
 
-  const displayLabel = hasDate
-    ? `${startDate?.format("MMM YYYY")} – ${endDate?.format("MMM YYYY") || "Present"}`
-    : label;
+  let displayLabel = label;
+  if (hasDate) {
+    const startLabel = startDate
+      ? typeof startDate.format === "function"
+        ? startDate.format("MMM YYYY")
+        : dayjs(startDate).format("MMM YYYY")
+      : "";
+    const endLabel = endDate
+      ? typeof endDate.format === "function"
+        ? endDate.format("MMM YYYY")
+        : dayjs(endDate).format("MMM YYYY")
+      : "Present";
+    displayLabel = `${startLabel} – ${endLabel}`;
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ minWidth: 100, maxWidth: 200, width: "75%" }}>
         <OutlinedInput
-        ref={anchorRef}
-        onClick={handleToggle}
-        value={displayLabel}
-        readOnly
-        disabled={disabled}
-        notched={false}
-        endAdornment={
+          ref={anchorRef}
+          onClick={handleToggle}
+          value={displayLabel}
+          readOnly
+          disabled={disabled}
+          notched={false}
+          endAdornment={
             <InputAdornment position="end" sx={{ ml: 0.5 }}>
-            {open ? (
+              {open ? (
                 <ArrowDropUpIcon
-                sx={{ fontSize: 24, color: hasDate ? "#5B5B5B" : "#94a3b8" }}
+                  sx={{ fontSize: 24, color: hasDate ? "#5B5B5B" : "#94a3b8" }}
                 />
-            ) : (
+              ) : (
                 <ArrowDropDownIcon
-                sx={{
+                  sx={{
                     fontSize: 24,
-                    color: '#64748b',
-                    marginRight: '4px',
-                }}
+                    color: "#64748b",
+                    marginRight: "4px",
+                  }}
                 />
-            )}
+              )}
             </InputAdornment>
-        }
-        sx={{
-            borderRadius: '20px',
-            backgroundColor: '#fff',
-            fontSize: '12px',
+          }
+          sx={{
+            borderRadius: "20px",
+            backgroundColor: "#fff",
+            fontSize: "12px",
             fontWeight: 500,
-            height: '32px',
-            padding: '0 12px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            '& .MuiOutlinedInput-notchedOutline': {
-            border: '1px solid #b3b7bd',
+            height: "32px",
+            padding: "0 12px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            "& .MuiOutlinedInput-notchedOutline": {
+              border: "1px solid #b3b7bd",
             },
-            '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#94a3b8',
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#94a3b8",
             },
-            '& input': {
-            padding: 0,
-            fontSize: '12px',
-            fontWeight: 300, // ✅ Bold value
-            color: '#000',
+            "& input": {
+              padding: 0,
+              fontSize: "12px",
+              fontWeight: 300,
+              color: "#000",
             },
-        }}
+          }}
         />
 
         <Popper
@@ -109,21 +119,31 @@ const MonthRangeSelect = ({
                 label="Start Month"
                 views={["year", "month"]}
                 format="MMM YYYY"
-                value={startDate}
+                allowKeyboardControl
+                disableMaskedInput={false}
+                value={startDate ? dayjs(startDate) : null}
                 onChange={(newValue) => setStartDate(newValue)}
-                minDate={dayjs('2000-01-01')}
+                minDate={dayjs("2000-01-01")}
                 maxDate={
-                  endDate && endDate.isBefore(dayjs(), 'month')
-                    ? endDate
-                    : dayjs() // Prevent selecting future months
+                  endDate
+                    ? dayjs(endDate).isBefore(dayjs(), "month")
+                      ? dayjs(endDate)
+                      : dayjs()
+                    : dayjs()
                 }
                 slotProps={{
                   textField: {
                     size: "small",
+                    placeholder: "e.g. Jan 2023",
                     sx: {
                       width: 150,
-                      "& .MuiInputBase-root": { height: 36, fontSize: "0.8rem" },
-                      "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                      "& .MuiInputBase-root": {
+                        height: 36,
+                        fontSize: "0.8rem",
+                      },
+                      "& .MuiInputLabel-root": {
+                        fontSize: "0.75rem",
+                      },
                     },
                   },
                 }}
@@ -133,17 +153,25 @@ const MonthRangeSelect = ({
                 label="End Month"
                 views={["year", "month"]}
                 format="MMM YYYY"
-                value={endDate}
+                allowKeyboardControl
+                disableMaskedInput={false}
+                value={endDate ? dayjs(endDate) : null}
                 onChange={(newValue) => setEndDate(newValue)}
-                minDate={startDate || dayjs()}
-                maxDate={dayjs()} // Prevent selecting future months
+                minDate={startDate ? dayjs(startDate) : dayjs("2000-01-01")}
+                maxDate={dayjs()}
                 slotProps={{
                   textField: {
                     size: "small",
+                    placeholder: "e.g. Jun 2024",
                     sx: {
                       width: 150,
-                      "& .MuiInputBase-root": { height: 36, fontSize: "0.8rem" },
-                      "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                      "& .MuiInputBase-root": {
+                        height: 36,
+                        fontSize: "0.8rem",
+                      },
+                      "& .MuiInputLabel-root": {
+                        fontSize: "0.75rem",
+                      },
                     },
                   },
                 }}
