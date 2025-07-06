@@ -9,7 +9,6 @@ import { renderGenericLegend } from '../../utils/smallLegend';
 const CustomTooltip = ({ active, payload, label, unit }) => {
   if (!active || !payload || !payload.length) return null;
 
-
   return (
     <div style={{
       background: 'white',
@@ -17,17 +16,18 @@ const CustomTooltip = ({ active, payload, label, unit }) => {
       padding: 10,
       fontSize: 12,
       position: 'relative',
-      top: '-30px', // 👈 Raise the tooltip a bit
+      top: '-30px',
     }}>
-      <p style={{ marginBottom: 4,fontWeight: 'bold' }}>{formatPeriod(label)}</p>
+      <p style={{ marginBottom: 4, fontWeight: 'bold' }}>{formatPeriod(label)}</p>
       {payload.map((entry, index) => (
         <p key={`item-${index}`} style={{ color: entry.color, margin: 0 }}>
-           {entry.name}: {Number(entry.value).toLocaleString()} {unit}
+          {entry.name}: {Number(entry.value * (unit === 'kWh' ? 1000 : 1)).toLocaleString()} {unit}
         </p>
       ))}
     </div>
   );
 };
+
 
 
 
@@ -71,7 +71,10 @@ const LineChartComponent = ({
   yAxisLabel,
   colorMap = {} // ✅ Accept colorMap as a prop
 }) => {
-  const periods = [...new Set(data.flatMap(item => item.data.map(d => d.x)))];
+  const periods = [...new Set(
+  data.flatMap(item => item.data.map(d => d.x))
+)].sort((a, b) => new Date(a) - new Date(b));
+
 
   const formattedData = periods.map(period => {
     const entry = { name: period };

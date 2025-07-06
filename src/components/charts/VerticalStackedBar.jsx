@@ -6,10 +6,26 @@ import { renderGenericLegend } from '../../utils/smallLegend';
 
 const formatTooltipValue = (value, unit) => {
   const formatted = Number(value).toLocaleString();
-  if (unit?.toLowerCase() === 'pesos') return `₱${formatted}`;
-  return `${formatted} ${unit}`;
+  const normalizedUnit = (unit || '').toLowerCase();
+  if (normalizedUnit === 'pesos') return `₱${formatted}`;
+  return `${formatted} ${unit || ''}`.trim();
 };
 
+const formatPeriod = (period) => {
+  if (/^\d{4}-Q[1-4]$/.test(period)) {
+    const [year, quarter] = period.split('-');
+    return `${quarter} ${year}`;
+  }
+
+  if (/^\d{4}-\d{2}$/.test(period)) {
+    const [year, month] = period.split('-');
+    const date = new Date(`${year}-${month}-01`);
+    const monthName = date.toLocaleString('default', { month: 'short' });
+    return `${monthName} ${year}`;
+  }
+
+  return period;
+};
 
 const CustomTooltip = ({ active, payload, label, unit }) => {
   if (!active || !payload || !payload.length) return null;
@@ -34,45 +50,28 @@ const CustomTooltip = ({ active, payload, label, unit }) => {
 };
 
 const formatXAxis = (num, unit) => {
+  unit = unit || '';
   if (unit === 'kWh' && num >= 1_000_000) {
     num = num / 1_000_000;
   } else if (unit === 'kWh' && num >= 1_000) {
     num = num / 1_000;
   }
 
-  const formatted = 
+  const formatted =
     num >= 1_000_000 ? `${(num / 1_000_000).toFixed(1)}M` :
     num >= 1_000 ? `${(num / 1_000).toFixed(1)}K` :
     `${num.toFixed(1)}`;
 
-  if (unit === 'pesos') {
+  if (unit.toLowerCase() === 'pesos') {
     return `₱${formatted}`;
   }
 
   return formatted;
 };
 
-const formatPeriod = (period) => {
-  if (/^\d{4}-Q[1-4]$/.test(period)) {
-    const [year, quarter] = period.split('-');
-    return `${quarter} ${year}`;
-  }
-
-  if (/^\d{4}-\d{2}$/.test(period)) {
-    const [year, month] = period.split('-');
-    const date = new Date(`${year}-${month}-01`);
-    const monthName = date.toLocaleString('default', { month: 'short' });
-    return `${monthName} ${year}`;
-  }
-
-  return period;
-};
-
 const renderCustomYAxisTick = ({ x, y, payload }) => {
   const rawValue = payload.value;
   const value = /^\d{4}-/.test(rawValue) ? formatPeriod(rawValue) : rawValue;
-
-  // Split the label into chunks of ~12 characters
   const words = value.match(/.{1,15}/g) || [];
 
   return (
@@ -83,6 +82,54 @@ const renderCustomYAxisTick = ({ x, y, payload }) => {
         ))}
       </text>
     </g>
+  );
+};
+
+const renderSmartBarLabel = (props) => {
+  const {
+    x, y, width, height, value, unit, fill, name, index, payload
+  } = props;
+
+  // ❌ Skip if value is zero or invalid
+  if (!value || value === 0) return null;
+
+  // ❌ Skip if payload isn't valid
+  if (!payload || typeof payload !== 'object') return null;
+
+  // ✅ Check if this is the only non-zero bar in the stack
+  const keys = Object.keys(payload).filter(k =>
+    k !== 'period' && typeof payload[k] === 'number'
+  );
+
+  const otherKeys = keys.filter(k => k !== name);
+  const othersHaveData = otherKeys.some(k => payload[k] && payload[k] !== 0);
+
+  if (othersHaveData) return null;
+
+  // ✅ Format and position
+  const padding = 4;
+  const fontSize = 11;
+
+  const formattedValue = formatTooltipValue(value, unit);
+  const labelText = `${name}: ${formattedValue}`;
+
+  const estimatedTextWidth = labelText.length * fontSize * 0.6;
+  const isInside = width > estimatedTextWidth + padding * 2;
+
+  const labelX = isInside ? x + width - padding : x + width + padding;
+  const labelY = y + height / 2 + (isInside ? 0 : (index % 2 === 0 ? -6 : 6));
+
+  return (
+    <text
+      x={labelX}
+      y={labelY}
+      textAnchor={isInside ? 'end' : 'start'}
+      dominantBaseline="middle"
+      fill={fill || '#000'}
+      fontSize={fontSize}
+    >
+      {labelText}
+    </text>
   );
 };
 
@@ -99,9 +146,11 @@ const VerticalStackedBarChartComponent = ({
   colorMap = {},
   stackId = 'a',
   yAxisLabel,
-  yAxisKey = 'period'
+  yAxisKey = 'period',
+  zoom = false,
 }) => {
   if (!data || data.length === 0) return <p>No data available</p>;
+  unit = unit || '';
 
   const keys = Object.keys(data[0]).filter(k => k !== yAxisKey);
 
@@ -148,7 +197,7 @@ const VerticalStackedBarChartComponent = ({
               tick={renderCustomYAxisTick}
               width={120}
             />
-            <Tooltip content={<CustomTooltip unit={autoUnit} />} />
+            <Tooltip content={<CustomTooltip unit={unit} />} />
             <Legend content={renderGenericLegend()} />
             {keys.map((key, index) => (
               <Bar
@@ -156,6 +205,7 @@ const VerticalStackedBarChartComponent = ({
                 dataKey={key}
                 stackId={stackId}
                 fill={colorMap[key] || defaultColors[index % defaultColors.length]}
+                label={zoom ? (props => renderSmartBarLabel({ ...props, unit, name: key })) : false}
               />
             ))}
           </BarChart>
