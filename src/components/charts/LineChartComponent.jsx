@@ -123,7 +123,7 @@ const maxValue = Math.max(...data.flatMap(source => source.data.map(d => d.y || 
               {data.map((source, idx) => (
                 <Line
                   key={source.name}
-                  type="monotone"
+                  type="linear"
                   dataKey={source.name}
                   name={legendMap[source.name] || source.name}
                   stroke={colorMap[source.name] || `hsl(${(idx * 40) % 360}, 70%, 50%)`} // ✅ Use colorMap if available

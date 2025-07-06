@@ -140,15 +140,42 @@ function roundUpToNiceNumber(num) {
   }
 }
 
-// Utility to fill missing months with zero values for stacked bar charting
-function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', valueKeys = []) {
-  const months = [];
-  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-  const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-  while (current <= end) {
-    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
-    current.setMonth(current.getMonth() + 1);
+// Utility to fill missing periods with zero values for stacked bar charting
+function fillMissingPeriods(dataArray, startDate, endDate, timeInterval = 'monthly', keyName = 'period', valueKeys = []) {
+  const periods = [];
+  
+  if (timeInterval === 'quarterly') {
+    // Generate quarters (2024-Q1, 2024-Q2, etc.)
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    const startQuarter = Math.ceil((startDate.getMonth() + 1) / 3);
+    const endQuarter = Math.ceil((endDate.getMonth() + 1) / 3);
+    
+    for (let year = startYear; year <= endYear; year++) {
+      const firstQ = year === startYear ? startQuarter : 1;
+      const lastQ = year === endYear ? endQuarter : 4;
+      for (let q = firstQ; q <= lastQ; q++) {
+        periods.push(`${year}-Q${q}`);
+      }
+    }
+  } else if (timeInterval === 'yearly') {
+    // Generate years (2024, 2025, etc.)
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    
+    for (let year = startYear; year <= endYear; year++) {
+      periods.push(year.toString());
+    }
+  } else {
+    // Monthly (default behavior)
+    let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    while (current <= end) {
+      periods.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
+      current.setMonth(current.getMonth() + 1);
+    }
   }
+  
   if (valueKeys.length === 0 && dataArray.length > 0) {
     valueKeys = Object.keys(dataArray[0]).filter(k => k !== keyName);
   }
@@ -163,15 +190,15 @@ function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', va
   dataArray.forEach(item => {
     dataMap[item[keyName]] = item;
   });
-  return months.map(month => {
-    if (dataMap[month]) {
-      const filled = { ...dataMap[month] };
+  return periods.map(period => {
+    if (dataMap[period]) {
+      const filled = { ...dataMap[period] };
       allKeysArr.forEach(k => {
         if (!(k in filled)) filled[k] = 0;
       });
       return filled;
     }
-    const zeroObj = { [keyName]: month };
+    const zeroObj = { [keyName]: period };
     allKeysArr.forEach(k => {
       zeroObj[k] = 0;
     });
@@ -179,23 +206,50 @@ function fillMissingMonths(dataArray, startDate, endDate, keyName = 'period', va
   });
 }
 
-// Helper for line chart series: fills missing months for each series
-function fillLineSeriesWithZeroes(seriesArray, startDate, endDate) {
+// Helper for line chart series: fills missing periods for each series
+function fillLineSeriesWithZeroes(seriesArray, startDate, endDate, timeInterval = 'monthly') {
   if (!Array.isArray(seriesArray)) return [];
-  // Get all months in range
-  const months = [];
-  let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-  const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-  while (current <= end) {
-    months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
-    current.setMonth(current.getMonth() + 1);
+  
+  const periods = [];
+  
+  if (timeInterval === 'quarterly') {
+    // Generate quarters (2024-Q1, 2024-Q2, etc.)
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    const startQuarter = Math.ceil((startDate.getMonth() + 1) / 3);
+    const endQuarter = Math.ceil((endDate.getMonth() + 1) / 3);
+    
+    for (let year = startYear; year <= endYear; year++) {
+      const firstQ = year === startYear ? startQuarter : 1;
+      const lastQ = year === endYear ? endQuarter : 4;
+      for (let q = firstQ; q <= lastQ; q++) {
+        periods.push(`${year}-Q${q}`);
+      }
+    }
+  } else if (timeInterval === 'yearly') {
+    // Generate years (2024, 2025, etc.)
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    
+    for (let year = startYear; year <= endYear; year++) {
+      periods.push(year.toString());
+    }
+  } else {
+    // Monthly (default behavior)
+    let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    while (current <= end) {
+      periods.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
+      current.setMonth(current.getMonth() + 1);
+    }
   }
+  
   return seriesArray.map(series => {
     const dataMap = {};
     (series.data || []).forEach(d => { dataMap[d.x] = d.y; });
     return {
       ...series,
-      data: months.map(month => ({ x: month, y: dataMap[month] !== undefined ? dataMap[month] : 0 }))
+      data: periods.map(period => ({ x: period, y: dataMap[period] !== undefined ? dataMap[period] : 0 }))
     };
   });
 }
@@ -238,14 +292,10 @@ function PowerDashboard() {
   // Filter values
   const [y, setY] = useState('monthly');
   const [startDate, setStartDate] = useState(
-    y === 'quarterly'
-      ? dayjs().startOf('quarter').subtract(8, 'quarter')
-      : dayjs().startOf('month').subtract(11, 'month')
+    dayjs().startOf('month').subtract(11, 'month')
   );
   const [endDate, setEndDate] = useState(
-    y === 'quarterly'
-      ? dayjs().startOf('quarter')
-      : dayjs().startOf('month')
+    dayjs().startOf('month')
   );
   const [companyFilter, setCompanyFilter] = useState([]);
   const [powerPlantFilter, setPowerPlantFilter] = useState([]);
@@ -395,6 +445,7 @@ const fetchData = async () => {
     const raw = response?.data;
     const energyData = raw?.energy_data || {};
     const rawData = energyData?.results || [];    setData(energyData);
+    console.log("Raw Data:", raw); // Log the raw data for debugging
     setFilteredData(rawData);
     setEquivalenceData(raw?.equivalence_data || {});
     setHousePowerData(raw?.house_powered || {});
@@ -454,13 +505,16 @@ const clearAllFilters = () => {
   setPowerPlantFilter([]);
   setGenerationSourceFilter([]);
   setProvinceFilter([]);
-  if (y === 'quarterly') {
-    setStartDate(dayjs().startOf('quarter').subtract(8, 'quarter'));
-    setEndDate(dayjs().startOf('quarter'));
-  } else {
+  
+  // Apply 12 months ago only for monthly, otherwise null
+  if (y === 'monthly') {
     setStartDate(dayjs().startOf('month').subtract(11, 'month'));
     setEndDate(dayjs().startOf('month'));
+  } else {
+    setStartDate(null);
+    setEndDate(null);
   }
+  
   setUserChangedFilters(false);
 };
 useEffect(() => {
@@ -538,10 +592,22 @@ useEffect(() => {
   setFilters(syncedFilters);
 }, [companyFilter, powerPlantFilter, generationSourceFilter, provinceFilter]);
 
+// Handle date changes when time interval changes
+useEffect(() => {
+  if (!userChangedFilters) {
+    if (y === 'monthly') {
+      setStartDate(dayjs().startOf('month').subtract(11, 'month'));
+      setEndDate(dayjs().startOf('month'));
+    } else {
+      setStartDate(null);
+      setEndDate(null);
+    }
+  }
+}, [y, userChangedFilters]);
+
 useEffect(() => {
   fetchData();
 }, [x, y, filters, startDate, endDate]);
-
 
   const xOptions = [
     { label: "Power Plant", value: "power_plant_id" },
@@ -608,18 +674,18 @@ if (loading) {
   );
 }
 
-  // Compute filled chart data for all months in range (define before return!)
+  // Compute filled chart data for all periods in range (define before return!)
   const filledLineData = (startDate && endDate && data?.line_graph?.total_energy_generated?.length > 0)
-    ? fillLineSeriesWithZeroes(data.line_graph.total_energy_generated, new Date(startDate), new Date(endDate))
+    ? fillLineSeriesWithZeroes(data.line_graph.total_energy_generated, new Date(startDate), new Date(endDate), y)
     : (data?.line_graph?.total_energy_generated || []);
   const filledCo2Data = (startDate && endDate && data?.line_graph?.total_co2_avoidance?.length > 0)
-    ? fillLineSeriesWithZeroes(data.line_graph.total_co2_avoidance, new Date(startDate), new Date(endDate))
+    ? fillLineSeriesWithZeroes(data.line_graph.total_co2_avoidance, new Date(startDate), new Date(endDate), y)
     : (data?.line_graph?.total_co2_avoidance || []);
   const filledStackedBarData = (startDate && endDate && data?.stacked_bar?.length > 0)
-    ? fillMissingMonths(data.stacked_bar, new Date(startDate), new Date(endDate), 'period')
+    ? fillMissingPeriods(data.stacked_bar, new Date(startDate), new Date(endDate), y, 'period')
     : (data?.stacked_bar || []);
   const filledHousePowerStackedBar = (startDate && endDate && housePowerData?.stacked_bar?.length > 0)
-    ? fillMissingMonths(housePowerData.stacked_bar, new Date(startDate), new Date(endDate), 'period')
+    ? fillMissingPeriods(housePowerData.stacked_bar, new Date(startDate), new Date(endDate), y, 'period')
     : (housePowerData?.stacked_bar || []);
 
 return (
