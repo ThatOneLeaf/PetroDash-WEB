@@ -2186,8 +2186,8 @@ function EnvironmentWasteDash() {
             </div>
             <div style={{ fontSize: '12px', opacity: 0.8 }}>
               {keyMetrics?.combined?.most_generated_waste_type?.total_generated
-                ? `TOTAL: ${mostWasteType()}`
-                : `TOTAL: ${mostWasteType()}`} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
+                ? `TOTAL: ${mostWasteType() ?? '--'}`
+                : `TOTAL: ${mostWasteType() ?? '--'}`} {unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'}
             </div>
           </div>
 
@@ -2328,9 +2328,9 @@ function EnvironmentWasteDash() {
               color: '#1e293b',
               flexShrink: 0
             }}>
-              Distribution of Hazardous Waste {
-                activeTab === 'hazardous_generated' ? 'Generated' : 
-                activeTab === 'hazardous_disposed' ? 'Disposed' : ''
+              Distribution of {
+                activeTab === 'hazardous_generated' ? 'Hazardous Waste Generated' : 
+                activeTab === 'hazardous_disposed' ? 'Hazardous Waste Disposed' : 'Non-hazardous Waste Generated'
               } by Company ({unit === 'Kilogram' ? 'kg' : unit === 'Liter' ? 'L' : 'pcs'})
             </h3>
 
