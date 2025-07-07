@@ -636,10 +636,10 @@ const ViewEditRecordModal = ({
                       isEditing && !permanentlyReadOnlyFields.includes(key) ? (
                         <>
                           {" "}
-                          {key} <span style={{ color: "red" }}>*</span>{" "}
+                          {key.toUpperCase()} <span style={{ color: "red" }}>*</span>{" "}
                         </>
                       ) : (
-                        key
+                        key.toUpperCase()
                       )
                     }
                     value={value ? new Date(value) : null}
@@ -678,12 +678,12 @@ const ViewEditRecordModal = ({
                     {isEditing && !permanentlyReadOnlyFields.includes(key) ? (
                       <>
                         <span style={{ color: isEditing ? "#182959" : "grey" }}>
-                          {key}
+                          {key.toUpperCase()}
                         </span>
                         <span style={{ color: "red" }}>*</span>
                       </>
                     ) : (
-                      key
+                      key.toUpperCase()
                     )}
                   </InputLabel>
                   <Select
@@ -693,12 +693,12 @@ const ViewEditRecordModal = ({
                           <span
                             style={{ color: isEditing ? "#182959" : "grey" }}
                           >
-                            {key}
+                            {key.toUpperCase()}
                           </span>
                           <span style={{ color: "red" }}>*</span>
                         </>
                       ) : (
-                        key
+                        key.toUpperCase()
                       )
                     }
                     value={value ?? ""}
@@ -835,7 +835,7 @@ const ViewEditRecordModal = ({
                       color: "grey",
                     }}
                   >
-                    Status:
+                    {key.toUpperCase()}
                   </Typography>
                   <StatusChip status={value} />
                 </Box>
@@ -845,10 +845,10 @@ const ViewEditRecordModal = ({
                     isEditing && !permanentlyReadOnlyFields.includes(key) ? (
                       <>
                         {" "}
-                        {key} <span style={{ color: "red" }}>*</span>{" "}
+                        {key.toUpperCase()} <span style={{ color: "red" }}>*</span>{" "}
                       </>
                     ) : (
-                      key
+                      key.toUpperCase()
                     )
                   }
                   variant="outlined"
