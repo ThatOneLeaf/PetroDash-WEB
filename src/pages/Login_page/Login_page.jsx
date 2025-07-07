@@ -18,6 +18,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import logo from "../../assets/petrodashlogo.png";
 import loginImage from "../../assets/login_image.png";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -125,7 +126,7 @@ useEffect(() => {
           <Box sx={{ mb: 2 }}>
             <Box
               component="img"
-              src="src/assets/petrodashlogo.png"
+              src={logo}
               alt="PetroDash Logo"
               sx={{ width: 250 }}
             />

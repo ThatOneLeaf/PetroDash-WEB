@@ -20,7 +20,7 @@ import Modal from '../components/modal';
 import LoginPage from '../pages/Login_page/Login_page';
 import Btn from '../components/ButtonComp';
 import CO2Widget from './CO2Widget';
-
+import logo from '../assets/petrodashlogo.png';
 // Simple hamburger icon component
 function Hamburger({ open, onClick }) {
   return (
@@ -200,7 +200,7 @@ function Navbar({ isSticky = false }) {
         }}>
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit', flex: '0 0 auto' }}>
             <img
-              src="src/assets/petrodashlogo.png"
+              src={logo}
               alt="PetroDash"
               style={{ height: '90px', padding: '1rem 0' }}
               className="navbar-logo"
