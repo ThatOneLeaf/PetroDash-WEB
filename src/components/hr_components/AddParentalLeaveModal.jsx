@@ -93,6 +93,12 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
     }));
   };
 
+  const typeOfLeaveOptions = [
+    { label: "Maternity", value: "Maternity" },
+    { label: "Paternity", value: "Paternity" },
+    { label: "SPL", value: "SPL" },
+  ];
+
   const employeeOptions = Array.from(
     new Set(employabilityData.map((item) => item.employee_id))
   ).map((val) => ({ label: val, value: val }));
@@ -127,8 +133,8 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
       (option) => option.label === employeeId
     );
 
-    const isValidLeaveType = uniqueOptions("type_of_leave").some(
-      (option) => option.value === typeOfLeave
+    const isValidLeaveType = typeOfLeaveOptions.some(
+      (opt) => opt.value === typeOfLeave
     );
 
     const isValidDate =
@@ -276,7 +282,7 @@ function AddParentalLeaveModal({ onClose, onSuccess }) {
             label="Type of Leave"
             sx={{ height: "55px" }}
           >
-            {uniqueOptions("type_of_leave").map((option) => (
+            {typeOfLeaveOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>

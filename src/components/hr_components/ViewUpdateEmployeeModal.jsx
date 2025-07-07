@@ -172,6 +172,48 @@ const ViewUpdateEmployeeModal = ({
     }));
   };
 
+  const genderOptions = [
+    { label: "Male", value: "M" },
+    { label: "Female", value: "F" },
+  ];
+
+  const positionOptions = [
+    {
+      label: "Rank-and-File",
+      value: "RF",
+    },
+    {
+      label: "Middle Management",
+      value: "MM",
+    },
+    {
+      label: "Senior Management",
+      value: "SM",
+    },
+  ];
+
+  const employementCategoryOptions = [
+    {
+      label: "Professional",
+      value: "P",
+    },
+    {
+      label: "Non-Professional",
+      value: "NP",
+    },
+  ];
+
+  const employementStatusOptions = [
+    {
+      label: "Permanent",
+      value: "Permanent",
+    },
+    {
+      label: "Temporary",
+      value: "Temporary",
+    },
+  ];
+
   const handleChange = (field) => (event) => {
     setEditedRecord((prev) => ({
       ...prev,
@@ -211,16 +253,23 @@ const ViewUpdateEmployeeModal = ({
     const isInOptions = (value, key) =>
       uniqueOptions(key).some((option) => option.value === value);
 
-    const isValidGender = isInOptions(gender, "gender");
-    const isValidPosition = isInOptions(position_id, "position_id");
+    const isValidGender = genderOptions.some((opt) => opt.value === gender);
+    const isValidPosition = positionOptions.some(
+      (opt) => opt.value === position_id
+    );
+
     const isValidBirthdate =
       birthdate &&
       dayjs(birthdate).isValid() &&
       dayjs(birthdate).isBefore(today) &&
       dayjs(birthdate).isAfter(MIN_BIRTHDATE);
 
-    const isValidCategory = isInOptions(p_np, "p_np");
-    const isValidStatus = isInOptions(employment_status, "employment_status");
+    const isValidCategory = employementCategoryOptions.some(
+      (opt) => opt.value === p_np
+    );
+    const isValidStatus = employementStatusOptions.some(
+      (opt) => opt.value === employment_status
+    );
 
     const isValidTenureStart =
       start_date &&
@@ -530,17 +579,11 @@ const ViewUpdateEmployeeModal = ({
               sx={{ height: "55px" }}
               fullWidth
             >
-              {uniqueOptions("gender").map((option) => {
-                let label = option.label;
-                if (option.value === "M") label = "Male";
-                else if (option.value === "F") label = "Female";
-
-                return (
-                  <MenuItem key={option.value} value={option.value}>
-                    {label}
-                  </MenuItem>
-                );
-              })}
+              {genderOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         ) : (
@@ -606,18 +649,11 @@ const ViewUpdateEmployeeModal = ({
               sx={{ height: "55px" }}
               fullWidth
             >
-              {uniqueOptions("position_id").map((option) => {
-                let label = option.label;
-                if (option.value === "RF") label = "Rank-And-File";
-                else if (option.value === "MM") label = "Middle Management";
-                else if (option.value === "SM") label = "Senior Management";
-
-                return (
-                  <MenuItem key={option.value} value={option.value}>
-                    {label}
-                  </MenuItem>
-                );
-              })}
+              {positionOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         ) : (
@@ -737,17 +773,11 @@ const ViewUpdateEmployeeModal = ({
               sx={{ height: "55px" }}
               fullWidth
             >
-              {uniqueOptions("p_np").map((option) => {
-                let label = option.label;
-                if (option.value === "P") label = "Professional";
-                else if (option.value === "NP") label = "Non-Professional";
-
-                return (
-                  <MenuItem key={option.value} value={option.value}>
-                    {label}
-                  </MenuItem>
-                );
-              })}
+              {employementCategoryOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         ) : (
@@ -813,7 +843,7 @@ const ViewUpdateEmployeeModal = ({
               sx={{ height: "55px" }}
               fullWidth
             >
-              {uniqueOptions("employment_status").map((option) => (
+              {employementStatusOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
                 </MenuItem>

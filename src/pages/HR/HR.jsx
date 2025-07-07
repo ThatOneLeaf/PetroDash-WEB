@@ -151,6 +151,50 @@ function Demographics({
     new Set(data.map((item) => item.company_name))
   ).map((val) => ({ label: val, value: val }));
 
+  const genderOptions = [
+    { label: "Male", value: "m" },
+    { label: "Female", value: "f" },
+  ];
+
+  const positionOptions = [
+    {
+      label: "Rank-and-File",
+      value: "rf",
+    },
+    {
+      label: "Middle Management",
+      value: "mm",
+    },
+    {
+      label: "Senior Management",
+      value: "sm",
+    },
+  ];
+
+  const employementCategoryOptions = [
+    {
+      label: "Professional",
+      value: "p",
+    },
+    {
+      label: "Non-Professional",
+      value: "np",
+    },
+  ];
+
+  const employementStatusOptions = [
+    {
+      label: "Permanent",
+      value: "Permanent",
+    },
+    {
+      label: "Temporary",
+      value: "Temporary",
+    },
+  ];
+
+  /*
+
   const genderOptions = Array.from(
     new Set(data.map((item) => item.gender?.trim().toLowerCase()))
   ).map((val) => ({
@@ -171,6 +215,7 @@ function Demographics({
         : val,
     value: val,
   }));
+
   const employementCategoryOptions = Array.from(
     new Set(data.map((item) => item.p_np?.trim().toLowerCase()))
   ).map((val) => ({
@@ -184,7 +229,7 @@ function Demographics({
   }));
   const employementStatusOptions = Array.from(
     new Set(data.map((item) => item.employment_status))
-  ).map((val) => ({ label: val, value: val }));
+  ).map((val) => ({ label: val, value: val }));*/
 
   //STATUS DONT CHANGE
   const statusOptions = [
