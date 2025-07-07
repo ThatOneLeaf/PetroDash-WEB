@@ -21,6 +21,7 @@ import ZoomModal from '../../components/DashboardComponents/ZoomModal'; // Add t
 import InvestmentKPI from '../CSR/Charts/InvestmentKPI'; // Add this import
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import IconButton from '@mui/material/IconButton';
+import DashboardHeader from '../../components/DashboardComponents/DashboardHeader';
 
 // KPI configuration for HELP dashboard
 const kpiConfig = [
@@ -429,23 +430,55 @@ export default function HELPDash() {
     setZoomModal({ open: true, title, fileName, content });
   };
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      height: '100vh', 
-      background: '#f4f6fb',
-      flexDirection: { xs: 'column', md: 'row' },
-      overflow: 'hidden'
-    }}>
-      <Sidebar />
-      <Box sx={{ 
-        flexGrow: 1, 
-        p: { xs: 1, sm: 1.5, md: 2 },
-        maxWidth: '100%',
-        overflow: 'hidden',
+    <Box
+      sx={{
         display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Header Row */}
+        minHeight: '100vh',
+        height: '100vh',
+        width: '100vw',
+        background: '#f4f6fb',
+        flexDirection: { xs: 'column', md: 'row' },
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+      }}
+    >
+      <Sidebar />
+      <Box
+        sx={{
+          flexGrow: 1,
+          p: { xs: 0.5, sm: 1, md: 2 },
+          width: {
+            xs: '100%',
+            md: '100%', // 110% width (1/0.9 = 111.11%)
+            lg: '100%'
+          },
+          minWidth: 0,
+          height: '100%',
+          maxWidth: 'none',
+          maxHeight: '100%',
+          overflow: 'visible',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+          marginRight: { xs: 0, md: '-11vw' },
+          marginLeft: 0, // ensure no space between sidebar and main content
+          '@media (max-width: 900px)': {
+            p: 0.5,
+            width: '100%',
+            marginRight: 0,
+            marginLeft: 0,
+          },
+          '@media (max-width: 600px)': {
+            p: 0.2,
+            width: '100%',
+            marginRight: 0,
+            marginLeft: 0,
+          },
+          transform: { xs: 'none', md: 'scale(0.9)' },
+          transformOrigin: { xs: 'unset', md: 'top left' },
+        }}
+      >
+        {/* Dashboard Header replacement */}
         <Box sx={{
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
@@ -455,33 +488,11 @@ export default function HELPDash() {
           gap: { xs: 1, sm: 0 },
           flexShrink: 0
         }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography sx={{ 
-              fontSize: isSmallScreen ? 9 : 11, 
-              fontWeight: 800, 
-              color: '#64748b', 
-              mb: 0.5 
-            }}>
-              DASHBOARD
-            </Typography>
-            <Typography sx={{ 
-              fontSize: isSmallScreen ? 16 : isMobile ? 18 : 18, 
-              fontWeight: 800, 
-              color: '#182959', 
-              letterSpacing: 0.5 
-            }}>
-              Social - H.E.L.P
-            </Typography>
-            {/* Metadata: Last updated */}
-            <Typography sx={{
-              color: '#64748b',
-              fontSize: isSmallScreen ? 8 : 10,
-              fontWeight: 400,
-              mt: 0.5
-            }}>
-              The data presented in this dashboard is accurate as of: {formatDateTime(lastUpdated)}
-            </Typography>
-          </Box>
+          <DashboardHeader
+            title="Social - H.E.L.P"
+            lastUpdated={lastUpdated}
+            formatDateTime={formatDateTime}
+          />
           <Button
             variant="contained"
             startIcon={<RefreshIcon sx={{ fontSize: isSmallScreen ? 14 : 16 }} />}

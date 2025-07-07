@@ -579,15 +579,51 @@ useEffect(() => {
     fetchFilterData();
   }, []);
 
-// Compute filtered power plant options for R04
+
+// Compute filtered power plant and generation source options based on selected company
 const filteredPowerPlantOptions = React.useMemo(() => {
   if (role === 'R04' && companyId && plantMetadata.length > 0) {
     return plantMetadata
       .filter(item => item.company_id === companyId)
       .map(item => ({ value: item.power_plant_id, label: item.power_plant_id }));
   }
+  if (companyFilter.length > 0 && plantMetadata.length > 0) {
+    // companyFilter is an array of selected company IDs
+    return plantMetadata
+      .filter(item => companyFilter.includes(item.company_id))
+      .map(item => ({ value: item.power_plant_id, label: item.power_plant_id }));
+  }
   return powerPlantOptions;
-}, [role, companyId, plantMetadata, powerPlantOptions]);
+}, [role, companyId, plantMetadata, powerPlantOptions, companyFilter]);
+
+const filteredGenerationSourceOptions = React.useMemo(() => {
+  if (companyFilter.length > 0 && plantMetadata.length > 0) {
+    // Only show generation sources for selected companies
+    const sources = plantMetadata
+      .filter(item => companyFilter.includes(item.company_id))
+      .map(item => item.generation_source)
+      .filter(Boolean);
+    const uniqueSources = Array.from(new Set(sources));
+    return uniqueSources.map(source => ({ value: source, label: source }));
+  }
+  return generationSourceOptions;
+}, [companyFilter, plantMetadata, generationSourceOptions]);
+
+// When companyFilter changes, update powerPlantFilter and generationSourceFilter if their values are no longer valid
+useEffect(() => {
+  // Only run if not R04 (R04 is handled by filteredPowerPlantOptions)
+  if (role === 'R04') return;
+  // Power Plant
+  const validPowerPlantValues = filteredPowerPlantOptions.map(opt => opt.value);
+  if (powerPlantFilter.some(val => !validPowerPlantValues.includes(val))) {
+    setPowerPlantFilter(powerPlantFilter.filter(val => validPowerPlantValues.includes(val)));
+  }
+  // Generation Source
+  const validGenSourceValues = filteredGenerationSourceOptions.map(opt => opt.value);
+  if (generationSourceFilter.some(val => !validGenSourceValues.includes(val))) {
+    setGenerationSourceFilter(generationSourceFilter.filter(val => validGenSourceValues.includes(val)));
+  }
+}, [companyFilter, filteredPowerPlantOptions, filteredGenerationSourceOptions, powerPlantFilter, generationSourceFilter, role]);
 
 // Sync multi-select filter arrays into the filters object
 useEffect(() => {
@@ -758,7 +794,7 @@ return (
             placeholder="All Power Projects"
           />
           {role !== 'R04' && (
-            <MultiSelectWithChips label="Generation Sources" options={generationSourceOptions} selectedValues={generationSourceFilter} onChange={handleGenerationSourceFilter} placeholder="All Sources" />)}
+            <MultiSelectWithChips label="Generation Sources" options={filteredGenerationSourceOptions} selectedValues={generationSourceFilter} onChange={handleGenerationSourceFilter} placeholder="All Sources" />)}
           <MonthRangeSelect label="All Time" startDate={startDate} endDate={endDate} setStartDate={handleStartDate} setEndDate={handleEndDate} />
 
           {userChangedFilters && showClearButton && <ClearButton onClick={clearAllFilters} />}

@@ -196,7 +196,7 @@ const ZoomModal = ({
                                 userSelect: 'none',
                             }}
                         >
-                            {now.toLocaleString()}
+                            Export Time:{now.toLocaleString()}
                         </Box>                        <Box 
                             sx={{ 
                                 width: '100%', 

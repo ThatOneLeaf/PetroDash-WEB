@@ -673,15 +673,30 @@ useEffect(() => {
 
 
 
-// Compute filtered power plant options for R04
+
+// Compute filtered power plant options based on selected company
 const filteredPowerPlantOptions = React.useMemo(() => {
   if (role === 'R04' && companyId && plantMetadata.length > 0) {
     return plantMetadata
       .filter(item => item.company_id === companyId)
       .map(item => ({ value: item.power_plant_id, label: item.power_plant_id }));
   }
+  if (companyFilter.length > 0 && plantMetadata.length > 0) {
+    return plantMetadata
+      .filter(item => companyFilter.includes(item.company_id))
+      .map(item => ({ value: item.power_plant_id, label: item.power_plant_id }));
+  }
   return powerPlantOptions;
-}, [role, companyId, plantMetadata, powerPlantOptions]);
+}, [role, companyId, plantMetadata, powerPlantOptions, companyFilter]);
+
+// When companyFilter changes, update powerPlantFilter if their values are no longer valid
+useEffect(() => {
+  if (role === 'R04') return;
+  const validPowerPlantValues = filteredPowerPlantOptions.map(opt => opt.value);
+  if (powerPlantFilter.some(val => !validPowerPlantValues.includes(val))) {
+    setPowerPlantFilter(powerPlantFilter.filter(val => validPowerPlantValues.includes(val)));
+  }
+}, [companyFilter, filteredPowerPlantOptions, powerPlantFilter, role]);
 
 
 
