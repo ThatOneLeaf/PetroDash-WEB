@@ -111,6 +111,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    // Prevent multiple logout calls
+    if (!localStorage.getItem('access_token')) {
+      window.location.href = '/landing';
+      return;
+    }
+
     try {
       // Get the current token
       const currentToken = localStorage.getItem('access_token');
