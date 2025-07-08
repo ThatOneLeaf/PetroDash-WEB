@@ -57,7 +57,6 @@ const handleLogin = async (e) => {
 useEffect(() => {
   if (loggedIn && user) {
     const role = getUserRole();
-    console.log("User role after login:", role);
     if (role === "R01") {
       navigate("/admin");
     } else {

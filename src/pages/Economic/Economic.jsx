@@ -269,10 +269,7 @@ function Economic() {
         { name: 'Foreign Supplier Spending', value: item.foreignSupplierSpending },
         { name: 'Employee Wages & Benefits', value: item.employeeWagesBenefits },
         { name: 'Community Investments', value: item.communityInvestments },
-        { name: 'Capital Provider Payments', value: item.capitalProviderPayments },
-        { name: 'Depreciation', value: item.depreciation },
-        { name: 'Depletion', value: item.depletion },
-        { name: 'Other Expenditures', value: item.otherExpenditures }
+        { name: 'Capital Provider Payments', value: item.capitalProviderPayments }
       ].filter(entry => entry.value > 0 && (entry.value / total) >= 0.01); // Filter out values less than 1%
     })[0] || [];
 
