@@ -19,7 +19,6 @@ import LoginIcon from '@mui/icons-material/Login';
 import Modal from '../components/modal'; 
 import LoginPage from '../pages/Login_page/Login_page';
 import Btn from '../components/ButtonComp';
-import CO2Widget from './CO2Widget';
 import logo from '../assets/petrodashlogo.png';
 // Simple hamburger icon component
 function Hamburger({ open, onClick }) {
@@ -164,9 +163,6 @@ function Navbar({ isSticky = false }) {
           .navbar-center-btn:focus {
             color: #182959;
           }          @media (max-width: 900px) {
-            .navbar-center-desktop {
-              display: none !important;
-            }
             .navbar-login-desktop {
               display: none !important;
             }
@@ -206,16 +202,6 @@ function Navbar({ isSticky = false }) {
               className="navbar-logo"
             />
           </Link>
-          
-          {/* Centered CO2 Widget for desktop */}
-          <div className="navbar-center-desktop" style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            flex: '1 1 auto',
-            zIndex: 1202 
-          }}>
-            <CO2Widget />
-          </div>
           
           {/* Desktop LOGIN button */}
           <div className="navbar-login-desktop" style={{ 
@@ -296,11 +282,6 @@ function Navbar({ isSticky = false }) {
                 alt="PetroDash"
                 style={{ height: '40px' }}
               />            </Link>
-            
-            {/* CO2 Widget for mobile */}
-            <div style={{ alignSelf: 'center', marginBottom: '1rem' }}>
-              <CO2Widget />
-            </div>
             
             <div style={{ marginTop: '2rem', alignSelf: 'stretch' }}>
               {/* Full width, green LOGIN button for mobile */}
