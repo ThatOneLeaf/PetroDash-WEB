@@ -294,10 +294,7 @@ export default function InvestmentKPI({ year: yearProp, companyId, isInDashboard
                                 letterSpacing: 0.2,
                                 fontWeight: 400,
                             }}
-                        >
-                            {dates?.livelihood && (
-                                <>As of: {formatMonthYear(dates.livelihood)}</>
-                            )}
+                        >   
                         </div>
                     </div>
                 </div>
