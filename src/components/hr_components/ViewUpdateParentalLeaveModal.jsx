@@ -132,6 +132,12 @@ const ViewUpdateParentalLeaveModal = ({
     }));
   };
 
+  const typeOfLeaveOptions = [
+    { label: "Maternity", value: "Maternity" },
+    { label: "Paternity", value: "Paternity" },
+    { label: "SPL", value: "SPL" },
+  ];
+
   const handleChange = (field) => (event) => {
     setEditedRecord((prev) => ({
       ...prev,
@@ -157,10 +163,9 @@ const ViewUpdateParentalLeaveModal = ({
 
     const { employeeId, date, days, type_of_leave } = editedRecord;
 
-    const isValidLeaveType = uniqueOptions("type_of_leave").some(
-      (option) => option.value === type_of_leave
+    const isValidLeaveType = typeOfLeaveOptions.some(
+      (opt) => opt.value === type_of_leave
     );
-
     const isValidDate = date && dayjs(date).isSameOrAfter(MIN_DATE);
 
     const isValidDays = days !== "" && !isNaN(days) && Number(days) > 0;
@@ -441,7 +446,7 @@ const ViewUpdateParentalLeaveModal = ({
               sx={{ height: "55px" }}
               fullWidth
             >
-              {uniqueOptions("type_of_leave").map((option) => (
+              {typeOfLeaveOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
                 </MenuItem>

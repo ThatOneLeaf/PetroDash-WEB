@@ -137,6 +137,48 @@ function AddEmployeeModal({ onClose, onSuccess }) {
     }));
   };
 
+  const genderOptions = [
+    { label: "Male", value: "M" },
+    { label: "Female", value: "F" },
+  ];
+
+  const positionOptions = [
+    {
+      label: "Rank-and-File",
+      value: "RF",
+    },
+    {
+      label: "Middle Management",
+      value: "MM",
+    },
+    {
+      label: "Senior Management",
+      value: "SM",
+    },
+  ];
+
+  const employementCategoryOptions = [
+    {
+      label: "Professional",
+      value: "P",
+    },
+    {
+      label: "Non-Professional",
+      value: "NP",
+    },
+  ];
+
+  const employementStatusOptions = [
+    {
+      label: "Permanent",
+      value: "Permanent",
+    },
+    {
+      label: "Temporary",
+      value: "Temporary",
+    },
+  ];
+
   const handleChange = (field) => (event) => {
     const newFormData = {
       ...formData,
@@ -170,22 +212,25 @@ function AddEmployeeModal({ onClose, onSuccess }) {
       tenureEnded,
     } = formData;
 
-    const isInOptions = (value, key) =>
-      uniqueOptions(key).some((option) => option.value === value);
-
     const isValidEmployeeId = employeeId.trim() !== "";
     const isValidEmployeeIdExists = !uniqueOptions("employee_id").some(
       (option) => option.value === employeeId.trim()
     );
-    const isValidGender = isInOptions(gender, "gender");
-    const isValidPosition = isInOptions(position, "position_id");
+    const isValidGender = genderOptions.some((opt) => opt.value === gender);
+    const isValidPosition = positionOptions.some(
+      (opt) => opt.value === position
+    );
     const isValidBirthdate =
       birthdate &&
       dayjs(birthdate).isValid() &&
       dayjs(birthdate).isBefore(today) &&
       dayjs(birthdate).isAfter(MIN_BIRTHDATE);
-    const isValidCategory = isInOptions(employeeCategory, "p_np");
-    const isValidStatus = isInOptions(employeeStatus, "employment_status");
+    const isValidCategory = employementCategoryOptions.some(
+      (opt) => opt.value === employeeCategory
+    );
+    const isValidStatus = employementStatusOptions.some(
+      (opt) => opt.value === employeeStatus
+    );
     const isValidTenureStart =
       tenureStart &&
       dayjs(tenureStart).isValid() &&
@@ -384,17 +429,11 @@ function AddEmployeeModal({ onClose, onSuccess }) {
               label="Gender"
               sx={{ height: "55px" }}
             >
-              {uniqueOptions("gender").map((option) => {
-                let label = option.label;
-                if (option.value === "M") label = "Male";
-                else if (option.value === "F") label = "Female";
-
-                return (
-                  <MenuItem key={option.value} value={option.value}>
-                    {label}
-                  </MenuItem>
-                );
-              })}
+              {genderOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -406,18 +445,11 @@ function AddEmployeeModal({ onClose, onSuccess }) {
               label="Position"
               sx={{ height: "55px" }}
             >
-              {uniqueOptions("position_id").map((option) => {
-                let label = option.label;
-                if (option.value === "RF") label = "Rank-And-File";
-                else if (option.value === "MM") label = "Middle Management";
-                else if (option.value === "SM") label = "Senior Management";
-
-                return (
-                  <MenuItem key={option.value} value={option.value}>
-                    {label}
-                  </MenuItem>
-                );
-              })}
+              {positionOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Box>
@@ -445,17 +477,11 @@ function AddEmployeeModal({ onClose, onSuccess }) {
             label="Employee Category"
             sx={{ height: "55px" }}
           >
-            {uniqueOptions("p_np").map((option) => {
-              let label = option.label;
-              if (option.value === "P") label = "Professional";
-              else if (option.value === "NP") label = "Non-Professional";
-
-              return (
-                <MenuItem key={option.value} value={option.value}>
-                  {label}
-                </MenuItem>
-              );
-            })}
+            {employementCategoryOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 
@@ -467,7 +493,7 @@ function AddEmployeeModal({ onClose, onSuccess }) {
             label="Employee Status"
             sx={{ height: "55px" }}
           >
-            {uniqueOptions("employment_status").map((option) => (
+            {employementStatusOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>

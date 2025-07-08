@@ -103,9 +103,16 @@ function ParentalLeave({
     new Set(data.map((item) => item.company_name))
   ).map((val) => ({ label: val, value: val }));
 
+  /*
   const typeOfLeaveOptions = Array.from(
     new Set(data.map((item) => item.type_of_leave))
-  ).map((val) => ({ label: val, value: val }));
+  ).map((val) => ({ label: val, value: val }));*/
+
+  const typeOfLeaveOptions = [
+    { label: "Maternity", value: "Maternity" },
+    { label: "Paternity", value: "Paternity" },
+    { label: "SPL", value: "SPL" },
+  ];
 
   //STATUS DONT CHANGE
   const statusOptions = [
