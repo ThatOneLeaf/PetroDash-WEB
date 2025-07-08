@@ -9,9 +9,7 @@ export default defineConfig({
 	allowedHosts: ['esgdash.perc.com.ph'],
   },
   preview: {
-    host: true,
     port: 5173,
-    allowedHosts: ['esgdash.perc.com.ph'],
   },
   plugins: [react()],
 })
