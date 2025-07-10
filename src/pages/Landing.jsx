@@ -59,7 +59,7 @@ function Landing() {
             lineHeight: '1.2',
             fontWeight: 'bold'
           }}>
-            <span style={{ fontWeight: 'bold' }}>PetroEnergy</span>, building a more sustainable and ethical future
+            Welcome to ESGDash!
           </h1>
           
           <p style={{
@@ -68,7 +68,7 @@ function Landing() {
             fontSize: isMobile ? '1rem' : '1.1rem',
             lineHeight: '1.6'
           }}>
-            ESG is a vital framework that helps investors assess sustainability risks and guides businesses in operating responsibly for long-term impact.
+            ESGDash is a web-based dashboard for collecting, managing, and visualizing Petro Group's Environment, Social, and Governance (ESG) data and Corporate Social Responsibility (CSR) impact.
           </p>
 
           <Btn
