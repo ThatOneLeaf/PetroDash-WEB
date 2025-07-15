@@ -53,7 +53,6 @@ import ForestIcon from '@mui/icons-material/Forest';
 import VerticalStackedBarChartComponent from "../../components/charts/VerticalStackedBar";
 import HorizontalGroupedBarChartComponent from "../../components/charts/HorizontalGrouped";
 import { useAuth } from "../../contexts/AuthContext";
-import { useCO2 } from "../../contexts/CO2Context";
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import dayjs from "dayjs";
 
@@ -317,7 +316,6 @@ function PowerDashboard() {
   const [staticData, setStaticData] = useState({});  const { getUserRole } = useAuth();
   const {getUserCompanyId} = useAuth();
   const{getUserPowerPlantId}=useAuth();
-  const { updateCO2Data } = useCO2();
   const role = getUserRole();
   const companyId = getUserCompanyId();
   const powerPlantId = getUserPowerPlantId();
@@ -447,9 +445,6 @@ const fetchData = async () => {
     const updatedTime = new Date();
     setLastUpdated(updatedTime);  // ✅ Update the last updated time here
     
-    // Update CO2 context with total CO2 avoided
-    const totalCO2 = energyData?.totals?.total_co2_avoidance || 0;
-    updateCO2Data(totalCO2, updatedTime);
   } catch (error) {
     console.error("Error fetching data:", error);
     setData({});

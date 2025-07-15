@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 //import Navbar from './components/layout/Navbar';
 import Dashboard from "./pages/Dashboard";
 import Economic from "./pages/Economic/Economic";
@@ -8,7 +8,6 @@ import LoginPage from "./pages/Login_page/Login_page";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
 import { AuthProvider } from "./contexts/AuthContext";
-import { CO2Provider } from "./contexts/CO2Context";
 import EconomicRepository from "./pages/Economic/EconomicRepository";
 import EnvironmentEnergy from "./pages/Envi/EnvironmentEnergy";
 import EnvironmentWater from "./pages/Envi/EnvironmentWater";
@@ -36,7 +35,6 @@ import AuditTrail from "./pages/AuditTrail/AuditTrail";
 function App() {
   return (
     <AuthProvider>
-      <CO2Provider>
         <Router>
           <div className="app">
             <main><Routes>
@@ -260,11 +258,11 @@ function App() {
                     <Dashboard />
                   </ProtectedRoute>
                 }
-              /></Routes>
+              />
+            </Routes>
           </main>
         </div>
       </Router>
-      </CO2Provider>
     </AuthProvider>
   );
 }

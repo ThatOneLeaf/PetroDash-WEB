@@ -15,6 +15,7 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
       </div>
     );
   }
+
   // If not logged in, redirect to landing page
   if (!isLoggedIn()) {
     return <Navigate to="/landing" replace />;
